@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alibaba Cloud Academy — Catálogo en Español</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style id="styles">
+:root{
+  --bg:#0e0d0b;
+  --bg-2:#161411;
+  --ink:#f5efe4;
+  --ink-dim:#a89a83;
+  --ink-mute:#6d6355;
+  --line:#2a251e;
+  --line-strong:#3a3229;
+  --accent:#e8a53a;
+  --accent-2:#c76a2a;
+  --danger:#c94f3d;
+  --ok:#7fa66a;
+  --grid: 1.25rem;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Inter','Helvetica Neue',sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(232,165,58,0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 30%, rgba(199,106,42,0.06), transparent 55%),
+    var(--bg);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity:.6;mix-blend-mode:overlay;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;background:none;border:0;color:inherit;cursor:pointer}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:400;letter-spacing:.02em}
+.serif{font-family:'Fraunces',serif;font-variation-settings:"opsz" 144,"SOFT" 30}
+
+/* ============ HEADER ============ */
+header.masthead{
+  position:relative;z-index:2;
+  padding:2rem 3rem 1.4rem;
+  border-bottom:1px solid var(--line);
+  display:grid;grid-template-columns:auto 1fr auto;gap:2rem;align-items:end;
+}
+.brand{display:flex;flex-direction:column;gap:.15rem}
+.brand .tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.35em;color:var(--accent);text-transform:uppercase}
+.brand .name{font-family:'Fraunces',serif;font-weight:400;font-size:1.35rem;letter-spacing:-.01em;font-style:italic}
+.brand .name em{color:var(--accent);font-style:normal;font-weight:600}
+.masthead .meta{
+  display:flex;justify-content:flex-end;gap:2rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.15em;color:var(--ink-mute);text-transform:uppercase;
+}
+.masthead .meta span b{color:var(--ink);font-weight:500}
+.masthead h1{
+  font-family:'Fraunces',serif;
+  font-weight:300;
+  font-size:clamp(2.4rem, 5vw, 4.2rem);
+  line-height:.95;
+  letter-spacing:-.03em;
+  grid-column:1 / -1;
+  margin-top:2.5rem;
+  max-width:22ch;
+}
+.masthead h1 em{font-style:italic;color:var(--accent);font-weight:400}
+.masthead h1::after{
+  content:" ✱";color:var(--accent-2);font-size:.5em;vertical-align:super;
+}
+.masthead .subtitle{
+  grid-column:1/-1;
+  color:var(--ink-dim);
+  font-size:1.05rem;
+  max-width:60ch;
+  margin-top:1.2rem;
+  border-left:1px solid var(--line-strong);
+  padding-left:1rem;
+}
+
+.pilot-banner{
+  grid-column:1/-1;margin-top:2rem;padding:1.3rem 1.6rem;
+  background:linear-gradient(135deg,rgba(232,165,58,0.12),rgba(199,106,42,0.06));
+  border:1px solid var(--accent);border-radius:2px;
+  display:flex;justify-content:space-between;align-items:center;gap:2rem;
+  text-decoration:none;color:inherit;
+  transition:all .3s;
+}
+.pilot-banner:hover{background:linear-gradient(135deg,rgba(232,165,58,0.18),rgba(199,106,42,0.1));transform:translateX(4px)}
+.pilot-left{display:flex;flex-direction:column;gap:.25rem}
+.pilot-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.28em;color:var(--accent);text-transform:uppercase}
+.pilot-title{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:500;letter-spacing:-.01em}
+.pilot-sub{color:var(--ink-dim);font-size:.9rem}
+.pilot-cta{font-family:'JetBrains Mono',monospace;font-size:.78rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;white-space:nowrap}
+
+/* ============ CONTROLS ============ */
+.controls{
+  position:sticky;top:0;z-index:5;
+  background:linear-gradient(to bottom,rgba(14,13,11,0.95),rgba(14,13,11,0.85));
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  padding:1rem 3rem;
+  display:grid;grid-template-columns:1fr auto auto auto;gap:1rem;align-items:center;
+}
+.search{position:relative}
+.search input{
+  width:100%;background:transparent;border:0;border-bottom:1px solid var(--line-strong);
+  color:var(--ink);padding:.7rem .2rem .7rem 1.6rem;font-size:1rem;
+  transition:border-color .3s;
+}
+.search input:focus{outline:0;border-color:var(--accent)}
+.search input::placeholder{color:var(--ink-mute);font-style:italic}
+.search::before{content:"⌕";position:absolute;left:0;top:50%;transform:translateY(-50%);color:var(--accent);font-size:1.1rem}
+.filter{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink-dim);
+  border:1px solid var(--line-strong);
+  padding:.55rem .9rem;
+  border-radius:2px;
+  cursor:pointer;
+  transition:all .25s;
+  display:flex;align-items:center;gap:.5rem;
+}
+.filter:hover{border-color:var(--accent);color:var(--ink)}
+.filter.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.filter select{background:transparent;border:0;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;padding-right:.3rem}
+.filter select option{background:var(--bg-2);color:var(--ink)}
+
+/* ============ SIDEBAR + MAIN LAYOUT ============ */
+.layout{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:260px 1fr;
+  gap:0;
+}
+aside.categories{
+  padding:2.2rem 1.5rem 3rem 3rem;
+  border-right:1px solid var(--line);
+  position:sticky;top:74px;align-self:start;
+  max-height:calc(100vh - 74px);overflow-y:auto;
+}
+aside .side-title{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-mute);
+  margin-bottom:1rem;
+}
+aside .cat-item{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:.55rem 0;
+  border-bottom:1px dashed var(--line);
+  cursor:pointer;
+  color:var(--ink-dim);
+  transition:color .2s,padding-left .25s;
+}
+aside .cat-item:hover{color:var(--ink);padding-left:.3rem}
+aside .cat-item.active{color:var(--accent)}
+aside .cat-item .name{font-family:'Fraunces',serif;font-size:1.02rem;line-height:1.2;letter-spacing:-.01em}
+aside .cat-item .count{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--ink-mute)}
+aside .cat-item.active .count{color:var(--accent)}
+
+main.catalog{padding:2.2rem 3rem 5rem}
+
+/* ============ CATEGORY BLOCK ============ */
+.cat-section{margin-bottom:4.5rem}
+.cat-section header.cat-header{
+  display:grid;grid-template-columns:auto 1fr auto;gap:1.5rem;align-items:end;
+  border-bottom:1px solid var(--line-strong);
+  padding-bottom:1rem;margin-bottom:2rem;
+}
+.cat-num{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:3.5rem;color:var(--accent);line-height:.85;letter-spacing:-.03em;
+}
+.cat-title{
+  font-family:'Fraunces',serif;font-weight:400;font-size:2.1rem;line-height:1;letter-spacing:-.02em;
+}
+.cat-title small{display:block;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;color:var(--ink-mute);text-transform:uppercase;margin-bottom:.35rem;font-weight:400}
+.cat-count{
+  font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--ink-dim);letter-spacing:.1em;
+}
+
+.subcat-block{margin-bottom:2.5rem}
+.subcat-title{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.25em;text-transform:uppercase;
+  color:var(--accent-2);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.7rem;
+}
+.subcat-title::before{content:"";width:24px;height:1px;background:var(--accent-2)}
+
+/* ============ COURSE CARDS ============ */
+.course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:0;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.course-card{
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:1.4rem 1.3rem 1.2rem;
+  display:flex;flex-direction:column;gap:.8rem;
+  position:relative;transition:background .3s;
+  min-height:190px;
+  background:linear-gradient(180deg,transparent 0%,rgba(232,165,58,0) 100%);
+}
+.course-card:hover{background:linear-gradient(180deg,rgba(232,165,58,0.03),rgba(232,165,58,0.08))}
+.course-card:hover .goto{opacity:1;transform:translateX(0)}
+.course-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;color:var(--ink-mute);text-transform:uppercase}
+.course-card .top .idx{color:var(--accent)}
+.course-card .title{
+  font-family:'Fraunces',serif;font-weight:400;font-size:1.22rem;line-height:1.2;letter-spacing:-.015em;
+  color:var(--ink);flex:1;
+}
+.course-card .title-en{font-family:'Inter',sans-serif;font-size:.75rem;color:var(--ink-mute);font-style:italic;line-height:1.35}
+.course-card .meta-row{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.08em}
+.tag{padding:.22rem .5rem;border:1px solid var(--line-strong);border-radius:1px;text-transform:uppercase;color:var(--ink-dim)}
+.tag.dur{color:var(--accent)}
+.tag.lvl-Principiante{border-color:#4a6b3a;color:#9dc180}
+.tag.lvl-Intermedio{border-color:#8b6d1e;color:#e3b95a}
+.tag.lvl-Avanzado{border-color:#94402a;color:#e07555}
+.tag.lvl-Experto{border-color:#7a2a2a;color:#d94d4d}
+.course-card .goto{
+  position:absolute;right:1.3rem;bottom:1.1rem;
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;color:var(--accent);
+  opacity:0;transform:translateX(-6px);transition:all .3s;text-transform:uppercase;
+}
+.course-card .goto::after{content:" →"}
+.course-card.has-guide{border-left:3px solid var(--accent)}
+.course-card.has-guide::before{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 22px 22px 0;border-color:transparent var(--accent) transparent transparent;opacity:.9}
+.guide-badge{background:var(--accent);color:var(--bg);padding:.08rem .35rem;font-weight:600;letter-spacing:.1em;font-size:.62rem;border-radius:1px}
+.guide-badge.base{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.course-card.is-detailed{border-left:3px solid var(--accent)}
+.course-card.has-guide:not(.is-detailed){border-left:3px dashed var(--accent-2)}
+.course-card.is-detailed::before{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 22px 22px 0;border-color:transparent var(--accent) transparent transparent;opacity:.9}
+.course-card.has-guide:not(.is-detailed)::before{display:none}
+.pilot-banner.static{cursor:default}
+.pilot-banner.static:hover{transform:none;background:linear-gradient(135deg,rgba(232,165,58,0.12),rgba(199,106,42,0.06))}
+.card-actions{display:flex;gap:.5rem;margin-top:auto;flex-wrap:wrap}
+.action{
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.12em;
+  padding:.4rem .7rem;border:1px solid var(--line-strong);color:var(--ink-dim);
+  text-decoration:none;text-transform:uppercase;transition:all .2s;border-radius:1px;flex:1;text-align:center;
+}
+.action:hover{border-color:var(--accent);color:var(--accent)}
+.action.guide-link{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+.action.guide-link:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+
+/* ============ EMPTY STATE ============ */
+.empty{padding:5rem 2rem;text-align:center;color:var(--ink-mute);font-family:'Fraunces',serif;font-style:italic;font-size:1.4rem}
+
+/* ============ FOOTER ============ */
+footer{
+  border-top:1px solid var(--line);
+  padding:2.5rem 3rem;
+  display:grid;grid-template-columns:2fr 1fr 1fr;gap:2rem;
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.12em;color:var(--ink-mute);text-transform:uppercase;
+}
+footer .brandline{font-family:'Fraunces',serif;font-style:italic;font-size:1rem;text-transform:none;letter-spacing:0;color:var(--ink-dim)}
+footer b{color:var(--ink);font-weight:500}
+
+/* animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.cat-section{animation:fadeUp .55s ease both}
+.cat-section:nth-child(1){animation-delay:.05s}
+.cat-section:nth-child(2){animation-delay:.1s}
+.cat-section:nth-child(3){animation-delay:.15s}
+
+/* responsive */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  aside.categories{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);padding:1.5rem}
+  header.masthead,.controls,main.catalog,footer{padding-left:1.5rem;padding-right:1.5rem}
+  .controls{grid-template-columns:1fr;gap:.6rem}
+  footer{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- populated by script -->
+</div>
+<script id="data" type="application/json">{
+  "total": 130,
+  "categories": [
+    {
+      "category": "Elastic Computing",
+      "category_es": "Cómputo Elástico",
+      "subcategories": [
+        {
+          "name": "Cloud Server",
+          "name_es": "Servidor en la Nube",
+          "courses": [
+            {
+              "title_en": "Operate and Manage a Cloud Server",
+              "title_es": "Operar y Administrar un Servidor en la Nube",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "63 Minutes",
+              "duration_es": "63 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_cloudserver"
+            },
+            {
+              "title_en": "ECS Cost Control: An Overview",
+              "title_es": "ECS Control de Costos: Una Visión General",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "46 Minutes",
+              "duration_es": "46 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_ecs_costcontrol"
+            },
+            {
+              "title_en": "Alibaba Cloud ECS Product Purchasing Options",
+              "title_es": "Alibaba Cloud ECS Opciones de Compra del Producto",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "20 Minutes",
+              "duration_es": "20 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_ecs_purchasing"
+            },
+            {
+              "title_en": "Dedicated Hardware: Bare Metal Instances and Dedicated Hosts",
+              "title_es": "Hardware Dedicado: Instancias Bare Metal y Hosts Dedicados",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "52 Minutes",
+              "duration_es": "52 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_dh"
+            },
+            {
+              "title_en": "Serverless Technology On Alibaba Cloud",
+              "title_es": "Tecnología Serverless en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "100 Minutes",
+              "duration_es": "100 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_serverless"
+            },
+            {
+              "title_en": "Using ECS to Construct a Dynamic Website",
+              "title_es": "Usar ECS para Construir un Sitio Web Dinámico",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "27 Minutes",
+              "duration_es": "27 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_dynamicweb"
+            },
+            {
+              "title_en": "Using SAS to Publish an Opencart E-commerce Website",
+              "title_es": "Usar SAS para Publicar un Sitio de E-commerce con Opencart",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "21 Minutes",
+              "duration_es": "21 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_ecommerce"
+            },
+            {
+              "title_en": "6th Generation Elastic Compute Service Technical Essentials",
+              "title_es": "Elementos Esenciales de la 6ª Generación de ECS",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "53 Minutes",
+              "duration_es": "53 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_6th_ecs"
+            },
+            {
+              "title_en": "Use Cloud Resources Flexibly According to Business Requirement",
+              "title_es": "Uso Flexible de Recursos Cloud según Requerimientos de Negocio",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "71 Minutes",
+              "duration_es": "71 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_autoscaling"
+            },
+            {
+              "title_en": "Operate and Manage a Cloud Server (Cantonese)",
+              "title_es": "Operar y Administrar un Servidor en la Nube (Cantonés)",
+              "language": "Cantonese",
+              "language_es": "Cantonés",
+              "duration": "71 Minutes",
+              "duration_es": "71 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_cloudservercantonese"
+            },
+            {
+              "title_en": "Using ECS to Construct a Dynamic Website (Cantonese)",
+              "title_es": "Usar ECS para Construir un Sitio Web Dinámico (Cantonés)",
+              "language": "Cantonese",
+              "language_es": "Cantonés",
+              "duration": "40 Minutes",
+              "duration_es": "40 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_webcantonese"
+            },
+            {
+              "title_en": "Using SAS to Publish a Magento E-commerce Website",
+              "title_es": "Usar SAS para Publicar un E-commerce con Magento",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "20 Minutes",
+              "duration_es": "20 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-simple-application-ecommerce"
+            },
+            {
+              "title_en": "Operate and Manage a Cloud Server (Bahasa)",
+              "title_es": "Operar y Administrar un Servidor en la Nube (Bahasa)",
+              "language": "Bahasa",
+              "language_es": "Bahasa",
+              "duration": "60 Minutes",
+              "duration_es": "60 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_cloudserverbahasa"
+            },
+            {
+              "title_en": "Special Purpose Hardware: Introduction to GPU and FPGA Equipped Instances",
+              "title_es": "Hardware de Propósito Especial: Introducción a Instancias con GPU y FPGA",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_special_purpose_hardware"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Networking & CDN",
+      "category_es": "Redes y CDN",
+      "subcategories": [
+        {
+          "name": "Cloud Network",
+          "name_es": "Red en la Nube",
+          "courses": [
+            {
+              "title_en": "Handle Large Traffic with Load Balancer",
+              "title_es": "Manejar Tráfico Alto con Balanceador de Carga",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "46 Minutes",
+              "duration_es": "46 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_slb"
+            },
+            {
+              "title_en": "Internetworking with VPC",
+              "title_es": "Interconexión de Redes con VPC",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "65 Minutes",
+              "duration_es": "65 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_Internetwork"
+            },
+            {
+              "title_en": "Interconnecting VPC Using Cloud Enterprise Network",
+              "title_es": "Interconnecting VPC Usar Cloud Empresarial Red",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "61 Minutes",
+              "duration_es": "61 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_Intervpcuscen"
+            },
+            {
+              "title_en": "Establish virtual private connection with VPN Gateway",
+              "title_es": "Establish virtual private connection con VPN Gateway",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "40 Minutes",
+              "duration_es": "40 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_establishvirtual"
+            },
+            {
+              "title_en": "Alibaba Cloud Network Solution",
+              "title_es": "Alibaba Red en la Nube Solución",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "53 Minutes",
+              "duration_es": "53 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-network-solution"
+            }
+          ]
+        },
+        {
+          "name": "CDN and Acceleration",
+          "name_es": "CDN and Acceleration",
+          "courses": [
+            {
+              "title_en": "Use Alibaba Cloud CDN to Accelerate Your Content Globally",
+              "title_es": "Usar Alibaba Cloud CDN to Accelerate Your Content Globally",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "37 Minutes",
+              "duration_es": "37 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_cdn"
+            },
+            {
+              "title_en": "Global Accelerator - Network Acceleration Service Technical Operations",
+              "title_es": "Global Accelerator - Red Acceleration Servicio Technical Operations",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "36 Minutes",
+              "duration_es": "36 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_ga"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Database",
+      "category_es": "Bases de Datos",
+      "subcategories": [
+        {
+          "name": "Relational Database",
+          "name_es": "Relational Database",
+          "courses": [
+            {
+              "title_en": "MySQL for Beginners - Basic Queries",
+              "title_es": "MySQL para Beginners - Básico Queries",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "41 Minutes",
+              "duration_es": "41 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_mysqlqueries"
+            },
+            {
+              "title_en": "Operate and Manage a Relational Database on the Cloud",
+              "title_es": "Operate y Gestionar a Relational Base de Datos en Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "27 Minutes",
+              "duration_es": "27 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_rds"
+            },
+            {
+              "title_en": "Alibaba Cloud Relational Database Service Technical Operations",
+              "title_es": "Alibaba Cloud Relational Base de Datos Servicio Technical Operations",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "128 Minutes",
+              "duration_es": "128 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder-relational-database"
+            },
+            {
+              "title_en": "Alibaba Cloud ApsaraDB for PolarDB Technical Essentials",
+              "title_es": "Alibaba Cloud ApsaraDB para PolarDB Technical Essentials",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "76 Minutes",
+              "duration_es": "76 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-apsaradb-polardb"
+            },
+            {
+              "title_en": "MySQL Database Concepts and Operations",
+              "title_es": "MySQL Base de Datos Concepts y Operations",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "78 Minutes",
+              "duration_es": "78 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_mysql"
+            },
+            {
+              "title_en": "Introduction to HybridDB for PostgreSQL",
+              "title_es": "Introducción a HybridDB para PostgreSQL",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "77 Minutes",
+              "duration_es": "77 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-hybriddb-for-postgresql"
+            }
+          ]
+        },
+        {
+          "name": "NoSQL Database",
+          "name_es": "Base de Datos NoSQL",
+          "courses": [
+            {
+              "title_en": "Introduction to Redis® OSS-Compatible",
+              "title_es": "Introducción a Redis® OSS-Compatible",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_redis"
+            },
+            {
+              "title_en": "Introduction of HBase",
+              "title_es": "Introducción of HBase",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "54 Minutes",
+              "duration_es": "54 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_introduction_hbase2"
+            },
+            {
+              "title_en": "Why is ApsaraDB for Hbase 7 times faster than community edition",
+              "title_es": "Why is ApsaraDB para Hbase 7 times faster than community edition",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "24 Minutes",
+              "duration_es": "24 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_hbase2"
+            },
+            {
+              "title_en": "HBase Performance Tuning",
+              "title_es": "HBase Performance Tuning",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "39 Minutes",
+              "duration_es": "39 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder-hbase-tuning"
+            }
+          ]
+        },
+        {
+          "name": "Data Warehouse",
+          "name_es": "Data Warehouse",
+          "courses": [
+            {
+              "title_en": "Alibaba Cloud ApsaraDB for ClickHouse Deep Dive",
+              "title_es": "Alibaba Cloud ApsaraDB para ClickHouse Profundización",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "59 Minutes",
+              "duration_es": "59 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder_clickhouse2"
+            },
+            {
+              "title_en": "Design a Cloud Data Architecture Using AnalyticDB & Data Lake Analytics",
+              "title_es": "Design a Cloud Datos Architecture Usar AnalyticDB & Datos Lake Analítica",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "30 Minutes",
+              "duration_es": "30 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_adb_dla2"
+            }
+          ]
+        },
+        {
+          "name": "Utility & Tools",
+          "name_es": "Utility & Tools",
+          "courses": [
+            {
+              "title_en": "Alibaba Cloud Database Backup Service Technical Essentials",
+              "title_es": "Alibaba Base de Datos en la Nube Respaldo Servicio Technical Essentials",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "80 Minutes",
+              "duration_es": "80 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_dbs2"
+            },
+            {
+              "title_en": "Secure and Easy Data Management with DMS",
+              "title_es": "Secure y Easy Datos Gestión con DMS",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "53 Minutes",
+              "duration_es": "53 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_dms2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Storage",
+      "category_es": "Almacenamiento",
+      "subcategories": [
+        {
+          "name": "Essential Storage Service",
+          "name_es": "Essential Storage Service",
+          "courses": [
+            {
+              "title_en": "Using OSS to Publish a Static Website",
+              "title_es": "Usar OSS to Publish a Static Sitio Web",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "26 Minutes",
+              "duration_es": "26 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_staticweb"
+            },
+            {
+              "title_en": "Operate and Manage Object Storage on the Cloud",
+              "title_es": "Operate y Gestionar Object Almacenamiento en Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "62 Minutes",
+              "duration_es": "62 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_oss"
+            },
+            {
+              "title_en": "Introduction to Network Attached Storage",
+              "title_es": "Introducción a Red Attached Almacenamiento",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "49 Minutes",
+              "duration_es": "49 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_nas"
+            },
+            {
+              "title_en": "Using OSS to Publish a Static Website in China (Cantonese)",
+              "title_es": "Usar OSS to Publish a Static Sitio Web in China (Cantonés)",
+              "language": "Cantonese",
+              "language_es": "Cantonés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_staticcantonese"
+            },
+            {
+              "title_en": "Operate and Manage Object Storage on the Cloud (Cantonese)",
+              "title_es": "Operate y Gestionar Object Almacenamiento en Cloud (Cantonés)",
+              "language": "Cantonese",
+              "language_es": "Cantonés",
+              "duration": "65 Minutes",
+              "duration_es": "65 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_osscantonese"
+            },
+            {
+              "title_en": "Distributed Storage Introduction",
+              "title_es": "Distributed Almacenamiento Introducción",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "63 Minutes",
+              "duration_es": "63 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_distributed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Security",
+      "category_es": "Seguridad",
+      "subcategories": [
+        {
+          "name": "Cloud Security",
+          "name_es": "Seguridad en la Nube",
+          "courses": [
+            {
+              "title_en": "Protect Your Web Application on Alibaba Cloud",
+              "title_es": "Protect Your Web Aplicación en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "85 Minutes",
+              "duration_es": "85 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_applicationsecurity"
+            },
+            {
+              "title_en": "Use Alibaba Cloud Anti-DDoS Service to Defend DoS Attack",
+              "title_es": "Usar Alibaba Cloud Anti-DDoS Servicio to Defend DoS Attack",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "53 Minutes",
+              "duration_es": "53 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_ddos"
+            },
+            {
+              "title_en": "Best Practice to Protect Your Servers on Alibaba Cloud",
+              "title_es": "Best Práctica to Protect Your Servidores en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_protectservers"
+            },
+            {
+              "title_en": "Cloud Platform Security Overview",
+              "title_es": "Cloud Platform Seguridad Visión General",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "61 Minutes",
+              "duration_es": "61 minutos",
+              "level": "50 Minutes",
+              "level_es": "50 Minutes",
+              "url": "https://edu.alibabacloud.com/certification/clouder_securityoverview"
+            },
+            {
+              "title_en": "Web Application Attacks and Defense Deep Dive",
+              "title_es": "Web Aplicación Attacks y Defense Profundización",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "70 Minutes",
+              "duration_es": "70 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder_webattack"
+            },
+            {
+              "title_en": "Cloud Servers Security Strengthening",
+              "title_es": "Cloud Servidores Seguridad Strengthening",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "70 Minutes",
+              "duration_es": "70 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_sechardening"
+            },
+            {
+              "title_en": "Best Practices for the Safety Operation of the Host on the Cloud",
+              "title_es": "Mejores Prácticas para Safety Operation of Host en Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "60 Minutes",
+              "duration_es": "60 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_safetyoperation"
+            },
+            {
+              "title_en": "Cloud Platform Security Overview (Cantonese)",
+              "title_es": "Cloud Platform Seguridad Visión General (Cantonés)",
+              "language": "Cantonese",
+              "language_es": "Cantonés",
+              "duration": "60 Minutes",
+              "duration_es": "60 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_platseccantonese"
+            },
+            {
+              "title_en": "Malicious Code Mechanism Deep Dive",
+              "title_es": "Malicious Code Mechanism Profundización",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "58 Minutes",
+              "duration_es": "58 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maliciouscode"
+            }
+          ]
+        },
+        {
+          "name": "Data Security",
+          "name_es": "Data Security",
+          "courses": [
+            {
+              "title_en": "Secure Your Data on Alibaba Cloud",
+              "title_es": "Secure Your Datos en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "70 Minutes",
+              "duration_es": "70 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_securedata"
+            },
+            {
+              "title_en": "Secure Your Data in Alibaba Cloud (French version)",
+              "title_es": "Secure Your Datos in Alibaba Cloud (French version)",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "40 Minutes",
+              "duration_es": "40 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_securedatafrench"
+            },
+            {
+              "title_en": "The Backup and Recovery of Common Cloud Databases",
+              "title_es": "The Respaldo y Recuperación of Common Cloud Bases de Datos",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "70 Minutes",
+              "duration_es": "70 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_databackup"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Analytics",
+      "category_es": "Analítica",
+      "subcategories": [
+        {
+          "name": "Analytics Basics",
+          "name_es": "Analytics Basics",
+          "courses": [
+            {
+              "title_en": "Quick Start Guide of Data Lake Analytics",
+              "title_es": "Quick Start Guía of Datos Lake Analítica",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "40 Minutes",
+              "duration_es": "40 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datalakeanalytics"
+            },
+            {
+              "title_en": "Alibaba Cloud Big Data Products Overview",
+              "title_es": "Alibaba Cloud Big Datos Products Visión General",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "49 Minutes",
+              "duration_es": "49 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_bigdataview"
+            },
+            {
+              "title_en": "Introduction to Big Data Platform on the Cloud",
+              "title_es": "Introducción a Big Datos Platform en Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "37 Minutes",
+              "duration_es": "37 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_bigdata"
+            },
+            {
+              "title_en": "A Quick Guide to Process Structured Data with Python",
+              "title_es": "A Quick Guía to Process Structured Datos con Python",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "48 Minutes",
+              "duration_es": "48 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_pythondata"
+            },
+            {
+              "title_en": "Scale Python on Cloud",
+              "title_es": "Scale Python en Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "38 Minutes",
+              "duration_es": "38 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_scalablepython"
+            },
+            {
+              "title_en": "How to Use Spark on Cloud Series - Setup",
+              "title_es": "Cómo Usar Spark en Cloud Series - Setup",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_sparksetup"
+            },
+            {
+              "title_en": "How to Use Spark on Cloud Series 2 - Spark Python",
+              "title_es": "Cómo Usar Spark en Cloud Series 2 - Spark Python",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "46 Minutes",
+              "duration_es": "46 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_sparkpython"
+            }
+          ]
+        },
+        {
+          "name": "Data Computing",
+          "name_es": "Data Computing",
+          "courses": [
+            {
+              "title_en": "An Introduction of Elasticsearch",
+              "title_es": "An Introducción of Elasticsearch",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_elasticsearch"
+            },
+            {
+              "title_en": "Using Spark on E-MapReduce",
+              "title_es": "Usar Spark en E-MapReduce",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "51 Minutes",
+              "duration_es": "51 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_sparkemr"
+            },
+            {
+              "title_en": "Alibaba Cloud MaxCompute - Basic Knowledge",
+              "title_es": "Alibaba Cloud MaxCompute - Básico Knowledge",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "61 Minutes",
+              "duration_es": "61 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maxcbasic"
+            },
+            {
+              "title_en": "Alibaba Cloud MaxCompute - Data Transmission",
+              "title_es": "Alibaba Cloud MaxCompute - Datos Transmission",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maxcdata"
+            },
+            {
+              "title_en": "Alibaba Cloud MaxCompute - SQL Development",
+              "title_es": "Alibaba Cloud MaxCompute - SQL Development",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "96 Minutes",
+              "duration_es": "96 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maxcsql"
+            },
+            {
+              "title_en": "Alibaba Cloud MaxCompute - UDF Development",
+              "title_es": "Alibaba Cloud MaxCompute - UDF Development",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "28 Minutes",
+              "duration_es": "28 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maxcudf"
+            },
+            {
+              "title_en": "Alibaba Cloud MaxCompute - Programming Model",
+              "title_es": "Alibaba Cloud MaxCompute - Programming Model",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "64 Minutes",
+              "duration_es": "64 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maxcpro"
+            },
+            {
+              "title_en": "Alibaba Cloud MaxCompute - Authority and Security",
+              "title_es": "Alibaba Cloud MaxCompute - Authority y Seguridad",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "60 Minutes",
+              "duration_es": "60 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_maxcauth"
+            },
+            {
+              "title_en": "Using Hive and Hadoop on E-MapReduce",
+              "title_es": "Usar Hive y Hadoop en E-MapReduce",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_hivehadoop"
+            },
+            {
+              "title_en": "Hadoop Cluster Installation on Alibaba Cloud ECS",
+              "title_es": "Hadoop Cluster Installation en Alibaba Cloud ECS",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_hadoopecs"
+            },
+            {
+              "title_en": "Apache Hadoop Overview",
+              "title_es": "Apache Hadoop Visión General",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_hadoopoverview"
+            },
+            {
+              "title_en": "Hadoop Architecture and Principles",
+              "title_es": "Hadoop Architecture y Principles",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "53 Minutes",
+              "duration_es": "53 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_hadooparcpri"
+            },
+            {
+              "title_en": "Realtime Computing With Apache Flink",
+              "title_es": "Realtime Computación With Apache Flink",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_flink"
+            }
+          ]
+        },
+        {
+          "name": "Data Development",
+          "name_es": "Data Development",
+          "courses": [
+            {
+              "title_en": "Alibaba Cloud Big Data - Data Integration",
+              "title_es": "Alibaba Cloud Big Datos - Datos Integration",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_bigdatainteg"
+            },
+            {
+              "title_en": "Alibaba Cloud DataWorks - Basic Knowledge",
+              "title_es": "Alibaba Cloud DataWorks - Básico Knowledge",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "36 Minutes",
+              "duration_es": "36 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datawbasic"
+            },
+            {
+              "title_en": "Alibaba Cloud DataWorks - Application Development",
+              "title_es": "Alibaba Cloud DataWorks - Aplicación Development",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "78 Minutes",
+              "duration_es": "78 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datawapp"
+            },
+            {
+              "title_en": "Data Development with DataWorks and MaxCompute",
+              "title_es": "Datos Development con DataWorks y MaxCompute",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "86 Minutes",
+              "duration_es": "86 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder-dataworks-maxcompute"
+            },
+            {
+              "title_en": "How to Migrate Data to Big Data Platform on the Cloud",
+              "title_es": "Cómo Migrar Datos to Big Datos Platform en Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "48 Minutes",
+              "duration_es": "48 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_dataintegration"
+            },
+            {
+              "title_en": "How to Migrate Data to Big Data Platform on the Cloud (French version)",
+              "title_es": "Cómo Migrar Datos to Big Datos Platform en Cloud (French version)",
+              "language": "French",
+              "language_es": "French",
+              "duration": "48 Minutes",
+              "duration_es": "48 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datafrench"
+            }
+          ]
+        },
+        {
+          "name": "Big Data Application and Visualization",
+          "name_es": "Big Data Application and Visualization",
+          "courses": [
+            {
+              "title_en": "Quickly Generate Large Dashboards for Data Visualization",
+              "title_es": "Quickly Generate Large Dashboards para Datos Visualization",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "61 Minutes",
+              "duration_es": "61 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datav"
+            },
+            {
+              "title_en": "Quickly Generate Business Intelligence Diagrams with QuickBI",
+              "title_es": "Quickly Generate Negocio Intelligence Diagrams con QuickBI",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "94 Minutes",
+              "duration_es": "94 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_quickbi"
+            },
+            {
+              "title_en": "Data Visualization Using Python",
+              "title_es": "Datos Visualization Usar Python",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datavpython"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Artificial Intelligence",
+      "category_es": "Inteligencia Artificial",
+      "subcategories": [
+        {
+          "name": "Artificial Intelligence",
+          "name_es": "Artificial Intelligence",
+          "courses": [
+            {
+              "title_en": "Machine Learning: Heart Disease Prediction",
+              "title_es": "Machine Learning: Heart Disease Prediction",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "33 Minutes",
+              "duration_es": "33 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_machinelearning"
+            },
+            {
+              "title_en": "Machine Learning for Beginners - Linear Regression",
+              "title_es": "Machine Learning para Beginners - Linear Regression",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "48 Minutes",
+              "duration_es": "48 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_linearregression"
+            },
+            {
+              "title_en": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
+              "title_es": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "46 Minutes",
+              "duration_es": "46 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_naivebayes"
+            },
+            {
+              "title_en": "Machine Learning Algorithm Primer Series 3- Logistic Regression Model",
+              "title_es": "Machine Learning Algorithm Primer Series 3- Logistic Regression Model",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_logisticregression"
+            },
+            {
+              "title_en": "Machine Learning Algorithm Primer Series 4 - Decision Tree and Random Forest",
+              "title_es": "Machine Learning Algorithm Primer Series 4 - Decision Tree y Random Forest",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "47 Minutes",
+              "duration_es": "47 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_decisiontree"
+            },
+            {
+              "title_en": "Implement Decision Tree with Python",
+              "title_es": "Implement Decision Tree con Python",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "42 Minutes",
+              "duration_es": "42 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_pythondecisiontree"
+            },
+            {
+              "title_en": "Predicting Coupon Efficacy",
+              "title_es": "Predicting Coupon Efficacy",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "90 Minutes",
+              "duration_es": "90 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_tianchiai"
+            },
+            {
+              "title_en": "Support Vector Machine Implementation Through PAI",
+              "title_es": "Support Vector Machine Implementation Through PAI",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "44 Minutes",
+              "duration_es": "44 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder-vector-machine"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Container & Middleware",
+      "category_es": "Contenedores y Middleware",
+      "subcategories": [
+        {
+          "name": "Basics",
+          "name_es": "Basics",
+          "courses": [
+            {
+              "title_en": "Conducting DevOps practices on Alibaba Cloud",
+              "title_es": "Conducting DevOps practices en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "40 Minutes",
+              "duration_es": "40 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_conductingdevops"
+            },
+            {
+              "title_en": "Performance Testing and Optimizing of Containerized Applications",
+              "title_es": "Performance Testing y Optimizing of Containerized Aplicaciones",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "55 Minutes",
+              "duration_es": "55 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder-containerized-applications"
+            },
+            {
+              "title_en": "An Introduction of Alibaba Cloud Message Queue",
+              "title_es": "An Introducción of Alibaba Cloud Message Queue",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "48 Minutes",
+              "duration_es": "48 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_mq"
+            }
+          ]
+        },
+        {
+          "name": "Container",
+          "name_es": "Container",
+          "courses": [
+            {
+              "title_en": "Using Kubernetes to Manage Containers and Cluster Resources",
+              "title_es": "Usar Kubernetes to Gestionar Contenedores y Cluster Resources",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_kubernetes"
+            },
+            {
+              "title_en": "Introduction To Docker Container",
+              "title_es": "Introducción To Docker Contenedor",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "60 Minutes",
+              "duration_es": "60 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_docker"
+            },
+            {
+              "title_en": "Problem Diagnosis and Monitoring for Containerized Applications",
+              "title_es": "Problem Diagnosis y Monitoreo para Containerized Aplicaciones",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-diagnosis-containerized"
+            },
+            {
+              "title_en": "Provisioning a Multi-zone ACK Kubernetes Cluster Using Terraform",
+              "title_es": "Provisioning a Multi-zone ACK Kubernetes Cluster Usar Terraform",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "128 Minutes",
+              "duration_es": "128 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder-terraform-kubernetes"
+            },
+            {
+              "title_en": "Implement Blue-Green Deployment with Container Service",
+              "title_es": "Implement Blue-Green Despliegue con Contenedor Servicio",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "38 Minutes",
+              "duration_es": "38 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_container"
+            },
+            {
+              "title_en": "Using Swarm to Orchestrate and Manage Containers",
+              "title_es": "Usar Swarm to Orchestrate y Gestionar Contenedores",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "54 Minutes",
+              "duration_es": "54 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_swarm"
+            },
+            {
+              "title_en": "An Introduction to Application Containerization",
+              "title_es": "An Introducción a Aplicación Containerization",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "55 Minutes",
+              "duration_es": "55 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_appcontain"
+            }
+          ]
+        },
+        {
+          "name": "Micro Services",
+          "name_es": "Micro Services",
+          "courses": [
+            {
+              "title_en": "An Introduction to Microservice Architecture",
+              "title_es": "An Introducción a Microservice Architecture",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "65 Minutes",
+              "duration_es": "65 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_architecture"
+            },
+            {
+              "title_en": "How to Manage Ultra Large Application with EDAS",
+              "title_es": "Cómo Gestionar Ultra Large Aplicación con EDAS",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "55 Minutes",
+              "duration_es": "55 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder_edas"
+            }
+          ]
+        },
+        {
+          "name": "Serverless",
+          "name_es": "Serverless",
+          "courses": [
+            {
+              "title_en": "Serverless Technology On Alibaba Cloud",
+              "title_es": "Tecnología Serverless en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "100 Minutes",
+              "duration_es": "100 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_serverless"
+            },
+            {
+              "title_en": "Deploy an Image Process Service Using Function Compute",
+              "title_es": "Desplegar an Image Process Servicio Usar Function Cómputo",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "55 Minutes",
+              "duration_es": "55 minutos",
+              "level": "Beginner, Intermediate",
+              "level_es": "Beginner, Intermediate",
+              "url": "https://edu.alibabacloud.com/certification/clouder_function"
+            },
+            {
+              "title_en": "Using Function Compute To Acquire Users Registration Info",
+              "title_es": "Usar Function Cómputo To Acquire Users Registration Info",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_registrationinfo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Architecting, DevOps & Solution",
+      "category_es": "Arquitectura, DevOps y Soluciones",
+      "subcategories": [
+        {
+          "name": "Architecting",
+          "name_es": "Architecting",
+          "courses": [
+            {
+              "title_en": "Enterprise Multi-Account Management With Resource Directory",
+              "title_es": "Empresarial Multi-Account Gestión With Resource Directory",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_multiaccount_management"
+            },
+            {
+              "title_en": "Alibaba Cloud Fundamental Architecture and Case Study",
+              "title_es": "Alibaba Cloud Fundamental Architecture y Case Study",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_caseanalysis"
+            },
+            {
+              "title_en": "Alibaba Cloud Elastic Architecture and Case Study",
+              "title_es": "Alibaba Cloud Elástico Architecture y Case Study",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "59 Minutes",
+              "duration_es": "59 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_elasticcase"
+            },
+            {
+              "title_en": "Alibaba Cloud Analysis Architecture and Case Studies",
+              "title_es": "Alibaba Cloud Analysis Architecture y Case Studies",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "60 Minutes",
+              "duration_es": "60 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_analycase"
+            },
+            {
+              "title_en": "Alibaba Hybrid Cloud Solution",
+              "title_es": "Alibaba Hybrid Cloud Solución",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "40 Minutes",
+              "duration_es": "40 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-hybrid-solution"
+            },
+            {
+              "title_en": "Understanding the Database Technology that Powers Double 11",
+              "title_es": "Understanding Base de Datos Technology that Powers Double 11",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "41 Minutes",
+              "duration_es": "41 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-database-double11"
+            },
+            {
+              "title_en": "Internet of Things(IoT), Big Data and AI in Alibaba Cloud",
+              "title_es": "Internet of Things(IoT), Big Datos y AI in Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "42 Minutes",
+              "duration_es": "42 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-iot-bigdata-ai"
+            },
+            {
+              "title_en": "Explore the Technologies Behind the World’s Largest Shopping Festival",
+              "title_es": "Explore Technologies Behind World’s Largest Shopping Festival",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-shopping-technologies"
+            }
+          ]
+        },
+        {
+          "name": "DevOps",
+          "name_es": "DevOps",
+          "courses": [
+            {
+              "title_en": "Use Log Service to Apply Log Management",
+              "title_es": "Usar Log Servicio to Apply Log Gestión",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "39 Minutes",
+              "duration_es": "39 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-apply-log-management"
+            },
+            {
+              "title_en": "Alibaba Cloud Monitoring & Management",
+              "title_es": "Alibaba Cloud Monitoreo & Gestión",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "45 Minutes",
+              "duration_es": "45 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-monitoring-management"
+            },
+            {
+              "title_en": "An Introduction Of DevOps",
+              "title_es": "An Introducción Of DevOps",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "35 Minutes",
+              "duration_es": "35 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_devops"
+            },
+            {
+              "title_en": "Achieve CI&CD With Jenkins",
+              "title_es": "Achieve CI&CD With Jenkins",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "58 Minutes",
+              "duration_es": "58 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_jenkins"
+            },
+            {
+              "title_en": "Introduction to API Gateway on Alibaba Cloud",
+              "title_es": "Introducción a API Gateway en Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "47 Minutes",
+              "duration_es": "47 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder-introduction-api"
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "name_es": "Analytics",
+          "courses": [
+            {
+              "title_en": "Riding Analysis of Shared Bicycles",
+              "title_es": "Riding Analysis of Shared Bicycles",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "82 Minutes",
+              "duration_es": "82 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_ridinganalysis"
+            },
+            {
+              "title_en": "Persona Building of Housing Resource",
+              "title_es": "Persona Construir of Housing Resource",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "63 Minutes",
+              "duration_es": "63 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_housingresource"
+            },
+            {
+              "title_en": "Delivery Business Data Analysis",
+              "title_es": "Delivery Negocio Datos Analysis",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "116 Minutes",
+              "duration_es": "116 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_deliverybusiness"
+            }
+          ]
+        },
+        {
+          "name": "Cloud Migration",
+          "name_es": "Cloud Migration",
+          "courses": [
+            {
+              "title_en": "Data Transmission Service Technical Essentials",
+              "title_es": "Datos Transmission Servicio Technical Essentials",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "70 Minutes",
+              "duration_es": "70 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_dts"
+            },
+            {
+              "title_en": "Unstructured Data Migration",
+              "title_es": "Unstructured Datos Migración",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "65 Minutes",
+              "duration_es": "65 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_datamigration"
+            },
+            {
+              "title_en": "3 Major Scenarios You Should Know to Migrate to Alibaba Cloud",
+              "title_es": "3 Major Scenarios You Should Know to Migrar to Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "35 Minutes",
+              "duration_es": "35 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder_migrate"
+            },
+            {
+              "title_en": "Migrate Your Application to Alibaba Cloud",
+              "title_es": "Migrar Your Aplicación to Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder_migrateapp"
+            },
+            {
+              "title_en": "Structured Data Migration",
+              "title_es": "Structured Datos Migración",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "58 Minutes",
+              "duration_es": "58 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_strdatamig"
+            },
+            {
+              "title_en": "Migration of Cloud Database from Third-party Platforms to Alibaba Cloud",
+              "title_es": "Migración of Base de Datos en la Nube from Third-party Platforms to Alibaba Cloud",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "46 Minutes",
+              "duration_es": "46 minutos",
+              "level": "Intermediate",
+              "level_es": "Intermedio",
+              "url": "https://edu.alibabacloud.com/certification/clouder-migration-database"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Others",
+      "category_es": "Otros",
+      "subcategories": [
+        {
+          "name": "IT Fundamental",
+          "name_es": "IT Fundamental",
+          "courses": [
+            {
+              "title_en": "JAVA Coding Standards In Alibaba Group",
+              "title_es": "JAVA Coding Standards In Alibaba Group",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "90 Minutes",
+              "duration_es": "90 minutos",
+              "level": "Advanced",
+              "level_es": "Avanzado",
+              "url": "https://edu.alibabacloud.com/certification/clouder_java"
+            },
+            {
+              "title_en": "Getting Started with Linux Server Management",
+              "title_es": "Primeros Pasos con Linux Servidor Gestión",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "50 Minutes",
+              "duration_es": "50 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_linux"
+            }
+          ]
+        },
+        {
+          "name": "Business",
+          "name_es": "Business",
+          "courses": [
+            {
+              "title_en": "Coming to China Online Market",
+              "title_es": "Coming to China Online Market",
+              "language": "English",
+              "language_es": "Inglés",
+              "duration": "58 Minutes",
+              "duration_es": "58 minutos",
+              "level": "Beginner",
+              "level_es": "Principiante",
+              "url": "https://edu.alibabacloud.com/certification/clouder_market"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</script>
+<script id="logic">
+(async () => {
+  const data = JSON.parse(document.getElementById('data').textContent);
+  const app = document.getElementById('app');
+
+  // Cargar manifest de guías (url → {slug, detailed})
+  let manifest = {};
+  try {
+    manifest = await (await fetch('data/guides-manifest.json')).json();
+  } catch(e) { console.warn('No manifest', e); }
+
+  const STUDY_GUIDES = Object.fromEntries(
+    Object.entries(manifest).map(([url, m]) => [url, {href:`guide.html?c=${encodeURIComponent(m.slug)}`, detailed: m.detailed}])
+  );
+
+  const state = {
+    query: '',
+    level: 'all',
+    lang: 'all',
+    duration: 'all',
+    category: 'all',
+    guide: 'all',
+  };
+
+  const levels = ['Principiante','Intermedio','Avanzado','Experto'];
+  const langs = [...new Set(data.categories.flatMap(c => c.subcategories.flatMap(s => s.courses.map(x => x.language_es))))];
+
+  function parseMinutes(d){ const m = d.match(/(\d+)/); return m?parseInt(m[1]):0; }
+
+  function filterCourses(){
+    let idx = 0;
+    return data.categories.map(cat => {
+      if (state.category !== 'all' && cat.category !== state.category) return null;
+      const subs = cat.subcategories.map(sub => {
+        const courses = sub.courses.filter(c => {
+          if (state.level !== 'all' && c.level_es !== state.level) return false;
+          if (state.lang !== 'all' && c.language_es !== state.lang) return false;
+          if (state.duration !== 'all'){
+            const m = parseMinutes(c.duration);
+            if (state.duration==='short' && m>=45) return false;
+            if (state.duration==='mid' && (m<45||m>75)) return false;
+            if (state.duration==='long' && m<=75) return false;
+          }
+          if (state.query){
+            const q = state.query.toLowerCase();
+            if (!(c.title_es.toLowerCase().includes(q) || c.title_en.toLowerCase().includes(q))) return false;
+          }
+          if (state.guide !== 'all'){
+            const g = STUDY_GUIDES[c.url];
+            if (state.guide === 'detailed' && !(g && g.detailed)) return false;
+            if (state.guide === 'any' && !g) return false;
+          }
+          return true;
+        }).map(c => ({...c, __idx: ++idx}));
+        return courses.length ? {...sub, courses} : null;
+      }).filter(Boolean);
+      return subs.length ? {...cat, subcategories: subs} : null;
+    }).filter(Boolean);
+  }
+
+  function render(){
+    const filtered = filterCourses();
+    const totalShown = filtered.reduce((s,c)=>s+c.subcategories.reduce((x,y)=>x+y.courses.length,0),0);
+
+    app.innerHTML = `
+      <header class="masthead">
+        <div class="brand">
+          <span class="tag mono">◆ ACADEMY · EDICIÓN ESPAÑOL</span>
+          <span class="name">Alibaba <em>Cloud</em> Academy</span>
+        </div>
+        <div></div>
+        <div class="meta">
+          <span>Cursos <b>${data.total}</b></span>
+          <span>Guías ES <b>${Object.keys(STUDY_GUIDES).length}</b></span>
+          <span>Detalladas <b>${Object.values(STUDY_GUIDES).filter(g=>g.detailed).length}</b></span>
+        </div>
+        <h1>Un catálogo curado para tu <em>equipo</em>, en su idioma.</h1>
+        <p class="subtitle">Índice completo del programa de certificaciones y e-learning de Alibaba Cloud Academy, con títulos, categorías y metadatos traducidos al español. Cada tarjeta enlaza al curso original en la plataforma; tu equipo puede ver el video y regresar aquí para navegar el temario.</p>
+        <div class="pilot-banner static">
+          <div class="pilot-left">
+            <span class="pilot-tag">◆ Cobertura de guías en español</span>
+            <span class="pilot-title">130 cursos con guía de estudio</span>
+            <span class="pilot-sub">${Object.values(STUDY_GUIDES).filter(g=>g.detailed).length} guías detalladas (contenido por producto) · ${Object.values(STUDY_GUIDES).filter(g=>!g.detailed).length} guías base (estructura + glosario + preguntas). Filtra por «Guía ES» abajo.</span>
+          </div>
+          <span class="pilot-cta">★ = detallada</span>
+        </div>
+        <a class="pilot-banner" href="certifications.html" style="margin-top:1rem">
+          <div class="pilot-left">
+            <span class="pilot-tag">◆ Rutas de certificación · ACA · ACP · ACE</span>
+            <span class="pilot-title">5 tracks oficiales con blueprint + banco de preguntas</span>
+            <span class="pilot-sub">Cloud Engineer · Data Engineer · LLM Engineer · Cloud Architect · Solutions Architect Expert. Cada track incluye syllabus oficial, cursos recomendados del catálogo y simulacros.</span>
+          </div>
+          <span class="pilot-cta">Ver rutas →</span>
+        </a>
+      </header>
+
+      <div class="controls">
+        <div class="search"><input id="q" type="text" placeholder="Buscar por título…" value="${state.query.replace(/"/g,'&quot;')}"></div>
+        <label class="filter"><span>Nivel</span>
+          <select id="fLevel">
+            <option value="all">Todos</option>
+            ${levels.map(l => `<option value="${l}" ${state.level===l?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </label>
+        <label class="filter"><span>Idioma</span>
+          <select id="fLang">
+            <option value="all">Todos</option>
+            ${langs.map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </label>
+        <label class="filter"><span>Duración</span>
+          <select id="fDur">
+            <option value="all">Toda</option>
+            <option value="short" ${state.duration==='short'?'selected':''}>&lt; 45 min</option>
+            <option value="mid" ${state.duration==='mid'?'selected':''}>45–75 min</option>
+            <option value="long" ${state.duration==='long'?'selected':''}>&gt; 75 min</option>
+          </select>
+        </label>
+        <label class="filter"><span>Guía ES</span>
+          <select id="fGuide">
+            <option value="all">Todas</option>
+            <option value="any" ${state.guide==='any'?'selected':''}>Cualquier guía</option>
+            <option value="detailed" ${state.guide==='detailed'?'selected':''}>★ Detallada</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="layout">
+        <aside class="categories">
+          <div class="side-title">Índice · ${totalShown} resultados</div>
+          <div class="cat-item ${state.category==='all'?'active':''}" data-cat="all">
+            <span class="name">Todo</span>
+            <span class="count">${data.total}</span>
+          </div>
+          ${data.categories.map(cat => {
+            const n = cat.subcategories.reduce((s,x)=>s+x.courses.length,0);
+            return `<div class="cat-item ${state.category===cat.category?'active':''}" data-cat="${cat.category}">
+              <span class="name">${cat.category_es}</span>
+              <span class="count">${String(n).padStart(3,'0')}</span>
+            </div>`;
+          }).join('')}
+        </aside>
+
+        <main class="catalog">
+          ${filtered.length === 0 ? `<div class="empty">— Sin resultados para «${state.query}» —</div>` : filtered.map((cat,i) => `
+            <section class="cat-section" id="cat-${i}">
+              <header class="cat-header">
+                <div class="cat-num">${String(i+1).padStart(2,'0')}</div>
+                <div>
+                  <div class="cat-title">
+                    <small>${cat.category}</small>
+                    ${cat.category_es}
+                  </div>
+                </div>
+                <div class="cat-count">${cat.subcategories.reduce((s,x)=>s+x.courses.length,0)} cursos</div>
+              </header>
+              ${cat.subcategories.map(sub => `
+                <div class="subcat-block">
+                  <div class="subcat-title">${sub.name_es}</div>
+                  <div class="course-grid">
+                    ${sub.courses.map(c => {
+                      const guide = STUDY_GUIDES[c.url];
+                      const hasGuide = !!guide;
+                      const isDetailed = guide && guide.detailed;
+                      return `
+                      <div class="course-card ${hasGuide?'has-guide':''} ${isDetailed?'is-detailed':''}">
+                        <div class="top">
+                          <span class="idx">№ ${String(c.__idx).padStart(3,'0')}</span>
+                          <span>${c.language_es}${isDetailed?' · <span class="guide-badge">★ GUÍA</span>':(hasGuide?' · <span class="guide-badge base">GUÍA</span>':'')}</span>
+                        </div>
+                        <div class="title">${c.title_es}</div>
+                        <div class="title-en">${c.title_en}</div>
+                        <div class="meta-row">
+                          <span class="tag dur">${c.duration_es}</span>
+                          <span class="tag lvl-${c.level_es}">${c.level_es}</span>
+                        </div>
+                        <div class="card-actions">
+                          <a class="action primary" href="${c.url}" target="_blank" rel="noopener">Curso original ↗</a>
+                          ${hasGuide ? `<a class="action guide-link" href="${guide.href}">Estudiar en español →</a>` : ''}
+                        </div>
+                      </div>
+                    `;}).join('')}
+                  </div>
+                </div>
+              `).join('')}
+            </section>
+          `).join('')}
+        </main>
+      </div>
+
+      <footer>
+        <div>
+          <div class="brandline">Dashboard construido para facilitar la capacitación de tu equipo hacia las certificaciones de Alibaba Cloud.</div>
+        </div>
+        <div>
+          <b>Notas</b><br>
+          Videos alojados en la plataforma original<br>
+          Cada usuario ingresa con su cuenta
+        </div>
+        <div>
+          <b>Personalización</b><br>
+          Colores y logo adaptables al cliente<br>
+          Multi-tenant listo
+        </div>
+      </footer>
+    `;
+
+    // Wire events
+    const q = document.getElementById('q');
+    q.addEventListener('input', e => { state.query = e.target.value; render(); q.focus(); q.setSelectionRange(q.value.length,q.value.length); });
+    document.getElementById('fLevel').addEventListener('change', e => { state.level = e.target.value; render(); });
+    document.getElementById('fLang').addEventListener('change', e => { state.lang = e.target.value; render(); });
+    document.getElementById('fDur').addEventListener('change', e => { state.duration = e.target.value; render(); });
+    document.getElementById('fGuide').addEventListener('change', e => { state.guide = e.target.value; render(); });
+    document.querySelectorAll('.cat-item').forEach(el => {
+      el.addEventListener('click', () => { state.category = el.dataset.cat; render(); window.scrollTo({top:0,behavior:'smooth'}); });
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
