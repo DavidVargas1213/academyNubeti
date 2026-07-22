@@ -1,0 +1,98 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº 758",
+  "title_en": "Ethical Considerations in AI and Generative AI Development",
+  "title_es": "Consideraciones Éticas en el Desarrollo de IA y IA Generativa",
+  "title_es_html": "Consideraciones <em>Éticas</em> en el Desarrollo de IA y IA Generativa",
+  "duration_es": "~45 minutos",
+  "level_es": "Principiante",
+  "category_es": "Inteligencia Artificial",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/course/758",
+  "lead": "Construir sistemas de IA con responsabilidad, equidad y confianza. Esta guía sintetiza los cuatro módulos del curso oficial y prepara al equipo para responder preguntas de certificación sobre ética aplicada a modelos generativos.",
+  "objectives": [
+    "<strong>Reconocer</strong> por qué la ética es un pilar de diseño (no un añadido) en sistemas de IA.",
+    "<strong>Identificar</strong> las fuentes de sesgo en modelos generativos y las técnicas para mitigarlo.",
+    "<strong>Aplicar</strong> principios de transparencia (explicabilidad) y rendición de cuentas.",
+    "<strong>Distinguir</strong> los marcos regulatorios relevantes: GDPR, EU AI Act, y prácticas de privacidad.",
+    "<strong>Evaluar</strong> riesgos de un caso de uso y proponer mitigaciones concretas."
+  ],
+  "lessons": [
+    {
+      "title_es": "La importancia de la ética",
+      "title_en": "Importance of Ethics",
+      "intro": "La ética en IA no es un tema filosófico opcional: es un requisito operacional. Los sistemas de IA toman decisiones que afectan a personas reales — empleo, diagnósticos, crédito, contenido. Sin un marco ético, reproducen daños a escala.",
+      "points": [
+        "<strong>Cuatro pilares</strong> estándar: Equidad, Transparencia, Privacidad, Rendición de Cuentas.",
+        "La <strong>IA generativa</strong> añade retos: alucinaciones, deepfakes, propiedad intelectual.",
+        "Costo de ignorar la ética: pérdida de confianza, multas, exclusión del mercado europeo."
+      ],
+      "keypoint": {"label":"Concepto clave","text":"La ética se diseña <em>desde el inicio</em> (ethics by design), no se parcha después."}
+    },
+    {
+      "title_es": "Sesgo en modelos de IA",
+      "title_en": "Bias in AI Models",
+      "intro": "Los modelos aprenden patrones de los datos. Si los datos contienen sesgos históricos o de muestreo, el modelo los amplifica.",
+      "points": [
+        "<strong>Sesgo de datos</strong>: los datos no representan a toda la población objetivo.",
+        "<strong>Sesgo algorítmico</strong>: la función de optimización favorece ciertos grupos.",
+        "<strong>Sesgo de despliegue</strong>: modelo usado en contexto distinto al de entrenamiento.",
+        "<strong>Sesgo de confirmación</strong>: humanos interpretan salidas reforzando creencias previas."
+      ],
+      "keypoint": {"label":"Estrategias de mitigación","text":"Curación de datasets · re-muestreo balanceado · pruebas de equidad por grupo · red-teaming · métricas <em>Demographic Parity</em>, <em>Equalized Odds</em>."}
+    },
+    {
+      "title_es": "Transparencia y rendición de cuentas",
+      "title_en": "Transparency and Accountability",
+      "intro": "Un sistema es transparente cuando los afectados pueden entender qué decidió, por qué, y quién es responsable.",
+      "points": [
+        "<strong>Explicabilidad (XAI)</strong>: SHAP, LIME, atención en LLMs, model cards.",
+        "<strong>Model Cards</strong> y <strong>Data Sheets</strong>: documentación estándar del modelo.",
+        "<strong>Trazabilidad</strong>: registro de decisiones, versiones, datos y despliegues.",
+        "<strong>Human-in-the-loop</strong>: revisión humana para decisiones de alto impacto."
+      ],
+      "keypoint": {"label":"Concepto clave","text":"La responsabilidad legal recae en la organización que despliega, no en el modelo ni en el proveedor de infra."}
+    },
+    {
+      "title_es": "Privacidad, seguridad y cumplimiento",
+      "title_en": "Privacy, Security, and Compliance",
+      "intro": "Los datos que alimentan la IA suelen ser personales. Protegerlos es un requisito legal y ético.",
+      "points": [
+        "<strong>GDPR</strong>: derecho a explicación, rectificación y no decisiones automatizadas.",
+        "<strong>EU AI Act</strong>: clasifica sistemas por riesgo (mínimo, limitado, alto, inaceptable).",
+        "<strong>Alibaba Cloud</strong> ofrece: cifrado en reposo/tránsito, KMS, PrivateLink, DLP.",
+        "<strong>Data minimization</strong> y <strong>purpose limitation</strong>: recolectar solo lo necesario.",
+        "<strong>Ataques específicos a IA</strong>: extracción de datos, prompt injection, jailbreaking, envenenamiento."
+      ],
+      "keypoint": {"label":"Buenas prácticas","text":"Anonimización · pseudonimización · federated learning · differential privacy · auditorías periódicas."}
+    }
+  ],
+  "glossary": [
+    {"en":"Bias","es":"Sesgo","def":"Preferencia sistemática por ciertos resultados debido a datos o diseño."},
+    {"en":"Fairness","es":"Equidad","def":"Propiedad de que el modelo trate a grupos demográficos de forma comparable."},
+    {"en":"Explainability","es":"Explicabilidad","def":"Capacidad de comprender por qué el modelo tomó una decisión concreta."},
+    {"en":"Accountability","es":"Rendición de cuentas","def":"Definición clara de quién responde por las decisiones del sistema."},
+    {"en":"Hallucination","es":"Alucinación","def":"Salida factualmente incorrecta pero presentada con confianza por un LLM."},
+    {"en":"Red-teaming","es":"Equipo rojo","def":"Prueba adversaria intencional para descubrir fallos éticos o de seguridad."},
+    {"en":"Data poisoning","es":"Envenenamiento de datos","def":"Manipulación deliberada de datos de entrenamiento para inducir comportamientos."},
+    {"en":"Prompt injection","es":"Inyección de instrucciones","def":"Ataque que manipula un LLM insertando instrucciones ocultas en la entrada."},
+    {"en":"Differential Privacy","es":"Privacidad diferencial","def":"Técnica matemática que añade ruido para proteger individuos."},
+    {"en":"Federated Learning","es":"Aprendizaje federado","def":"Entrenamiento distribuido donde los datos nunca salen del dispositivo."},
+    {"en":"Model Card","es":"Ficha de modelo","def":"Documento estándar que describe propósito, limitaciones y métricas."},
+    {"en":"Human-in-the-loop","es":"Humano en el ciclo","def":"Diseño donde una persona revisa/aprueba decisiones críticas."},
+    {"en":"GDPR","es":"RGPD","def":"Reglamento General de Protección de Datos de la Unión Europea."},
+    {"en":"EU AI Act","es":"Ley de IA de la UE","def":"Marco regulatorio europeo que clasifica sistemas de IA por riesgo."}
+  ],
+  "quiz": [
+    {"q":"¿Cuál NO es uno de los cuatro pilares de la ética en IA?","options":["Equidad","Transparencia","Velocidad de entrenamiento","Rendición de cuentas"],"answer":2,"explain":"Los cuatro pilares son Equidad, Transparencia, Privacidad y Rendición de cuentas. La velocidad es una métrica de rendimiento."},
+    {"q":"Un modelo rechaza sistemáticamente a solicitantes de una región. ¿Qué tipo de sesgo es más probable?","options":["Sesgo de confirmación","Sesgo de datos (representatividad)","Sesgo de despliegue","Alucinación"],"answer":1,"explain":"Si el dataset subrepresenta a esa región, el modelo aprende patrones incorrectos. Es sesgo de datos por falta de representatividad."},
+    {"q":"¿Qué documento estándar describe propósito, limitaciones y métricas de un modelo?","options":["README.md","Model Card","Data License","SLA"],"answer":1,"explain":"Las Model Cards son el estándar propuesto por Google (Mitchell et al., 2019) para documentación responsable."},
+    {"q":"Orden correcto de niveles del EU AI Act de menor a mayor riesgo:","options":["Alto → Limitado → Mínimo → Inaceptable","Mínimo → Limitado → Alto → Inaceptable","Inaceptable → Alto → Limitado → Mínimo","Limitado → Mínimo → Alto → Inaceptable"],"answer":1,"explain":"Los cuatro niveles: Mínimo, Limitado, Alto e Inaceptable (prohibido)."},
+    {"q":"¿Qué técnica permite entrenar sin que los datos personales salgan del dispositivo?","options":["Cifrado en reposo","Federated Learning","Anonimización simple","Balanceo de carga"],"answer":1,"explain":"Federated Learning entrena distribuido en dispositivos; solo se comparten gradientes/pesos, no los datos crudos."},
+    {"q":"Un LLM produce una cita académica que suena convincente pero el artículo no existe. Esto es:","options":["Prompt injection","Alucinación","Data poisoning","Overfitting"],"answer":1,"explain":"Cuando un LLM genera contenido factualmente incorrecto pero con confianza, se le llama alucinación."},
+    {"q":"¿Quién es legalmente responsable de una decisión discriminatoria del sistema?","options":["Proveedor del modelo base","Proveedor de infraestructura cloud","Organización que despliega el sistema","Usuario final"],"answer":2,"explain":"Bajo GDPR y EU AI Act, la responsabilidad recae en el operador/desplegador en producción."},
+    {"q":"¿Qué métrica evalúa igualdad de tasas de acierto entre grupos demográficos?","options":["Accuracy global","Equalized Odds","F1 Score","AUC-ROC"],"answer":1,"explain":"Equalized Odds requiere que las tasas de verdaderos y falsos positivos sean iguales entre grupos protegidos."},
+    {"q":"Un atacante inserta 'ignora las instrucciones anteriores' en un documento. Este ataque es:","options":["Data poisoning","Prompt injection","Model extraction","Sesgo algorítmico"],"answer":1,"explain":"Prompt injection: instrucciones adversarias en la entrada del modelo para alterar comportamiento."},
+    {"q":"Según 'data minimization' del GDPR, ¿qué se debe hacer al recolectar datos para IA?","options":["Recolectar la mayor cantidad posible","Recolectar solo lo estrictamente necesario","Comprar datos adicionales","Anonimizar sin revisión"],"answer":1,"explain":"Data minimization exige recolectar únicamente lo estrictamente necesario para la finalidad declarada."}
+  ]
+}

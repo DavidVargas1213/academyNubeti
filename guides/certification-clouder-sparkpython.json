@@ -1,0 +1,436 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-sparkpython",
+  "title_en": "How to Use Spark on Cloud Series 2 - Spark Python",
+  "title_es": "Cómo Usar Spark en Cloud Series 2 - Spark Python",
+  "duration_es": "46 minutos",
+  "level_es": "Principiante",
+  "category_es": "Analítica",
+  "subcategory_es": "Analytics Basics",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_sparkpython",
+  "lead": "Guía completa en español para el curso «How to Use Spark on Cloud Series 2 - Spark Python» de Alibaba Cloud Academy. Cubre en profundidad Apache Spark en Alibaba Cloud. Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Apache Spark en Alibaba Cloud</em>.",
+    "<strong>Dominar</strong> los conceptos clave: RDD, DataFrame, Dataset, Executor, Partition.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Apache Spark en Alibaba Cloud y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Job Spark: SparkSession → lee de OSS (Parquet particionado) → transformaciones lazy → escribe a Hologres/OSS. Deploy: EMR o ACK con Spark Operator. Metastore en DLF (Data Lake Formation). Monitoring en Spark UI.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a Apache Spark en Alibaba Cloud",
+      "title_en": "Introduction to Apache Spark en Alibaba Cloud",
+      "intro": "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC.",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo Apache Spark en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Apache Spark en Alibaba Cloud es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando Apache Spark en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Job Spark: SparkSession → lee de OSS (Parquet particionado) → transformaciones lazy → escribe a Hologres/OSS. Deploy: EMR o ACK con Spark Operator. Metastore en DLF (Data Lake Formation). Monitoring en Spark UI.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → Apache Spark en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>RDD</strong> <em>(RDD)</em>: Colección distribuida inmutable — API legacy.",
+        "<strong>DataFrame</strong> <em>(DataFrame)</em>: API estructurada con Catalyst optimizer.",
+        "<strong>Dataset</strong> <em>(Dataset)</em>: DataFrame tipado (Scala/Java).",
+        "<strong>Executor</strong> <em>(Executor)</em>: Proceso worker que ejecuta tasks.",
+        "<strong>Partition</strong> <em>(Partition)</em>: Chunk de datos procesado en paralelo.",
+        "<strong>Shuffle</strong> <em>(Shuffle)</em>: Redistribución cross-partition — costoso.",
+        "<strong>Broadcast</strong> <em>(Broadcast)</em>: Enviar pequeño dataset a todos los executors (evita shuffle).",
+        "<strong>Catalyst</strong> <em>(Catalyst)</em>: Optimizador de queries de Spark SQL."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>HA</strong>: AQE habilitado",
+        "<strong>Seguridad</strong>: DataFrame API sobre RDD (Catalyst optimiza)",
+        "<strong>Buenas prácticas</strong>: Particiones ~128-256 MB por partition",
+        "<strong>Buenas prácticas</strong>: Broadcast joins para tablas pequeñas",
+        "<strong>Buenas prácticas</strong>: Parquet + partition pruning en OSS"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Muchas partitions pequeñas (small files problem)",
+        "<strong>Antipattern</strong>: Collect() en DF grande → OOM en driver",
+        "<strong>Antipattern</strong>: UDFs Python cuando existe función nativa",
+        "<strong>Antipattern</strong>: Shuffle innecesario por reorderings",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "ETL batch nocturno TB-PB"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "Feature engineering para ML"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Migración de ETL SQL a código versionado"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "Análisis ad-hoc con pyspark"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "Streaming con Structured Streaming"
+    }
+  ],
+  "mistakes": [
+    "Muchas partitions pequeñas (small files problem)",
+    "Collect() en DF grande → OOM en driver",
+    "UDFs Python cuando existe función nativa",
+    "Shuffle innecesario por reorderings"
+  ],
+  "cli": [
+    {
+      "cmd": "spark-submit --deploy-mode cluster ...",
+      "desc": "Envío job"
+    },
+    {
+      "cmd": "pyspark",
+      "desc": "Shell interactivo"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "RDD",
+      "es": "RDD",
+      "def": "Colección distribuida inmutable — API legacy."
+    },
+    {
+      "en": "DataFrame",
+      "es": "DataFrame",
+      "def": "API estructurada con Catalyst optimizer."
+    },
+    {
+      "en": "Dataset",
+      "es": "Dataset",
+      "def": "DataFrame tipado (Scala/Java)."
+    },
+    {
+      "en": "Executor",
+      "es": "Executor",
+      "def": "Proceso worker que ejecuta tasks."
+    },
+    {
+      "en": "Partition",
+      "es": "Partition",
+      "def": "Chunk de datos procesado en paralelo."
+    },
+    {
+      "en": "Shuffle",
+      "es": "Shuffle",
+      "def": "Redistribución cross-partition — costoso."
+    },
+    {
+      "en": "Broadcast",
+      "es": "Broadcast",
+      "def": "Enviar pequeño dataset a todos los executors (evita shuffle)."
+    },
+    {
+      "en": "Catalyst",
+      "es": "Catalyst",
+      "def": "Optimizador de queries de Spark SQL."
+    },
+    {
+      "en": "Adaptive Query Execution",
+      "es": "AQE",
+      "def": "Optimización dinámica en runtime."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a Apache Spark en Alibaba Cloud?",
+      "options": [
+        "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres.",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres."
+    },
+    {
+      "q": "¿Qué es <strong>RDD</strong> (RDD) en Apache Spark en Alibaba Cloud?",
+      "options": [
+        "Colección distribuida inmutable — API legacy.",
+        "API estructurada con Catalyst optimizer.",
+        "DataFrame tipado (Scala/Java).",
+        "Proceso worker que ejecuta tasks."
+      ],
+      "answer": 0,
+      "explain": "RDD (RDD): Colección distribuida inmutable — API legacy."
+    },
+    {
+      "q": "¿Qué es <strong>DataFrame</strong> (DataFrame) en Apache Spark en Alibaba Cloud?",
+      "options": [
+        "API estructurada con Catalyst optimizer.",
+        "Colección distribuida inmutable — API legacy.",
+        "DataFrame tipado (Scala/Java).",
+        "Proceso worker que ejecuta tasks."
+      ],
+      "answer": 0,
+      "explain": "DataFrame (DataFrame): API estructurada con Catalyst optimizer."
+    },
+    {
+      "q": "¿Qué es <strong>Dataset</strong> (Dataset) en Apache Spark en Alibaba Cloud?",
+      "options": [
+        "DataFrame tipado (Scala/Java).",
+        "Colección distribuida inmutable — API legacy.",
+        "API estructurada con Catalyst optimizer.",
+        "Proceso worker que ejecuta tasks."
+      ],
+      "answer": 0,
+      "explain": "Dataset (Dataset): DataFrame tipado (Scala/Java)."
+    },
+    {
+      "q": "¿Qué es <strong>Executor</strong> (Executor) en Apache Spark en Alibaba Cloud?",
+      "options": [
+        "Proceso worker que ejecuta tasks.",
+        "Colección distribuida inmutable — API legacy.",
+        "API estructurada con Catalyst optimizer.",
+        "DataFrame tipado (Scala/Java)."
+      ],
+      "answer": 0,
+      "explain": "Executor (Executor): Proceso worker que ejecuta tasks."
+    },
+    {
+      "q": "¿Qué es <strong>Partition</strong> (Partition) en Apache Spark en Alibaba Cloud?",
+      "options": [
+        "Chunk de datos procesado en paralelo.",
+        "Colección distribuida inmutable — API legacy.",
+        "API estructurada con Catalyst optimizer.",
+        "DataFrame tipado (Scala/Java)."
+      ],
+      "answer": 0,
+      "explain": "Partition (Partition): Chunk de datos procesado en paralelo."
+    },
+    {
+      "q": "Para maximizar disponibilidad con Apache Spark en Alibaba Cloud, ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar Apache Spark en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con Apache Spark en Alibaba Cloud, el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde Apache Spark en Alibaba Cloud es la elección típica:",
+      "options": [
+        "ETL batch nocturno TB-PB",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: ETL batch nocturno TB-PB."
+    }
+  ],
+  "exam_focus": "DataFrame vs RDD, shuffles y broadcast, Catalyst/AQE, particionamiento.",
+  "official_intro": "In this course we will show you how to write basic data analysis programs on Spark in Python. Through these programs we will introduce some concepts like Spark RDD, Dataframe, Streaming, etc. You'll also learn how to use Python's generators, anonymous functions.",
+  "recommended_for": "Spark on Cloud, Spark, Cloud Computing, Python",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_sparkpython",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}

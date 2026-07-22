@@ -1,0 +1,425 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-migration-database",
+  "title_en": "Migration of Cloud Database from Third-party Platforms to Alibaba Cloud",
+  "title_es": "Migración of Base de Datos en la Nube from Third-party Platforms to Alibaba Cloud",
+  "duration_es": "46 minutos",
+  "level_es": "Intermedio",
+  "category_es": "Arquitectura, DevOps y Soluciones",
+  "subcategory_es": "Cloud Migration",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder-migration-database",
+  "lead": "Guía completa en español para el curso «Migration of Cloud Database from Third-party Platforms to Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad Data Transmission Service (DTS). DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Data Transmission Service (DTS)</em>.",
+    "<strong>Dominar</strong> los conceptos clave: Migration Task, Structure Migration, Full Migration, Incremental Migration, Change Tracking.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Data Transmission Service (DTS) y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Estructura → data → incremental (CDC binlog): DTS crea schema en target, hace initial load, luego aplica cambios binlog en tiempo real. Al cortar, apps se apuntan al nuevo. RPO segundos, RTO minutos.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a Data Transmission Service (DTS)",
+      "title_en": "Introduction to Data Transmission Service (DTS)",
+      "intro": "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo Data Transmission Service (DTS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Data Transmission Service (DTS) es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando Data Transmission Service (DTS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Estructura → data → incremental (CDC binlog): DTS crea schema en target, hace initial load, luego aplica cambios binlog en tiempo real. Al cortar, apps se apuntan al nuevo. RPO segundos, RTO minutos.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → Data Transmission Service (DTS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>Tarea de migración</strong> <em>(Migration Task)</em>: One-shot o continua.",
+        "<strong>Migración de estructura</strong> <em>(Structure Migration)</em>: Schemas, tablas, índices.",
+        "<strong>Migración full</strong> <em>(Full Migration)</em>: Copia inicial de datos.",
+        "<strong>Migración incremental</strong> <em>(Incremental Migration)</em>: Aplica binlog/WAL cambios continuos.",
+        "<strong>Change Tracking</strong> <em>(Change Tracking)</em>: Publica CDC hacia consumidores (Kafka, código).",
+        "<strong>Sync bidireccional</strong> <em>(Bidirectional Sync)</em>: Ambas puntas escriben; DTS resuelve conflictos.",
+        "<strong>Verificación de datos</strong> <em>(Data Verification)</em>: Compara integridad source vs target."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>Buenas prácticas</strong>: Migration en 3 fases: structure → full → incremental",
+        "<strong>Buenas prácticas</strong>: Verificación al final",
+        "<strong>Buenas prácticas</strong>: Ventana de cutover corta",
+        "<strong>Buenas prácticas</strong>: Binlog retention suficiente en la fuente",
+        "<strong>Buenas prácticas</strong>: Monitorear lag continuamente"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Cutover sin ventana de verificación",
+        "<strong>Antipattern</strong>: Binlog retention muy corto — DTS se queda atrás",
+        "<strong>Antipattern</strong>: Sync bidireccional sin resolver conflictos por diseño",
+        "<strong>Antipattern</strong>: No probar rollback",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "Migración lift-and-shift on-premise → Alibaba Cloud"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "Cross-cloud (AWS RDS → Alibaba RDS)"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Sincronización dual (activo-activo)"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "CDC hacia data lake (MySQL → OSS/MaxCompute)"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "DR con réplica cross-región continua"
+    }
+  ],
+  "mistakes": [
+    "Cutover sin ventana de verificación",
+    "Binlog retention muy corto — DTS se queda atrás",
+    "Sync bidireccional sin resolver conflictos por diseño",
+    "No probar rollback"
+  ],
+  "cli": [
+    {
+      "cmd": "aliyun dts CreateMigrationJob",
+      "desc": "Crear job de migración"
+    },
+    {
+      "cmd": "aliyun dts DescribeMigrationJobs",
+      "desc": "Estado"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "Migration Task",
+      "es": "Tarea de migración",
+      "def": "One-shot o continua."
+    },
+    {
+      "en": "Structure Migration",
+      "es": "Migración de estructura",
+      "def": "Schemas, tablas, índices."
+    },
+    {
+      "en": "Full Migration",
+      "es": "Migración full",
+      "def": "Copia inicial de datos."
+    },
+    {
+      "en": "Incremental Migration",
+      "es": "Migración incremental",
+      "def": "Aplica binlog/WAL cambios continuos."
+    },
+    {
+      "en": "Change Tracking",
+      "es": "Change Tracking",
+      "def": "Publica CDC hacia consumidores (Kafka, código)."
+    },
+    {
+      "en": "Bidirectional Sync",
+      "es": "Sync bidireccional",
+      "def": "Ambas puntas escriben; DTS resuelve conflictos."
+    },
+    {
+      "en": "Data Verification",
+      "es": "Verificación de datos",
+      "def": "Compara integridad source vs target."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a Data Transmission Service (DTS)?",
+      "options": [
+        "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migracio",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas."
+    },
+    {
+      "q": "¿Qué es <strong>Migration Task</strong> (Tarea de migración) en Data Transmission Service (DTS)?",
+      "options": [
+        "One-shot o continua.",
+        "Schemas, tablas, índices.",
+        "Copia inicial de datos.",
+        "Aplica binlog/WAL cambios continuos."
+      ],
+      "answer": 0,
+      "explain": "Migration Task (Tarea de migración): One-shot o continua."
+    },
+    {
+      "q": "¿Qué es <strong>Structure Migration</strong> (Migración de estructura) en Data Transmission Service (DTS)?",
+      "options": [
+        "Schemas, tablas, índices.",
+        "One-shot o continua.",
+        "Copia inicial de datos.",
+        "Aplica binlog/WAL cambios continuos."
+      ],
+      "answer": 0,
+      "explain": "Structure Migration (Migración de estructura): Schemas, tablas, índices."
+    },
+    {
+      "q": "¿Qué es <strong>Full Migration</strong> (Migración full) en Data Transmission Service (DTS)?",
+      "options": [
+        "Copia inicial de datos.",
+        "One-shot o continua.",
+        "Schemas, tablas, índices.",
+        "Aplica binlog/WAL cambios continuos."
+      ],
+      "answer": 0,
+      "explain": "Full Migration (Migración full): Copia inicial de datos."
+    },
+    {
+      "q": "¿Qué es <strong>Incremental Migration</strong> (Migración incremental) en Data Transmission Service (DTS)?",
+      "options": [
+        "Aplica binlog/WAL cambios continuos.",
+        "One-shot o continua.",
+        "Schemas, tablas, índices.",
+        "Copia inicial de datos."
+      ],
+      "answer": 0,
+      "explain": "Incremental Migration (Migración incremental): Aplica binlog/WAL cambios continuos."
+    },
+    {
+      "q": "¿Qué es <strong>Change Tracking</strong> (Change Tracking) en Data Transmission Service (DTS)?",
+      "options": [
+        "Publica CDC hacia consumidores (Kafka, código).",
+        "One-shot o continua.",
+        "Schemas, tablas, índices.",
+        "Copia inicial de datos."
+      ],
+      "answer": 0,
+      "explain": "Change Tracking (Change Tracking): Publica CDC hacia consumidores (Kafka, código)."
+    },
+    {
+      "q": "Para maximizar disponibilidad con Data Transmission Service (DTS), ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar Data Transmission Service (DTS) en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con Data Transmission Service (DTS), el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde Data Transmission Service (DTS) es la elección típica:",
+      "options": [
+        "Migración lift-and-shift on-premise → Alibaba Cloud",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: Migración lift-and-shift on-premise → Alibaba Cloud."
+    }
+  ],
+  "exam_focus": "3 fases de migración, CDC vs bulk, sync bidireccional caveats, ventana de cutover.",
+  "official_intro": "This course aims to help users and engineers who want to migrate databases from third-party cloud platforms to Alibaba Cloud. By learning this course, you can get a comprehensive understanding of what cross-platform database migration is, the DTS, a common tool of database migration on Alibaba Cloud, and the scenarios for migrating cloud databases from third-party cloud platforms to Alibaba Cloud ApsaraDB for RDS, so as to provide a reference for database migration across cloud platforms.",
+  "recommended_for": "Cloud Computing Engineers, Cloud Service Providers, Cloud Computing Enthusiasts",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder-migration-database",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}

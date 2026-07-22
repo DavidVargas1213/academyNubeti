@@ -1,0 +1,431 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-caseanalysis",
+  "title_en": "Alibaba Cloud Fundamental Architecture and Case Study",
+  "title_es": "Alibaba Cloud Fundamental Architecture y Case Study",
+  "duration_es": "45 minutos",
+  "level_es": "Principiante",
+  "category_es": "Arquitectura, DevOps y Soluciones",
+  "subcategory_es": "Architecting",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_caseanalysis",
+  "lead": "Guía completa en español para el curso «Alibaba Cloud Fundamental Architecture and Case Study» de Alibaba Cloud Academy. Cubre en profundidad Arquitectura Alibaba Cloud. Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Arquitectura Alibaba Cloud</em>.",
+    "<strong>Dominar</strong> los conceptos clave: Well-Architected, Multi-region, Multi-AZ, Elastic, Fault Tolerance.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Arquitectura Alibaba Cloud y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a Arquitectura Alibaba Cloud",
+      "title_en": "Introduction to Arquitectura Alibaba Cloud",
+      "intro": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics).",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo Arquitectura Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Arquitectura Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando Arquitectura Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → Arquitectura Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>Well-Architected</strong> <em>(Well-Architected)</em>: 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
+        "<strong>Multi-región</strong> <em>(Multi-region)</em>: Despliegue en varias regiones para DR/latencia.",
+        "<strong>Multi-AZ</strong> <em>(Multi-AZ)</em>: Múltiples zonas dentro de región.",
+        "<strong>Elástico</strong> <em>(Elastic)</em>: Auto-scale según demanda.",
+        "<strong>Tolerancia a fallos</strong> <em>(Fault Tolerance)</em>: Diseño que sobrevive a fallos parciales.",
+        "<strong>Blast radius</strong> <em>(Blast Radius)</em>: Alcance de una falla.",
+        "<strong>Chaos engineering</strong> <em>(Chaos Engineering)</em>: Introducir fallos controlados para validar resiliencia.",
+        "<strong>Landing zone</strong> <em>(Landing Zone)</em>: Baseline de cuenta lista para cargas."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>HA</strong>: Multi-AZ default, multi-región para tier-1",
+        "<strong>HA</strong>: Chaos engineering en pre-prod",
+        "<strong>Buenas prácticas</strong>: Elasticidad automática (HPA + Cluster Autoscaler + Auto Scaling ECS)",
+        "<strong>Buenas prácticas</strong>: Blast radius pequeño (celdas independientes)",
+        "<strong>Buenas prácticas</strong>: Landing zone estándar antes de cargar"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Single-AZ en producción tier-1",
+        "<strong>Antipattern</strong>: Sin auto-scale — capacity planning manual",
+        "<strong>Antipattern</strong>: Blast radius global (un servicio caído cae todo)",
+        "<strong>Antipattern</strong>: Sin ejercicios DR",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "E-commerce con picos estacionales (Double 11 pattern)"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "SaaS multi-tenant global"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Fintech con requerimientos compliance"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "IoT + real-time analytics"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "Media con content delivery global"
+    }
+  ],
+  "mistakes": [
+    "Single-AZ en producción tier-1",
+    "Sin auto-scale — capacity planning manual",
+    "Blast radius global (un servicio caído cae todo)",
+    "Sin ejercicios DR"
+  ],
+  "cli": [
+    {
+      "cmd": "Consulta Well-Architected Review",
+      "desc": "Framework"
+    },
+    {
+      "cmd": "aliyun sae CreateApplication",
+      "desc": "App SAE"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "Well-Architected",
+      "es": "Well-Architected",
+      "def": "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
+    },
+    {
+      "en": "Multi-region",
+      "es": "Multi-región",
+      "def": "Despliegue en varias regiones para DR/latencia."
+    },
+    {
+      "en": "Multi-AZ",
+      "es": "Multi-AZ",
+      "def": "Múltiples zonas dentro de región."
+    },
+    {
+      "en": "Elastic",
+      "es": "Elástico",
+      "def": "Auto-scale según demanda."
+    },
+    {
+      "en": "Fault Tolerance",
+      "es": "Tolerancia a fallos",
+      "def": "Diseño que sobrevive a fallos parciales."
+    },
+    {
+      "en": "Blast Radius",
+      "es": "Blast radius",
+      "def": "Alcance de una falla."
+    },
+    {
+      "en": "Chaos Engineering",
+      "es": "Chaos engineering",
+      "def": "Introducir fallos controlados para validar resiliencia."
+    },
+    {
+      "en": "Landing Zone",
+      "es": "Landing zone",
+      "def": "Baseline de cuenta lista para cargas."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a Arquitectura Alibaba Cloud?",
+      "options": [
+        "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga."
+    },
+    {
+      "q": "¿Qué es <strong>Well-Architected</strong> (Well-Architected) en Arquitectura Alibaba Cloud?",
+      "options": [
+        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
+        "Despliegue en varias regiones para DR/latencia.",
+        "Múltiples zonas dentro de región.",
+        "Auto-scale según demanda."
+      ],
+      "answer": 0,
+      "explain": "Well-Architected (Well-Architected): 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
+    },
+    {
+      "q": "¿Qué es <strong>Multi-region</strong> (Multi-región) en Arquitectura Alibaba Cloud?",
+      "options": [
+        "Despliegue en varias regiones para DR/latencia.",
+        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
+        "Múltiples zonas dentro de región.",
+        "Auto-scale según demanda."
+      ],
+      "answer": 0,
+      "explain": "Multi-region (Multi-región): Despliegue en varias regiones para DR/latencia."
+    },
+    {
+      "q": "¿Qué es <strong>Multi-AZ</strong> (Multi-AZ) en Arquitectura Alibaba Cloud?",
+      "options": [
+        "Múltiples zonas dentro de región.",
+        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
+        "Despliegue en varias regiones para DR/latencia.",
+        "Auto-scale según demanda."
+      ],
+      "answer": 0,
+      "explain": "Multi-AZ (Multi-AZ): Múltiples zonas dentro de región."
+    },
+    {
+      "q": "¿Qué es <strong>Elastic</strong> (Elástico) en Arquitectura Alibaba Cloud?",
+      "options": [
+        "Auto-scale según demanda.",
+        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
+        "Despliegue en varias regiones para DR/latencia.",
+        "Múltiples zonas dentro de región."
+      ],
+      "answer": 0,
+      "explain": "Elastic (Elástico): Auto-scale según demanda."
+    },
+    {
+      "q": "¿Qué es <strong>Fault Tolerance</strong> (Tolerancia a fallos) en Arquitectura Alibaba Cloud?",
+      "options": [
+        "Diseño que sobrevive a fallos parciales.",
+        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
+        "Despliegue en varias regiones para DR/latencia.",
+        "Múltiples zonas dentro de región."
+      ],
+      "answer": 0,
+      "explain": "Fault Tolerance (Tolerancia a fallos): Diseño que sobrevive a fallos parciales."
+    },
+    {
+      "q": "Para maximizar disponibilidad con Arquitectura Alibaba Cloud, ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar Arquitectura Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con Arquitectura Alibaba Cloud, el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde Arquitectura Alibaba Cloud es la elección típica:",
+      "options": [
+        "E-commerce con picos estacionales (Double 11 pattern)",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: E-commerce con picos estacionales (Double 11 pattern)."
+    }
+  ],
+  "exam_focus": "5 pilares Well-Architected, Multi-AZ vs Multi-Region, Elastic patterns, Double 11 lessons.",
+  "official_intro": "Through this course, you will learn the core services of Alibaba Cloud Fundamental Architecture (ECS, SLB, OSS and RDS). By studying some classic use cases, you can understand how to build a basic architecture in Alibaba Cloud.",
+  "recommended_for": "Junior Developers and Cloud Beginners",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_caseanalysis",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}

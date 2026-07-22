@@ -1,0 +1,419 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-clickhouse2",
+  "title_en": "Alibaba Cloud ApsaraDB for ClickHouse Deep Dive",
+  "title_es": "Alibaba Cloud ApsaraDB para ClickHouse Profundización",
+  "duration_es": "59 minutos",
+  "level_es": "Avanzado",
+  "category_es": "Bases de Datos",
+  "subcategory_es": "Data Warehouse",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_clickhouse2",
+  "lead": "Guía completa en español para el curso «Alibaba Cloud ApsaraDB for ClickHouse Deep Dive» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB for ClickHouse. ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows. Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB for ClickHouse</em>.",
+    "<strong>Dominar</strong> los conceptos clave: MergeTree, Partition Key, Order Key, Materialized View, Distributed Table.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB for ClickHouse y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Kafka/Flink CDC → ingesta en ClickHouse → tablas MergeTree con partition por día + order by columnas de filtro → materialized views para agregaciones pre-computadas → Quick BI/Grafana como frontend.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a ApsaraDB for ClickHouse",
+      "title_en": "Introduction to ApsaraDB for ClickHouse",
+      "intro": "ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional.",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo ApsaraDB for ClickHouse se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "ApsaraDB for ClickHouse es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando ApsaraDB for ClickHouse no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Kafka/Flink CDC → ingesta en ClickHouse → tablas MergeTree con partition por día + order by columnas de filtro → materialized views para agregaciones pre-computadas → Quick BI/Grafana como frontend.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → ApsaraDB for ClickHouse (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>MergeTree</strong> <em>(MergeTree)</em>: Engine principal, particionado + ordenado.",
+        "<strong>Partition key</strong> <em>(Partition Key)</em>: División física, típicamente por fecha.",
+        "<strong>Order by</strong> <em>(Order Key)</em>: Clave de ordenación dentro de partición — clave del rendimiento.",
+        "<strong>Materialized View</strong> <em>(Materialized View)</em>: Vista pre-agregada actualizada en escritura.",
+        "<strong>Tabla distribuida</strong> <em>(Distributed Table)</em>: Vista que rutea a múltiples shards.",
+        "<strong>ReplicatedMergeTree</strong> <em>(ReplicatedMergeTree)</em>: Replicación entre nodos via ZooKeeper."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>Buenas prácticas</strong>: Partition mensual/diaria — no por rango tiny",
+        "<strong>Buenas prácticas</strong>: Order by con columnas de filtro más frecuentes primero",
+        "<strong>Buenas prácticas</strong>: Materialized views para agregaciones repetidas",
+        "<strong>Buenas prácticas</strong>: Batches grandes en INSERT (1K-1M rows)",
+        "<strong>Buenas prácticas</strong>: Compresión ZSTD para datos históricos"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: INSERT row por row",
+        "<strong>Antipattern</strong>: Order by con columna cardinalidad alta primero",
+        "<strong>Antipattern</strong>: Muchas partitions pequeñas → merge overhead",
+        "<strong>Antipattern</strong>: OLTP transaccional en ClickHouse (no es su caso)",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "Log analytics a escala (reemplazo de ELK caro)"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "Dashboards de negocio con TB de eventos"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Análisis de clickstream"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "Métricas de aplicaciones"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "Fraud detection en tiempo real"
+    }
+  ],
+  "mistakes": [
+    "INSERT row por row",
+    "Order by con columna cardinalidad alta primero",
+    "Muchas partitions pequeñas → merge overhead",
+    "OLTP transaccional en ClickHouse (no es su caso)"
+  ],
+  "cli": [
+    {
+      "cmd": "clickhouse-client",
+      "desc": "Cliente SQL"
+    },
+    {
+      "cmd": "aliyun clickhouse DescribeDBClusters",
+      "desc": "Listar clusters"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "MergeTree",
+      "es": "MergeTree",
+      "def": "Engine principal, particionado + ordenado."
+    },
+    {
+      "en": "Partition Key",
+      "es": "Partition key",
+      "def": "División física, típicamente por fecha."
+    },
+    {
+      "en": "Order Key",
+      "es": "Order by",
+      "def": "Clave de ordenación dentro de partición — clave del rendimiento."
+    },
+    {
+      "en": "Materialized View",
+      "es": "Materialized View",
+      "def": "Vista pre-agregada actualizada en escritura."
+    },
+    {
+      "en": "Distributed Table",
+      "es": "Tabla distribuida",
+      "def": "Vista que rutea a múltiples shards."
+    },
+    {
+      "en": "ReplicatedMergeTree",
+      "es": "ReplicatedMergeTree",
+      "def": "Replicación entre nodos via ZooKeeper."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a ApsaraDB for ClickHouse?",
+      "options": [
+        "ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows.",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows."
+    },
+    {
+      "q": "¿Qué es <strong>MergeTree</strong> (MergeTree) en ApsaraDB for ClickHouse?",
+      "options": [
+        "Engine principal, particionado + ordenado.",
+        "División física, típicamente por fecha.",
+        "Clave de ordenación dentro de partición — clave del rendimiento.",
+        "Vista pre-agregada actualizada en escritura."
+      ],
+      "answer": 0,
+      "explain": "MergeTree (MergeTree): Engine principal, particionado + ordenado."
+    },
+    {
+      "q": "¿Qué es <strong>Partition Key</strong> (Partition key) en ApsaraDB for ClickHouse?",
+      "options": [
+        "División física, típicamente por fecha.",
+        "Engine principal, particionado + ordenado.",
+        "Clave de ordenación dentro de partición — clave del rendimiento.",
+        "Vista pre-agregada actualizada en escritura."
+      ],
+      "answer": 0,
+      "explain": "Partition Key (Partition key): División física, típicamente por fecha."
+    },
+    {
+      "q": "¿Qué es <strong>Order Key</strong> (Order by) en ApsaraDB for ClickHouse?",
+      "options": [
+        "Clave de ordenación dentro de partición — clave del rendimiento.",
+        "Engine principal, particionado + ordenado.",
+        "División física, típicamente por fecha.",
+        "Vista pre-agregada actualizada en escritura."
+      ],
+      "answer": 0,
+      "explain": "Order Key (Order by): Clave de ordenación dentro de partición — clave del rendimiento."
+    },
+    {
+      "q": "¿Qué es <strong>Materialized View</strong> (Materialized View) en ApsaraDB for ClickHouse?",
+      "options": [
+        "Vista pre-agregada actualizada en escritura.",
+        "Engine principal, particionado + ordenado.",
+        "División física, típicamente por fecha.",
+        "Clave de ordenación dentro de partición — clave del rendimiento."
+      ],
+      "answer": 0,
+      "explain": "Materialized View (Materialized View): Vista pre-agregada actualizada en escritura."
+    },
+    {
+      "q": "¿Qué es <strong>Distributed Table</strong> (Tabla distribuida) en ApsaraDB for ClickHouse?",
+      "options": [
+        "Vista que rutea a múltiples shards.",
+        "Engine principal, particionado + ordenado.",
+        "División física, típicamente por fecha.",
+        "Clave de ordenación dentro de partición — clave del rendimiento."
+      ],
+      "answer": 0,
+      "explain": "Distributed Table (Tabla distribuida): Vista que rutea a múltiples shards."
+    },
+    {
+      "q": "Para maximizar disponibilidad con ApsaraDB for ClickHouse, ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar ApsaraDB for ClickHouse en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB for ClickHouse, el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde ApsaraDB for ClickHouse es la elección típica:",
+      "options": [
+        "Log analytics a escala (reemplazo de ELK caro)",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: Log analytics a escala (reemplazo de ELK caro)."
+    }
+  ],
+  "exam_focus": "MergeTree y variantes, cuándo elegir ClickHouse vs MaxCompute vs Hologres, materialized views.",
+  "official_intro": "ApsaraDB for ClickHouse is a distributed column-oriented database service that provides real-time analysis. ApsaraDB for ClickHouse is high-performance and easy to use. ApsaraDB for ClickHouse meets various enterprise requirements. It is widely used in traffic analysis, marketing analysis, behavior analysis, crowd division, customer profiles, agile BI, data marts, network monitoring, distributed services, and link monitoring. In this clouder, we will introduce detailed products features, applicable scenarios and show comprehensive demonstration for product console operations.",
+  "recommended_for": "Database Administrator, Database Developer",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_clickhouse2",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}
