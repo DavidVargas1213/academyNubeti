@@ -6,58 +6,61 @@
 <title>Certificaciones Alibaba Cloud — Rutas ACA · ACP · ACE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;700;800;900&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0e0d0b;--bg-2:#161411;--ink:#f5efe4;--ink-dim:#a89a83;--ink-mute:#6d6355;--line:#2a251e;--line-strong:#3a3229;--accent:#e8a53a;--accent-2:#c76a2a;--danger:#c94f3d;--ok:#7fa66a}
+:root{--bg:#0a0a0a;--bg-2:#141414;--bg-3:#1c1c1c;--ink:#FDFBF2;--ink-dim:#c9c4b4;--ink-mute:#7a766c;--line:#232320;--line-strong:#38352f;--accent:#FB602B;--accent-2:#ff8a5c;--accent-3:#2061DE;--mist:#DEE9F8;--danger:#FB602B;--ok:#7fa66a;--font-display:'Azeret Mono',var(--font-mono);--font-body:'Manrope','Helvetica Neue',system-ui,sans-serif;--font-mono:'JetBrains Mono','Azeret Mono',ui-monospace,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
-body{background:radial-gradient(1200px 600px at 85% -10%,rgba(232,165,58,0.08),transparent 60%),radial-gradient(900px 500px at -10% 30%,rgba(199,106,42,0.06),transparent 55%),var(--bg);min-height:100vh;overflow-x:hidden;padding-bottom:5rem}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 600px at 85% -10%,rgba(251,96,43,0.10),transparent 60%),radial-gradient(900px 500px at -10% 30%,rgba(32,97,222,0.06),transparent 55%),var(--bg);min-height:100vh;overflow-x:hidden;padding-bottom:5rem}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");opacity:.6;mix-blend-mode:overlay}
 a{color:inherit;text-decoration:none}
-.back{position:fixed;top:1.4rem;left:2rem;z-index:10;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);padding:.5rem .8rem;border:1px solid var(--line-strong);border-radius:2px;background:rgba(14,13,11,.7);backdrop-filter:blur(8px);transition:all .25s}
+.brandmark{position:fixed;top:1.25rem;right:2rem;z-index:10;display:block}.brandmark img{height:30px;width:auto;display:block;opacity:.95;transition:opacity .25s}.brandmark:hover img{opacity:1}
+
+.back{position:fixed;top:1.4rem;left:2rem;z-index:10;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);padding:.5rem .8rem;border:1px solid var(--line-strong);border-radius:2px;background:rgba(10,10,10,.7);backdrop-filter:blur(8px);transition:all .25s}
 .back:hover{color:var(--accent);border-color:var(--accent)}
 header.masthead{position:relative;z-index:2;padding:5rem 3rem 2rem;border-bottom:1px solid var(--line);max-width:1400px;margin:0 auto}
-.kicker{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.35em;color:var(--accent);text-transform:uppercase;margin-bottom:1rem}
-h1{font-family:'Fraunces',serif;font-weight:300;font-size:clamp(2.8rem,6vw,5rem);line-height:.98;letter-spacing:-.03em;margin-bottom:1rem}
-h1 em{font-style:italic;color:var(--accent);font-weight:400}
-.subtitle{color:var(--ink-dim);font-size:1.1rem;max-width:60ch;border-left:2px solid var(--accent);padding-left:1.2rem;font-family:'Fraunces',serif;font-style:italic;font-weight:300;line-height:1.55}
+.kicker{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.35em;color:var(--accent);text-transform:uppercase;margin-bottom:1rem}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1;letter-spacing:-.02em;text-transform:uppercase;margin-bottom:1rem}
+h1 em{font-style:normal;color:var(--accent);font-weight:900}
+.subtitle{color:var(--ink-dim);font-size:1.1rem;max-width:60ch;border-left:2px solid var(--accent);padding-left:1.2rem;font-family:var(--font-body);font-weight:400;line-height:1.55}
 
 .legend{max-width:1400px;margin:3rem auto 0;padding:0 3rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
 .legend .lvl{border:1px solid var(--line-strong);padding:1.4rem 1.6rem;background:var(--bg-2);position:relative;overflow:hidden}
 .legend .lvl::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%}
 .legend .lvl.assoc::before{background:#7fa66a}
-.legend .lvl.prof::before{background:#e8a53a}
-.legend .lvl.exp::before{background:#c94f3d}
-.legend .lvl .code{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.4rem;text-transform:uppercase}
-.legend .lvl h3{font-family:'Fraunces',serif;font-weight:500;font-size:1.35rem;margin-bottom:.6rem;letter-spacing:-.01em}
+.legend .lvl.prof::before{background:#FB602B}
+.legend .lvl.exp::before{background:#e83a3a}
+.legend .lvl .code{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.4rem;text-transform:uppercase}
+.legend .lvl h3{font-family:var(--font-display);font-weight:500;font-size:1.35rem;margin-bottom:.6rem;letter-spacing:-.01em}
 .legend .lvl p{color:var(--ink-dim);font-size:.92rem}
 
 .tracks{max-width:1400px;margin:4rem auto 0;padding:0 3rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:1.6rem}
 .track{border:1px solid var(--line-strong);background:linear-gradient(180deg,var(--bg-2),rgba(22,20,17,.6));padding:2rem 2rem 1.8rem;position:relative;cursor:pointer;transition:all .3s;display:flex;flex-direction:column;gap:1.1rem}
-.track:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(232,165,58,.1)}
+.track:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(251,96,43,.14)}
 .track .badge{display:flex;justify-content:space-between;align-items:baseline}
-.track .code-badge{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;padding:.28rem .6rem;border:1px solid var(--accent);border-radius:1px}
-.track .lvl-badge{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;padding:.28rem .6rem;border-radius:1px}
+.track .code-badge{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;padding:.28rem .6rem;border:1px solid var(--accent);border-radius:1px}
+.track .lvl-badge{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;padding:.28rem .6rem;border-radius:1px}
 .track .lvl-badge.Associate{background:rgba(127,166,106,.15);color:#a8ce8c;border:1px solid #4a6b3a}
-.track .lvl-badge.Professional{background:rgba(232,165,58,.15);color:var(--accent);border:1px solid var(--accent-2)}
-.track .lvl-badge.Expert{background:rgba(201,79,61,.15);color:#e07555;border:1px solid var(--danger)}
-.track h2{font-family:'Fraunces',serif;font-weight:400;font-size:1.7rem;line-height:1.1;letter-spacing:-.02em}
-.track h2 em{font-style:italic;color:var(--accent)}
-.track .en{font-family:'Inter',sans-serif;font-style:italic;color:var(--ink-mute);font-size:.85rem}
+.track .lvl-badge.Professional{background:rgba(251,96,43,.14);color:var(--accent);border:1px solid var(--accent-2)}
+.track .lvl-badge.Expert{background:rgba(232,58,58,.15);color:#e07555;border:1px solid var(--danger)}
+.track h2{font-family:var(--font-display);font-weight:400;font-size:1.7rem;line-height:1.1;letter-spacing:-.02em}
+.track h2 em{font-style:normal;color:var(--accent);font-weight:900}
+.track .en{font-family:var(--font-body);font-style:italic;color:var(--ink-mute);font-size:.85rem}
 .track p.role{color:var(--ink-dim);font-size:.94rem;line-height:1.55}
-.track .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);padding:.9rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.track .stats b{display:block;color:var(--ink);font-family:'Fraunces',serif;font-style:italic;font-size:1.3rem;letter-spacing:-.01em;margin-bottom:.15rem;font-weight:400}
+.track .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);padding:.9rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.track .stats b{display:block;color:var(--ink);font-family:var(--font-display);font-size:1.3rem;letter-spacing:-.01em;margin-bottom:.15rem;font-weight:400}
 .track .stats b em{color:var(--accent);font-weight:500;font-style:normal}
 .track .blueprint-preview{display:flex;flex-direction:column;gap:.4rem;font-size:.85rem;color:var(--ink-dim)}
 .track .blueprint-preview .row{display:grid;grid-template-columns:1fr auto;gap:.8rem;align-items:center}
 .track .blueprint-preview .bar{height:6px;background:var(--line);border-radius:2px;overflow:hidden;position:relative}
 .track .blueprint-preview .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
-.track .blueprint-preview .row .w{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);min-width:2.6rem;text-align:right}
-.track .cta{display:inline-flex;align-items:center;gap:.6rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);border-top:1px solid var(--line);padding-top:1rem;margin-top:auto}
+.track .blueprint-preview .row .w{font-family:var(--font-mono);font-size:.7rem;color:var(--accent);min-width:2.6rem;text-align:right}
+.track .cta{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--font-mono);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);border-top:1px solid var(--line);padding-top:1rem;margin-top:auto}
 .track .cta::after{content:"→";transition:transform .25s}
 .track:hover .cta::after{transform:translateX(6px)}
 
-footer{max-width:1400px;margin:4rem auto 0;padding:2rem 3rem 0;border-top:1px solid var(--line);color:var(--ink-mute);font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;text-align:center}
+footer{max-width:1400px;margin:4rem auto 0;padding:2rem 3rem 0;border-top:1px solid var(--line);color:var(--ink-mute);font-family:var(--font-mono);font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;text-align:center}
 
 @media(max-width:800px){
   header.masthead,.legend,.tracks,footer{padding-left:1.4rem;padding-right:1.4rem}
@@ -67,6 +70,7 @@ footer{max-width:1400px;margin:4rem auto 0;padding:2rem 3rem 0;border-top:1px so
 </style>
 </head>
 <body>
+<a class="brandmark" href="index.html"><img src="assets/logo.png" alt="Nubeti"></a>
 <a class="back" href="index.html">← Catálogo de cursos</a>
 <header class="masthead">
   <div class="kicker">◆ Alibaba Cloud Academy · Rutas de certificación</div>
@@ -80,7 +84,7 @@ footer{max-width:1400px;margin:4rem auto 0;padding:2rem 3rem 0;border-top:1px so
   <div class="lvl exp"><div class="code">◆ ACE</div><h3>Expert</h3><p>Nivel experto. Perfil arquitecto senior con 3+ años. 100 preguntas, 80 puntos para aprobar.</p></div>
 </section>
 
-<section class="tracks" id="tracks"><div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--ink-mute);font-family:'Fraunces',serif;font-style:italic">Cargando tracks…</div></section>
+<section class="tracks" id="tracks"><div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--ink-mute);font-family:var(--font-display);text-transform:uppercase;letter-spacing:.08em">Cargando tracks…</div></section>
 
 <footer>Última actualización basada en syllabi oficiales de Alibaba Cloud Academy · 2026</footer>
 
