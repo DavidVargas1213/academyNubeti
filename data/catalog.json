@@ -1,0 +1,1172 @@
+[
+  {
+    "slug": "certification-clouder-6th-ecs",
+    "title_en": "6th Generation Elastic Compute Service Technical Essentials",
+    "title_es": "Elementos Esenciales de la 6ª Generación de ECS",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-6th-ecs",
+    "url": "https://edu.alibabacloud.com/certification/clouder_6th_ecs"
+  },
+  {
+    "slug": "certification-clouder-adb-dla2",
+    "title_en": "Design a Cloud Data Architecture Using AnalyticDB & Data Lake Analytics",
+    "title_es": "Design a Cloud Datos Architecture Usar AnalyticDB & Datos Lake Analítica",
+    "category": "Bases de Datos",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-adb-dla2",
+    "url": "https://edu.alibabacloud.com/certification/clouder_adb_dla2"
+  },
+  {
+    "slug": "certification-clouder-analycase",
+    "title_en": "Alibaba Cloud Analysis Architecture and Case Studies",
+    "title_es": "Alibaba Cloud Analysis Architecture y Case Studies",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-analycase",
+    "url": "https://edu.alibabacloud.com/certification/clouder_analycase"
+  },
+  {
+    "slug": "certification-clouder-appcontain",
+    "title_en": "An Introduction to Application Containerization",
+    "title_es": "An Introducción a Aplicación Containerization",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-appcontain",
+    "url": "https://edu.alibabacloud.com/certification/clouder_appcontain"
+  },
+  {
+    "slug": "certification-clouder-applicationsecurity",
+    "title_en": "Protect Your Web Application on Alibaba Cloud",
+    "title_es": "Protect Your Web Aplicación en Alibaba Cloud",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-applicationsecurity",
+    "url": "https://edu.alibabacloud.com/certification/clouder_applicationsecurity"
+  },
+  {
+    "slug": "certification-clouder-apply-log-management",
+    "title_en": "Use Log Service to Apply Log Management",
+    "title_es": "Usar Log Servicio to Apply Log Gestión",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-apply-log-management",
+    "url": "https://edu.alibabacloud.com/certification/clouder-apply-log-management"
+  },
+  {
+    "slug": "certification-clouder-apsaradb-polardb",
+    "title_en": "Alibaba Cloud ApsaraDB for PolarDB Technical Essentials",
+    "title_es": "Alibaba Cloud ApsaraDB para PolarDB Technical Essentials",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-apsaradb-polardb",
+    "url": "https://edu.alibabacloud.com/certification/clouder-apsaradb-polardb"
+  },
+  {
+    "slug": "certification-clouder-architecture",
+    "title_en": "An Introduction to Microservice Architecture",
+    "title_es": "An Introducción a Microservice Architecture",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-architecture",
+    "url": "https://edu.alibabacloud.com/certification/clouder_architecture"
+  },
+  {
+    "slug": "certification-clouder-autoscaling",
+    "title_en": "Use Cloud Resources Flexibly According to Business Requirement",
+    "title_es": "Uso Flexible de Recursos Cloud según Requerimientos de Negocio",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-autoscaling",
+    "url": "https://edu.alibabacloud.com/certification/clouder_autoscaling"
+  },
+  {
+    "slug": "certification-clouder-bigdata",
+    "title_en": "Introduction to Big Data Platform on the Cloud",
+    "title_es": "Introducción a Big Datos Platform en Cloud",
+    "category": "Analítica",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-bigdata",
+    "url": "https://edu.alibabacloud.com/certification/clouder_bigdata"
+  },
+  {
+    "slug": "certification-clouder-bigdatainteg",
+    "title_en": "Alibaba Cloud Big Data - Data Integration",
+    "title_es": "Alibaba Cloud Big Datos - Datos Integration",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-bigdatainteg",
+    "url": "https://edu.alibabacloud.com/certification/clouder_bigdatainteg"
+  },
+  {
+    "slug": "certification-clouder-bigdataview",
+    "title_en": "Alibaba Cloud Big Data Products Overview",
+    "title_es": "Alibaba Cloud Big Datos Products Visión General",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-bigdataview",
+    "url": "https://edu.alibabacloud.com/certification/clouder_bigdataview"
+  },
+  {
+    "slug": "certification-clouder-caseanalysis",
+    "title_en": "Alibaba Cloud Fundamental Architecture and Case Study",
+    "title_es": "Alibaba Cloud Fundamental Architecture y Case Study",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-caseanalysis",
+    "url": "https://edu.alibabacloud.com/certification/clouder_caseanalysis"
+  },
+  {
+    "slug": "certification-clouder-cdn",
+    "title_en": "Use Alibaba Cloud CDN to Accelerate Your Content Globally",
+    "title_es": "Usar Alibaba Cloud CDN to Accelerate Your Content Globally",
+    "category": "Redes y CDN",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-cdn",
+    "url": "https://edu.alibabacloud.com/certification/clouder_cdn"
+  },
+  {
+    "slug": "certification-clouder-clickhouse2",
+    "title_en": "Alibaba Cloud ApsaraDB for ClickHouse Deep Dive",
+    "title_es": "Alibaba Cloud ApsaraDB para ClickHouse Profundización",
+    "category": "Bases de Datos",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-clickhouse2",
+    "url": "https://edu.alibabacloud.com/certification/clouder_clickhouse2"
+  },
+  {
+    "slug": "certification-clouder-cloudserver",
+    "title_en": "Operate and Manage a Cloud Server",
+    "title_es": "Operar y Administrar un Servidor en la Nube",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-cloudserver",
+    "url": "https://edu.alibabacloud.com/certification/clouder_cloudserver"
+  },
+  {
+    "slug": "certification-clouder-cloudserverbahasa",
+    "title_en": "Operate and Manage a Cloud Server (Bahasa)",
+    "title_es": "Operar y Administrar un Servidor en la Nube (Bahasa)",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-cloudserverbahasa",
+    "url": "https://edu.alibabacloud.com/certification/clouder_cloudserverbahasa"
+  },
+  {
+    "slug": "certification-clouder-cloudservercantonese",
+    "title_en": "Operate and Manage a Cloud Server (Cantonese)",
+    "title_es": "Operar y Administrar un Servidor en la Nube (Cantonés)",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-cloudservercantonese",
+    "url": "https://edu.alibabacloud.com/certification/clouder_cloudservercantonese"
+  },
+  {
+    "slug": "certification-clouder-conductingdevops",
+    "title_en": "Conducting DevOps practices on Alibaba Cloud",
+    "title_es": "Conducting DevOps practices en Alibaba Cloud",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-conductingdevops",
+    "url": "https://edu.alibabacloud.com/certification/clouder_conductingdevops"
+  },
+  {
+    "slug": "certification-clouder-container",
+    "title_en": "Implement Blue-Green Deployment with Container Service",
+    "title_es": "Implement Blue-Green Despliegue con Contenedor Servicio",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-container",
+    "url": "https://edu.alibabacloud.com/certification/clouder_container"
+  },
+  {
+    "slug": "certification-clouder-containerized-applications",
+    "title_en": "Performance Testing and Optimizing of Containerized Applications",
+    "title_es": "Performance Testing y Optimizing of Containerized Aplicaciones",
+    "category": "Contenedores y Middleware",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-containerized-applications",
+    "url": "https://edu.alibabacloud.com/certification/clouder-containerized-applications"
+  },
+  {
+    "slug": "certification-clouder-databackup",
+    "title_en": "The Backup and Recovery of Common Cloud Databases",
+    "title_es": "The Respaldo y Recuperación of Common Cloud Bases de Datos",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-databackup",
+    "url": "https://edu.alibabacloud.com/certification/clouder_databackup"
+  },
+  {
+    "slug": "certification-clouder-database-double11",
+    "title_en": "Understanding the Database Technology that Powers Double 11",
+    "title_es": "Understanding Base de Datos Technology that Powers Double 11",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-database-double11",
+    "url": "https://edu.alibabacloud.com/certification/clouder-database-double11"
+  },
+  {
+    "slug": "certification-clouder-datafrench",
+    "title_en": "How to Migrate Data to Big Data Platform on the Cloud (French version)",
+    "title_es": "Cómo Migrar Datos to Big Datos Platform en Cloud (French version)",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datafrench",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datafrench"
+  },
+  {
+    "slug": "certification-clouder-dataintegration",
+    "title_en": "How to Migrate Data to Big Data Platform on the Cloud",
+    "title_es": "Cómo Migrar Datos to Big Datos Platform en Cloud",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-dataintegration",
+    "url": "https://edu.alibabacloud.com/certification/clouder_dataintegration"
+  },
+  {
+    "slug": "certification-clouder-datalakeanalytics",
+    "title_en": "Quick Start Guide of Data Lake Analytics",
+    "title_es": "Quick Start Guía of Datos Lake Analítica",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datalakeanalytics",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datalakeanalytics"
+  },
+  {
+    "slug": "certification-clouder-datamigration",
+    "title_en": "Unstructured Data Migration",
+    "title_es": "Unstructured Datos Migración",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datamigration",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datamigration"
+  },
+  {
+    "slug": "certification-clouder-datav",
+    "title_en": "Quickly Generate Large Dashboards for Data Visualization",
+    "title_es": "Quickly Generate Large Dashboards para Datos Visualization",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datav",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datav"
+  },
+  {
+    "slug": "certification-clouder-datavpython",
+    "title_en": "Data Visualization Using Python",
+    "title_es": "Datos Visualization Usar Python",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datavpython",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datavpython"
+  },
+  {
+    "slug": "certification-clouder-datawapp",
+    "title_en": "Alibaba Cloud DataWorks - Application Development",
+    "title_es": "Alibaba Cloud DataWorks - Aplicación Development",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datawapp",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datawapp"
+  },
+  {
+    "slug": "certification-clouder-datawbasic",
+    "title_en": "Alibaba Cloud DataWorks - Basic Knowledge",
+    "title_es": "Alibaba Cloud DataWorks - Básico Knowledge",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-datawbasic",
+    "url": "https://edu.alibabacloud.com/certification/clouder_datawbasic"
+  },
+  {
+    "slug": "certification-clouder-dataworks-maxcompute",
+    "title_en": "Data Development with DataWorks and MaxCompute",
+    "title_es": "Datos Development con DataWorks y MaxCompute",
+    "category": "Analítica",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-dataworks-maxcompute",
+    "url": "https://edu.alibabacloud.com/certification/clouder-dataworks-maxcompute"
+  },
+  {
+    "slug": "certification-clouder-dbs2",
+    "title_en": "Alibaba Cloud Database Backup Service Technical Essentials",
+    "title_es": "Alibaba Base de Datos en la Nube Respaldo Servicio Technical Essentials",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-dbs2",
+    "url": "https://edu.alibabacloud.com/certification/clouder_dbs2"
+  },
+  {
+    "slug": "certification-clouder-ddos",
+    "title_en": "Use Alibaba Cloud Anti-DDoS Service to Defend DoS Attack",
+    "title_es": "Usar Alibaba Cloud Anti-DDoS Servicio to Defend DoS Attack",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-ddos",
+    "url": "https://edu.alibabacloud.com/certification/clouder_ddos"
+  },
+  {
+    "slug": "certification-clouder-decisiontree",
+    "title_en": "Machine Learning Algorithm Primer Series 4 - Decision Tree and Random Forest",
+    "title_es": "Machine Learning Algorithm Primer Series 4 - Decision Tree y Random Forest",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-decisiontree",
+    "url": "https://edu.alibabacloud.com/certification/clouder_decisiontree"
+  },
+  {
+    "slug": "certification-clouder-deliverybusiness",
+    "title_en": "Delivery Business Data Analysis",
+    "title_es": "Delivery Negocio Datos Analysis",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-deliverybusiness",
+    "url": "https://edu.alibabacloud.com/certification/clouder_deliverybusiness"
+  },
+  {
+    "slug": "certification-clouder-devops",
+    "title_en": "An Introduction Of DevOps",
+    "title_es": "An Introducción Of DevOps",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-devops",
+    "url": "https://edu.alibabacloud.com/certification/clouder_devops"
+  },
+  {
+    "slug": "certification-clouder-dh",
+    "title_en": "Dedicated Hardware: Bare Metal Instances and Dedicated Hosts",
+    "title_es": "Hardware Dedicado: Instancias Bare Metal y Hosts Dedicados",
+    "category": "Cómputo Elástico",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-dh",
+    "url": "https://edu.alibabacloud.com/certification/clouder_dh"
+  },
+  {
+    "slug": "certification-clouder-diagnosis-containerized",
+    "title_en": "Problem Diagnosis and Monitoring for Containerized Applications",
+    "title_es": "Problem Diagnosis y Monitoreo para Containerized Aplicaciones",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-diagnosis-containerized",
+    "url": "https://edu.alibabacloud.com/certification/clouder-diagnosis-containerized"
+  },
+  {
+    "slug": "certification-clouder-distributed",
+    "title_en": "Distributed Storage Introduction",
+    "title_es": "Distributed Almacenamiento Introducción",
+    "category": "Almacenamiento",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-distributed",
+    "url": "https://edu.alibabacloud.com/certification/clouder_distributed"
+  },
+  {
+    "slug": "certification-clouder-dms2",
+    "title_en": "Secure and Easy Data Management with DMS",
+    "title_es": "Secure y Easy Datos Gestión con DMS",
+    "category": "Bases de Datos",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-dms2",
+    "url": "https://edu.alibabacloud.com/certification/clouder_dms2"
+  },
+  {
+    "slug": "certification-clouder-docker",
+    "title_en": "Introduction To Docker Container",
+    "title_es": "Introducción To Docker Contenedor",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-docker",
+    "url": "https://edu.alibabacloud.com/certification/clouder_docker"
+  },
+  {
+    "slug": "certification-clouder-dts",
+    "title_en": "Data Transmission Service Technical Essentials",
+    "title_es": "Datos Transmission Servicio Technical Essentials",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-dts",
+    "url": "https://edu.alibabacloud.com/certification/clouder_dts"
+  },
+  {
+    "slug": "certification-clouder-dynamicweb",
+    "title_en": "Using ECS to Construct a Dynamic Website",
+    "title_es": "Usar ECS para Construir un Sitio Web Dinámico",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-dynamicweb",
+    "url": "https://edu.alibabacloud.com/certification/clouder_dynamicweb"
+  },
+  {
+    "slug": "certification-clouder-ecommerce",
+    "title_en": "Using SAS to Publish an Opencart E-commerce Website",
+    "title_es": "Usar SAS para Publicar un Sitio de E-commerce con Opencart",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-ecommerce",
+    "url": "https://edu.alibabacloud.com/certification/clouder_ecommerce"
+  },
+  {
+    "slug": "certification-clouder-ecs-costcontrol",
+    "title_en": "ECS Cost Control: An Overview",
+    "title_es": "ECS Control de Costos: Una Visión General",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-ecs-costcontrol",
+    "url": "https://edu.alibabacloud.com/certification/clouder_ecs_costcontrol"
+  },
+  {
+    "slug": "certification-clouder-ecs-purchasing",
+    "title_en": "Alibaba Cloud ECS Product Purchasing Options",
+    "title_es": "Alibaba Cloud ECS Opciones de Compra del Producto",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-ecs-purchasing",
+    "url": "https://edu.alibabacloud.com/certification/clouder_ecs_purchasing"
+  },
+  {
+    "slug": "certification-clouder-edas",
+    "title_en": "How to Manage Ultra Large Application with EDAS",
+    "title_es": "Cómo Gestionar Ultra Large Aplicación con EDAS",
+    "category": "Contenedores y Middleware",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-edas",
+    "url": "https://edu.alibabacloud.com/certification/clouder_edas"
+  },
+  {
+    "slug": "certification-clouder-elasticcase",
+    "title_en": "Alibaba Cloud Elastic Architecture and Case Study",
+    "title_es": "Alibaba Cloud Elástico Architecture y Case Study",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-elasticcase",
+    "url": "https://edu.alibabacloud.com/certification/clouder_elasticcase"
+  },
+  {
+    "slug": "certification-clouder-elasticsearch",
+    "title_en": "An Introduction of Elasticsearch",
+    "title_es": "An Introducción of Elasticsearch",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-elasticsearch",
+    "url": "https://edu.alibabacloud.com/certification/clouder_elasticsearch"
+  },
+  {
+    "slug": "certification-clouder-establishvirtual",
+    "title_en": "Establish virtual private connection with VPN Gateway",
+    "title_es": "Establish virtual private connection con VPN Gateway",
+    "category": "Redes y CDN",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-establishvirtual",
+    "url": "https://edu.alibabacloud.com/certification/clouder_establishvirtual"
+  },
+  {
+    "slug": "certification-clouder-flink",
+    "title_en": "Realtime Computing With Apache Flink",
+    "title_es": "Realtime Computación With Apache Flink",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-flink",
+    "url": "https://edu.alibabacloud.com/certification/clouder_flink"
+  },
+  {
+    "slug": "certification-clouder-function",
+    "title_en": "Deploy an Image Process Service Using Function Compute",
+    "title_es": "Desplegar an Image Process Servicio Usar Function Cómputo",
+    "category": "Contenedores y Middleware",
+    "level": "Beginner, Intermediate",
+    "course_id": "Curso Nº certification-clouder-function",
+    "url": "https://edu.alibabacloud.com/certification/clouder_function"
+  },
+  {
+    "slug": "certification-clouder-ga",
+    "title_en": "Global Accelerator - Network Acceleration Service Technical Operations",
+    "title_es": "Global Accelerator - Red Acceleration Servicio Technical Operations",
+    "category": "Redes y CDN",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-ga",
+    "url": "https://edu.alibabacloud.com/certification/clouder_ga"
+  },
+  {
+    "slug": "certification-clouder-hadooparcpri",
+    "title_en": "Hadoop Architecture and Principles",
+    "title_es": "Hadoop Architecture y Principles",
+    "category": "Analítica",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-hadooparcpri",
+    "url": "https://edu.alibabacloud.com/certification/clouder_hadooparcpri"
+  },
+  {
+    "slug": "certification-clouder-hadoopecs",
+    "title_en": "Hadoop Cluster Installation on Alibaba Cloud ECS",
+    "title_es": "Hadoop Cluster Installation en Alibaba Cloud ECS",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-hadoopecs",
+    "url": "https://edu.alibabacloud.com/certification/clouder_hadoopecs"
+  },
+  {
+    "slug": "certification-clouder-hadoopoverview",
+    "title_en": "Apache Hadoop Overview",
+    "title_es": "Apache Hadoop Visión General",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-hadoopoverview",
+    "url": "https://edu.alibabacloud.com/certification/clouder_hadoopoverview"
+  },
+  {
+    "slug": "certification-clouder-hbase-tuning",
+    "title_en": "HBase Performance Tuning",
+    "title_es": "HBase Performance Tuning",
+    "category": "Bases de Datos",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-hbase-tuning",
+    "url": "https://edu.alibabacloud.com/certification/clouder-hbase-tuning"
+  },
+  {
+    "slug": "certification-clouder-hbase2",
+    "title_en": "Why is ApsaraDB for Hbase 7 times faster than community edition",
+    "title_es": "Why is ApsaraDB para Hbase 7 times faster than community edition",
+    "category": "Bases de Datos",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-hbase2",
+    "url": "https://edu.alibabacloud.com/certification/clouder_hbase2"
+  },
+  {
+    "slug": "certification-clouder-hivehadoop",
+    "title_en": "Using Hive and Hadoop on E-MapReduce",
+    "title_es": "Usar Hive y Hadoop en E-MapReduce",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-hivehadoop",
+    "url": "https://edu.alibabacloud.com/certification/clouder_hivehadoop"
+  },
+  {
+    "slug": "certification-clouder-housingresource",
+    "title_en": "Persona Building of Housing Resource",
+    "title_es": "Persona Construir of Housing Resource",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-housingresource",
+    "url": "https://edu.alibabacloud.com/certification/clouder_housingresource"
+  },
+  {
+    "slug": "certification-clouder-hybrid-solution",
+    "title_en": "Alibaba Hybrid Cloud Solution",
+    "title_es": "Alibaba Hybrid Cloud Solución",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-hybrid-solution",
+    "url": "https://edu.alibabacloud.com/certification/clouder-hybrid-solution"
+  },
+  {
+    "slug": "certification-clouder-hybriddb-for-postgresql",
+    "title_en": "Introduction to HybridDB for PostgreSQL",
+    "title_es": "Introducción a HybridDB para PostgreSQL",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-hybriddb-for-postgresql",
+    "url": "https://edu.alibabacloud.com/certification/clouder-hybriddb-for-postgresql"
+  },
+  {
+    "slug": "certification-clouder-internetwork",
+    "title_en": "Internetworking with VPC",
+    "title_es": "Interconexión de Redes con VPC",
+    "category": "Redes y CDN",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-internetwork",
+    "url": "https://edu.alibabacloud.com/certification/clouder_Internetwork"
+  },
+  {
+    "slug": "certification-clouder-intervpcuscen",
+    "title_en": "Interconnecting VPC Using Cloud Enterprise Network",
+    "title_es": "Interconnecting VPC Usar Cloud Empresarial Red",
+    "category": "Redes y CDN",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-intervpcuscen",
+    "url": "https://edu.alibabacloud.com/certification/clouder_Intervpcuscen"
+  },
+  {
+    "slug": "certification-clouder-introduction-api",
+    "title_en": "Introduction to API Gateway on Alibaba Cloud",
+    "title_es": "Introducción a API Gateway en Alibaba Cloud",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-introduction-api",
+    "url": "https://edu.alibabacloud.com/certification/clouder-introduction-api"
+  },
+  {
+    "slug": "certification-clouder-introduction-hbase2",
+    "title_en": "Introduction of HBase",
+    "title_es": "Introducción of HBase",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-introduction-hbase2",
+    "url": "https://edu.alibabacloud.com/certification/clouder_introduction_hbase2"
+  },
+  {
+    "slug": "certification-clouder-iot-bigdata-ai",
+    "title_en": "Internet of Things(IoT), Big Data and AI in Alibaba Cloud",
+    "title_es": "Internet of Things(IoT), Big Datos y AI in Alibaba Cloud",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-iot-bigdata-ai",
+    "url": "https://edu.alibabacloud.com/certification/clouder-iot-bigdata-ai"
+  },
+  {
+    "slug": "certification-clouder-java",
+    "title_en": "JAVA Coding Standards In Alibaba Group",
+    "title_es": "JAVA Coding Standards In Alibaba Group",
+    "category": "Otros",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-java",
+    "url": "https://edu.alibabacloud.com/certification/clouder_java"
+  },
+  {
+    "slug": "certification-clouder-jenkins",
+    "title_en": "Achieve CI&CD With Jenkins",
+    "title_es": "Achieve CI&CD With Jenkins",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-jenkins",
+    "url": "https://edu.alibabacloud.com/certification/clouder_jenkins"
+  },
+  {
+    "slug": "certification-clouder-kubernetes",
+    "title_en": "Using Kubernetes to Manage Containers and Cluster Resources",
+    "title_es": "Usar Kubernetes to Gestionar Contenedores y Cluster Resources",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-kubernetes",
+    "url": "https://edu.alibabacloud.com/certification/clouder_kubernetes"
+  },
+  {
+    "slug": "certification-clouder-linearregression",
+    "title_en": "Machine Learning for Beginners - Linear Regression",
+    "title_es": "Machine Learning para Beginners - Linear Regression",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-linearregression",
+    "url": "https://edu.alibabacloud.com/certification/clouder_linearregression"
+  },
+  {
+    "slug": "certification-clouder-linux",
+    "title_en": "Getting Started with Linux Server Management",
+    "title_es": "Primeros Pasos con Linux Servidor Gestión",
+    "category": "Otros",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-linux",
+    "url": "https://edu.alibabacloud.com/certification/clouder_linux"
+  },
+  {
+    "slug": "certification-clouder-logisticregression",
+    "title_en": "Machine Learning Algorithm Primer Series 3- Logistic Regression Model",
+    "title_es": "Machine Learning Algorithm Primer Series 3- Logistic Regression Model",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-logisticregression",
+    "url": "https://edu.alibabacloud.com/certification/clouder_logisticregression"
+  },
+  {
+    "slug": "certification-clouder-machinelearning",
+    "title_en": "Machine Learning: Heart Disease Prediction",
+    "title_es": "Machine Learning: Heart Disease Prediction",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-machinelearning",
+    "url": "https://edu.alibabacloud.com/certification/clouder_machinelearning"
+  },
+  {
+    "slug": "certification-clouder-maliciouscode",
+    "title_en": "Malicious Code Mechanism Deep Dive",
+    "title_es": "Malicious Code Mechanism Profundización",
+    "category": "Seguridad",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-maliciouscode",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maliciouscode"
+  },
+  {
+    "slug": "certification-clouder-market",
+    "title_en": "Coming to China Online Market",
+    "title_es": "Coming to China Online Market",
+    "category": "Otros",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-market",
+    "url": "https://edu.alibabacloud.com/certification/clouder_market"
+  },
+  {
+    "slug": "certification-clouder-maxcauth",
+    "title_en": "Alibaba Cloud MaxCompute - Authority and Security",
+    "title_es": "Alibaba Cloud MaxCompute - Authority y Seguridad",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-maxcauth",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maxcauth"
+  },
+  {
+    "slug": "certification-clouder-maxcbasic",
+    "title_en": "Alibaba Cloud MaxCompute - Basic Knowledge",
+    "title_es": "Alibaba Cloud MaxCompute - Básico Knowledge",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-maxcbasic",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maxcbasic"
+  },
+  {
+    "slug": "certification-clouder-maxcdata",
+    "title_en": "Alibaba Cloud MaxCompute - Data Transmission",
+    "title_es": "Alibaba Cloud MaxCompute - Datos Transmission",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-maxcdata",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maxcdata"
+  },
+  {
+    "slug": "certification-clouder-maxcpro",
+    "title_en": "Alibaba Cloud MaxCompute - Programming Model",
+    "title_es": "Alibaba Cloud MaxCompute - Programming Model",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-maxcpro",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maxcpro"
+  },
+  {
+    "slug": "certification-clouder-maxcsql",
+    "title_en": "Alibaba Cloud MaxCompute - SQL Development",
+    "title_es": "Alibaba Cloud MaxCompute - SQL Development",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-maxcsql",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maxcsql"
+  },
+  {
+    "slug": "certification-clouder-maxcudf",
+    "title_en": "Alibaba Cloud MaxCompute - UDF Development",
+    "title_es": "Alibaba Cloud MaxCompute - UDF Development",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-maxcudf",
+    "url": "https://edu.alibabacloud.com/certification/clouder_maxcudf"
+  },
+  {
+    "slug": "certification-clouder-migrate",
+    "title_en": "3 Major Scenarios You Should Know to Migrate to Alibaba Cloud",
+    "title_es": "3 Major Scenarios You Should Know to Migrar to Alibaba Cloud",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-migrate",
+    "url": "https://edu.alibabacloud.com/certification/clouder_migrate"
+  },
+  {
+    "slug": "certification-clouder-migrateapp",
+    "title_en": "Migrate Your Application to Alibaba Cloud",
+    "title_es": "Migrar Your Aplicación to Alibaba Cloud",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-migrateapp",
+    "url": "https://edu.alibabacloud.com/certification/clouder_migrateapp"
+  },
+  {
+    "slug": "certification-clouder-migration-database",
+    "title_en": "Migration of Cloud Database from Third-party Platforms to Alibaba Cloud",
+    "title_es": "Migración of Base de Datos en la Nube from Third-party Platforms to Alibaba Cloud",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-migration-database",
+    "url": "https://edu.alibabacloud.com/certification/clouder-migration-database"
+  },
+  {
+    "slug": "certification-clouder-monitoring-management",
+    "title_en": "Alibaba Cloud Monitoring & Management",
+    "title_es": "Alibaba Cloud Monitoreo & Gestión",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-monitoring-management",
+    "url": "https://edu.alibabacloud.com/certification/clouder-monitoring-management"
+  },
+  {
+    "slug": "certification-clouder-mq",
+    "title_en": "An Introduction of Alibaba Cloud Message Queue",
+    "title_es": "An Introducción of Alibaba Cloud Message Queue",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-mq",
+    "url": "https://edu.alibabacloud.com/certification/clouder_mq"
+  },
+  {
+    "slug": "certification-clouder-multiaccount-management",
+    "title_en": "Enterprise Multi-Account Management With Resource Directory",
+    "title_es": "Empresarial Multi-Account Gestión With Resource Directory",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-multiaccount-management",
+    "url": "https://edu.alibabacloud.com/certification/clouder_multiaccount_management"
+  },
+  {
+    "slug": "certification-clouder-mysql",
+    "title_en": "MySQL Database Concepts and Operations",
+    "title_es": "MySQL Base de Datos Concepts y Operations",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-mysql",
+    "url": "https://edu.alibabacloud.com/certification/clouder_mysql"
+  },
+  {
+    "slug": "certification-clouder-mysqlqueries",
+    "title_en": "MySQL for Beginners - Basic Queries",
+    "title_es": "MySQL para Beginners - Básico Queries",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-mysqlqueries",
+    "url": "https://edu.alibabacloud.com/certification/clouder_mysqlqueries"
+  },
+  {
+    "slug": "certification-clouder-naivebayes",
+    "title_en": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
+    "title_es": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-naivebayes",
+    "url": "https://edu.alibabacloud.com/certification/clouder_naivebayes"
+  },
+  {
+    "slug": "certification-clouder-nas",
+    "title_en": "Introduction to Network Attached Storage",
+    "title_es": "Introducción a Red Attached Almacenamiento",
+    "category": "Almacenamiento",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-nas",
+    "url": "https://edu.alibabacloud.com/certification/clouder_nas"
+  },
+  {
+    "slug": "certification-clouder-network-solution",
+    "title_en": "Alibaba Cloud Network Solution",
+    "title_es": "Alibaba Red en la Nube Solución",
+    "category": "Redes y CDN",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-network-solution",
+    "url": "https://edu.alibabacloud.com/certification/clouder-network-solution"
+  },
+  {
+    "slug": "certification-clouder-oss",
+    "title_en": "Operate and Manage Object Storage on the Cloud",
+    "title_es": "Operate y Gestionar Object Almacenamiento en Cloud",
+    "category": "Almacenamiento",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-oss",
+    "url": "https://edu.alibabacloud.com/certification/clouder_oss"
+  },
+  {
+    "slug": "certification-clouder-osscantonese",
+    "title_en": "Operate and Manage Object Storage on the Cloud (Cantonese)",
+    "title_es": "Operate y Gestionar Object Almacenamiento en Cloud (Cantonés)",
+    "category": "Almacenamiento",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-osscantonese",
+    "url": "https://edu.alibabacloud.com/certification/clouder_osscantonese"
+  },
+  {
+    "slug": "certification-clouder-platseccantonese",
+    "title_en": "Cloud Platform Security Overview (Cantonese)",
+    "title_es": "Cloud Platform Seguridad Visión General (Cantonés)",
+    "category": "Seguridad",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-platseccantonese",
+    "url": "https://edu.alibabacloud.com/certification/clouder_platseccantonese"
+  },
+  {
+    "slug": "certification-clouder-protectservers",
+    "title_en": "Best Practice to Protect Your Servers on Alibaba Cloud",
+    "title_es": "Best Práctica to Protect Your Servidores en Alibaba Cloud",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-protectservers",
+    "url": "https://edu.alibabacloud.com/certification/clouder_protectservers"
+  },
+  {
+    "slug": "certification-clouder-pythondata",
+    "title_en": "A Quick Guide to Process Structured Data with Python",
+    "title_es": "A Quick Guía to Process Structured Datos con Python",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-pythondata",
+    "url": "https://edu.alibabacloud.com/certification/clouder_pythondata"
+  },
+  {
+    "slug": "certification-clouder-pythondecisiontree",
+    "title_en": "Implement Decision Tree with Python",
+    "title_es": "Implement Decision Tree con Python",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-pythondecisiontree",
+    "url": "https://edu.alibabacloud.com/certification/clouder_pythondecisiontree"
+  },
+  {
+    "slug": "certification-clouder-quickbi",
+    "title_en": "Quickly Generate Business Intelligence Diagrams with QuickBI",
+    "title_es": "Quickly Generate Negocio Intelligence Diagrams con QuickBI",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-quickbi",
+    "url": "https://edu.alibabacloud.com/certification/clouder_quickbi"
+  },
+  {
+    "slug": "certification-clouder-rds",
+    "title_en": "Operate and Manage a Relational Database on the Cloud",
+    "title_es": "Operate y Gestionar a Relational Base de Datos en Cloud",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-rds",
+    "url": "https://edu.alibabacloud.com/certification/clouder_rds"
+  },
+  {
+    "slug": "certification-clouder-redis",
+    "title_en": "Introduction to Redis® OSS-Compatible",
+    "title_es": "Introducción a Redis® OSS-Compatible",
+    "category": "Bases de Datos",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-redis",
+    "url": "https://edu.alibabacloud.com/certification/clouder_redis"
+  },
+  {
+    "slug": "certification-clouder-registrationinfo",
+    "title_en": "Using Function Compute To Acquire Users Registration Info",
+    "title_es": "Usar Function Cómputo To Acquire Users Registration Info",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-registrationinfo",
+    "url": "https://edu.alibabacloud.com/certification/clouder_registrationinfo"
+  },
+  {
+    "slug": "certification-clouder-relational-database",
+    "title_en": "Alibaba Cloud Relational Database Service Technical Operations",
+    "title_es": "Alibaba Cloud Relational Base de Datos Servicio Technical Operations",
+    "category": "Bases de Datos",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-relational-database",
+    "url": "https://edu.alibabacloud.com/certification/clouder-relational-database"
+  },
+  {
+    "slug": "certification-clouder-ridinganalysis",
+    "title_en": "Riding Analysis of Shared Bicycles",
+    "title_es": "Riding Analysis of Shared Bicycles",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-ridinganalysis",
+    "url": "https://edu.alibabacloud.com/certification/clouder_ridinganalysis"
+  },
+  {
+    "slug": "certification-clouder-safetyoperation",
+    "title_en": "Best Practices for the Safety Operation of the Host on the Cloud",
+    "title_es": "Mejores Prácticas para Safety Operation of Host en Cloud",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-safetyoperation",
+    "url": "https://edu.alibabacloud.com/certification/clouder_safetyoperation"
+  },
+  {
+    "slug": "certification-clouder-scalablepython",
+    "title_en": "Scale Python on Cloud",
+    "title_es": "Scale Python en Cloud",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-scalablepython",
+    "url": "https://edu.alibabacloud.com/certification/clouder_scalablepython"
+  },
+  {
+    "slug": "certification-clouder-sechardening",
+    "title_en": "Cloud Servers Security Strengthening",
+    "title_es": "Cloud Servidores Seguridad Strengthening",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-sechardening",
+    "url": "https://edu.alibabacloud.com/certification/clouder_sechardening"
+  },
+  {
+    "slug": "certification-clouder-securedata",
+    "title_en": "Secure Your Data on Alibaba Cloud",
+    "title_es": "Secure Your Datos en Alibaba Cloud",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-securedata",
+    "url": "https://edu.alibabacloud.com/certification/clouder_securedata"
+  },
+  {
+    "slug": "certification-clouder-securedatafrench",
+    "title_en": "Secure Your Data in Alibaba Cloud (French version)",
+    "title_es": "Secure Your Datos in Alibaba Cloud (French version)",
+    "category": "Seguridad",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-securedatafrench",
+    "url": "https://edu.alibabacloud.com/certification/clouder_securedatafrench"
+  },
+  {
+    "slug": "certification-clouder-securityoverview",
+    "title_en": "Cloud Platform Security Overview",
+    "title_es": "Cloud Platform Seguridad Visión General",
+    "category": "Seguridad",
+    "level": "50 Minutes",
+    "course_id": "Curso Nº certification-clouder-securityoverview",
+    "url": "https://edu.alibabacloud.com/certification/clouder_securityoverview"
+  },
+  {
+    "slug": "certification-clouder-serverless",
+    "title_en": "Serverless Technology On Alibaba Cloud",
+    "title_es": "Tecnología Serverless en Alibaba Cloud",
+    "category": "Contenedores y Middleware",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-serverless",
+    "url": "https://edu.alibabacloud.com/certification/clouder_serverless"
+  },
+  {
+    "slug": "certification-clouder-shopping-technologies",
+    "title_en": "Explore the Technologies Behind the World’s Largest Shopping Festival",
+    "title_es": "Explore Technologies Behind World’s Largest Shopping Festival",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-shopping-technologies",
+    "url": "https://edu.alibabacloud.com/certification/clouder-shopping-technologies"
+  },
+  {
+    "slug": "certification-clouder-simple-application-ecommerce",
+    "title_en": "Using SAS to Publish a Magento E-commerce Website",
+    "title_es": "Usar SAS para Publicar un E-commerce con Magento",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-simple-application-ecommerce",
+    "url": "https://edu.alibabacloud.com/certification/clouder-simple-application-ecommerce"
+  },
+  {
+    "slug": "certification-clouder-slb",
+    "title_en": "Handle Large Traffic with Load Balancer",
+    "title_es": "Manejar Tráfico Alto con Balanceador de Carga",
+    "category": "Redes y CDN",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-slb",
+    "url": "https://edu.alibabacloud.com/certification/clouder_slb"
+  },
+  {
+    "slug": "certification-clouder-sparkemr",
+    "title_en": "Using Spark on E-MapReduce",
+    "title_es": "Usar Spark en E-MapReduce",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-sparkemr",
+    "url": "https://edu.alibabacloud.com/certification/clouder_sparkemr"
+  },
+  {
+    "slug": "certification-clouder-sparkpython",
+    "title_en": "How to Use Spark on Cloud Series 2 - Spark Python",
+    "title_es": "Cómo Usar Spark en Cloud Series 2 - Spark Python",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-sparkpython",
+    "url": "https://edu.alibabacloud.com/certification/clouder_sparkpython"
+  },
+  {
+    "slug": "certification-clouder-sparksetup",
+    "title_en": "How to Use Spark on Cloud Series - Setup",
+    "title_es": "Cómo Usar Spark en Cloud Series - Setup",
+    "category": "Analítica",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-sparksetup",
+    "url": "https://edu.alibabacloud.com/certification/clouder_sparksetup"
+  },
+  {
+    "slug": "certification-clouder-special-purpose-hardware",
+    "title_en": "Special Purpose Hardware: Introduction to GPU and FPGA Equipped Instances",
+    "title_es": "Hardware de Propósito Especial: Introducción a Instancias con GPU y FPGA",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-special-purpose-hardware",
+    "url": "https://edu.alibabacloud.com/certification/clouder_special_purpose_hardware"
+  },
+  {
+    "slug": "certification-clouder-staticcantonese",
+    "title_en": "Using OSS to Publish a Static Website in China (Cantonese)",
+    "title_es": "Usar OSS to Publish a Static Sitio Web in China (Cantonés)",
+    "category": "Almacenamiento",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-staticcantonese",
+    "url": "https://edu.alibabacloud.com/certification/clouder_staticcantonese"
+  },
+  {
+    "slug": "certification-clouder-staticweb",
+    "title_en": "Using OSS to Publish a Static Website",
+    "title_es": "Usar OSS to Publish a Static Sitio Web",
+    "category": "Almacenamiento",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-staticweb",
+    "url": "https://edu.alibabacloud.com/certification/clouder_staticweb"
+  },
+  {
+    "slug": "certification-clouder-strdatamig",
+    "title_en": "Structured Data Migration",
+    "title_es": "Structured Datos Migración",
+    "category": "Arquitectura, DevOps y Soluciones",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-strdatamig",
+    "url": "https://edu.alibabacloud.com/certification/clouder_strdatamig"
+  },
+  {
+    "slug": "certification-clouder-swarm",
+    "title_en": "Using Swarm to Orchestrate and Manage Containers",
+    "title_es": "Usar Swarm to Orchestrate y Gestionar Contenedores",
+    "category": "Contenedores y Middleware",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-swarm",
+    "url": "https://edu.alibabacloud.com/certification/clouder_swarm"
+  },
+  {
+    "slug": "certification-clouder-terraform-kubernetes",
+    "title_en": "Provisioning a Multi-zone ACK Kubernetes Cluster Using Terraform",
+    "title_es": "Provisioning a Multi-zone ACK Kubernetes Cluster Usar Terraform",
+    "category": "Contenedores y Middleware",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-terraform-kubernetes",
+    "url": "https://edu.alibabacloud.com/certification/clouder-terraform-kubernetes"
+  },
+  {
+    "slug": "certification-clouder-tianchiai",
+    "title_en": "Predicting Coupon Efficacy",
+    "title_es": "Predicting Coupon Efficacy",
+    "category": "Inteligencia Artificial",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-tianchiai",
+    "url": "https://edu.alibabacloud.com/certification/clouder_tianchiai"
+  },
+  {
+    "slug": "certification-clouder-vector-machine",
+    "title_en": "Support Vector Machine Implementation Through PAI",
+    "title_es": "Support Vector Machine Implementation Through PAI",
+    "category": "Inteligencia Artificial",
+    "level": "Intermedio",
+    "course_id": "Curso Nº certification-clouder-vector-machine",
+    "url": "https://edu.alibabacloud.com/certification/clouder-vector-machine"
+  },
+  {
+    "slug": "certification-clouder-webattack",
+    "title_en": "Web Application Attacks and Defense Deep Dive",
+    "title_es": "Web Aplicación Attacks y Defense Profundización",
+    "category": "Seguridad",
+    "level": "Avanzado",
+    "course_id": "Curso Nº certification-clouder-webattack",
+    "url": "https://edu.alibabacloud.com/certification/clouder_webattack"
+  },
+  {
+    "slug": "certification-clouder-webcantonese",
+    "title_en": "Using ECS to Construct a Dynamic Website (Cantonese)",
+    "title_es": "Usar ECS para Construir un Sitio Web Dinámico (Cantonés)",
+    "category": "Cómputo Elástico",
+    "level": "Principiante",
+    "course_id": "Curso Nº certification-clouder-webcantonese",
+    "url": "https://edu.alibabacloud.com/certification/clouder_webcantonese"
+  },
+  {
+    "slug": "ethics-ai",
+    "title_en": "Ethical Considerations in AI and Generative AI Development",
+    "title_es": "Consideraciones Éticas en el Desarrollo de IA y IA Generativa",
+    "category": "Inteligencia Artificial",
+    "level": "Principiante",
+    "course_id": "Curso Nº 758",
+    "url": "https://edu.alibabacloud.com/course/758"
+  }
+]

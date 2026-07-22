@@ -1,0 +1,2963 @@
+[
+  {
+    "slug": "cloud-engineer-associate",
+    "code": "ACA · CEA-C01",
+    "level": "Associate",
+    "name_en": "Alibaba Cloud Certified Associate: Cloud Engineer",
+    "name_es": "Ingeniero de Nube — Asociado (ACA)",
+    "duration_min": 90,
+    "questions": 50,
+    "passing_score": 70,
+    "role_es": "El Ingeniero de Nube diseña, implementa y opera cargas básicas en Alibaba Cloud: cómputo (ECS), redes (VPC), almacenamiento (OSS, EBS), bases de datos (RDS) y gestión de recursos. Reemplaza el retirado ACA Cloud Computing.",
+    "learn_es": [
+      "Aprovisionar y operar ECS con distintas familias de instancias.",
+      "Diseñar VPC con subredes, tablas de rutas, VSwitch y peering.",
+      "Elegir entre almacenamiento en bloque (EBS), objetos (OSS) y archivos (NAS).",
+      "Configurar RDS y elegir engine (MySQL, PostgreSQL, SQL Server).",
+      "Aplicar RAM, políticas y grupos de recursos."
+    ],
+    "blueprint": [
+      {
+        "area": "Basics of Alibaba Cloud",
+        "area_es": "Fundamentos de Alibaba Cloud",
+        "weight": 12,
+        "description": "Regiones y zonas, modelo de responsabilidad, panorama de servicios, consola y CLI.",
+        "courses": [
+          {
+            "slug": "certification-clouder-nas",
+            "title_es": "Introducción a Red Attached Almacenamiento",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-nas",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-6th-ecs",
+            "title_es": "Elementos Esenciales de la 6ª Generación de ECS",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-6th-ecs",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-appcontain",
+            "title_es": "An Introducción a Aplicación Containerization",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-appcontain",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-architecture",
+            "title_es": "An Introducción a Microservice Architecture",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-architecture",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-bigdata",
+            "title_es": "Introducción a Big Datos Platform en Cloud",
+            "category": "Analítica",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-bigdata",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Cloud Service Fundamentals",
+        "area_es": "Servicios en la nube",
+        "weight": 76,
+        "description": "ECS, VPC, SLB/ALB, EBS/OSS/NAS, RDS/PolarDB, Redis, CDN, Security.",
+        "courses": [
+          {
+            "slug": "certification-clouder-dynamicweb",
+            "title_es": "Usar ECS para Construir un Sitio Web Dinámico",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-dynamicweb",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-internetwork",
+            "title_es": "Interconexión de Redes con VPC",
+            "category": "Redes y CDN",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-internetwork",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-intervpcuscen",
+            "title_es": "Interconnecting VPC Usar Cloud Empresarial Red",
+            "category": "Redes y CDN",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-intervpcuscen",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-redis",
+            "title_es": "Introducción a Redis® OSS-Compatible",
+            "category": "Bases de Datos",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-redis",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-staticcantonese",
+            "title_es": "Usar OSS to Publish a Static Sitio Web in China (Cantonés)",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-staticcantonese",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Resource Management",
+        "area_es": "Gestión de recursos",
+        "weight": 12,
+        "description": "Resource Manager, Resource Groups, Tag Policy, ROS/Terraform, billing.",
+        "courses": [
+          {
+            "slug": "certification-clouder-linux",
+            "title_es": "Primeros Pasos con Linux Servidor Gestión",
+            "category": "Otros",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-linux",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-monitoring-management",
+            "title_es": "Alibaba Cloud Monitoreo & Gestión",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-monitoring-management",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-multiaccount-management",
+            "title_es": "Empresarial Multi-Account Gestión With Resource Directory",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-multiaccount-management",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-apply-log-management",
+            "title_es": "Usar Log Servicio to Apply Log Gestión",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apply-log-management",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-autoscaling",
+            "title_es": "Uso Flexible de Recursos Cloud según Requerimientos de Negocio",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-autoscaling",
+            "score": 1
+          }
+        ]
+      }
+    ],
+    "question_types": [
+      {
+        "type": "Single response",
+        "quantity": 30,
+        "points": 2
+      },
+      {
+        "type": "Multiple response",
+        "quantity": 15,
+        "points": 2
+      },
+      {
+        "type": "True/false",
+        "quantity": 5,
+        "points": 2
+      }
+    ],
+    "question_bank": [
+      {
+        "q": "¿Cuál es la unidad de facturación de instancias preemptibles (spot) en ECS?",
+        "options": [
+          "Por segundo",
+          "Por hora",
+          "Por minuto con descuento",
+          "Mensual con descuento"
+        ],
+        "answer": 2,
+        "explain": "Las instancias preemptibles se facturan por hora con un descuento significativo, pero pueden ser reclamadas si el precio de mercado supera tu puja.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué componente NO forma parte de una VPC en Alibaba Cloud?",
+        "options": [
+          "VSwitch",
+          "Route Table",
+          "Security Group",
+          "NAT Gateway (opcional)"
+        ],
+        "answer": 2,
+        "explain": "El Security Group se aplica a nivel de ENI/ECS, no es un componente estructural de la VPC. VSwitch, tablas de rutas y NAT sí lo son.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué clase de almacenamiento OSS es adecuada para archivos accedidos <1 vez al año?",
+        "options": [
+          "Standard",
+          "Infrequent Access",
+          "Archive",
+          "Cold Archive"
+        ],
+        "answer": 3,
+        "explain": "Cold Archive tiene el costo de almacenamiento más bajo y el mayor tiempo de restauración, apropiado para retención regulatoria.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué tipo de disco EBS ofrece la mejor relación IOPS/precio para bases de datos de producción?",
+        "options": [
+          "Basic Cloud Disk",
+          "Ultra Cloud Disk",
+          "SSD Cloud Disk",
+          "ESSD PL1"
+        ],
+        "answer": 3,
+        "explain": "ESSD PL1 ofrece hasta 50 000 IOPS con latencia submilisegundo, siendo el balance recomendado para bases de datos.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es el propósito de un Resource Group?",
+        "options": [
+          "Facturar por región",
+          "Aislar recursos por proyecto/departamento con permisos RAM",
+          "Comprimir imágenes ECS",
+          "Escalar automáticamente"
+        ],
+        "answer": 1,
+        "explain": "Los Resource Groups permiten organizar recursos por proyecto y aplicar permisos RAM granulares.",
+        "section": "Resource Management",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio provee escalado automático horizontal de ECS?",
+        "options": [
+          "ROS",
+          "Auto Scaling (ESS)",
+          "CloudMonitor",
+          "Function Compute"
+        ],
+        "answer": 1,
+        "explain": "ESS (Auto Scaling) crea/elimina ECS según políticas de umbral, cron o predicción ML.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es el rol principal de RAM?",
+        "options": [
+          "Cifrar discos",
+          "Gestión de identidades y accesos",
+          "Balancear carga",
+          "CDN"
+        ],
+        "answer": 1,
+        "explain": "RAM (Resource Access Management) gestiona usuarios, grupos, roles y políticas de permisos.",
+        "section": "Basics of Alibaba Cloud",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué diferencia principal hay entre SLB (CLB) y ALB?",
+        "options": [
+          "SLB es solo Layer 4; ALB soporta Layer 7 con contenido HTTP",
+          "ALB es más barato",
+          "SLB soporta HTTPS y ALB no",
+          "Son idénticos"
+        ],
+        "answer": 0,
+        "explain": "ALB (Application Load Balancer) opera en Layer 7 con enrutamiento avanzado; CLB opera en L4 y L7 básico.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es una Region en Alibaba Cloud?",
+        "options": [
+          "Un centro de datos físico único",
+          "Un conjunto de zonas de disponibilidad aisladas geográficamente",
+          "Una cuenta de facturación",
+          "Una VPC compartida"
+        ],
+        "answer": 1,
+        "explain": "Una Region agrupa varias AZs (zonas) físicamente separadas pero interconectadas de baja latencia.",
+        "section": "Basics of Alibaba Cloud",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es el tamaño máximo de un archivo simple en OSS?",
+        "options": [
+          "5 GB",
+          "48.8 TB (multipart upload)",
+          "100 GB",
+          "1 PB"
+        ],
+        "answer": 1,
+        "explain": "OSS acepta objetos hasta 48.8 TB usando multipart upload. Un solo PUT permite hasta 5 GB.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué protocolo se usa para conectar Apsara File Storage NAS desde Linux?",
+        "options": [
+          "SMB",
+          "NFS v3/v4",
+          "iSCSI",
+          "RDP"
+        ],
+        "answer": 1,
+        "explain": "NAS Linux usa NFS v3/v4. Los clientes Windows usan SMB en el mismo servicio.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué diferencia hay entre RDS MySQL Basic y High Availability?",
+        "options": [
+          "El engine",
+          "HA replica en un standby con failover automático",
+          "HA es más barato",
+          "Basic soporta más IOPS"
+        ],
+        "answer": 1,
+        "explain": "La edición HA agrega una réplica secundaria con failover automático (~30s).",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué política RAM sigue el principio de menor privilegio?",
+        "options": [
+          "AdministratorAccess",
+          "Políticas personalizadas con acciones/recursos mínimos",
+          "ReadOnlyAccess a todo",
+          "Acceso raíz"
+        ],
+        "answer": 1,
+        "explain": "El principio de menor privilegio requiere políticas custom que otorguen solo las acciones necesarias en los recursos específicos.",
+        "section": "Resource Management",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cómo se llama la herramienta oficial de Infrastructure as Code de Alibaba Cloud?",
+        "options": [
+          "ROS (Resource Orchestration Service)",
+          "ARM Templates",
+          "CloudFormation",
+          "Chef"
+        ],
+        "answer": 0,
+        "explain": "ROS usa plantillas JSON/YAML para orquestar recursos. También hay provider de Terraform.",
+        "section": "Resource Management",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio ofrece monitoreo unificado de métricas y alertas?",
+        "options": [
+          "CloudMonitor",
+          "SLS",
+          "ARMS",
+          "ActionTrail"
+        ],
+        "answer": 0,
+        "explain": "CloudMonitor recolecta métricas de servicios, define alarmas y dashboards. ARMS es APM avanzado.",
+        "section": "Cloud Service Fundamentals",
+        "source": "generado"
+      },
+      {
+        "q": "Which of the following ECS instance configurations can't be changed without changing the instance type?",
+        "options": [
+          "Memory size",
+          "System disk size",
+          "Data disk size",
+          "Number of data disks"
+        ],
+        "answer": 2,
+        "explain": "ECS es el servicio de cómputo elástico principal en Alibaba Cloud.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "Which of the following statements about OSS bucket is NOT correct?",
+        "options": [
+          "Every user can create more than one bucket",
+          "Bucket name can be changed after creation",
+          "Every bucket should have a unique name",
+          "There is no limitation on the number of objects inside a bucket"
+        ],
+        "answer": 1,
+        "explain": "VPC (Virtual Private Cloud) provee redes aisladas y personalizables.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "A company wants to use Alibaba Cloud service to replace their self-built database, which of the following services should it choose?",
+        "options": [
+          "AsparaDB for RDS",
+          "Server Load Balancer (SLB)",
+          "Alibaba Cloud CDN (Content Delivery Network)",
+          "Data Transmission Service"
+        ],
+        "answer": 0,
+        "explain": "Respuestas correctas: A, C. ECS y OSS son los dos servicios base recomendados.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "You are developing a highly available web application using stateless web servers. Which services are suitable for the application?",
+        "options": [
+          "RDS",
+          "SLB",
+          "ECS",
+          "MaxCompute",
+          "PAI"
+        ],
+        "answer": 1,
+        "explain": "Respuestas correctas: B, D. ALB y Anti-DDoS Pro se integran para tráfico de producción.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "Object Storage Service (OSS) natively supports a hierarchical file structure, just like a traditional file system.",
+        "options": [
+          "Verdadero",
+          "Falso"
+        ],
+        "answer": 0,
+        "explain": "Verdadero — la responsabilidad compartida se aplica en cloud.",
+        "section": "True/false",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "Server Load Balancer can be integrated with a Virtual Private Cloud (VPC). You can create an internal cloud load balancer to route traffic using private IP addresses within your VPC.",
+        "options": [
+          "Verdadero",
+          "Falso"
+        ],
+        "answer": 0,
+        "explain": "Verdadero — las Regiones son físicamente aisladas.",
+        "section": "True/false",
+        "source": "Alibaba Cloud Academy (oficial)"
+      }
+    ],
+    "roadmap": [
+      {
+        "phase": "Semanas 1–6",
+        "focus": "Servicios en la nube",
+        "weight": 76,
+        "courses": [
+          "certification-clouder-dynamicweb",
+          "certification-clouder-internetwork",
+          "certification-clouder-intervpcuscen"
+        ],
+        "goal": "Dominar servicios en la nube (76% del examen)."
+      },
+      {
+        "phase": "Semanas 7–7",
+        "focus": "Fundamentos de Alibaba Cloud",
+        "weight": 12,
+        "courses": [
+          "certification-clouder-nas",
+          "certification-clouder-6th-ecs",
+          "certification-clouder-appcontain"
+        ],
+        "goal": "Dominar fundamentos de alibaba cloud (12% del examen)."
+      },
+      {
+        "phase": "Semanas 8–8",
+        "focus": "Gestión de recursos",
+        "weight": 12,
+        "courses": [
+          "certification-clouder-linux",
+          "certification-clouder-monitoring-management",
+          "certification-clouder-multiaccount-management"
+        ],
+        "goal": "Dominar gestión de recursos (12% del examen)."
+      },
+      {
+        "phase": "Semana 9",
+        "focus": "Simulacro y repaso",
+        "weight": 0,
+        "courses": [],
+        "goal": "Rendir 2 simulacros completos (50 preguntas) y revisar errores."
+      }
+    ]
+  },
+  {
+    "slug": "data-engineer-associate",
+    "code": "ACA · DEA-C01",
+    "level": "Associate",
+    "name_en": "Alibaba Cloud Certified Associate: Data Engineer",
+    "name_es": "Ingeniero de Datos — Asociado (ACA)",
+    "duration_min": 90,
+    "questions": 50,
+    "passing_score": 70,
+    "role_es": "El Ingeniero de Datos diseña, construye y mantiene pipelines escalables sobre MaxCompute, DataWorks, Hologres, DataHub y Flink. Cubre ingesta, ETL batch/streaming, gobierno y calidad de datos.",
+    "learn_es": [
+      "Diseñar el patrón lakehouse con MaxCompute + Hologres + OSS.",
+      "Orquestar pipelines en DataWorks (nodos Sync, SQL, PyODPS).",
+      "Ingesta real-time con DataHub → Flink → Hologres.",
+      "Distinguir MaxCompute vs Hologres vs AnalyticDB según carga.",
+      "Aplicar particionamiento y ClusterBy para minimizar costos."
+    ],
+    "blueprint": [
+      {
+        "area": "Overview of Big Data",
+        "area_es": "Panorama de Big Data",
+        "weight": 14,
+        "description": "4Vs, data warehouse vs data lake vs lakehouse, Apsara File System.",
+        "courses": [
+          {
+            "slug": "certification-clouder-bigdata",
+            "title_es": "Introducción a Big Datos Platform en Cloud",
+            "category": "Analítica",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-bigdata",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-adb-dla2",
+            "title_es": "Design a Cloud Datos Architecture Usar AnalyticDB & Datos Lake Analítica",
+            "category": "Bases de Datos",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-adb-dla2",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-appcontain",
+            "title_es": "An Introducción a Aplicación Containerization",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-appcontain",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-architecture",
+            "title_es": "An Introducción a Microservice Architecture",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-architecture",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-bigdatainteg",
+            "title_es": "Alibaba Cloud Big Datos - Datos Integration",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-bigdatainteg",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Data Collections",
+        "area_es": "Recolección de datos",
+        "weight": 12,
+        "description": "DataHub, LogHub/SLS, DTS, Kafka, DataWorks Data Integration.",
+        "courses": [
+          {
+            "slug": "certification-clouder-apply-log-management",
+            "title_es": "Usar Log Servicio to Apply Log Gestión",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apply-log-management",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Distributed Storage",
+        "area_es": "Almacenamiento distribuido",
+        "weight": 10,
+        "description": "MaxCompute tables, OSS, Apsara File System, particionamiento.",
+        "courses": [
+          {
+            "slug": "certification-clouder-dataworks-maxcompute",
+            "title_es": "Datos Development con DataWorks y MaxCompute",
+            "category": "Analítica",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-dataworks-maxcompute",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-distributed",
+            "title_es": "Distributed Almacenamiento Introducción",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-distributed",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-maxcauth",
+            "title_es": "Alibaba Cloud MaxCompute - Authority y Seguridad",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcauth",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-maxcbasic",
+            "title_es": "Alibaba Cloud MaxCompute - Básico Knowledge",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcbasic",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-maxcdata",
+            "title_es": "Alibaba Cloud MaxCompute - Datos Transmission",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcdata",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Batch Processing",
+        "area_es": "Procesamiento batch",
+        "weight": 28,
+        "description": "MaxCompute SQL, PyODPS, MapReduce, Spark on MaxCompute, EMR.",
+        "courses": [
+          {
+            "slug": "certification-clouder-hadooparcpri",
+            "title_es": "Hadoop Architecture y Principles",
+            "category": "Analítica",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-hadooparcpri",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-hadoopecs",
+            "title_es": "Hadoop Cluster Installation en Alibaba Cloud ECS",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-hadoopecs",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-hadoopoverview",
+            "title_es": "Apache Hadoop Visión General",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-hadoopoverview",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-hivehadoop",
+            "title_es": "Usar Hive y Hadoop en E-MapReduce",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-hivehadoop",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-maxcpro",
+            "title_es": "Alibaba Cloud MaxCompute - Programming Model",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcpro",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Real-time Processing",
+        "area_es": "Procesamiento en tiempo real",
+        "weight": 22,
+        "description": "Flink (Realtime Compute), Blink SQL, checkpoints, exactly-once, Hologres sink.",
+        "courses": [
+          {
+            "slug": "certification-clouder-flink",
+            "title_es": "Realtime Computación With Apache Flink",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-flink",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Data Services & Development Tools",
+        "area_es": "Servicios de datos y herramientas",
+        "weight": 14,
+        "description": "DataWorks (Studio, Data Map, DQC, DataService), QuickBI, DataV.",
+        "courses": [
+          {
+            "slug": "certification-clouder-datawapp",
+            "title_es": "Alibaba Cloud DataWorks - Aplicación Development",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-datawapp",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-datawbasic",
+            "title_es": "Alibaba Cloud DataWorks - Básico Knowledge",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-datawbasic",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-quickbi",
+            "title_es": "Quickly Generate Negocio Intelligence Diagrams con QuickBI",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-quickbi",
+            "score": 1
+          }
+        ]
+      }
+    ],
+    "question_types": [
+      {
+        "type": "Single response",
+        "quantity": 28,
+        "points": 2
+      },
+      {
+        "type": "Multiple response",
+        "quantity": 16,
+        "points": 2
+      },
+      {
+        "type": "True/false",
+        "quantity": 6,
+        "points": 2
+      }
+    ],
+    "question_bank": [
+      {
+        "q": "¿Cuál es el modelo de tabla nativo de MaxCompute?",
+        "options": [
+          "Row-oriented",
+          "Columnar (basado en AliORC)",
+          "Documento JSON",
+          "Grafo"
+        ],
+        "answer": 1,
+        "explain": "MaxCompute usa el formato columnar AliORC, optimizado para consultas analíticas OLAP.",
+        "section": "Batch Processing",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué garantía ofrece Flink con checkpoints correctamente configurados?",
+        "options": [
+          "At-most-once",
+          "At-least-once",
+          "Exactly-once (state) + end-to-end con sinks 2PC",
+          "Best-effort"
+        ],
+        "answer": 2,
+        "explain": "Flink garantiza exactly-once en su estado, y end-to-end si el sink soporta 2-phase commit.",
+        "section": "Real-time Processing",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio es la fuente típica de eventos real-time desde apps móviles?",
+        "options": [
+          "MaxCompute",
+          "DataHub",
+          "RDS",
+          "OSS Archive"
+        ],
+        "answer": 1,
+        "explain": "DataHub es un servicio de streaming similar a Kafka, ideal para ingesta de clickstream y eventos.",
+        "section": "Data Collections",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es Hologres?",
+        "options": [
+          "Un data warehouse offline",
+          "Un HSAP (análisis en tiempo real + queries interactivas)",
+          "Un servicio de BI",
+          "Un vector store"
+        ],
+        "answer": 1,
+        "explain": "Hologres es HSAP: soporta escrituras en tiempo real, queries interactivas y federación con MaxCompute.",
+        "section": "Real-time Processing",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué componente de DataWorks orquesta pipelines?",
+        "options": [
+          "Data Integration",
+          "DataStudio",
+          "DQC (Data Quality Center)",
+          "Data Map"
+        ],
+        "answer": 1,
+        "explain": "DataStudio permite crear DAGs de nodos SQL, sync, python y orquestarlos con scheduler.",
+        "section": "Data Services & Development Tools",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué particiona una tabla MaxCompute?",
+        "options": [
+          "Clave hash automática",
+          "Columnas de partición declaradas (ds, hh...)",
+          "Random split",
+          "Filas por bloque"
+        ],
+        "answer": 1,
+        "explain": "Las particiones se declaran al crear la tabla (usualmente por fecha ds) y se accede con predicados en el WHERE.",
+        "section": "Distributed Storage",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es el rol de DQC en DataWorks?",
+        "options": [
+          "Diccionario de datos",
+          "Reglas de calidad (SQL rules) sobre tablas",
+          "Backup automático",
+          "Streaming"
+        ],
+        "answer": 1,
+        "explain": "DQC (Data Quality Center) permite definir reglas SQL de calidad que se disparan al terminar un nodo.",
+        "section": "Data Services & Development Tools",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es el \"medallion architecture\" (bronze/silver/gold)?",
+        "options": [
+          "Formato de compresión",
+          "Modelo de capas para lakehouse (raw/clean/serving)",
+          "Nivel de seguridad",
+          "Tipos de instancia"
+        ],
+        "answer": 1,
+        "explain": "Bronze = raw/append; Silver = limpio/normalizado; Gold = agregado para consumo BI/ML.",
+        "section": "Overview of Big Data",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cómo se define un job real-time SQL en Alibaba Cloud?",
+        "options": [
+          "MaxCompute SQL",
+          "Realtime Compute for Apache Flink (Flink SQL)",
+          "Hive SQL",
+          "PolarDB SQL"
+        ],
+        "answer": 1,
+        "explain": "Realtime Compute for Apache Flink permite escribir SQL streaming con ventanas y state.",
+        "section": "Real-time Processing",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es un \"sync node\" en DataWorks?",
+        "options": [
+          "Nodo de replicación entre DBs",
+          "Nodo Data Integration que mueve datos entre fuentes",
+          "Nodo de checkpoint",
+          "Nodo de logging"
+        ],
+        "answer": 1,
+        "explain": "Sync Node de DataWorks orquesta jobs de Data Integration (batch/incremental) para ingesta.",
+        "section": "Data Collections",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es una V del big data que se refiere a la exactitud?",
+        "options": [
+          "Volume",
+          "Velocity",
+          "Veracity",
+          "Variety"
+        ],
+        "answer": 2,
+        "explain": "Las 4 Vs comunes: Volume, Velocity, Variety, Veracity (exactitud/confianza).",
+        "section": "Overview of Big Data",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué formato es más eficiente para leer un subset de columnas en MaxCompute?",
+        "options": [
+          "CSV",
+          "JSON",
+          "AliORC (columnar)",
+          "XML"
+        ],
+        "answer": 2,
+        "explain": "El formato columnar solo lee las columnas necesarias, reduciendo I/O drásticamente.",
+        "section": "Distributed Storage",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué patrón describe el flujo Kafka/DataHub → Flink → Hologres?",
+        "options": [
+          "Lambda",
+          "Kappa (single streaming pipeline)",
+          "CDC clásico",
+          "Batch tradicional"
+        ],
+        "answer": 1,
+        "explain": "Kappa usa un solo pipeline streaming para batch y real-time, con DataHub ordered/replayable.",
+        "section": "Real-time Processing",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué herramienta visualiza dashboards al final de un pipeline?",
+        "options": [
+          "DataWorks Studio",
+          "Quick BI o DataV",
+          "MaxCompute Console",
+          "OSS Browser"
+        ],
+        "answer": 1,
+        "explain": "Quick BI para dashboards analíticos self-service; DataV para dashboards visuales/big screen.",
+        "section": "Data Services & Development Tools",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es el motor de consulta MPP nativo de Hologres?",
+        "options": [
+          "MapReduce",
+          "Postgres wire protocol + storage columnar propio",
+          "Spark SQL",
+          "Presto"
+        ],
+        "answer": 1,
+        "explain": "Hologres es compatible con Postgres protocol pero con storage y ejecución MPP columnares propios.",
+        "section": "Real-time Processing",
+        "source": "generado"
+      },
+      {
+        "q": "Which service enables real-time monitoring and fast retrieval by not only collecting logs but also offering built-in powerful log search and analysis features?",
+        "options": [
+          "DataHub",
+          "MaxCompute",
+          "Simple Log Service (SLS)",
+          "DataV"
+        ],
+        "answer": 2,
+        "explain": "Simple Log Service (SLS) provee recolección + búsqueda + análisis en un solo servicio.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "How does DataHub manage data replication within a region to ensure high availability and fault tolerance?",
+        "options": [
+          "Data is stored only once to reduce storage costs",
+          "Each data record is replicated across multiple servers within the same availability zone",
+          "Replication is managed manually by the user through API calls",
+          "Data is automatically replicated across multiple availability zones to protect against zone-level failures"
+        ],
+        "answer": 3,
+        "explain": "DataHub replica automáticamente entre AZs para alta disponibilidad.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "An e-commerce business is looking to leverage Alibaba Cloud services for specific operational needs. Which services are best suited for this scenario? (Correct answers: 2)",
+        "options": [
+          "Use Simple Log Service (SLS) to store and analyze transaction error logs with full-text search and dashboards",
+          "Use OSS to buffer incoming IoT sensor data before batch loading into RDS",
+          "Use DataWorks Sync Node to replace Kafka for high-throughput message queuing",
+          "Use MaxCompute as the primary source for ingesting real-time payment messages",
+          "Use DataHub to collect user clickstream events from mobile apps for real-time processing with Flink"
+        ],
+        "answer": 0,
+        "explain": "Respuestas correctas: A, E. SLS para logs de transacciones y DataHub para clickstream mobile en real-time.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "Which of the following accurately describe the capabilities of Flink + Hologres for building real-time analytics applications? (Correct answers: 2)",
+        "options": [
+          "Real-time data writing",
+          "Low-latency point queries",
+          "Only batch support",
+          "No SQL"
+        ],
+        "answer": 0,
+        "explain": "Respuestas correctas: A, B. Flink + Hologres permite escrituras en tiempo real y point queries de baja latencia.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "DataHub offers ordered and replayable message queues, making it a suitable Alibaba Cloud Associate: Data Engineer Sample Questions Version:20260104 foundational component for implementing Kappa architecture.",
+        "options": [
+          "Verdadero",
+          "Falso"
+        ],
+        "answer": 0,
+        "explain": "Verdadero — DataHub soporta orden y replay, base para Kappa.",
+        "section": "True/false",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "The data lakehouse architecture integrates the key advantages of data lakes — such as flexibility and low-cost storage — with the structured capabilities of data warehouses, including ACID compliance and SQL support.",
+        "options": [
+          "Verdadero",
+          "Falso"
+        ],
+        "answer": 0,
+        "explain": "Verdadero — el lakehouse combina flexibilidad de lake con ACID/SQL de warehouse.",
+        "section": "True/false",
+        "source": "Alibaba Cloud Academy (oficial)"
+      }
+    ],
+    "roadmap": [
+      {
+        "phase": "Semanas 1–2",
+        "focus": "Procesamiento batch",
+        "weight": 28,
+        "courses": [
+          "certification-clouder-hadooparcpri",
+          "certification-clouder-hadoopecs",
+          "certification-clouder-hadoopoverview"
+        ],
+        "goal": "Dominar procesamiento batch (28% del examen)."
+      },
+      {
+        "phase": "Semanas 3–4",
+        "focus": "Procesamiento en tiempo real",
+        "weight": 22,
+        "courses": [
+          "certification-clouder-flink"
+        ],
+        "goal": "Dominar procesamiento en tiempo real (22% del examen)."
+      },
+      {
+        "phase": "Semanas 5–5",
+        "focus": "Panorama de Big Data",
+        "weight": 14,
+        "courses": [
+          "certification-clouder-bigdata",
+          "certification-clouder-adb-dla2",
+          "certification-clouder-appcontain"
+        ],
+        "goal": "Dominar panorama de big data (14% del examen)."
+      },
+      {
+        "phase": "Semanas 6–6",
+        "focus": "Servicios de datos y herramientas",
+        "weight": 14,
+        "courses": [
+          "certification-clouder-datawapp",
+          "certification-clouder-datawbasic",
+          "certification-clouder-quickbi"
+        ],
+        "goal": "Dominar servicios de datos y herramientas (14% del examen)."
+      },
+      {
+        "phase": "Semanas 7–7",
+        "focus": "Recolección de datos",
+        "weight": 12,
+        "courses": [
+          "certification-clouder-apply-log-management"
+        ],
+        "goal": "Dominar recolección de datos (12% del examen)."
+      },
+      {
+        "phase": "Semanas 8–8",
+        "focus": "Almacenamiento distribuido",
+        "weight": 10,
+        "courses": [
+          "certification-clouder-dataworks-maxcompute",
+          "certification-clouder-distributed",
+          "certification-clouder-maxcauth"
+        ],
+        "goal": "Dominar almacenamiento distribuido (10% del examen)."
+      },
+      {
+        "phase": "Semana 9",
+        "focus": "Simulacro y repaso",
+        "weight": 0,
+        "courses": [],
+        "goal": "Rendir 2 simulacros completos (50 preguntas) y revisar errores."
+      }
+    ]
+  },
+  {
+    "slug": "aca-llm-engineer",
+    "code": "ACA · LLM",
+    "level": "Associate",
+    "name_en": "Alibaba Cloud Certified Associate: LLM Engineer",
+    "name_es": "Ingeniero de LLM — Asociado (ACA)",
+    "duration_min": 60,
+    "questions": 50,
+    "passing_score": 80,
+    "role_es": "Certificación de alfabetización empresarial en IA. Cubre conceptos LLM, prompt engineering, RAG, LLM agents, fine-tuning, seguridad y multimodal, usando Alibaba Cloud Model Studio.",
+    "learn_es": [
+      "Explicar cómo funciona un LLM (tokens, embeddings, atención).",
+      "Aplicar frameworks de prompting (RTF, CRISPE, chain-of-thought).",
+      "Diseñar RAG con vector store + retriever + reranker.",
+      "Construir un LLM Agent con herramientas y planificación.",
+      "Reconocer cuándo hacer fine-tuning vs prompt vs RAG."
+    ],
+    "blueprint": [
+      {
+        "area": "LLM concepts",
+        "area_es": "Conceptos LLM",
+        "weight": 18,
+        "description": "Historia, arquitectura Transformer, tokens, escenarios.",
+        "courses": [
+          {
+            "slug": "ethics-ai",
+            "title_es": "Consideraciones Éticas en el Desarrollo de IA y IA Generativa",
+            "category": "Inteligencia Artificial",
+            "level": "Principiante",
+            "course_id": "Curso Nº 758",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-appcontain",
+            "title_es": "An Introducción a Aplicación Containerization",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-appcontain",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-docker",
+            "title_es": "Introducción To Docker Contenedor",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-docker",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-naivebayes",
+            "title_es": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
+            "category": "Inteligencia Artificial",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-naivebayes",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-vector-machine",
+            "title_es": "Support Vector Machine Implementation Through PAI",
+            "category": "Inteligencia Artificial",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-vector-machine",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Prompt engineering",
+        "area_es": "Ingeniería de prompts",
+        "weight": 20,
+        "description": "Zero-shot, few-shot, CoT, prompt patterns, guardrails.",
+        "courses": [
+          {
+            "slug": "certification-clouder-container",
+            "title_es": "Implement Blue-Green Despliegue con Contenedor Servicio",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-container",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-containerized-applications",
+            "title_es": "Performance Testing y Optimizing of Containerized Aplicaciones",
+            "category": "Contenedores y Middleware",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-containerized-applications",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-diagnosis-containerized",
+            "title_es": "Problem Diagnosis y Monitoreo para Containerized Aplicaciones",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-diagnosis-containerized",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-iot-bigdata-ai",
+            "title_es": "Internet of Things(IoT), Big Datos y AI in Alibaba Cloud",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-iot-bigdata-ai",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-kubernetes",
+            "title_es": "Usar Kubernetes to Gestionar Contenedores y Cluster Resources",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-kubernetes",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Enhancing LLM applications",
+        "area_es": "Mejora de aplicaciones LLM",
+        "weight": 20,
+        "description": "LLM APIs, plugins, RAG, vector stores, embeddings.",
+        "courses": [
+          {
+            "slug": "certification-clouder-distributed",
+            "title_es": "Distributed Almacenamiento Introducción",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-distributed",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-nas",
+            "title_es": "Introducción a Red Attached Almacenamiento",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-nas",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-oss",
+            "title_es": "Operate y Gestionar Object Almacenamiento en Cloud",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-oss",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-osscantonese",
+            "title_es": "Operate y Gestionar Object Almacenamiento en Cloud (Cantonés)",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-osscantonese",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-swarm",
+            "title_es": "Usar Swarm to Orchestrate y Gestionar Contenedores",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-swarm",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "LLM agent",
+        "area_es": "LLM Agents",
+        "weight": 14,
+        "description": "ReAct, ModelScope-Agent, multi-agent, herramientas, memoria.",
+        "courses": [
+          {
+            "slug": "certification-clouder-simple-application-ecommerce",
+            "title_es": "Usar SAS para Publicar un E-commerce con Magento",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-simple-application-ecommerce",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "LLM fine-tuning",
+        "area_es": "Fine-tuning",
+        "weight": 12,
+        "description": "SFT, PEFT/LoRA, datasets, evaluación, cuándo usar.",
+        "courses": []
+      },
+      {
+        "area": "Safety and compliance",
+        "area_es": "Seguridad y cumplimiento",
+        "weight": 10,
+        "description": "Riesgos LLM, gobierno, ética, filtros, red-teaming.",
+        "courses": [
+          {
+            "slug": "certification-clouder-maxcauth",
+            "title_es": "Alibaba Cloud MaxCompute - Authority y Seguridad",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcauth",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-platseccantonese",
+            "title_es": "Cloud Platform Seguridad Visión General (Cantonés)",
+            "category": "Seguridad",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-platseccantonese",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-sechardening",
+            "title_es": "Cloud Servidores Seguridad Strengthening",
+            "category": "Seguridad",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-sechardening",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-securityoverview",
+            "title_es": "Cloud Platform Seguridad Visión General",
+            "category": "Seguridad",
+            "level": "50 Minutes",
+            "course_id": "Curso Nº certification-clouder-securityoverview",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Multimodal LLM",
+        "area_es": "LLM multimodal",
+        "weight": 6,
+        "description": "Vision + text, audio, arquitecturas cross-modal.",
+        "courses": [
+          {
+            "slug": "certification-clouder-terraform-kubernetes",
+            "title_es": "Provisioning a Multi-zone ACK Kubernetes Cluster Usar Terraform",
+            "category": "Contenedores y Middleware",
+            "level": "Avanzado",
+            "course_id": "Curso Nº certification-clouder-terraform-kubernetes",
+            "score": 1
+          }
+        ]
+      }
+    ],
+    "question_types": [
+      {
+        "type": "Single choice",
+        "quantity": 35,
+        "points": 2
+      },
+      {
+        "type": "Multiple choice",
+        "quantity": 15,
+        "points": 2
+      }
+    ],
+    "question_bank": [
+      {
+        "q": "¿Qué representa un token en un LLM?",
+        "options": [
+          "Un carácter",
+          "Una pieza sub-palabra codificada (BPE, SentencePiece)",
+          "Una oración",
+          "Un vector embedding"
+        ],
+        "answer": 1,
+        "explain": "Los tokens son sub-palabras generadas por algoritmos como BPE. Un token ≈ 4 caracteres en inglés.",
+        "section": "LLM concepts",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es \"few-shot prompting\"?",
+        "options": [
+          "Modelo pequeño",
+          "Incluir 2-5 ejemplos de entrada/salida en el prompt",
+          "Fine-tuning con pocos datos",
+          "Reducir temperatura a 0"
+        ],
+        "answer": 1,
+        "explain": "Few-shot añade ejemplos in-context para que el modelo generalice sin re-entrenamiento.",
+        "section": "Prompt engineering",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es el propósito de un vector store en RAG?",
+        "options": [
+          "Guardar prompts",
+          "Indexar embeddings de documentos y hacer búsqueda por similitud",
+          "Ejecutar el modelo",
+          "Cifrar los datos"
+        ],
+        "answer": 1,
+        "explain": "RAG usa un vector DB (AnalyticDB Vector, Lindorm Vector) para recuperar chunks relevantes por similitud coseno.",
+        "section": "Enhancing LLM applications",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué patrón implementa un LLM Agent?",
+        "options": [
+          "MapReduce",
+          "ReAct (Reasoning + Acting con herramientas)",
+          "Sharding",
+          "Publish/Subscribe"
+        ],
+        "answer": 1,
+        "explain": "ReAct alterna pensamiento y ejecución de herramientas (búsqueda, calculadora, APIs) hasta responder.",
+        "section": "LLM agent",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuándo se justifica fine-tuning sobre RAG?",
+        "options": [
+          "Cuando necesitas actualizar respuestas cada día",
+          "Cuando el estilo/dominio requiere adaptar el comportamiento del modelo (no solo el conocimiento)",
+          "Siempre",
+          "Nunca"
+        ],
+        "answer": 1,
+        "explain": "Fine-tuning cambia el comportamiento/estilo; RAG añade conocimiento actualizable sin re-entrenar.",
+        "section": "LLM fine-tuning",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es \"prompt injection\"?",
+        "options": [
+          "Un patrón de diseño",
+          "Instrucciones adversarias insertadas para manipular al LLM",
+          "Un tipo de embedding",
+          "Fine-tuning ligero"
+        ],
+        "answer": 1,
+        "explain": "Prompt injection puede venir en documentos, URLs o inputs de usuario, alterando las instrucciones del sistema.",
+        "section": "Safety and compliance",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué técnica reduce parámetros entrenables en fine-tuning?",
+        "options": [
+          "SFT completo",
+          "LoRA (Low-Rank Adaptation)",
+          "Grid search",
+          "Data augmentation"
+        ],
+        "answer": 1,
+        "explain": "LoRA entrena matrices de bajo rango en las capas de atención, reduciendo ~100-1000x los parámetros entrenables.",
+        "section": "LLM fine-tuning",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es Alibaba Cloud Model Studio?",
+        "options": [
+          "IDE de Python",
+          "Plataforma para desplegar y personalizar LLMs (Qwen y otros)",
+          "Un servicio de CDN",
+          "Un vector store"
+        ],
+        "answer": 1,
+        "explain": "Model Studio expone Qwen y otros modelos vía API, con RAG, agents y fine-tuning integrados.",
+        "section": "Enhancing LLM applications",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es una limitación real de los LLM que induce alucinaciones?",
+        "options": [
+          "Ancho de banda",
+          "Su generación es probabilística y no verifica hechos",
+          "La velocidad de red",
+          "La compresión de audio"
+        ],
+        "answer": 1,
+        "explain": "Los LLM predicen tokens según probabilidad; sin herramientas o RAG pueden inventar contenido plausible.",
+        "section": "LLM concepts",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué añade \"multimodal\" a un LLM?",
+        "options": [
+          "Más idiomas",
+          "Entradas/salidas de imagen, audio o video además de texto",
+          "Múltiples GPUs",
+          "Cifrado"
+        ],
+        "answer": 1,
+        "explain": "Modelos multimodales (Qwen-VL, GPT-4V) procesan imágenes y texto en un mismo prompt.",
+        "section": "Multimodal LLM",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué elemento controla el determinismo de la salida de un LLM?",
+        "options": [
+          "top_p / temperature",
+          "batch_size",
+          "context_length",
+          "model_id"
+        ],
+        "answer": 0,
+        "explain": "Temperature=0 hace determinista (greedy); top_p limita la masa probabilística acumulada.",
+        "section": "Prompt engineering",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es Chain-of-Thought?",
+        "options": [
+          "Encriptar el prompt",
+          "Pedir al modelo razonar paso a paso antes de responder",
+          "Reducir tokens",
+          "Multiplicar GPUs"
+        ],
+        "answer": 1,
+        "explain": "CoT mejora resultados en razonamiento matemático y lógico al hacer explícitos los pasos intermedios.",
+        "section": "Prompt engineering",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es un riesgo de compliance de subir PII a un LLM público?",
+        "options": [
+          "Latencia",
+          "Fuga de datos personales, incumplimiento GDPR/PIPL",
+          "Costo de red",
+          "Menor precisión"
+        ],
+        "answer": 1,
+        "explain": "Los prompts pueden retenerse; usar modelos privados/on-prem o mask PII antes de enviar.",
+        "section": "Safety and compliance",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cómo mejora \"reranking\" un pipeline RAG?",
+        "options": [
+          "Baja costo",
+          "Reordena los top-k documentos usando un modelo cross-encoder más preciso",
+          "Genera más tokens",
+          "Reduce embeddings"
+        ],
+        "answer": 1,
+        "explain": "El retriever recupera candidatos rápidos; el reranker (bge-reranker, cohere-rerank) ordena por relevancia real.",
+        "section": "Enhancing LLM applications",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué framework en Alibaba Cloud facilita crear Agents?",
+        "options": [
+          "SLB",
+          "ModelScope-Agent",
+          "DataV",
+          "ARMS"
+        ],
+        "answer": 1,
+        "explain": "ModelScope-Agent orquesta modelos + herramientas siguiendo ReAct/Function calling.",
+        "section": "LLM agent",
+        "source": "generado"
+      }
+    ],
+    "roadmap": [
+      {
+        "phase": "Semanas 1–2",
+        "focus": "Ingeniería de prompts",
+        "weight": 20,
+        "courses": [
+          "certification-clouder-container",
+          "certification-clouder-containerized-applications",
+          "certification-clouder-diagnosis-containerized"
+        ],
+        "goal": "Dominar ingeniería de prompts (20% del examen)."
+      },
+      {
+        "phase": "Semanas 3–4",
+        "focus": "Mejora de aplicaciones LLM",
+        "weight": 20,
+        "courses": [
+          "certification-clouder-distributed",
+          "certification-clouder-nas",
+          "certification-clouder-oss"
+        ],
+        "goal": "Dominar mejora de aplicaciones llm (20% del examen)."
+      },
+      {
+        "phase": "Semanas 5–6",
+        "focus": "Conceptos LLM",
+        "weight": 18,
+        "courses": [
+          "ethics-ai",
+          "certification-clouder-appcontain",
+          "certification-clouder-docker"
+        ],
+        "goal": "Dominar conceptos llm (18% del examen)."
+      },
+      {
+        "phase": "Semanas 7–7",
+        "focus": "LLM Agents",
+        "weight": 14,
+        "courses": [
+          "certification-clouder-simple-application-ecommerce"
+        ],
+        "goal": "Dominar llm agents (14% del examen)."
+      },
+      {
+        "phase": "Semanas 8–8",
+        "focus": "Fine-tuning",
+        "weight": 12,
+        "courses": [],
+        "goal": "Dominar fine-tuning (12% del examen)."
+      },
+      {
+        "phase": "Semanas 9–9",
+        "focus": "Seguridad y cumplimiento",
+        "weight": 10,
+        "courses": [
+          "certification-clouder-maxcauth",
+          "certification-clouder-platseccantonese",
+          "certification-clouder-sechardening"
+        ],
+        "goal": "Dominar seguridad y cumplimiento (10% del examen)."
+      },
+      {
+        "phase": "Semanas 10–10",
+        "focus": "LLM multimodal",
+        "weight": 6,
+        "courses": [
+          "certification-clouder-terraform-kubernetes"
+        ],
+        "goal": "Dominar llm multimodal (6% del examen)."
+      },
+      {
+        "phase": "Semana 11",
+        "focus": "Simulacro y repaso",
+        "weight": 0,
+        "courses": [],
+        "goal": "Rendir 2 simulacros completos (50 preguntas) y revisar errores."
+      }
+    ]
+  },
+  {
+    "slug": "cloud-architect-professional",
+    "code": "ACP · CAP-C01",
+    "level": "Professional",
+    "name_en": "Alibaba Cloud Certified Professional: Cloud Architect",
+    "name_es": "Arquitecto de Nube — Profesional (ACP)",
+    "duration_min": 90,
+    "questions": 50,
+    "passing_score": 70,
+    "role_es": "El Arquitecto de Nube diseña arquitecturas escalables, seguras y de alto rendimiento en Alibaba Cloud. Cubre redes empresariales, infraestructura profunda, HA, entrega de servicios/contenido y seguridad.",
+    "learn_es": [
+      "Diseñar redes multi-región con Express Connect, CEN y VPN.",
+      "Aplicar patrones HA: multi-AZ, DR activo-pasivo, activo-activo.",
+      "Elegir familias ECS/EBS/GPU según carga (batch, latencia, IA).",
+      "Diseñar entrega global con CDN + WAF + Anti-DDoS Pro.",
+      "Aplicar Well-Architected: seguridad, fiabilidad, coste."
+    ],
+    "blueprint": [
+      {
+        "area": "Enterprise-grade Networks",
+        "area_es": "Redes empresariales",
+        "weight": 18,
+        "description": "VPC avanzado, Express Connect, CEN, VPN, GA, DNS empresarial.",
+        "courses": [
+          {
+            "slug": "certification-clouder-establishvirtual",
+            "title_es": "Establish virtual private connection con VPN Gateway",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-establishvirtual",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-internetwork",
+            "title_es": "Interconexión de Redes con VPC",
+            "category": "Redes y CDN",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-internetwork",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-intervpcuscen",
+            "title_es": "Interconnecting VPC Usar Cloud Empresarial Red",
+            "category": "Redes y CDN",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-intervpcuscen",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-ga",
+            "title_es": "Global Accelerator - Red Acceleration Servicio Technical Operations",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-ga",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-nas",
+            "title_es": "Introducción a Red Attached Almacenamiento",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-nas",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Core Infrastructure Deep Dive",
+        "area_es": "Infraestructura profunda",
+        "weight": 26,
+        "description": "ECS avanzado, EBS, ESSD, Bare Metal, GPU, Auto Scaling, imágenes.",
+        "courses": [
+          {
+            "slug": "certification-clouder-6th-ecs",
+            "title_es": "Elementos Esenciales de la 6ª Generación de ECS",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-6th-ecs",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-dynamicweb",
+            "title_es": "Usar ECS para Construir un Sitio Web Dinámico",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-dynamicweb",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-webcantonese",
+            "title_es": "Usar ECS para Construir un Sitio Web Dinámico (Cantonés)",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-webcantonese",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-apsaradb-polardb",
+            "title_es": "Alibaba Cloud ApsaraDB para PolarDB Technical Essentials",
+            "category": "Bases de Datos",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apsaradb-polardb",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-autoscaling",
+            "title_es": "Uso Flexible de Recursos Cloud según Requerimientos de Negocio",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-autoscaling",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "HA & Performant Cloud Architecture",
+        "area_es": "Arquitecturas HA y performantes",
+        "weight": 22,
+        "description": "Multi-AZ, DR, SLB/ALB, cache, sharding, HA en DBs.",
+        "courses": [
+          {
+            "slug": "certification-clouder-database-double11",
+            "title_es": "Understanding Base de Datos Technology that Powers Double 11",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-database-double11",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-ridinganalysis",
+            "title_es": "Riding Analysis of Shared Bicycles",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-ridinganalysis",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-analycase",
+            "title_es": "Alibaba Cloud Analysis Architecture y Case Studies",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-analycase",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-apply-log-management",
+            "title_es": "Usar Log Servicio to Apply Log Gestión",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apply-log-management",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-caseanalysis",
+            "title_es": "Alibaba Cloud Fundamental Architecture y Case Study",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-caseanalysis",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Delivering Services & Content",
+        "area_es": "Entrega de servicios y contenido",
+        "weight": 12,
+        "description": "CDN, DCDN, live streaming, API Gateway, Message Queue.",
+        "courses": [
+          {
+            "slug": "certification-clouder-cdn",
+            "title_es": "Usar Alibaba Cloud CDN to Accelerate Your Content Globally",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-cdn",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-introduction-api",
+            "title_es": "Introducción a API Gateway en Alibaba Cloud",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-introduction-api",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-mq",
+            "title_es": "An Introducción of Alibaba Cloud Message Queue",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-mq",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-network-solution",
+            "title_es": "Alibaba Red en la Nube Solución",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-network-solution",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-slb",
+            "title_es": "Manejar Tráfico Alto con Balanceador de Carga",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-slb",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Securing Workloads",
+        "area_es": "Aseguramiento de cargas",
+        "weight": 22,
+        "description": "Cloud Firewall, WAF, Anti-DDoS Pro, KMS, RAM, Cloud Config, SIEM.",
+        "courses": [
+          {
+            "slug": "certification-clouder-ddos",
+            "title_es": "Usar Alibaba Cloud Anti-DDoS Servicio to Defend DoS Attack",
+            "category": "Seguridad",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-ddos",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-maxcauth",
+            "title_es": "Alibaba Cloud MaxCompute - Authority y Seguridad",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcauth",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-platseccantonese",
+            "title_es": "Cloud Platform Seguridad Visión General (Cantonés)",
+            "category": "Seguridad",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-platseccantonese",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-sechardening",
+            "title_es": "Cloud Servidores Seguridad Strengthening",
+            "category": "Seguridad",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-sechardening",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-securityoverview",
+            "title_es": "Cloud Platform Seguridad Visión General",
+            "category": "Seguridad",
+            "level": "50 Minutes",
+            "course_id": "Curso Nº certification-clouder-securityoverview",
+            "score": 2
+          }
+        ]
+      }
+    ],
+    "question_types": [
+      {
+        "type": "Single response",
+        "quantity": 30,
+        "points": 2
+      },
+      {
+        "type": "Multiple response",
+        "quantity": 20,
+        "points": 2
+      }
+    ],
+    "question_bank": [
+      {
+        "q": "¿Qué servicio conecta VPCs en múltiples regiones con SLA?",
+        "options": [
+          "VPC Peering (misma región)",
+          "Cloud Enterprise Network (CEN)",
+          "Internet Gateway",
+          "NAT Gateway"
+        ],
+        "answer": 1,
+        "explain": "CEN es el backbone privado multi-región recomendado; peering solo intra-región.",
+        "section": "Enterprise-grade Networks",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es la diferencia entre CDN y DCDN?",
+        "options": [
+          "DCDN es más lento",
+          "DCDN acelera contenido dinámico además del estático",
+          "CDN soporta HTTPS y DCDN no",
+          "Son idénticos"
+        ],
+        "answer": 1,
+        "explain": "DCDN combina CDN estático + aceleración dinámica de APIs mediante rutas optimizadas.",
+        "section": "Delivering Services & Content",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué disco alcanza millones de IOPS?",
+        "options": [
+          "ESSD PL0",
+          "ESSD PL3",
+          "HDD",
+          "Ultra Cloud Disk"
+        ],
+        "answer": 1,
+        "explain": "ESSD PL3 alcanza hasta 1 M IOPS y 4 GB/s por disco, adecuado para DBs OLTP intensivas.",
+        "section": "Core Infrastructure Deep Dive",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué patrón HA activa-activa multi-región requiere?",
+        "options": [
+          "DNS-based routing + replicación DB bidireccional + estado sin afinidad",
+          "Solo un failover manual",
+          "Backup nocturno",
+          "Un CDN"
+        ],
+        "answer": 0,
+        "explain": "Activo-activo requiere resolución global (GTM), replicación DB (DTS bidireccional o distribuida) y stateless services.",
+        "section": "HA & Performant Cloud Architecture",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio protege contra ataques DDoS L3-L7 de alto volumen?",
+        "options": [
+          "WAF",
+          "Anti-DDoS Pro/Premium",
+          "Cloud Firewall",
+          "KMS"
+        ],
+        "answer": 1,
+        "explain": "Anti-DDoS Pro absorbe ataques volumétricos (>Tbps); WAF filtra L7 aplicativo.",
+        "section": "Securing Workloads",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué componente centraliza claves criptográficas?",
+        "options": [
+          "RAM",
+          "KMS (Key Management Service)",
+          "ActionTrail",
+          "CloudMonitor"
+        ],
+        "answer": 1,
+        "explain": "KMS gestiona CMK/BYOK con rotación y auditoría; se integra con OSS, RDS, EBS.",
+        "section": "Securing Workloads",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es un caso típico de Global Accelerator (GA)?",
+        "options": [
+          "CDN de imágenes",
+          "Acelerar apps globales via anycast + backbone",
+          "Sustituir OSS",
+          "Reemplazar VPN"
+        ],
+        "answer": 1,
+        "explain": "GA acepta tráfico en múltiples PoPs y lo enruta por el backbone privado hasta el origen.",
+        "section": "Enterprise-grade Networks",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué patrón de escalado usa \"target tracking\" sobre CPU?",
+        "options": [
+          "Manual scaling",
+          "Auto Scaling con métrica objetivo (target tracking)",
+          "Bare Metal",
+          "Reservas anuales"
+        ],
+        "answer": 1,
+        "explain": "ESS soporta step, simple, scheduled y target tracking sobre CPU/RPS/custom.",
+        "section": "Core Infrastructure Deep Dive",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué DB es apropiada para 100 K RPS con lecturas y baja latencia?",
+        "options": [
+          "RDS MySQL Basic",
+          "PolarDB con read-only nodes",
+          "MaxCompute",
+          "OSS"
+        ],
+        "answer": 1,
+        "explain": "PolarDB separa compute/storage y agrega read-only nodes para escalar lecturas linealmente.",
+        "section": "HA & Performant Cloud Architecture",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es un endpoint privado (PrivateLink)?",
+        "options": [
+          "VPN de sitio",
+          "Acceso privado a servicios sin exponer Internet",
+          "Nombre de dominio interno",
+          "Un tipo de OSS"
+        ],
+        "answer": 1,
+        "explain": "PrivateLink expone servicios via ENI en tu VPC; el tráfico nunca sale al backbone público.",
+        "section": "Enterprise-grade Networks",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué mecanismo garantiza integridad de logs en compliance?",
+        "options": [
+          "ActionTrail + OSS con Object Lock (WORM)",
+          "CloudMonitor",
+          "ARMS",
+          "SLS estándar"
+        ],
+        "answer": 0,
+        "explain": "ActionTrail entrega logs a OSS; con Object Lock WORM se hacen inmutables por retención.",
+        "section": "Securing Workloads",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es la ventaja de ALB sobre CLB para microservicios?",
+        "options": [
+          "Es más barato",
+          "Rutas por Host/Path, WebSocket, HTTP/2, mTLS",
+          "Solo Layer 4",
+          "Sin health checks"
+        ],
+        "answer": 1,
+        "explain": "ALB provee ruteo L7 avanzado y soporta protocolos modernos requeridos por microservicios.",
+        "section": "Delivering Services & Content",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio es un message queue serverless de alto throughput?",
+        "options": [
+          "Kafka self-managed",
+          "Message Queue for Apache Kafka / RocketMQ",
+          "RDS",
+          "ECS Metal"
+        ],
+        "answer": 1,
+        "explain": "Alibaba ofrece MQ for Kafka (compatible) y RocketMQ (interno) totalmente administrados.",
+        "section": "Delivering Services & Content",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es un Landing Zone?",
+        "options": [
+          "Un region",
+          "Una base multi-cuenta segura con Resource Directory, RAM, guardrails",
+          "Un ECS",
+          "Un cluster ACK"
+        ],
+        "answer": 1,
+        "explain": "Landing Zone codifica cuentas hijas, redes base, security baseline y compliance.",
+        "section": "Enterprise-grade Networks",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué protege WAF que Anti-DDoS no?",
+        "options": [
+          "Volumen L3",
+          "Ataques aplicativos L7: SQLi, XSS, credential stuffing",
+          "DDoS L4",
+          "Ninguno"
+        ],
+        "answer": 1,
+        "explain": "WAF inspecciona HTTP/HTTPS con reglas OWASP; Anti-DDoS mitiga volumen L3/L4.",
+        "section": "Securing Workloads",
+        "source": "generado"
+      },
+      {
+        "q": "A healthcare organization is deploying its patient management system on Alibaba Cloud. They require: • Secure, private connectivity between their on-premises servers and Alibaba Cloud VPCs. • Automated failover to ensure connectivity during outages. • Scalable bandwidth to handle varying data loads without manual intervention. Which Alibaba Cloud service should the organization implement to meet these requirements?",
+        "options": [
+          "Cloud Storage Gateway",
+          "Cloud Enterprise Network (CEN)",
+          "VPC peering",
+          "Express Connect with redundant connections"
+        ],
+        "answer": 1,
+        "explain": "Express Connect + CEN se usan para conectar VPCs multi-región con SLA.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "An application that runs on Elastic Compute Service (ECS) is configured with an Elastic IP address. The ECS is deployed in VPC-1A. The application reads data from a databased deployed under the same Alibaba Cloud account, in VPC-2C. What is the MOST secure way for the application to access the database?",
+        "options": [
+          "Create a security group for the database that allows all traffic from the public IP address of the ECS in VPC-1A.",
+          "Make the database instance publicly accessible over the Internet via a public IP address.",
+          "Launch an ECS instance in VPC-2C and proxy all requests through the new ECS instance.",
+          "Configure VPC peering between VPC-1A and VPC-2C."
+        ],
+        "answer": 2,
+        "explain": "Anti-DDoS Pro protege contra ataques volumétricos en producción.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "An insurance company is implementing a new compliance requirement for their services that are deployed on Alibaba Cloud. This new requirement requires them to monitor and manage access logs across all services. Which services and configurations should they use to fulfill this requirement?",
+        "options": [
+          "Use CloudMonitor to monitor service usage and alert on high utilization rates.",
+          "Enable ActionTrail to track account activity and log API calls across Alibaba Cloud services.",
+          "Integrate Resource Access Management (RAM) to enforce and audit access controls.",
+          "Use Simple Log Service to collect, process, and analyze access logs in real time."
+        ],
+        "answer": 1,
+        "explain": "Respuestas correctas: B, C. ESSD PL3 y multi-AZ son opciones para máxima IOPS + HA.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "A streaming service plans to migrate their services to Alibaba Cloud, while Alibaba Cloud Professional: Cloud Architect Sample Questions Version: 20260108 improving the quality and performance during peak hours. Which combination of services would BEST fit their requirements?",
+        "options": [
+          "Use Tair (Redis® OSS-Compatible) to create a cache for back-to-origin content.",
+          "Implement Auto Scaling policies to adjust server capacity dynamically based on user traffic.",
+          "Use Alibaba Cloud CDN to cache video content at PoPs close to viewers.",
+          "Store content in Object Storage Service (OSS) and replicate content across all regions."
+        ],
+        "answer": 0,
+        "explain": "Respuestas correctas: A, D. RAM Roles y KMS son componentes clave de arquitectura segura.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      }
+    ],
+    "roadmap": [
+      {
+        "phase": "Semanas 1–2",
+        "focus": "Infraestructura profunda",
+        "weight": 26,
+        "courses": [
+          "certification-clouder-6th-ecs",
+          "certification-clouder-dynamicweb",
+          "certification-clouder-webcantonese"
+        ],
+        "goal": "Dominar infraestructura profunda (26% del examen)."
+      },
+      {
+        "phase": "Semanas 3–4",
+        "focus": "Arquitecturas HA y performantes",
+        "weight": 22,
+        "courses": [
+          "certification-clouder-database-double11",
+          "certification-clouder-ridinganalysis",
+          "certification-clouder-analycase"
+        ],
+        "goal": "Dominar arquitecturas ha y performantes (22% del examen)."
+      },
+      {
+        "phase": "Semanas 5–6",
+        "focus": "Aseguramiento de cargas",
+        "weight": 22,
+        "courses": [
+          "certification-clouder-ddos",
+          "certification-clouder-maxcauth",
+          "certification-clouder-platseccantonese"
+        ],
+        "goal": "Dominar aseguramiento de cargas (22% del examen)."
+      },
+      {
+        "phase": "Semanas 7–8",
+        "focus": "Redes empresariales",
+        "weight": 18,
+        "courses": [
+          "certification-clouder-establishvirtual",
+          "certification-clouder-internetwork",
+          "certification-clouder-intervpcuscen"
+        ],
+        "goal": "Dominar redes empresariales (18% del examen)."
+      },
+      {
+        "phase": "Semanas 9–9",
+        "focus": "Entrega de servicios y contenido",
+        "weight": 12,
+        "courses": [
+          "certification-clouder-cdn",
+          "certification-clouder-introduction-api",
+          "certification-clouder-mq"
+        ],
+        "goal": "Dominar entrega de servicios y contenido (12% del examen)."
+      },
+      {
+        "phase": "Semana 10",
+        "focus": "Simulacro y repaso",
+        "weight": 0,
+        "courses": [],
+        "goal": "Rendir 2 simulacros completos (50 preguntas) y revisar errores."
+      }
+    ]
+  },
+  {
+    "slug": "solutions-architect-expert",
+    "code": "ACE · SAE-C01",
+    "level": "Expert",
+    "name_en": "Alibaba Cloud Certified Expert: Solutions Architect",
+    "name_es": "Arquitecto de Soluciones — Experto (ACE)",
+    "duration_min": 120,
+    "questions": 100,
+    "passing_score": 80,
+    "role_es": "El Arquitecto de Soluciones Experto diseña arquitecturas globales, hybrid-cloud y cloud-native. Cubre seguridad avanzada, almacenamiento, cómputo, bases de datos, redes multi-región, contenedores y microservicios.",
+    "learn_es": [
+      "Diseñar arquitecturas para SLA de 99.99% multi-región.",
+      "Modelar landing zones con Resource Directory y CEN.",
+      "Elegir DB (PolarDB, ADB, Lindorm, TableStore) por CAP.",
+      "Diseñar patrones cloud-native con ACK, ASM y Service Mesh.",
+      "Estrategias hybrid cloud con Apsara Stack + CEN."
+    ],
+    "blueprint": [
+      {
+        "area": "Security",
+        "area_es": "Seguridad",
+        "weight": 14,
+        "description": "IAM avanzado, KMS/HSM, Bastion, SIEM, arquitecturas Zero Trust.",
+        "courses": [
+          {
+            "slug": "certification-clouder-maxcauth",
+            "title_es": "Alibaba Cloud MaxCompute - Authority y Seguridad",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcauth",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-platseccantonese",
+            "title_es": "Cloud Platform Seguridad Visión General (Cantonés)",
+            "category": "Seguridad",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-platseccantonese",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-sechardening",
+            "title_es": "Cloud Servidores Seguridad Strengthening",
+            "category": "Seguridad",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-sechardening",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-securityoverview",
+            "title_es": "Cloud Platform Seguridad Visión General",
+            "category": "Seguridad",
+            "level": "50 Minutes",
+            "course_id": "Curso Nº certification-clouder-securityoverview",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-applicationsecurity",
+            "title_es": "Protect Your Web Aplicación en Alibaba Cloud",
+            "category": "Seguridad",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-applicationsecurity",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Storage",
+        "area_es": "Almacenamiento",
+        "weight": 5,
+        "description": "OSS classes, HDD, ESSD, snapshots, HDFS/OSS-HDFS.",
+        "courses": [
+          {
+            "slug": "certification-clouder-staticcantonese",
+            "title_es": "Usar OSS to Publish a Static Sitio Web in China (Cantonés)",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-staticcantonese",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-staticweb",
+            "title_es": "Usar OSS to Publish a Static Sitio Web",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-staticweb",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-distributed",
+            "title_es": "Distributed Almacenamiento Introducción",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-distributed",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-nas",
+            "title_es": "Introducción a Red Attached Almacenamiento",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-nas",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-oss",
+            "title_es": "Operate y Gestionar Object Almacenamiento en Cloud",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-oss",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Compute",
+        "area_es": "Cómputo",
+        "weight": 12,
+        "description": "ECS families, Bare Metal, GPU, elastic bare metal, EBM, ASI.",
+        "courses": [
+          {
+            "slug": "certification-clouder-6th-ecs",
+            "title_es": "Elementos Esenciales de la 6ª Generación de ECS",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-6th-ecs",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-dataworks-maxcompute",
+            "title_es": "Datos Development con DataWorks y MaxCompute",
+            "category": "Analítica",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-dataworks-maxcompute",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-dh",
+            "title_es": "Hardware Dedicado: Instancias Bare Metal y Hosts Dedicados",
+            "category": "Cómputo Elástico",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-dh",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-dynamicweb",
+            "title_es": "Usar ECS para Construir un Sitio Web Dinámico",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-dynamicweb",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-ecs-costcontrol",
+            "title_es": "ECS Control de Costos: Una Visión General",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-ecs-costcontrol",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Public Cloud Architectures",
+        "area_es": "Arquitecturas cloud público",
+        "weight": 15,
+        "description": "Well-Architected, multi-tier, event-driven, serverless.",
+        "courses": [
+          {
+            "slug": "certification-clouder-analycase",
+            "title_es": "Alibaba Cloud Analysis Architecture y Case Studies",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-analycase",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-apply-log-management",
+            "title_es": "Usar Log Servicio to Apply Log Gestión",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apply-log-management",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-caseanalysis",
+            "title_es": "Alibaba Cloud Fundamental Architecture y Case Study",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-caseanalysis",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-database-double11",
+            "title_es": "Understanding Base de Datos Technology that Powers Double 11",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-database-double11",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-datamigration",
+            "title_es": "Unstructured Datos Migración",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-datamigration",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Database",
+        "area_es": "Bases de datos",
+        "weight": 15,
+        "description": "PolarDB, ADB, Lindorm, TableStore, Redis, MongoDB, DMS, DTS.",
+        "courses": [
+          {
+            "slug": "certification-clouder-apsaradb-polardb",
+            "title_es": "Alibaba Cloud ApsaraDB para PolarDB Technical Essentials",
+            "category": "Bases de Datos",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apsaradb-polardb",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-adb-dla2",
+            "title_es": "Design a Cloud Datos Architecture Usar AnalyticDB & Datos Lake Analítica",
+            "category": "Bases de Datos",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-adb-dla2",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-clickhouse2",
+            "title_es": "Alibaba Cloud ApsaraDB para ClickHouse Profundización",
+            "category": "Bases de Datos",
+            "level": "Avanzado",
+            "course_id": "Curso Nº certification-clouder-clickhouse2",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-databackup",
+            "title_es": "The Respaldo y Recuperación of Common Cloud Bases de Datos",
+            "category": "Seguridad",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-databackup",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-datav",
+            "title_es": "Quickly Generate Large Dashboards para Datos Visualization",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-datav",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Networking",
+        "area_es": "Redes",
+        "weight": 12,
+        "description": "VPC/CEN/GA/Express Connect en escala global, PrivateLink.",
+        "courses": [
+          {
+            "slug": "certification-clouder-establishvirtual",
+            "title_es": "Establish virtual private connection con VPN Gateway",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-establishvirtual",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-internetwork",
+            "title_es": "Interconexión de Redes con VPC",
+            "category": "Redes y CDN",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-internetwork",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-intervpcuscen",
+            "title_es": "Interconnecting VPC Usar Cloud Empresarial Red",
+            "category": "Redes y CDN",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-intervpcuscen",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-ga",
+            "title_es": "Global Accelerator - Red Acceleration Servicio Technical Operations",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-ga",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-network-solution",
+            "title_es": "Alibaba Red en la Nube Solución",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-network-solution",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Cloud Native",
+        "area_es": "Cloud Native",
+        "weight": 13,
+        "description": "ACK, ASM, Kubernetes, microservicios, EDAS, MSE.",
+        "courses": [
+          {
+            "slug": "certification-clouder-kubernetes",
+            "title_es": "Usar Kubernetes to Gestionar Contenedores y Cluster Resources",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-kubernetes",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-terraform-kubernetes",
+            "title_es": "Provisioning a Multi-zone ACK Kubernetes Cluster Usar Terraform",
+            "category": "Contenedores y Middleware",
+            "level": "Avanzado",
+            "course_id": "Curso Nº certification-clouder-terraform-kubernetes",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-appcontain",
+            "title_es": "An Introducción a Aplicación Containerization",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-appcontain",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-conductingdevops",
+            "title_es": "Conducting DevOps practices en Alibaba Cloud",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-conductingdevops",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-container",
+            "title_es": "Implement Blue-Green Despliegue con Contenedor Servicio",
+            "category": "Contenedores y Middleware",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-container",
+            "score": 1
+          }
+        ]
+      },
+      {
+        "area": "Hybrid Cloud",
+        "area_es": "Nube híbrida",
+        "weight": 14,
+        "description": "Apsara Stack, ACK edge, CEN cross-cloud, Cloud Box.",
+        "courses": [
+          {
+            "slug": "certification-clouder-datawbasic",
+            "title_es": "Alibaba Cloud DataWorks - Básico Knowledge",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-datawbasic",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-hbase2",
+            "title_es": "Why is ApsaraDB para Hbase 7 times faster than community edition",
+            "category": "Bases de Datos",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-hbase2",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-hybrid-solution",
+            "title_es": "Alibaba Hybrid Cloud Solución",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-hybrid-solution",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-hybriddb-for-postgresql",
+            "title_es": "Introducción a HybridDB para PostgreSQL",
+            "category": "Bases de Datos",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-hybriddb-for-postgresql",
+            "score": 1
+          },
+          {
+            "slug": "certification-clouder-maxcbasic",
+            "title_es": "Alibaba Cloud MaxCompute - Básico Knowledge",
+            "category": "Analítica",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-maxcbasic",
+            "score": 1
+          }
+        ]
+      }
+    ],
+    "question_types": [
+      {
+        "type": "Single response",
+        "quantity": 60,
+        "points": 1
+      },
+      {
+        "type": "Multiple response",
+        "quantity": 40,
+        "points": 1
+      }
+    ],
+    "question_bank": [
+      {
+        "q": "¿Qué patrón usa Resource Directory + RAM Role Chain?",
+        "options": [
+          "Login federado",
+          "Multi-cuenta con delegación central de acceso",
+          "CDN",
+          "Un SSO cliente"
+        ],
+        "answer": 1,
+        "explain": "Resource Directory jerarquiza cuentas y permite AssumeRole entre ellas para governance central.",
+        "section": "Security",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál DB es transaccional distribuida globalmente?",
+        "options": [
+          "PolarDB-X (X-DB)",
+          "RDS single-AZ",
+          "OSS",
+          "HBase"
+        ],
+        "answer": 0,
+        "explain": "PolarDB-X es la DB distribuida MySQL-compatible con sharding transparente.",
+        "section": "Database",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio orquesta Kubernetes con GPUs y elasticidad serverless?",
+        "options": [
+          "ECI + ACK (Elastic Container Instance)",
+          "ECS solo",
+          "Bare Metal",
+          "Function Compute"
+        ],
+        "answer": 0,
+        "explain": "ACK integra ECI para nodos serverless que escalan a segundos, útil para batch/IA.",
+        "section": "Cloud Native",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué producto es la malla de servicios administrada?",
+        "options": [
+          "ASM (Alibaba Service Mesh)",
+          "ARMS",
+          "EDAS",
+          "MSE"
+        ],
+        "answer": 0,
+        "explain": "ASM es Istio administrado con multi-cluster y multi-cloud.",
+        "section": "Cloud Native",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué diferencia PolarDB vs AnalyticDB?",
+        "options": [
+          "PolarDB es OLTP, AnalyticDB es OLAP MPP",
+          "Son iguales",
+          "PolarDB no soporta SQL",
+          "AnalyticDB es NoSQL"
+        ],
+        "answer": 0,
+        "explain": "PolarDB para transacciones; AnalyticDB (MySQL/Postgres) para análisis columnar MPP.",
+        "section": "Database",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es Lindorm?",
+        "options": [
+          "LDAP",
+          "DB multi-modelo (wide-column, timeseries, vector, search)",
+          "Un firewall",
+          "Un CDN"
+        ],
+        "answer": 1,
+        "explain": "Lindorm unifica HBase, TSDB, Solr y Vector en una plataforma serverless multi-modelo.",
+        "section": "Database",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es Apsara Stack?",
+        "options": [
+          "Un IDE",
+          "La versión on-prem de Alibaba Cloud (private/hybrid cloud)",
+          "Un LLM",
+          "Un CDN"
+        ],
+        "answer": 1,
+        "explain": "Apsara Stack empaqueta los servicios core de Alibaba Cloud para despliegue on-premises.",
+        "section": "Hybrid Cloud",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cómo se conectan VPCs con proveedores externos y on-prem?",
+        "options": [
+          "Solo Internet",
+          "CEN + VBR (Virtual Border Router) + Express Connect",
+          "VPN pública",
+          "DNAT"
+        ],
+        "answer": 1,
+        "explain": "VBR conecta línea física Express Connect a CEN uniendo on-prem con multi-VPC.",
+        "section": "Hybrid Cloud",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué es EBM (Elastic Bare Metal)?",
+        "options": [
+          "Contenedor",
+          "Servidor físico dedicado con features cloud (VPC, ESSD, elasticidad)",
+          "Function",
+          "Serverless DB"
+        ],
+        "answer": 1,
+        "explain": "EBM combina aislamiento físico total con integración VPC/EBS/imágenes cloud.",
+        "section": "Compute",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué clase OSS ofrece la menor latencia de acceso?",
+        "options": [
+          "Cold Archive",
+          "Archive",
+          "Infrequent Access",
+          "Standard"
+        ],
+        "answer": 3,
+        "explain": "Standard: milisegundos. Archive/Cold Archive requieren restauración (minutos-horas).",
+        "section": "Storage",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué componente de Well-Architected mide sostenibilidad?",
+        "options": [
+          "Solo costo",
+          "Pilar de eficiencia + sustainability (carbono, uso, PUE)",
+          "Solo seguridad",
+          "Solo performance"
+        ],
+        "answer": 1,
+        "explain": "Well-Architected: operational excellence, security, reliability, performance, cost, sustainability.",
+        "section": "Public Cloud Architectures",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué patrón implementa event-driven serverless?",
+        "options": [
+          "ECS + cron",
+          "EventBridge + Function Compute + FnF",
+          "RDS + trigger SQL",
+          "CDN"
+        ],
+        "answer": 1,
+        "explain": "EventBridge enruta eventos a Function Compute; FnF orquesta workflows serverless.",
+        "section": "Public Cloud Architectures",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cómo garantizar RPO=0 entre regiones?",
+        "options": [
+          "DTS sync + PolarDB-X global",
+          "Backup diario",
+          "Snapshot semanal",
+          "No es posible"
+        ],
+        "answer": 0,
+        "explain": "Replicación sincrónica multi-región (o Global Database) permite RPO cercano a 0.",
+        "section": "Database",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué producto empaqueta ACK + red + almacenamiento para edge sites?",
+        "options": [
+          "ACK Edge (con Cloud Box)",
+          "ECS solo",
+          "DataWorks",
+          "Function Compute"
+        ],
+        "answer": 0,
+        "explain": "ACK Edge extiende Kubernetes a sedes remotas y Cloud Box es hardware Alibaba on-prem.",
+        "section": "Hybrid Cloud",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué servicio previene la exfiltración de datos desde VPC?",
+        "options": [
+          "PrivateLink + Cloud Firewall + DNS-Filter",
+          "Solo NAT",
+          "CDN público",
+          "OSS público"
+        ],
+        "answer": 0,
+        "explain": "Combinar endpoints privados, firewall salida controlada y DNS-Filter mitiga exfiltración.",
+        "section": "Security",
+        "source": "generado"
+      },
+      {
+        "q": "A locally owned catering company in Singapore wants to upgrade its IT infrastructure using Alibaba Cloud. The company operates several chain stores using a central ordering system with each store employing around six tablets to log customer orders. Given the context and operational needs of such a business, which of the following solutions is inappropriate?",
+        "options": [
+          "Use Elastic Compute Service (ECS) to deploy inventory management, ordering and other applications.",
+          "Use ApsaraDB RDS or high-specification Elastic Compute Service (ECS) instances to deploy databases. We recommend that you use an active-active database solution.",
+          "Each branch uses Smart Access Gateway (SAG) to transmit encrypted data to VPCs in the Singapore region.",
+          "Deploy two Elastic Compute Service (ECS) instances, one in the Singapore region and the other in another region."
+        ],
+        "answer": 1,
+        "explain": "CEN es el backbone recomendado para conectividad multi-región global.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "A rapidly growing internet gaming company operates online card and board games, experiencing frequent spikes in inbound and outbound traffic, along with unexpected increases in CPU or memory usage. This often correlates with a surge in unfamiliar visits to its websites and applications, resembling potential cyber threats. Which of the following Alibaba Cloud services is recommended to mitigate these challenges effectively?",
+        "options": [
+          "Security Center",
+          "Bastionhost",
+          "Resource Access Management (RAM)",
+          "Key Management Service (KMS)",
+          "Anti-DDoS Premium"
+        ],
+        "answer": 2,
+        "explain": "PolarDB con nodos read-only escala lecturas manteniendo consistencia.",
+        "section": "Single response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "A company stores data in OSS buckets. According to the company's security policy, static data must be encrypted at rest. Which of the following methods can meet this requirement? An e-commerce platform, implementing a high-availability architecture, uses an Alibaba Cloud Server Load Balancer (SLB) instance to connect user terminals to its applications. Users note login states not being updated after logging in and items disappearing from shopping carts. Addressing this issue revolves around the management of user sessions and persistence. Alibaba Cloud Expert: Solutions Architect Sample Questions Version: 20260108 Which solutions can resolve issues such as session inconsistency and cleared shopping cart items?",
+        "options": [
+          "Enable session persistence for SLB instances, ensuring user requests maintain session continuity with backend processing servers. Upload an object and specify a server-side encryption method for the object.",
+          "Use OSS bucket policies to restrict access to static data.",
+          "Use custom keys to encrypt the data at the client before importing it to OSS.",
+          "Upload data over HTTPS and encrypt the data before transmitting it to OSS."
+        ],
+        "answer": 0,
+        "explain": "Respuestas correctas: A, B, D. ACK + ASM + Service Mesh forman la base de microservicios cloud-native.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      },
+      {
+        "q": "Distributed locks, a fundamental feature in large-scale applications, are implemented in redis-based systems to ensure mutually exclusive access to shared resources. In scenarios where resources are accessed by multiple hosts, distributed locks prevent logical failures due to resource contention. Understanding the properties of distributed locks helps in designing efficient synchronization mechanisms. Which of the following are features of distributed locks?",
+        "options": [
+          "Mutual exclusion",
+          "Atomicity",
+          "Consistency",
+          "Isolation"
+        ],
+        "answer": 1,
+        "explain": "Respuestas correctas: B, C. CEN cross-cloud + ACK Edge habilitan patrones híbridos.",
+        "section": "Multiple response",
+        "source": "Alibaba Cloud Academy (oficial)"
+      }
+    ],
+    "roadmap": [
+      {
+        "phase": "Semanas 1–1",
+        "focus": "Arquitecturas cloud público",
+        "weight": 15,
+        "courses": [
+          "certification-clouder-analycase",
+          "certification-clouder-apply-log-management",
+          "certification-clouder-caseanalysis"
+        ],
+        "goal": "Dominar arquitecturas cloud público (15% del examen)."
+      },
+      {
+        "phase": "Semanas 2–2",
+        "focus": "Bases de datos",
+        "weight": 15,
+        "courses": [
+          "certification-clouder-apsaradb-polardb",
+          "certification-clouder-adb-dla2",
+          "certification-clouder-clickhouse2"
+        ],
+        "goal": "Dominar bases de datos (15% del examen)."
+      },
+      {
+        "phase": "Semanas 3–3",
+        "focus": "Seguridad",
+        "weight": 14,
+        "courses": [
+          "certification-clouder-maxcauth",
+          "certification-clouder-platseccantonese",
+          "certification-clouder-sechardening"
+        ],
+        "goal": "Dominar seguridad (14% del examen)."
+      },
+      {
+        "phase": "Semanas 4–4",
+        "focus": "Nube híbrida",
+        "weight": 14,
+        "courses": [
+          "certification-clouder-datawbasic",
+          "certification-clouder-hbase2",
+          "certification-clouder-hybrid-solution"
+        ],
+        "goal": "Dominar nube híbrida (14% del examen)."
+      },
+      {
+        "phase": "Semanas 5–5",
+        "focus": "Cloud Native",
+        "weight": 13,
+        "courses": [
+          "certification-clouder-kubernetes",
+          "certification-clouder-terraform-kubernetes",
+          "certification-clouder-appcontain"
+        ],
+        "goal": "Dominar cloud native (13% del examen)."
+      },
+      {
+        "phase": "Semanas 6–6",
+        "focus": "Cómputo",
+        "weight": 12,
+        "courses": [
+          "certification-clouder-6th-ecs",
+          "certification-clouder-dataworks-maxcompute",
+          "certification-clouder-dh"
+        ],
+        "goal": "Dominar cómputo (12% del examen)."
+      },
+      {
+        "phase": "Semanas 7–7",
+        "focus": "Redes",
+        "weight": 12,
+        "courses": [
+          "certification-clouder-establishvirtual",
+          "certification-clouder-internetwork",
+          "certification-clouder-intervpcuscen"
+        ],
+        "goal": "Dominar redes (12% del examen)."
+      },
+      {
+        "phase": "Semanas 8–8",
+        "focus": "Almacenamiento",
+        "weight": 5,
+        "courses": [
+          "certification-clouder-staticcantonese",
+          "certification-clouder-staticweb",
+          "certification-clouder-distributed"
+        ],
+        "goal": "Dominar almacenamiento (5% del examen)."
+      },
+      {
+        "phase": "Semana 9",
+        "focus": "Simulacro y repaso",
+        "weight": 0,
+        "courses": [],
+        "goal": "Rendir 2 simulacros completos (50 preguntas) y revisar errores."
+      }
+    ]
+  }
+]

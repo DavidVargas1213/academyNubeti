@@ -1,0 +1,518 @@
+{
+  "https://edu.alibabacloud.com/certification/clouder_cloudserver": {
+    "slug": "certification-clouder-cloudserver",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_ecs_costcontrol": {
+    "slug": "certification-clouder-ecs-costcontrol",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_ecs_purchasing": {
+    "slug": "certification-clouder-ecs-purchasing",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_dh": {
+    "slug": "certification-clouder-dh",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_serverless": {
+    "slug": "certification-clouder-serverless",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_dynamicweb": {
+    "slug": "certification-clouder-dynamicweb",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_ecommerce": {
+    "slug": "certification-clouder-ecommerce",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_6th_ecs": {
+    "slug": "certification-clouder-6th-ecs",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_autoscaling": {
+    "slug": "certification-clouder-autoscaling",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_cloudservercantonese": {
+    "slug": "certification-clouder-cloudservercantonese",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_webcantonese": {
+    "slug": "certification-clouder-webcantonese",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-simple-application-ecommerce": {
+    "slug": "certification-clouder-simple-application-ecommerce",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_cloudserverbahasa": {
+    "slug": "certification-clouder-cloudserverbahasa",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_special_purpose_hardware": {
+    "slug": "certification-clouder-special-purpose-hardware",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_slb": {
+    "slug": "certification-clouder-slb",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_Internetwork": {
+    "slug": "certification-clouder-internetwork",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_Intervpcuscen": {
+    "slug": "certification-clouder-intervpcuscen",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_establishvirtual": {
+    "slug": "certification-clouder-establishvirtual",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-network-solution": {
+    "slug": "certification-clouder-network-solution",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_cdn": {
+    "slug": "certification-clouder-cdn",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_ga": {
+    "slug": "certification-clouder-ga",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_mysqlqueries": {
+    "slug": "certification-clouder-mysqlqueries",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_rds": {
+    "slug": "certification-clouder-rds",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-relational-database": {
+    "slug": "certification-clouder-relational-database",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-apsaradb-polardb": {
+    "slug": "certification-clouder-apsaradb-polardb",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_mysql": {
+    "slug": "certification-clouder-mysql",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-hybriddb-for-postgresql": {
+    "slug": "certification-clouder-hybriddb-for-postgresql",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_redis": {
+    "slug": "certification-clouder-redis",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_introduction_hbase2": {
+    "slug": "certification-clouder-introduction-hbase2",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_hbase2": {
+    "slug": "certification-clouder-hbase2",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-hbase-tuning": {
+    "slug": "certification-clouder-hbase-tuning",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_clickhouse2": {
+    "slug": "certification-clouder-clickhouse2",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_adb_dla2": {
+    "slug": "certification-clouder-adb-dla2",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_dbs2": {
+    "slug": "certification-clouder-dbs2",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_dms2": {
+    "slug": "certification-clouder-dms2",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_staticweb": {
+    "slug": "certification-clouder-staticweb",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_oss": {
+    "slug": "certification-clouder-oss",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_nas": {
+    "slug": "certification-clouder-nas",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_staticcantonese": {
+    "slug": "certification-clouder-staticcantonese",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_osscantonese": {
+    "slug": "certification-clouder-osscantonese",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_distributed": {
+    "slug": "certification-clouder-distributed",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_applicationsecurity": {
+    "slug": "certification-clouder-applicationsecurity",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_ddos": {
+    "slug": "certification-clouder-ddos",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_protectservers": {
+    "slug": "certification-clouder-protectservers",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_securityoverview": {
+    "slug": "certification-clouder-securityoverview",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_webattack": {
+    "slug": "certification-clouder-webattack",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_sechardening": {
+    "slug": "certification-clouder-sechardening",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_safetyoperation": {
+    "slug": "certification-clouder-safetyoperation",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_platseccantonese": {
+    "slug": "certification-clouder-platseccantonese",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maliciouscode": {
+    "slug": "certification-clouder-maliciouscode",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_securedata": {
+    "slug": "certification-clouder-securedata",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_securedatafrench": {
+    "slug": "certification-clouder-securedatafrench",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_databackup": {
+    "slug": "certification-clouder-databackup",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datalakeanalytics": {
+    "slug": "certification-clouder-datalakeanalytics",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_bigdataview": {
+    "slug": "certification-clouder-bigdataview",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_bigdata": {
+    "slug": "certification-clouder-bigdata",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_pythondata": {
+    "slug": "certification-clouder-pythondata",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_scalablepython": {
+    "slug": "certification-clouder-scalablepython",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_sparksetup": {
+    "slug": "certification-clouder-sparksetup",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_sparkpython": {
+    "slug": "certification-clouder-sparkpython",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_elasticsearch": {
+    "slug": "certification-clouder-elasticsearch",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_sparkemr": {
+    "slug": "certification-clouder-sparkemr",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maxcbasic": {
+    "slug": "certification-clouder-maxcbasic",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maxcdata": {
+    "slug": "certification-clouder-maxcdata",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maxcsql": {
+    "slug": "certification-clouder-maxcsql",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maxcudf": {
+    "slug": "certification-clouder-maxcudf",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maxcpro": {
+    "slug": "certification-clouder-maxcpro",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_maxcauth": {
+    "slug": "certification-clouder-maxcauth",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_hivehadoop": {
+    "slug": "certification-clouder-hivehadoop",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_hadoopecs": {
+    "slug": "certification-clouder-hadoopecs",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_hadoopoverview": {
+    "slug": "certification-clouder-hadoopoverview",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_hadooparcpri": {
+    "slug": "certification-clouder-hadooparcpri",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_flink": {
+    "slug": "certification-clouder-flink",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_bigdatainteg": {
+    "slug": "certification-clouder-bigdatainteg",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datawbasic": {
+    "slug": "certification-clouder-datawbasic",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datawapp": {
+    "slug": "certification-clouder-datawapp",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-dataworks-maxcompute": {
+    "slug": "certification-clouder-dataworks-maxcompute",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_dataintegration": {
+    "slug": "certification-clouder-dataintegration",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datafrench": {
+    "slug": "certification-clouder-datafrench",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datav": {
+    "slug": "certification-clouder-datav",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_quickbi": {
+    "slug": "certification-clouder-quickbi",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datavpython": {
+    "slug": "certification-clouder-datavpython",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_machinelearning": {
+    "slug": "certification-clouder-machinelearning",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_linearregression": {
+    "slug": "certification-clouder-linearregression",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_naivebayes": {
+    "slug": "certification-clouder-naivebayes",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_logisticregression": {
+    "slug": "certification-clouder-logisticregression",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_decisiontree": {
+    "slug": "certification-clouder-decisiontree",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_pythondecisiontree": {
+    "slug": "certification-clouder-pythondecisiontree",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_tianchiai": {
+    "slug": "certification-clouder-tianchiai",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-vector-machine": {
+    "slug": "certification-clouder-vector-machine",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_conductingdevops": {
+    "slug": "certification-clouder-conductingdevops",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-containerized-applications": {
+    "slug": "certification-clouder-containerized-applications",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_mq": {
+    "slug": "certification-clouder-mq",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_kubernetes": {
+    "slug": "certification-clouder-kubernetes",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_docker": {
+    "slug": "certification-clouder-docker",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-diagnosis-containerized": {
+    "slug": "certification-clouder-diagnosis-containerized",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-terraform-kubernetes": {
+    "slug": "certification-clouder-terraform-kubernetes",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_container": {
+    "slug": "certification-clouder-container",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_swarm": {
+    "slug": "certification-clouder-swarm",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_appcontain": {
+    "slug": "certification-clouder-appcontain",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_architecture": {
+    "slug": "certification-clouder-architecture",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_edas": {
+    "slug": "certification-clouder-edas",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_function": {
+    "slug": "certification-clouder-function",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_registrationinfo": {
+    "slug": "certification-clouder-registrationinfo",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_multiaccount_management": {
+    "slug": "certification-clouder-multiaccount-management",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_caseanalysis": {
+    "slug": "certification-clouder-caseanalysis",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_elasticcase": {
+    "slug": "certification-clouder-elasticcase",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_analycase": {
+    "slug": "certification-clouder-analycase",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-hybrid-solution": {
+    "slug": "certification-clouder-hybrid-solution",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-database-double11": {
+    "slug": "certification-clouder-database-double11",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-iot-bigdata-ai": {
+    "slug": "certification-clouder-iot-bigdata-ai",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-shopping-technologies": {
+    "slug": "certification-clouder-shopping-technologies",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-apply-log-management": {
+    "slug": "certification-clouder-apply-log-management",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-monitoring-management": {
+    "slug": "certification-clouder-monitoring-management",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_devops": {
+    "slug": "certification-clouder-devops",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_jenkins": {
+    "slug": "certification-clouder-jenkins",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-introduction-api": {
+    "slug": "certification-clouder-introduction-api",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_ridinganalysis": {
+    "slug": "certification-clouder-ridinganalysis",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_housingresource": {
+    "slug": "certification-clouder-housingresource",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_deliverybusiness": {
+    "slug": "certification-clouder-deliverybusiness",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_dts": {
+    "slug": "certification-clouder-dts",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_datamigration": {
+    "slug": "certification-clouder-datamigration",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_migrate": {
+    "slug": "certification-clouder-migrate",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_migrateapp": {
+    "slug": "certification-clouder-migrateapp",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_strdatamig": {
+    "slug": "certification-clouder-strdatamig",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder-migration-database": {
+    "slug": "certification-clouder-migration-database",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_java": {
+    "slug": "certification-clouder-java",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_linux": {
+    "slug": "certification-clouder-linux",
+    "detailed": true
+  },
+  "https://edu.alibabacloud.com/certification/clouder_market": {
+    "slug": "certification-clouder-market",
+    "detailed": true
+  }
+}
