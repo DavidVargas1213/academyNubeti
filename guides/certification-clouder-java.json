@@ -1,0 +1,472 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-java",
+  "title_en": "JAVA Coding Standards In Alibaba Group",
+  "title_es": "JAVA Coding Standards In Alibaba Group",
+  "duration_es": "90 minutos",
+  "level_es": "Avanzado",
+  "category_es": "Otros",
+  "subcategory_es": "IT Fundamental",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_java",
+  "lead": "Guía completa en español para el curso «JAVA Coding Standards In Alibaba Group» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB RDS. RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB RDS</em>.",
+    "<strong>Dominar</strong> los conceptos clave: HA Edition, Basic Edition, Enterprise Edition, Read-only Replica, Parameter Group.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB RDS y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a ApsaraDB RDS",
+      "title_en": "Introduction to ApsaraDB RDS",
+      "intro": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB).",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo ApsaraDB RDS se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "ApsaraDB RDS es una pieza fundamental de Otros en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando ApsaraDB RDS no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → ApsaraDB RDS (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>Edición HA</strong> <em>(HA Edition)</em>: Primaria + standby síncrono en zona distinta con failover <60 s.",
+        "<strong>Edición básica</strong> <em>(Basic Edition)</em>: Instancia única sin HA — solo dev/test.",
+        "<strong>Edición enterprise</strong> <em>(Enterprise Edition)</em>: Múltiples nodos, mayor SLA.",
+        "<strong>Réplica de lectura</strong> <em>(Read-only Replica)</em>: Hasta 5 réplicas asíncronas para escalar SELECT.",
+        "<strong>Parameter Group</strong> <em>(Parameter Group)</em>: Configuración reutilizable del engine.",
+        "<strong>Backup automático</strong> <em>(Automated Backup)</em>: Full diario + binlogs incrementales. Retención 7-730 días.",
+        "<strong>Point-in-Time Recovery</strong> <em>(PITR)</em>: Restaura al segundo exacto dentro del rango de retención.",
+        "<strong>Whitelist</strong> <em>(Whitelist)</em>: Lista de IPs/SG autorizados. Sin esto, nadie conecta."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>HA</strong>: HA Edition en producción — siempre",
+        "<strong>HA</strong>: PITR probado — hacer un drill de restauración trimestral",
+        "<strong>Seguridad</strong>: TDE + KMS para datos regulados (PCI, HIPAA)",
+        "<strong>Buenas prácticas</strong>: Whitelist con IPs privadas o Security Groups, no 0.0.0.0/0",
+        "<strong>Buenas prácticas</strong>: SSL obligatorio para conexiones desde fuera de la VPC",
+        "<strong>Buenas prácticas</strong>: Réplicas de lectura para BI/reportes — no golpear la primaria"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Basic Edition en producción — sin failover ni SLA",
+        "<strong>Antipattern</strong>: Whitelist 0.0.0.0/0 — DB expuesta a internet",
+        "<strong>Antipattern</strong>: Reportes pesados en la primaria — degradan transacciones",
+        "<strong>Antipattern</strong>: No monitorear IOPS/CPU — el motor se satura sin alerta",
+        "<strong>Antipattern</strong>: Retención de backup demasiado corta (default 7 días)",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "Backend transaccional de aplicaciones web/móviles"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "ERP/CRM con requisitos de HA y PITR"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Migración lift-and-shift desde MySQL/PG on-premise"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "Read scaling con read-only replicas para reportes"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "Test/dev con clones rápidos a partir de snapshots"
+    }
+  ],
+  "mistakes": [
+    "Basic Edition en producción — sin failover ni SLA",
+    "Whitelist 0.0.0.0/0 — DB expuesta a internet",
+    "Reportes pesados en la primaria — degradan transacciones",
+    "No monitorear IOPS/CPU — el motor se satura sin alerta",
+    "Retención de backup demasiado corta (default 7 días)"
+  ],
+  "cli": [
+    {
+      "cmd": "aliyun rds CreateDBInstance",
+      "desc": "Crear instancia RDS"
+    },
+    {
+      "cmd": "aliyun rds ModifySecurityIps --SecurityIps 10.0.0.0/24",
+      "desc": "Whitelist"
+    },
+    {
+      "cmd": "aliyun rds CreateBackup",
+      "desc": "Backup on-demand"
+    },
+    {
+      "cmd": "aliyun rds RestoreDBInstance --RestoreTime ...",
+      "desc": "Restauración PITR"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "HA Edition",
+      "es": "Edición HA",
+      "def": "Primaria + standby síncrono en zona distinta con failover <60 s."
+    },
+    {
+      "en": "Basic Edition",
+      "es": "Edición básica",
+      "def": "Instancia única sin HA — solo dev/test."
+    },
+    {
+      "en": "Enterprise Edition",
+      "es": "Edición enterprise",
+      "def": "Múltiples nodos, mayor SLA."
+    },
+    {
+      "en": "Read-only Replica",
+      "es": "Réplica de lectura",
+      "def": "Hasta 5 réplicas asíncronas para escalar SELECT."
+    },
+    {
+      "en": "Parameter Group",
+      "es": "Parameter Group",
+      "def": "Configuración reutilizable del engine."
+    },
+    {
+      "en": "Automated Backup",
+      "es": "Backup automático",
+      "def": "Full diario + binlogs incrementales. Retención 7-730 días."
+    },
+    {
+      "en": "PITR",
+      "es": "Point-in-Time Recovery",
+      "def": "Restaura al segundo exacto dentro del rango de retención."
+    },
+    {
+      "en": "Whitelist",
+      "es": "Whitelist",
+      "def": "Lista de IPs/SG autorizados. Sin esto, nadie conecta."
+    },
+    {
+      "en": "Account Privilege",
+      "es": "Privilegios de cuenta",
+      "def": "Roles: read/write/DDL/DML granulares."
+    },
+    {
+      "en": "SSL",
+      "es": "SSL",
+      "def": "Cifrado en tránsito; certificado descargable."
+    },
+    {
+      "en": "TDE",
+      "es": "Transparent Data Encryption",
+      "def": "Cifrado en reposo integrado con KMS."
+    },
+    {
+      "en": "Slow Query Log",
+      "es": "Log de queries lentas",
+      "def": "Diagnóstico automático de rendimiento."
+    },
+    {
+      "en": "DTS",
+      "es": "Data Transmission Service",
+      "def": "Migración y replicación entre motores."
+    },
+    {
+      "en": "Auto Scaling Storage",
+      "es": "Storage auto-scaling",
+      "def": "Aumenta disco automáticamente si se llena."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a ApsaraDB RDS?",
+      "options": [
+        "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability editio",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático."
+    },
+    {
+      "q": "¿Qué es <strong>HA Edition</strong> (Edición HA) en ApsaraDB RDS?",
+      "options": [
+        "Primaria + standby síncrono en zona distinta con failover <60 s.",
+        "Instancia única sin HA — solo dev/test.",
+        "Múltiples nodos, mayor SLA.",
+        "Hasta 5 réplicas asíncronas para escalar SELECT."
+      ],
+      "answer": 0,
+      "explain": "HA Edition (Edición HA): Primaria + standby síncrono en zona distinta con failover <60 s."
+    },
+    {
+      "q": "¿Qué es <strong>Basic Edition</strong> (Edición básica) en ApsaraDB RDS?",
+      "options": [
+        "Instancia única sin HA — solo dev/test.",
+        "Primaria + standby síncrono en zona distinta con failover <60 s.",
+        "Múltiples nodos, mayor SLA.",
+        "Hasta 5 réplicas asíncronas para escalar SELECT."
+      ],
+      "answer": 0,
+      "explain": "Basic Edition (Edición básica): Instancia única sin HA — solo dev/test."
+    },
+    {
+      "q": "¿Qué es <strong>Enterprise Edition</strong> (Edición enterprise) en ApsaraDB RDS?",
+      "options": [
+        "Múltiples nodos, mayor SLA.",
+        "Primaria + standby síncrono en zona distinta con failover <60 s.",
+        "Instancia única sin HA — solo dev/test.",
+        "Hasta 5 réplicas asíncronas para escalar SELECT."
+      ],
+      "answer": 0,
+      "explain": "Enterprise Edition (Edición enterprise): Múltiples nodos, mayor SLA."
+    },
+    {
+      "q": "¿Qué es <strong>Read-only Replica</strong> (Réplica de lectura) en ApsaraDB RDS?",
+      "options": [
+        "Hasta 5 réplicas asíncronas para escalar SELECT.",
+        "Primaria + standby síncrono en zona distinta con failover <60 s.",
+        "Instancia única sin HA — solo dev/test.",
+        "Múltiples nodos, mayor SLA."
+      ],
+      "answer": 0,
+      "explain": "Read-only Replica (Réplica de lectura): Hasta 5 réplicas asíncronas para escalar SELECT."
+    },
+    {
+      "q": "¿Qué es <strong>Parameter Group</strong> (Parameter Group) en ApsaraDB RDS?",
+      "options": [
+        "Configuración reutilizable del engine.",
+        "Primaria + standby síncrono en zona distinta con failover <60 s.",
+        "Instancia única sin HA — solo dev/test.",
+        "Múltiples nodos, mayor SLA."
+      ],
+      "answer": 0,
+      "explain": "Parameter Group (Parameter Group): Configuración reutilizable del engine."
+    },
+    {
+      "q": "Para maximizar disponibilidad con ApsaraDB RDS, ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar ApsaraDB RDS en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB RDS, el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde ApsaraDB RDS es la elección típica:",
+      "options": [
+        "Backend transaccional de aplicaciones web/móviles",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: Backend transaccional de aplicaciones web/móviles."
+    }
+  ],
+  "exam_focus": "Preguntas: (a) ediciones y cuándo usar cada una, (b) PITR y ventana de retención, (c) whitelist + VPC + SSL, (d) escalado lectura vs escritura, (e) DTS para migración.",
+  "official_intro": "As one of the most popular programming languages, Java's usage in cloud application development is also very high. This certification exam is based on Alibaba's Java Coding Guidelines.",
+  "recommended_for": "Java Developers",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_java",
+  "exam_meta": {
+    "duration_min": 90,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": ""
+  }
+}

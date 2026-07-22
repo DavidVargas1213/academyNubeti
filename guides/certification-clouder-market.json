@@ -1,0 +1,431 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-market",
+  "title_en": "Coming to China Online Market",
+  "title_es": "Coming to China Online Market",
+  "duration_es": "58 minutos",
+  "level_es": "Principiante",
+  "category_es": "Otros",
+  "subcategory_es": "Business",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_market",
+  "lead": "Guía completa en español para el curso «Coming to China Online Market» de Alibaba Cloud Academy. Cubre en profundidad Alibaba Cloud para el mercado chino. Lanzar productos digitales en China requiere: cuenta Alibaba Cloud China (separada de international), ICP filing (Beian) obligatorio para dominios servidos desde China, contenido según regulaciones (CAC), pagos locales (Alipay/WeChat), y arquitectura que respete el Great Firewall. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Alibaba Cloud para el mercado chino</em>.",
+    "<strong>Dominar</strong> los conceptos clave: ICP Filing, ICP Bei'an, ICP Xu'ke, CAC, MLPS 2.0.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Alibaba Cloud para el mercado chino y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Empresa registra entidad legal china o usa partner → cuenta Alibaba Cloud China → ICP filing con MIIT (2-4 semanas) → despliegue en regiones China → CDN con nodos China → integración Alipay/WeChat Pay → contenido revisado por regulación local.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a Alibaba Cloud para el mercado chino",
+      "title_en": "Introduction to Alibaba Cloud para el mercado chino",
+      "intro": "Lanzar productos digitales en China requiere: cuenta Alibaba Cloud China (separada de international), ICP filing (Beian) obligatorio para dominios servidos desde China, contenido según regulaciones (CAC), pagos locales (Alipay/WeChat), y arquitectura que respete el Great Firewall. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: Lanzar productos digitales en China requiere: cuenta Alibaba Cloud China (separada de international), ICP filing (Beian) obligatorio para dominios servidos desde China, contenido según regulaciones (CAC), pagos locales (Alipay/WeChat), y arquitectura que respete el Great Firewall.",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo Alibaba Cloud para el mercado chino se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Alibaba Cloud para el mercado chino es una pieza fundamental de Otros en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando Alibaba Cloud para el mercado chino no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Empresa registra entidad legal china o usa partner → cuenta Alibaba Cloud China → ICP filing con MIIT (2-4 semanas) → despliegue en regiones China → CDN con nodos China → integración Alipay/WeChat Pay → contenido revisado por regulación local.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → Alibaba Cloud para el mercado chino (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>ICP filing (Beian)</strong> <em>(ICP Filing)</em>: Registro obligatorio del dominio ante MIIT.",
+        "<strong>ICP Bei'an</strong> <em>(ICP Bei'an)</em>: Registro simple para no-comercial.",
+        "<strong>ICP Xu'ke</strong> <em>(ICP Xu'ke)</em>: Licencia para servicios comerciales.",
+        "<strong>CAC</strong> <em>(CAC)</em>: Cyberspace Administration of China: regulador.",
+        "<strong>MLPS 2.0</strong> <em>(MLPS 2.0)</em>: Multi-Level Protection Scheme: certificación de seguridad.",
+        "<strong>Localización de datos</strong> <em>(Data Localization)</em>: Datos personales deben permanecer en China.",
+        "<strong>Alipay/WeChat</strong> <em>(Alipay/WeChat)</em>: Pagos dominantes en China.",
+        "<strong>Cross-border</strong> <em>(Cross-Border Data)</em>: Requiere aprobación gubernamental."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>HA</strong>: Datos personales en regiones China (Hangzhou, Beijing, Shanghai, Shenzhen)",
+        "<strong>HA</strong>: Alipay + WeChat Pay como pagos principales",
+        "<strong>Buenas prácticas</strong>: Partner local o entidad china antes de empezar",
+        "<strong>Buenas prácticas</strong>: ICP filing early — es cuello de botella",
+        "<strong>Buenas prácticas</strong>: Compliance MLPS 2.0 para servicios importantes"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Servir desde región internacional pensando que funciona",
+        "<strong>Antipattern</strong>: Sin ICP — dominio bloqueado",
+        "<strong>Antipattern</strong>: Datos personales exportados sin aprobación",
+        "<strong>Antipattern</strong>: Solo tarjetas internacionales",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "E-commerce global expandiendo a China"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "SaaS occidental que quiere clientes chinos"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Gaming lanzando en China"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "Media/CDN necesitando entrega local"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "Fintech con licencias locales"
+    }
+  ],
+  "mistakes": [
+    "Servir desde región internacional pensando que funciona",
+    "Sin ICP — dominio bloqueado",
+    "Datos personales exportados sin aprobación",
+    "Solo tarjetas internacionales"
+  ],
+  "cli": [
+    {
+      "cmd": "Consola cn.aliyun.com",
+      "desc": "Consola separada"
+    },
+    {
+      "cmd": "aliyun cdn (China)",
+      "desc": "CDN China"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "ICP Filing",
+      "es": "ICP filing (Beian)",
+      "def": "Registro obligatorio del dominio ante MIIT."
+    },
+    {
+      "en": "ICP Bei'an",
+      "es": "ICP Bei'an",
+      "def": "Registro simple para no-comercial."
+    },
+    {
+      "en": "ICP Xu'ke",
+      "es": "ICP Xu'ke",
+      "def": "Licencia para servicios comerciales."
+    },
+    {
+      "en": "CAC",
+      "es": "CAC",
+      "def": "Cyberspace Administration of China: regulador."
+    },
+    {
+      "en": "MLPS 2.0",
+      "es": "MLPS 2.0",
+      "def": "Multi-Level Protection Scheme: certificación de seguridad."
+    },
+    {
+      "en": "Data Localization",
+      "es": "Localización de datos",
+      "def": "Datos personales deben permanecer en China."
+    },
+    {
+      "en": "Alipay/WeChat",
+      "es": "Alipay/WeChat",
+      "def": "Pagos dominantes en China."
+    },
+    {
+      "en": "Cross-Border Data",
+      "es": "Cross-border",
+      "def": "Requiere aprobación gubernamental."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a Alibaba Cloud para el mercado chino?",
+      "options": [
+        "Lanzar productos digitales en China requiere: cuenta Alibaba Cloud China (separada de international), ICP filing (Beian) obligatorio para dominios servidos desde China, contenido según regulaciones (C",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "Lanzar productos digitales en China requiere: cuenta Alibaba Cloud China (separada de international), ICP filing (Beian) obligatorio para dominios servidos desde China, contenido según regulaciones (CAC), pagos locales (Alipay/WeChat), y arquitectura que respete el Great Firewall."
+    },
+    {
+      "q": "¿Qué es <strong>ICP Filing</strong> (ICP filing (Beian)) en Alibaba Cloud para el mercado chino?",
+      "options": [
+        "Registro obligatorio del dominio ante MIIT.",
+        "Registro simple para no-comercial.",
+        "Licencia para servicios comerciales.",
+        "Cyberspace Administration of China: regulador."
+      ],
+      "answer": 0,
+      "explain": "ICP Filing (ICP filing (Beian)): Registro obligatorio del dominio ante MIIT."
+    },
+    {
+      "q": "¿Qué es <strong>ICP Bei'an</strong> (ICP Bei'an) en Alibaba Cloud para el mercado chino?",
+      "options": [
+        "Registro simple para no-comercial.",
+        "Registro obligatorio del dominio ante MIIT.",
+        "Licencia para servicios comerciales.",
+        "Cyberspace Administration of China: regulador."
+      ],
+      "answer": 0,
+      "explain": "ICP Bei'an (ICP Bei'an): Registro simple para no-comercial."
+    },
+    {
+      "q": "¿Qué es <strong>ICP Xu'ke</strong> (ICP Xu'ke) en Alibaba Cloud para el mercado chino?",
+      "options": [
+        "Licencia para servicios comerciales.",
+        "Registro obligatorio del dominio ante MIIT.",
+        "Registro simple para no-comercial.",
+        "Cyberspace Administration of China: regulador."
+      ],
+      "answer": 0,
+      "explain": "ICP Xu'ke (ICP Xu'ke): Licencia para servicios comerciales."
+    },
+    {
+      "q": "¿Qué es <strong>CAC</strong> (CAC) en Alibaba Cloud para el mercado chino?",
+      "options": [
+        "Cyberspace Administration of China: regulador.",
+        "Registro obligatorio del dominio ante MIIT.",
+        "Registro simple para no-comercial.",
+        "Licencia para servicios comerciales."
+      ],
+      "answer": 0,
+      "explain": "CAC (CAC): Cyberspace Administration of China: regulador."
+    },
+    {
+      "q": "¿Qué es <strong>MLPS 2.0</strong> (MLPS 2.0) en Alibaba Cloud para el mercado chino?",
+      "options": [
+        "Multi-Level Protection Scheme: certificación de seguridad.",
+        "Registro obligatorio del dominio ante MIIT.",
+        "Registro simple para no-comercial.",
+        "Licencia para servicios comerciales."
+      ],
+      "answer": 0,
+      "explain": "MLPS 2.0 (MLPS 2.0): Multi-Level Protection Scheme: certificación de seguridad."
+    },
+    {
+      "q": "Para maximizar disponibilidad con Alibaba Cloud para el mercado chino, ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar Alibaba Cloud para el mercado chino en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con Alibaba Cloud para el mercado chino, el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde Alibaba Cloud para el mercado chino es la elección típica:",
+      "options": [
+        "E-commerce global expandiendo a China",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: E-commerce global expandiendo a China."
+    }
+  ],
+  "exam_focus": "ICP filing, MLPS, data localization, pagos locales, arquitectura para China.",
+  "official_intro": "With the development of globalization and digitization, China has become a huge and powerful consuming e-marketplace attracting more and more brands and entrepreneurs’ attention around the world. Therefore, to better enter and engage with China e-market, having a whole picture of the target online market and carefully selecting a proper channel are really important for getting yourself prepared before full investment. Only by understanding: 1) the status quo and potential of China online market; 2) the key differences between traditional trade and cross-border e-commerce; 3) the key requirements and insightful analysis of different e-commerce platforms within Alibaba’s ecosystem; 4) and the must-knows for investment decision-making, you can get yourself well-equipped for starting a new journey and entering a new and charming market. The Coming to China Online Market Course is produced by Taobao University, Alibaba Group and specially designed for overseas entrepreneurs or international brand owner. Through this course, you can not only understand the potential of China online market and CBEC, but also obtain full knowledge of how to select a suitable channel to help successfully access to China market.",
+  "recommended_for": "Overseas entrepreneurs and brand owners who are interested in China market",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_market",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}

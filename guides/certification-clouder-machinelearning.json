@@ -1,0 +1,441 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-machinelearning",
+  "title_en": "Machine Learning: Heart Disease Prediction",
+  "title_es": "Machine Learning: Heart Disease Prediction",
+  "duration_es": "33 minutos",
+  "level_es": "Principiante",
+  "category_es": "Inteligencia Artificial",
+  "subcategory_es": "Artificial Intelligence",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_machinelearning",
+  "lead": "Guía completa en español para el curso «Machine Learning: Heart Disease Prediction» de Alibaba Cloud Academy. Cubre en profundidad Platform for AI (PAI). PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Platform for AI (PAI)</em>.",
+    "<strong>Dominar</strong> los conceptos clave: PAI-DSW, PAI-DLC, PAI-EAS, PAI-Designer, QuickStart.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Platform for AI (PAI) y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a Platform for AI (PAI)",
+      "title_en": "Introduction to Platform for AI (PAI)",
+      "intro": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud.",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo Platform for AI (PAI) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Platform for AI (PAI) es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando Platform for AI (PAI) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → Platform for AI (PAI) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>Data Science Workshop</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado con GPUs opcionales.",
+        "<strong>Deep Learning Containers</strong> <em>(PAI-DLC)</em>: Training jobs distribuidos con PyTorch/TF/Megatron.",
+        "<strong>Elastic Algorithm Service</strong> <em>(PAI-EAS)</em>: Serving online con auto-scaling y A/B.",
+        "<strong>PAI Designer</strong> <em>(PAI-Designer)</em>: Pipelines ML drag&drop.",
+        "<strong>QuickStart</strong> <em>(QuickStart)</em>: Modelos preentrenados y fine-tuning con un click.",
+        "<strong>Model Gallery</strong> <em>(Model Gallery)</em>: Catálogo de modelos (Qwen, Llama, SD, etc).",
+        "<strong>AutoML</strong> <em>(AutoML)</em>: Búsqueda automática de arquitectura e hiperparámetros.",
+        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Framework de compute distribuido soportado."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>HA</strong>: EAS con autoscaling por QPS + provisioned min replicas",
+        "<strong>Costo</strong>: DLC con spot GPU para reducir costo de training",
+        "<strong>Buenas prácticas</strong>: Datos en OSS + versioning para reproducibilidad",
+        "<strong>Buenas prácticas</strong>: Model versioning y A/B antes de rollout completo",
+        "<strong>Buenas prácticas</strong>: Feature Store para evitar training-serving skew"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Training en GPUs on-demand — 3-5x más caro que spot",
+        "<strong>Antipattern</strong>: EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
+        "<strong>Antipattern</strong>: Modelos sin versionar — imposible rollback",
+        "<strong>Antipattern</strong>: Sin monitoreo de drift — modelo se degrada silente",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "Fine-tuning de Qwen y LLMs open-source"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "Recomendación en tiempo real (CTR prediction)"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Visión computacional (defectos, OCR, detección)"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "NLP: clasificación, sentimiento, extracción"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "AutoML para equipos sin data scientists dedicados"
+    }
+  ],
+  "mistakes": [
+    "Training en GPUs on-demand — 3-5x más caro que spot",
+    "EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
+    "Modelos sin versionar — imposible rollback",
+    "Sin monitoreo de drift — modelo se degrada silente"
+  ],
+  "cli": [
+    {
+      "cmd": "aliyun pai CreateJob",
+      "desc": "Lanzar training DLC"
+    },
+    {
+      "cmd": "aliyun eas CreateService",
+      "desc": "Desplegar modelo"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "PAI-DSW",
+      "es": "Data Science Workshop",
+      "def": "JupyterLab gestionado con GPUs opcionales."
+    },
+    {
+      "en": "PAI-DLC",
+      "es": "Deep Learning Containers",
+      "def": "Training jobs distribuidos con PyTorch/TF/Megatron."
+    },
+    {
+      "en": "PAI-EAS",
+      "es": "Elastic Algorithm Service",
+      "def": "Serving online con auto-scaling y A/B."
+    },
+    {
+      "en": "PAI-Designer",
+      "es": "PAI Designer",
+      "def": "Pipelines ML drag&drop."
+    },
+    {
+      "en": "QuickStart",
+      "es": "QuickStart",
+      "def": "Modelos preentrenados y fine-tuning con un click."
+    },
+    {
+      "en": "Model Gallery",
+      "es": "Model Gallery",
+      "def": "Catálogo de modelos (Qwen, Llama, SD, etc)."
+    },
+    {
+      "en": "AutoML",
+      "es": "AutoML",
+      "def": "Búsqueda automática de arquitectura e hiperparámetros."
+    },
+    {
+      "en": "Ray on PAI",
+      "es": "Ray",
+      "def": "Framework de compute distribuido soportado."
+    },
+    {
+      "en": "Blade",
+      "es": "Blade",
+      "def": "Compilador de optimización de inferencia."
+    },
+    {
+      "en": "Feature Store",
+      "es": "Feature Store",
+      "def": "Almacén centralizado de features online/offline."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a Platform for AI (PAI)?",
+      "options": [
+        "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y f",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart)."
+    },
+    {
+      "q": "¿Qué es <strong>PAI-DSW</strong> (Data Science Workshop) en Platform for AI (PAI)?",
+      "options": [
+        "JupyterLab gestionado con GPUs opcionales.",
+        "Training jobs distribuidos con PyTorch/TF/Megatron.",
+        "Serving online con auto-scaling y A/B.",
+        "Pipelines ML drag&drop."
+      ],
+      "answer": 0,
+      "explain": "PAI-DSW (Data Science Workshop): JupyterLab gestionado con GPUs opcionales."
+    },
+    {
+      "q": "¿Qué es <strong>PAI-DLC</strong> (Deep Learning Containers) en Platform for AI (PAI)?",
+      "options": [
+        "Training jobs distribuidos con PyTorch/TF/Megatron.",
+        "JupyterLab gestionado con GPUs opcionales.",
+        "Serving online con auto-scaling y A/B.",
+        "Pipelines ML drag&drop."
+      ],
+      "answer": 0,
+      "explain": "PAI-DLC (Deep Learning Containers): Training jobs distribuidos con PyTorch/TF/Megatron."
+    },
+    {
+      "q": "¿Qué es <strong>PAI-EAS</strong> (Elastic Algorithm Service) en Platform for AI (PAI)?",
+      "options": [
+        "Serving online con auto-scaling y A/B.",
+        "JupyterLab gestionado con GPUs opcionales.",
+        "Training jobs distribuidos con PyTorch/TF/Megatron.",
+        "Pipelines ML drag&drop."
+      ],
+      "answer": 0,
+      "explain": "PAI-EAS (Elastic Algorithm Service): Serving online con auto-scaling y A/B."
+    },
+    {
+      "q": "¿Qué es <strong>PAI-Designer</strong> (PAI Designer) en Platform for AI (PAI)?",
+      "options": [
+        "Pipelines ML drag&drop.",
+        "JupyterLab gestionado con GPUs opcionales.",
+        "Training jobs distribuidos con PyTorch/TF/Megatron.",
+        "Serving online con auto-scaling y A/B."
+      ],
+      "answer": 0,
+      "explain": "PAI-Designer (PAI Designer): Pipelines ML drag&drop."
+    },
+    {
+      "q": "¿Qué es <strong>QuickStart</strong> (QuickStart) en Platform for AI (PAI)?",
+      "options": [
+        "Modelos preentrenados y fine-tuning con un click.",
+        "JupyterLab gestionado con GPUs opcionales.",
+        "Training jobs distribuidos con PyTorch/TF/Megatron.",
+        "Serving online con auto-scaling y A/B."
+      ],
+      "answer": 0,
+      "explain": "QuickStart (QuickStart): Modelos preentrenados y fine-tuning con un click."
+    },
+    {
+      "q": "Para maximizar disponibilidad con Platform for AI (PAI), ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar Platform for AI (PAI) en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con Platform for AI (PAI), el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde Platform for AI (PAI) es la elección típica:",
+      "options": [
+        "Fine-tuning de Qwen y LLMs open-source",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: Fine-tuning de Qwen y LLMs open-source."
+    }
+  ],
+  "exam_focus": "Preguntas: (a) módulos PAI y cuándo usar cada uno, (b) training distribuido y spot GPUs, (c) EAS scaling, (d) Model Gallery + QuickStart para GenAI, (e) MLOps con PAI.",
+  "official_intro": "Heart disease causes 33% of deaths in the world. Data mining has become extremely important for heart disease prediction and treatment. It uses the relevant health exam indicators and analyzes their influences on heart disease. This session introduces how to use Alibaba Cloud Machine Learning Platform For AI to create a heart disease prediction model based on the data collected from heart disease patients.",
+  "recommended_for": "Junior Developers and Cloud Beginners",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_machinelearning",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}

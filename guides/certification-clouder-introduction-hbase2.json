@@ -1,0 +1,432 @@
+{
+  "detailed": true,
+  "course_id": "Curso Nº certification-clouder-introduction-hbase2",
+  "title_en": "Introduction of HBase",
+  "title_es": "Introducción of HBase",
+  "duration_es": "54 minutos",
+  "level_es": "Principiante",
+  "category_es": "Bases de Datos",
+  "subcategory_es": "Base de Datos NoSQL",
+  "language_es": "Inglés",
+  "url": "https://edu.alibabacloud.com/certification/clouder_introduction_hbase2",
+  "lead": "Guía completa en español para el curso «Introduction of HBase» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB for HBase / Lindorm. ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con latencia ms. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "objectives": [
+    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB for HBase / Lindorm</em>.",
+    "<strong>Dominar</strong> los conceptos clave: Region Server, Region, Column Family, Compaction, Bloom Filter.",
+    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB for HBase / Lindorm y servicios relacionados.",
+    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
+    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
+    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
+    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+  ],
+  "architecture": "Ingesta streaming (Kafka/DataHub) → Lindorm wide-column para write-heavy → índices secundarios para consultas → TSDB para métricas → search engine para full-text. Backup automático a OSS.",
+  "lessons": [
+    {
+      "title_es": "1 · Introducción a ApsaraDB for HBase / Lindorm",
+      "title_en": "Introduction to ApsaraDB for HBase / Lindorm",
+      "intro": "ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con latencia ms. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "points": [
+        "<strong>Problema que resuelve</strong>: ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community.",
+        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
+        "<strong>Ecosistema</strong>: cómo ApsaraDB for HBase / Lindorm se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
+        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
+        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
+        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "ApsaraDB for HBase / Lindorm es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+      }
+    },
+    {
+      "title_es": "2 · Arquitectura de referencia",
+      "title_en": "Reference Architecture",
+      "intro": "La arquitectura ideal usando ApsaraDB for HBase / Lindorm no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "points": [
+        "<strong>Patrón canónico</strong>: Ingesta streaming (Kafka/DataHub) → Lindorm wide-column para write-heavy → índices secundarios para consultas → TSDB para métricas → search engine para full-text. Backup automático a OSS.",
+        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
+        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
+        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
+        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
+        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Internet → SLB (multi-zona) → ApsaraDB for HBase / Lindorm (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+      }
+    },
+    {
+      "title_es": "3 · Conceptos y componentes esenciales",
+      "title_en": "Core Concepts and Components",
+      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "points": [
+        "<strong>Region Server</strong> <em>(Region Server)</em>: Nodo que sirve regiones (particiones).",
+        "<strong>Region</strong> <em>(Region)</em>: Rango de row keys asignado a un server.",
+        "<strong>Column Family</strong> <em>(Column Family)</em>: Grupo de columnas con storage/config común.",
+        "<strong>Compaction</strong> <em>(Compaction)</em>: Merge de HFiles para optimizar lecturas.",
+        "<strong>Bloom filter</strong> <em>(Bloom Filter)</em>: Reduce IO al buscar keys inexistentes.",
+        "<strong>TTL</strong> <em>(TTL)</em>: Expiración automática de celdas.",
+        "<strong>Lindorm TSDB</strong> <em>(Lindorm TSDB)</em>: Motor optimizado para métricas time-series.",
+        "<strong>Lindorm Search</strong> <em>(Lindorm Search)</em>: Índice invertido tipo Elasticsearch integrado."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+      }
+    },
+    {
+      "title_es": "4 · Configuración y operación práctica",
+      "title_en": "Configuration and Operations",
+      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "points": [
+        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
+        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
+        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
+        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
+        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
+        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
+        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "points": [
+        "<strong>HA</strong>: Diseño de row key evitando hotspots (salting/hashing)",
+        "<strong>Seguridad</strong>: Compactación programada fuera de horas pico",
+        "<strong>Costo</strong>: Diseño de row key evitando hotspots (salting/hashing)",
+        "<strong>Buenas prácticas</strong>: Column families pequeñas (≤3)",
+        "<strong>Buenas prácticas</strong>: TTL por CF para retention",
+        "<strong>Buenas prácticas</strong>: Lindorm en vez de HBase self-managed para PB"
+      ],
+      "keypoint": {
+        "label": "Regla mnemotécnica",
+        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "points": [
+        "<strong>Antipattern</strong>: Row keys monotónicos → hotspots en un region server",
+        "<strong>Antipattern</strong>: Demasiadas column families",
+        "<strong>Antipattern</strong>: Sin compaction policy → degrada lecturas",
+        "<strong>Antipattern</strong>: Scan gigante en producción sin límite",
+        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
+        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+      ],
+      "keypoint": {
+        "label": "Estrategia final",
+        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Escenario 1",
+      "text": "Series temporales (IoT, monitoring, finanzas)"
+    },
+    {
+      "title": "Escenario 2",
+      "text": "Perfiles de usuario con billones de rows"
+    },
+    {
+      "title": "Escenario 3",
+      "text": "Feature store para ML"
+    },
+    {
+      "title": "Escenario 4",
+      "text": "Data lake caliente con búsqueda"
+    },
+    {
+      "title": "Escenario 5",
+      "text": "Metadata de vídeo/imágenes a escala"
+    }
+  ],
+  "mistakes": [
+    "Row keys monotónicos → hotspots en un region server",
+    "Demasiadas column families",
+    "Sin compaction policy → degrada lecturas",
+    "Scan gigante en producción sin límite"
+  ],
+  "cli": [
+    {
+      "cmd": "hbase shell → scan 'tabla'",
+      "desc": "Consultar tabla"
+    },
+    {
+      "cmd": "aliyun hbase DescribeInstances",
+      "desc": "Listar instancias"
+    }
+  ],
+  "glossary": [
+    {
+      "en": "Region Server",
+      "es": "Region Server",
+      "def": "Nodo que sirve regiones (particiones)."
+    },
+    {
+      "en": "Region",
+      "es": "Region",
+      "def": "Rango de row keys asignado a un server."
+    },
+    {
+      "en": "Column Family",
+      "es": "Column Family",
+      "def": "Grupo de columnas con storage/config común."
+    },
+    {
+      "en": "Compaction",
+      "es": "Compaction",
+      "def": "Merge de HFiles para optimizar lecturas."
+    },
+    {
+      "en": "Bloom Filter",
+      "es": "Bloom filter",
+      "def": "Reduce IO al buscar keys inexistentes."
+    },
+    {
+      "en": "TTL",
+      "es": "TTL",
+      "def": "Expiración automática de celdas."
+    },
+    {
+      "en": "Lindorm TSDB",
+      "es": "Lindorm TSDB",
+      "def": "Motor optimizado para métricas time-series."
+    },
+    {
+      "en": "Lindorm Search",
+      "es": "Lindorm Search",
+      "def": "Índice invertido tipo Elasticsearch integrado."
+    },
+    {
+      "en": "Region",
+      "es": "Región",
+      "def": "Área geográfica con múltiples zonas independientes."
+    },
+    {
+      "en": "Zone / AZ",
+      "es": "Zona",
+      "def": "Data center aislado dentro de una región."
+    },
+    {
+      "en": "RAM",
+      "es": "RAM",
+      "def": "Resource Access Management (IAM): usuarios, roles y policies."
+    },
+    {
+      "en": "KMS",
+      "es": "KMS",
+      "def": "Key Management Service para claves criptográficas."
+    },
+    {
+      "en": "CloudMonitor",
+      "es": "CloudMonitor",
+      "def": "Servicio de métricas, alertas y dashboards."
+    },
+    {
+      "en": "ActionTrail",
+      "es": "ActionTrail",
+      "def": "Auditoría inmutable de llamadas API."
+    },
+    {
+      "en": "ROS",
+      "es": "ROS",
+      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
+    },
+    {
+      "en": "SLA",
+      "es": "SLA",
+      "def": "Service Level Agreement: garantía contractual de disponibilidad."
+    },
+    {
+      "en": "Shared Responsibility",
+      "es": "Responsabilidad compartida",
+      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "¿Cuál describe mejor a ApsaraDB for HBase / Lindorm?",
+      "options": [
+        "ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con laten",
+        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
+        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
+        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
+      ],
+      "answer": 0,
+      "explain": "ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con latencia ms."
+    },
+    {
+      "q": "¿Qué es <strong>Region Server</strong> (Region Server) en ApsaraDB for HBase / Lindorm?",
+      "options": [
+        "Nodo que sirve regiones (particiones).",
+        "Rango de row keys asignado a un server.",
+        "Grupo de columnas con storage/config común.",
+        "Merge de HFiles para optimizar lecturas."
+      ],
+      "answer": 0,
+      "explain": "Region Server (Region Server): Nodo que sirve regiones (particiones)."
+    },
+    {
+      "q": "¿Qué es <strong>Region</strong> (Region) en ApsaraDB for HBase / Lindorm?",
+      "options": [
+        "Rango de row keys asignado a un server.",
+        "Nodo que sirve regiones (particiones).",
+        "Grupo de columnas con storage/config común.",
+        "Merge de HFiles para optimizar lecturas."
+      ],
+      "answer": 0,
+      "explain": "Region (Region): Rango de row keys asignado a un server."
+    },
+    {
+      "q": "¿Qué es <strong>Column Family</strong> (Column Family) en ApsaraDB for HBase / Lindorm?",
+      "options": [
+        "Grupo de columnas con storage/config común.",
+        "Nodo que sirve regiones (particiones).",
+        "Rango de row keys asignado a un server.",
+        "Merge de HFiles para optimizar lecturas."
+      ],
+      "answer": 0,
+      "explain": "Column Family (Column Family): Grupo de columnas con storage/config común."
+    },
+    {
+      "q": "¿Qué es <strong>Compaction</strong> (Compaction) en ApsaraDB for HBase / Lindorm?",
+      "options": [
+        "Merge de HFiles para optimizar lecturas.",
+        "Nodo que sirve regiones (particiones).",
+        "Rango de row keys asignado a un server.",
+        "Grupo de columnas con storage/config común."
+      ],
+      "answer": 0,
+      "explain": "Compaction (Compaction): Merge de HFiles para optimizar lecturas."
+    },
+    {
+      "q": "¿Qué es <strong>Bloom Filter</strong> (Bloom filter) en ApsaraDB for HBase / Lindorm?",
+      "options": [
+        "Reduce IO al buscar keys inexistentes.",
+        "Nodo que sirve regiones (particiones).",
+        "Rango de row keys asignado a un server.",
+        "Grupo de columnas con storage/config común."
+      ],
+      "answer": 0,
+      "explain": "Bloom Filter (Bloom filter): Reduce IO al buscar keys inexistentes."
+    },
+    {
+      "q": "Para maximizar disponibilidad con ApsaraDB for HBase / Lindorm, ¿qué diseño es correcto?",
+      "options": [
+        "Todos los recursos en una zona única (mínima latencia)",
+        "Distribuir en 2+ zonas dentro de la región con failover automático",
+        "Spot instances en producción crítica",
+        "Deshabilitar backups para reducir costos"
+      ],
+      "answer": 1,
+      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
+    },
+    {
+      "q": "Al operar ApsaraDB for HBase / Lindorm en producción, ¿qué principio de identidad se recomienda?",
+      "options": [
+        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
+        "AdministratorAccess para todos los usuarios humanos",
+        "RAM roles con mínimo privilegio + MFA obligatorio",
+        "Autenticación solo por contraseña sin MFA"
+      ],
+      "answer": 2,
+      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
+    },
+    {
+      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB for HBase / Lindorm, el modelo más económico suele ser:",
+      "options": [
+        "Pay-as-you-go puro",
+        "Instancias preemptible/spot",
+        "Suscripción anual o Reserved Instance de 3 años",
+        "Facturación por request"
+      ],
+      "answer": 2,
+      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
+    },
+    {
+      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "KMS (Key Management Service)",
+        "VPC"
+      ],
+      "answer": 2,
+      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
+    },
+    {
+      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
+      "options": [
+        "ActionTrail",
+        "CloudMonitor",
+        "OSS",
+        "RAM"
+      ],
+      "answer": 1,
+      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
+    },
+    {
+      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
+      "options": [
+        "CloudMonitor",
+        "ActionTrail",
+        "VPC",
+        "KMS"
+      ],
+      "answer": 1,
+      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
+    },
+    {
+      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
+      "options": [
+        "ROS (Resource Orchestration Service)",
+        "OSS",
+        "CDN",
+        "SLB"
+      ],
+      "answer": 0,
+      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
+    },
+    {
+      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
+      "options": [
+        "La configuración de tus aplicaciones",
+        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
+        "Tus datos y permisos RAM",
+        "El código de tus funciones y microservicios"
+      ],
+      "answer": 1,
+      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
+    },
+    {
+      "q": "Un escenario donde ApsaraDB for HBase / Lindorm es la elección típica:",
+      "options": [
+        "Series temporales (IoT, monitoring, finanzas)",
+        "Enrutamiento DNS global",
+        "Firma electrónica de documentos",
+        "Streaming de video en tiempo real (si no aplica)"
+      ],
+      "answer": 0,
+      "explain": "Caso de uso canónico: Series temporales (IoT, monitoring, finanzas)."
+    }
+  ],
+  "exam_focus": "Diseño row key, compaction, Lindorm vs HBase community, casos time-series.",
+  "official_intro": "We will introduce some fundamental concepts in hbase, like table, column, column family and so on. Then we come to a detailed elaboration of some hbase operations, such as get, scan, put, delete and so on. Next we compared HBase and the relational database to help you understand the differences between the two. And finally we focused on HBase shell and introduce some basic shell commands.",
+  "recommended_for": "This training is for DBAs or big data learners who want to get started with HBase learning",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_introduction_hbase2",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
+}
