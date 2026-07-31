@@ -1083,6 +1083,525 @@
     ]
   },
   {
+    "slug": "aca-cloud-business",
+    "code": "ACA · CB-C01",
+    "level": "Associate",
+    "name_en": "Alibaba Cloud Certified Associate: Cloud Business",
+    "name_es": "Fundamentos de Negocio en la Nube — Asociado (ACA)",
+    "duration_min": 90,
+    "questions": 50,
+    "passing_score": 70,
+    "role_es": "Certificación orientada a perfiles comerciales, pre-sales, product managers y consultores. Cubre la propuesta de valor de la nube, el catálogo de productos Alibaba Cloud, modelos de facturación, TCO/ROI, casos de uso por industria y el proceso de venta consultiva. No requiere experiencia técnica profunda.",
+    "learn_es": [
+      "Explicar los modelos de nube (IaaS, PaaS, SaaS) y sus beneficios de negocio.",
+      "Presentar el portafolio de Alibaba Cloud (cómputo, red, almacenamiento, datos, IA, seguridad) desde una óptica comercial.",
+      "Comparar modelos de facturación: Pay-As-You-Go, Subscription, Savings Plans y Reserved Instances.",
+      "Estimar TCO y ROI de migraciones a la nube frente a on-premise.",
+      "Identificar casos de uso por industria (retail, finanzas, gaming, manufactura, media, edu) y mapear productos.",
+      "Manejar el ciclo de venta consultiva: descubrimiento, propuesta, PoC, cierre y post-venta."
+    ],
+    "blueprint": [
+      {
+        "area": "Cloud value proposition",
+        "area_es": "Propuesta de valor de la nube",
+        "weight": 18,
+        "description": "Beneficios de negocio de la nube, modelos IaaS/PaaS/SaaS, nube pública vs privada vs híbrida, elasticidad, agilidad, OPEX vs CAPEX.",
+        "courses": [
+          {
+            "slug": "certification-clouder-analycase",
+            "title_es": "Alibaba Cloud Analysis Architecture y Case Studies",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-analycase",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-caseanalysis",
+            "title_es": "Alibaba Cloud Análisis de Casos",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-caseanalysis",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-iot-bigdata-ai",
+            "title_es": "Internet of Things(IoT), Big Datos y AI in Alibaba Cloud",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-iot-bigdata-ai",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Alibaba Cloud product portfolio",
+        "area_es": "Portafolio de productos Alibaba Cloud",
+        "weight": 22,
+        "description": "Panorama comercial de ECS, VPC, SLB, OSS, RDS, PolarDB, CDN, Security, Big Data e IA — con foco en el problema de negocio que cada producto resuelve.",
+        "courses": [
+          {
+            "slug": "certification-clouder-6th-ecs",
+            "title_es": "Elementos Esenciales de la 6ª Generación de ECS",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-6th-ecs",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-oss",
+            "title_es": "Operate y Gestionar Object Almacenamiento en Cloud",
+            "category": "Almacenamiento",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-oss",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-cdn",
+            "title_es": "Alibaba Cloud CDN — Introducción",
+            "category": "Redes y CDN",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-cdn",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-apsaradb-polardb",
+            "title_es": "Introducción a PolarDB",
+            "category": "Bases de Datos",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-apsaradb-polardb",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-bigdata",
+            "title_es": "Introducción a Big Datos Platform en Cloud",
+            "category": "Analítica",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-bigdata",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Pricing and billing models",
+        "area_es": "Modelos de precios y facturación",
+        "weight": 16,
+        "description": "Pay-As-You-Go, Subscription, Savings Plans, Reserved Instances, Spot, cotizador, presupuestos, control de gasto y optimización de costos.",
+        "courses": [
+          {
+            "slug": "certification-clouder-ecs-costcontrol",
+            "title_es": "Control de Costos en ECS",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-ecs-costcontrol",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-autoscaling",
+            "title_es": "Introducción a Auto Scaling",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-autoscaling",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "TCO, ROI and business case",
+        "area_es": "TCO, ROI y business case",
+        "weight": 14,
+        "description": "Comparación on-premise vs nube, cálculo de TCO a 3-5 años, ROI, payback, herramientas oficiales, argumentario financiero para CFO/CIO.",
+        "courses": [
+          {
+            "slug": "certification-clouder-hybrid-solution",
+            "title_es": "Solución de Nube Híbrida",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-hybrid-solution",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-datamigration",
+            "title_es": "Migración de Datos a Alibaba Cloud",
+            "category": "Bases de Datos",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-datamigration",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Industry use cases",
+        "area_es": "Casos de uso por industria",
+        "weight": 18,
+        "description": "Retail y e-commerce, banca y fintech, gaming, media & entertainment, manufactura, educación, sector público. Mapeo de arquitecturas de referencia.",
+        "courses": [
+          {
+            "slug": "certification-clouder-simple-application-ecommerce",
+            "title_es": "Usar SAS para Publicar un E-commerce con Magento",
+            "category": "Cómputo Elástico",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-simple-application-ecommerce",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-ecommerce",
+            "title_es": "Solución E-commerce en Alibaba Cloud",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-ecommerce",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-deliverybusiness",
+            "title_es": "Entrega de un Negocio en la Nube",
+            "category": "Arquitectura, DevOps y Soluciones",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-deliverybusiness",
+            "score": 2
+          },
+          {
+            "slug": "certification-clouder-database-double11",
+            "title_es": "Bases de Datos en el Doble 11",
+            "category": "Bases de Datos",
+            "level": "Intermedio",
+            "course_id": "Curso Nº certification-clouder-database-double11",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Security and compliance for business",
+        "area_es": "Seguridad y compliance para el negocio",
+        "weight": 8,
+        "description": "Modelo de responsabilidad compartida, cumplimiento (GDPR, PIPL, ISO 27001), soberanía de datos, argumentario de seguridad para clientes.",
+        "courses": [
+          {
+            "slug": "certification-clouder-securityoverview",
+            "title_es": "Cloud Platform Seguridad Visión General",
+            "category": "Seguridad",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-securityoverview",
+            "score": 3
+          },
+          {
+            "slug": "certification-clouder-applicationsecurity",
+            "title_es": "Protect Your Web Application on Alibaba Cloud",
+            "category": "Seguridad",
+            "level": "Principiante",
+            "course_id": "Curso Nº certification-clouder-applicationsecurity",
+            "score": 2
+          }
+        ]
+      },
+      {
+        "area": "Sales process and customer engagement",
+        "area_es": "Proceso de venta y relación con clientes",
+        "weight": 4,
+        "description": "Ciclo de venta consultiva, descubrimiento de necesidades, propuesta técnico-comercial, PoC, cierre, post-venta y expansión de cuenta.",
+        "courses": [
+          {
+            "slug": "ethics-ai",
+            "title_es": "Consideraciones Éticas en el Desarrollo de IA y IA Generativa",
+            "category": "Inteligencia Artificial",
+            "level": "Principiante",
+            "course_id": "Curso Nº 758",
+            "score": 2
+          }
+        ]
+      }
+    ],
+    "question_types": [
+      {
+        "type": "Single choice",
+        "quantity": 40,
+        "points": 2
+      },
+      {
+        "type": "Multiple choice",
+        "quantity": 10,
+        "points": 2
+      }
+    ],
+    "question_bank": [
+      {
+        "q": "¿Cuál es el principal beneficio financiero de migrar de un modelo on-premise a la nube pública?",
+        "options": [
+          "Eliminar por completo la latencia de red",
+          "Convertir CAPEX en OPEX y pagar por consumo real",
+          "Eliminar la necesidad de personal de operaciones",
+          "Reducir a cero los costos de licenciamiento"
+        ],
+        "answer": 1,
+        "explain": "La nube transforma inversiones de capital (CAPEX) en gasto operativo (OPEX) proporcional al consumo, mejorando el flujo de caja y la agilidad presupuestaria.",
+        "section": "Cloud value proposition",
+        "source": "generado"
+      },
+      {
+        "q": "Un cliente retail necesita absorber picos de tráfico durante el Doble 11. ¿Qué combinación de productos Alibaba Cloud propone en primera línea?",
+        "options": [
+          "ECS + Auto Scaling + SLB + PolarDB + CDN",
+          "OSS + MaxCompute + DataV",
+          "Solo ECS de tamaño fijo con RDS",
+          "Bastionhost + Anti-DDoS únicamente"
+        ],
+        "answer": 0,
+        "explain": "El patrón e-commerce elástico combina cómputo escalable (ECS + Auto Scaling), balanceo (SLB), base de datos horizontalmente escalable (PolarDB) y aceleración de contenido (CDN).",
+        "section": "Alibaba Cloud product portfolio",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué modelo de facturación conviene a una carga estable 24/7 durante 3 años?",
+        "options": [
+          "Pay-As-You-Go",
+          "Spot Instances",
+          "Subscription anual o Savings Plan de 3 años",
+          "Reserved Instances por horas sueltas"
+        ],
+        "answer": 2,
+        "explain": "Cargas predecibles a largo plazo obtienen el mayor descuento con compromisos plurianuales (Subscription/Savings Plans) — típicamente 30-60% menos que Pay-As-You-Go.",
+        "section": "Pricing and billing models",
+        "source": "generado"
+      },
+      {
+        "q": "Al construir un TCO comparativo on-premise vs Alibaba Cloud, ¿qué costos OCULTOS del on-premise debe incluir el análisis?",
+        "options": [
+          "Solo el hardware inicial",
+          "Solo licencias de software",
+          "Energía, refrigeración, espacio de datacenter, personal, mantenimiento, obsolescencia y sobredimensionamiento",
+          "Únicamente el ancho de banda"
+        ],
+        "answer": 2,
+        "explain": "Un TCO honesto suma facilities (energía + cooling + espacio), personal, contratos de mantenimiento, ciclo de refresh de hardware y el 30-50% de sobredimensionamiento típico para picos.",
+        "section": "TCO, ROI and business case",
+        "source": "generado"
+      },
+      {
+        "q": "Una fintech regulada en LATAM debe justificar seguridad y compliance ante su regulador. ¿Qué argumento es correcto sobre el modelo de responsabilidad compartida?",
+        "options": [
+          "Alibaba Cloud es responsable de toda la seguridad del cliente",
+          "El cliente es responsable de toda la seguridad, incluida la del hardware",
+          "Alibaba Cloud protege la infraestructura (\"security OF the cloud\") y el cliente los datos, identidades y configuraciones (\"security IN the cloud\")",
+          "No aplica ningún modelo de responsabilidad"
+        ],
+        "answer": 2,
+        "explain": "El modelo de responsabilidad compartida separa la seguridad de la infraestructura (proveedor) de la seguridad de los datos, IAM, red virtual y aplicaciones (cliente).",
+        "section": "Security and compliance for business",
+        "source": "generado"
+      },
+      {
+        "q": "En una venta consultiva, ¿cuál es el objetivo principal de la fase de Discovery?",
+        "options": [
+          "Enviar la cotización final",
+          "Cerrar el contrato",
+          "Entender los objetivos de negocio del cliente, sus pain points, restricciones y criterios de éxito",
+          "Instalar un PoC"
+        ],
+        "answer": 2,
+        "explain": "Discovery mapea el problema real de negocio antes de proponer arquitectura. Una propuesta sin discovery correcto conduce a churn o proyectos fallidos.",
+        "section": "Sales process and customer engagement",
+        "source": "generado"
+      },
+      {
+        "q": "Un cliente de media & entertainment quiere distribuir video a usuarios en 40 países con baja latencia. ¿Qué producto es el ancla de la propuesta?",
+        "options": [
+          "SLB",
+          "Alibaba Cloud CDN + OSS como origen",
+          "MaxCompute",
+          "PolarDB"
+        ],
+        "answer": 1,
+        "explain": "OSS almacena los assets y Alibaba Cloud CDN los distribuye globalmente con edge caching, minimizando latencia y coste de egress del origen.",
+        "section": "Industry use cases",
+        "source": "generado"
+      },
+      {
+        "q": "¿Cuál es la diferencia clave entre IaaS y SaaS desde la óptica del cliente?",
+        "options": [
+          "IaaS es más caro que SaaS siempre",
+          "En IaaS el cliente gestiona SO/runtime/app; en SaaS solo consume la aplicación",
+          "SaaS no permite personalización",
+          "IaaS no puede escalar"
+        ],
+        "answer": 1,
+        "explain": "IaaS entrega infraestructura (VMs, red, storage) y el cliente pone stack encima. SaaS entrega la aplicación completa; el cliente solo la usa.",
+        "section": "Cloud value proposition",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué producto de Alibaba Cloud usaría para posicionar una solución de \"data lake analítico\" a un CDO?",
+        "options": [
+          "ECS",
+          "MaxCompute + OSS + DataWorks + Quick BI",
+          "Anti-DDoS",
+          "SLB"
+        ],
+        "answer": 1,
+        "explain": "El stack analítico de referencia: OSS como data lake, MaxCompute como motor de consulta a escala, DataWorks para orquestación y Quick BI para visualización.",
+        "section": "Alibaba Cloud product portfolio",
+        "source": "generado"
+      },
+      {
+        "q": "Un cliente pregunta cómo optimizar su factura ya migrada. ¿Cuáles son 3 palancas de FinOps recomendables? (respuesta múltiple)",
+        "options": [
+          "Rightsizing de instancias infrautilizadas",
+          "Comprar Reserved / Savings Plans para cargas estables",
+          "Encender más instancias por si acaso",
+          "Aprovechar Spot Instances para cargas tolerantes a interrupción"
+        ],
+        "answer": 1,
+        "explain": "Respuestas correctas: A, B, D. Rightsizing, compromisos plurianuales y Spot combinados suelen reducir 20-40% de la factura sin degradar servicio.",
+        "section": "Pricing and billing models",
+        "source": "Multiple response"
+      },
+      {
+        "q": "Un cliente de gaming lanza un título global. ¿Qué ventaja competitiva de Alibaba Cloud es fuerte para su pitch?",
+        "options": [
+          "Solo tiene datacenter en un país",
+          "Red global de regiones + backbone privado CEN + fuerte presencia en APAC",
+          "No soporta bases de datos",
+          "Sin CDN"
+        ],
+        "answer": 1,
+        "explain": "Alibaba Cloud tiene fuerte huella en APAC y backbone CEN interregión que reduce latencia entre regiones — diferencial clave para gaming global.",
+        "section": "Industry use cases",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué certificaciones internacionales fortalecen el argumentario de compliance para clientes regulados?",
+        "options": [
+          "Ninguna",
+          "ISO 27001, ISO 27017, ISO 27018, SOC 1/2/3, PCI DSS, GDPR-ready",
+          "Solo licencia de software local",
+          "Solo la marca del país"
+        ],
+        "answer": 1,
+        "explain": "Alibaba Cloud mantiene un amplio catálogo de certificaciones y attestations internacionales que reducen la carga de auditoría del cliente.",
+        "section": "Security and compliance for business",
+        "source": "generado"
+      },
+      {
+        "q": "Al calcular ROI de una migración, ¿qué métrica financiera responde \"en cuánto tiempo recupero la inversión\"?",
+        "options": [
+          "Payback period",
+          "NPV",
+          "IRR",
+          "Gross margin"
+        ],
+        "answer": 0,
+        "explain": "Payback period es el tiempo en que los ahorros o ingresos acumulados igualan la inversión inicial. NPV/IRR miden rentabilidad, no tiempo de recuperación.",
+        "section": "TCO, ROI and business case",
+        "source": "generado"
+      },
+      {
+        "q": "En un PoC, ¿qué debe negociarse ANTES de arrancar para evitar un PoC eterno?",
+        "options": [
+          "El logo del cliente",
+          "Criterios de éxito medibles, alcance acotado, plazo definido y siguientes pasos si se cumplen",
+          "El menú del almuerzo",
+          "El color del dashboard"
+        ],
+        "answer": 1,
+        "explain": "Un PoC sano tiene success criteria, scope, timeline y next-steps firmados. Sin eso, se convierte en consultoría gratuita indefinida.",
+        "section": "Sales process and customer engagement",
+        "source": "generado"
+      },
+      {
+        "q": "¿Qué modelo de despliegue combina infraestructura on-premise con nube pública, y es común en banca?",
+        "options": [
+          "Nube pública pura",
+          "Nube privada aislada",
+          "Nube híbrida",
+          "Multi-tenant SaaS"
+        ],
+        "answer": 2,
+        "explain": "Nube híbrida mantiene cargas sensibles on-prem y usa nube pública para elasticidad, DR o cargas modernas — patrón frecuente en sectores regulados.",
+        "section": "Cloud value proposition",
+        "source": "generado"
+      }
+    ],
+    "roadmap": [
+      {
+        "phase": "Semanas 1–2",
+        "focus": "Portafolio de productos Alibaba Cloud",
+        "weight": 22,
+        "courses": [
+          "certification-clouder-6th-ecs",
+          "certification-clouder-oss",
+          "certification-clouder-cdn"
+        ],
+        "goal": "Dominar portafolio de productos (22% del examen)."
+      },
+      {
+        "phase": "Semanas 3–4",
+        "focus": "Propuesta de valor de la nube",
+        "weight": 18,
+        "courses": [
+          "certification-clouder-analycase",
+          "certification-clouder-caseanalysis",
+          "certification-clouder-iot-bigdata-ai"
+        ],
+        "goal": "Dominar propuesta de valor (18% del examen)."
+      },
+      {
+        "phase": "Semanas 5–6",
+        "focus": "Casos de uso por industria",
+        "weight": 18,
+        "courses": [
+          "certification-clouder-simple-application-ecommerce",
+          "certification-clouder-ecommerce",
+          "certification-clouder-deliverybusiness"
+        ],
+        "goal": "Dominar casos de uso por industria (18% del examen)."
+      },
+      {
+        "phase": "Semanas 7–7",
+        "focus": "Modelos de precios y facturación",
+        "weight": 16,
+        "courses": [
+          "certification-clouder-ecs-costcontrol",
+          "certification-clouder-autoscaling"
+        ],
+        "goal": "Dominar precios y facturación (16% del examen)."
+      },
+      {
+        "phase": "Semanas 8–8",
+        "focus": "TCO, ROI y business case",
+        "weight": 14,
+        "courses": [
+          "certification-clouder-hybrid-solution",
+          "certification-clouder-datamigration"
+        ],
+        "goal": "Dominar TCO y ROI (14% del examen)."
+      },
+      {
+        "phase": "Semanas 9–9",
+        "focus": "Seguridad y compliance para el negocio",
+        "weight": 8,
+        "courses": [
+          "certification-clouder-securityoverview",
+          "certification-clouder-applicationsecurity"
+        ],
+        "goal": "Dominar seguridad y compliance (8% del examen)."
+      },
+      {
+        "phase": "Semanas 10–10",
+        "focus": "Proceso de venta y relación con clientes",
+        "weight": 4,
+        "courses": [
+          "ethics-ai"
+        ],
+        "goal": "Dominar proceso de venta consultiva (4% del examen)."
+      },
+      {
+        "phase": "Semana 11",
+        "focus": "Simulacro y repaso",
+        "weight": 0,
+        "courses": [],
+        "goal": "Rendir 2 simulacros completos (50 preguntas) y revisar errores."
+      }
+    ]
+  },
+  {
     "slug": "aca-llm-engineer",
     "code": "ACA · LLM",
     "level": "Associate",
