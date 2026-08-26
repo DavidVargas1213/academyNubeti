@@ -17,7 +17,14 @@ async function requireAuth() {
     .select('*')
     .eq('id', session.user.id)
     .single();
-  return { session, profile: profile || { id: session.user.id, email: session.user.email, is_admin: false } };
+  const p = profile || { id: session.user.id, email: session.user.email, is_admin: false };
+
+  const onChangePasswordPage = location.pathname.endsWith('change-password.html');
+  if (p.must_change_password && !onChangePasswordPage) {
+    location.href = 'change-password.html';
+    return null;
+  }
+  return { session, profile: p };
 }
 
 async function logout() {
@@ -42,6 +49,30 @@ async function saveProgress({ slug, category, completed, score, total, attempts 
   return { error };
 }
 
+// Llama a un endpoint /api/admin-* pasando el token de sesión del admin actual.
+async function callAdminApi(path, body) {
+  const { data: { session } } = await window.sb.auth.getSession();
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.access_token || ''}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error || `Error ${res.status}` };
+  return { data };
+}
+
+// Genera una contraseña temporal legible (para que el admin la copie y se la pase al usuario).
+function generateTempPassword() {
+  const words = ['Nube','Cloud','Alibaba','Nubeti','Academy','Certifica','Aprende','Estudia'];
+  const w = words[Math.floor(Math.random() * words.length)];
+  const num = Math.floor(1000 + Math.random() * 9000);
+  return `${w}${num}!`;
+}
+
 // Inyecta una barra de navegación superior simple (Mi Progreso / Admin / Salir).
 function renderAuthBar(profile) {
   const bar = document.createElement('div');
@@ -52,6 +83,7 @@ function renderAuthBar(profile) {
   if (profile && profile.is_admin) {
     html += `<a href="admin.html" style="${linkStyle}">Admin</a>`;
   }
+  html += `<a href="change-password.html" style="${linkStyle}">Cambiar Contraseña</a>`;
   html += `<button id="auth-logout-btn" style="${linkStyle}cursor:pointer;">Salir</button>`;
   bar.innerHTML = html;
   document.body.appendChild(bar);

@@ -35,6 +35,23 @@ tr:hover td{background:rgba(251,96,43,.03)}
 .detail-course{display:flex;justify-content:space-between;font-size:.85rem;padding:.35rem 0;border-bottom:1px solid var(--line);color:var(--ink-dim)}
 .loading{text-align:center;padding:6rem 2rem;color:var(--ink-mute);font-family:var(--font-title);font-size:1.2rem}
 .denied{text-align:center;padding:8rem 2rem;color:var(--ink-mute);font-family:var(--font-title);font-size:1.3rem}
+.create-box{border:1px solid var(--line-strong);background:var(--bg-2);padding:1.4rem 1.6rem;margin-bottom:2.5rem}
+.create-box h3{font-family:var(--font-title);font-size:1.1rem;margin-bottom:1rem}
+.create-row{display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end}
+.create-row .field{display:flex;flex-direction:column;gap:.3rem}
+.create-row label{font-family:var(--font-display);font-size:.62rem;letter-spacing:.15em;color:var(--ink-mute);text-transform:uppercase}
+.create-row input{background:var(--bg);border:1px solid var(--line-strong);color:var(--ink);padding:.6rem .8rem;border-radius:2px;font-size:.9rem;min-width:200px}
+.btn{background:var(--accent);color:var(--bg);border:none;padding:.65rem 1.1rem;font-family:var(--font-display);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px}
+.btn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--ink-dim)}
+.btn.danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.create-msg{margin-top:1rem;font-size:.88rem;display:none;padding:.8rem 1rem;border-radius:2px}
+.create-msg.show{display:block}
+.create-msg.ok{background:rgba(127,166,106,.1);color:#c8e2b0;border:1px solid var(--ok)}
+.create-msg.err{background:rgba(224,117,85,.1);color:#e8a094;border:1px solid var(--danger)}
+.row-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.row-actions button{font-size:.65rem;padding:.4rem .7rem}
+.badge-disabled{font-family:var(--font-display);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--danger);border:1px solid var(--danger);padding:.15rem .4rem;border-radius:2px;margin-left:.5rem}
 </style>
 </head>
 <body>
@@ -44,6 +61,8 @@ tr:hover td{background:rgba(251,96,43,.03)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="assets/auth.js"></script>
 <script>
+let CATALOG = [];
+
 (async () => {
   const auth = await requireAuth();
   if (!auth) return;
@@ -55,13 +74,18 @@ tr:hover td{background:rgba(251,96,43,.03)}
     return;
   }
 
-  const [catalog, profilesRes, progressRes] = await Promise.all([
-    fetch('data/catalog.json').then(r => r.json()),
+  CATALOG = await fetch('data/catalog.json').then(r => r.json());
+  await renderAdmin();
+})();
+
+async function renderAdmin() {
+  const article = document.getElementById('content');
+  const [profilesRes, progressRes] = await Promise.all([
     window.sb.from('profiles').select('*').order('email'),
     window.sb.from('progress').select('*'),
   ]);
-  const totalCourses = catalog.length;
-  const titleBySlug = Object.fromEntries(catalog.map(c => [c.slug, c.title_es]));
+  const totalCourses = CATALOG.length;
+  const titleBySlug = Object.fromEntries(CATALOG.map(c => [c.slug, c.title_es]));
   const profiles = profilesRes.data || [];
   const progress = progressRes.data || [];
 
@@ -83,12 +107,33 @@ tr:hover td{background:rgba(251,96,43,.03)}
   article.innerHTML = `
     <div class="kicker">◆ Panel de administración</div>
     <h1>Avance del equipo</h1>
+
+    <div class="create-box">
+      <h3>Crear nuevo usuario</h3>
+      <div class="create-row">
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" id="newName" placeholder="Nombre completo">
+        </div>
+        <div class="field">
+          <label>Correo</label>
+          <input type="email" id="newEmail" placeholder="correo@ejemplo.com">
+        </div>
+        <div class="field">
+          <label>Contraseña temporal</label>
+          <input type="text" id="newPassword" value="${generateTempPassword()}">
+        </div>
+        <button class="btn" id="createUserBtn">Crear usuario</button>
+      </div>
+      <div class="create-msg" id="createMsg"></div>
+    </div>
+
     <table>
-      <thead><tr><th>Usuario</th><th>Avance</th><th>Promedio quiz</th><th></th></tr></thead>
+      <thead><tr><th>Usuario</th><th>Avance</th><th>Promedio quiz</th><th>Acciones</th></tr></thead>
       <tbody>
         ${users.map((u, i) => `
           <tr>
-            <td><div class="name">${esc(u.profile.full_name || u.profile.email)}</div><div class="email">${esc(u.profile.email)}</div></td>
+            <td><div class="name">${esc(u.profile.full_name || u.profile.email)}${u.profile.disabled ? '<span class="badge-disabled">Desactivado</span>' : ''}</div><div class="email">${esc(u.profile.email)}</div></td>
             <td>
               <div class="bar-cell">
                 <div class="bar"><span style="width:${u.pct}%"></span></div>
@@ -96,7 +141,13 @@ tr:hover td{background:rgba(251,96,43,.03)}
               </div>
             </td>
             <td>${u.avg !== null ? u.avg + '%' : '—'}</td>
-            <td><span class="expand" data-i="${i}">Ver detalle</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="btn ghost expand" data-i="${i}">Ver detalle</button>
+                <button class="btn ghost reset-btn" data-id="${u.profile.id}" data-email="${esc(u.profile.email)}">Resetear contraseña</button>
+                <button class="btn ${u.profile.disabled ? '' : 'danger'} toggle-btn" data-id="${u.profile.id}" data-disabled="${u.profile.disabled ? '1' : '0'}">${u.profile.disabled ? 'Activar' : 'Desactivar'}</button>
+              </div>
+            </td>
           </tr>
           <tr class="detail-row" id="detail-${i}">
             <td colspan="4">
@@ -118,7 +169,54 @@ tr:hover td{background:rgba(251,96,43,.03)}
       document.getElementById(`detail-${el.dataset.i}`).classList.toggle('show');
     });
   });
-})();
+
+  document.getElementById('createUserBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('createUserBtn');
+    const msg = document.getElementById('createMsg');
+    const email = document.getElementById('newEmail').value.trim();
+    const password = document.getElementById('newPassword').value.trim();
+    const full_name = document.getElementById('newName').value.trim();
+    if (!email || !password) {
+      msg.className = 'create-msg show err';
+      msg.textContent = 'Falta el correo o la contraseña.';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Creando…';
+    const { data, error } = await callAdminApi('/api/admin-create-user', { email, password, full_name });
+    btn.disabled = false;
+    btn.textContent = 'Crear usuario';
+    msg.className = 'create-msg show ' + (error ? 'err' : 'ok');
+    msg.textContent = error
+      ? `Error: ${error}`
+      : `✓ Usuario creado. Compártele estas credenciales: ${email} / ${password} (deberá cambiarla al entrar).`;
+    if (!error) await renderAdmin();
+  });
+
+  document.querySelectorAll('.reset-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newPass = prompt(`Nueva contraseña temporal para ${btn.dataset.email}:`, generateTempPassword());
+      if (!newPass) return;
+      btn.disabled = true;
+      const { error } = await callAdminApi('/api/admin-reset-password', { userId: btn.dataset.id, newPassword: newPass });
+      btn.disabled = false;
+      if (error) { alert('Error: ' + error); return; }
+      alert(`Contraseña actualizada. Compártesela a ${btn.dataset.email}: ${newPass}`);
+    });
+  });
+
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const disable = btn.dataset.disabled === '0';
+      if (!confirm(disable ? '¿Desactivar esta cuenta? No podrá iniciar sesión.' : '¿Reactivar esta cuenta?')) return;
+      btn.disabled = true;
+      const { error } = await callAdminApi('/api/admin-toggle-user', { userId: btn.dataset.id, disable });
+      btn.disabled = false;
+      if (error) { alert('Error: ' + error); return; }
+      await renderAdmin();
+    });
+  });
+}
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 </script>
