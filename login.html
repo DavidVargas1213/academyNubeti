@@ -60,7 +60,7 @@ form.addEventListener('submit', async (e) => {
   const password = document.getElementById('password').value;
   const { error } = await window.sb.auth.signInWithPassword({ email, password });
   if (error) {
-    errorMsg.textContent = 'Correo o contraseña incorrectos.';
+    errorMsg.textContent = `${error.message} (código: ${error.status || error.code || 's/d'})`;
     errorMsg.classList.add('show');
     submitBtn.disabled = false;
     submitBtn.textContent = 'Entrar';
