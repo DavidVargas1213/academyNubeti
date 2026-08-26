@@ -88,8 +88,14 @@ footer{max-width:1400px;margin:4rem auto 0;padding:2rem 3rem 0;border-top:1px so
 
 <footer>Última actualización basada en syllabi oficiales de Alibaba Cloud Academy · 2026</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/auth.js"></script>
 <script>
 (async () => {
+  const auth = await requireAuth();
+  if (!auth) return;
+  renderAuthBar(auth.profile);
+
   try {
     const res = await fetch('data/tracks.json');
     const tracks = await res.json();

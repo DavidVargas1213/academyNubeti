@@ -103,15 +103,26 @@ footer.foot{text-align:center;color:var(--ink-mute);font-family:var(--font-mono)
 <a class="brandmark" href="index.html"><img src="assets/logo.png" alt="Nubeti"></a>
 <a class="back" href="index.html">← Volver al catálogo</a>
 <article id="content"><div class="loading">Cargando guía…</div></article>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/auth.js"></script>
 <script>
+let CURRENT_SLUG = null;
+let CURRENT_CATEGORY = null;
+
 (async () => {
+  const auth = await requireAuth();
+  if (!auth) return;
+  renderAuthBar(auth.profile);
+
   const params = new URLSearchParams(location.search);
   const slug = params.get('c') || params.get('slug');
   if (!slug) { document.getElementById('content').innerHTML = '<div class="loading">Falta parámetro ?c=slug</div>'; return; }
+  CURRENT_SLUG = slug;
   try {
     const res = await fetch(`guides/${slug}.json`);
     if (!res.ok) throw new Error(res.status);
     const g = await res.json();
+    CURRENT_CATEGORY = g.category_es || null;
     render(g);
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="loading">No se pudo cargar la guía (${e.message}).<br><br><a class="back" style="position:static" href="index.html">← Volver</a></div>`;
@@ -250,7 +261,12 @@ function render(g) {
       <section class="section">
         <header><div class="num">08</div><h2><small>Práctica de examen</small>${g.quiz.length} preguntas tipo certificación</h2></header>
         <div class="quiz" id="quiz"></div>
-        <div class="score" id="score"><span>Progreso</span><span><b id="scoreVal">0</b> / ${g.quiz.length} respondidas</span></div>
+        <div class="score" id="score">
+          <span>Progreso</span>
+          <span><b id="scoreVal">0</b> / ${g.quiz.length} respondidas · <b id="scoreCorrect">0</b> correctas</span>
+          <button id="saveProgressBtn" style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1rem;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;">Guardar mi progreso</button>
+        </div>
+        <div id="saveMsg" style="display:none;margin-top:.8rem;font-size:.85rem;color:var(--ok);font-family:var(--font-mono);"></div>
       </section>
     ` : ''}
 
@@ -264,6 +280,37 @@ function render(g) {
   `;
 
   if (g.quiz) renderQuiz(g.quiz);
+
+  const saveBtn = document.getElementById('saveProgressBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      const total = g.quiz.length;
+      const answered = document.querySelectorAll('.q input:checked').length;
+      const correct = parseInt(document.getElementById('scoreCorrect').textContent, 10) || 0;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando…';
+      const { error } = await saveProgress({
+        slug: CURRENT_SLUG,
+        category: CURRENT_CATEGORY,
+        completed: answered === total,
+        score: correct,
+        total: total,
+      });
+      const msg = document.getElementById('saveMsg');
+      msg.style.display = 'block';
+      if (error) {
+        msg.style.color = 'var(--danger)';
+        msg.textContent = 'No se pudo guardar. Intenta de nuevo.';
+      } else {
+        msg.style.color = 'var(--ok)';
+        msg.textContent = answered === total
+          ? `✓ Guardado — ${correct}/${total} correctas. Guía marcada como completada.`
+          : `Guardado (parcial: ${answered}/${total} respondidas). Responde todas para marcarla como completada.`;
+      }
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Guardar mi progreso';
+    });
+  }
 }
 
 function renderQuiz(questions) {
@@ -299,8 +346,13 @@ function renderQuiz(questions) {
 
 function updateScore(total){
   const answered = new Set();
-  document.querySelectorAll('.q input:checked').forEach(el => answered.add(el.name));
+  let correct = 0;
+  document.querySelectorAll('.q input:checked').forEach(el => {
+    answered.add(el.name);
+    if (el.parentElement.classList.contains('correct')) correct++;
+  });
   document.getElementById('scoreVal').textContent = answered.size;
+  document.getElementById('scoreCorrect').textContent = correct;
 }
 
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

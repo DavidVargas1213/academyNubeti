@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Admin · Nubeti Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--bg-2:#141414;--ink:#FDFBF2;--ink-dim:#c9c4b4;--ink-mute:#7a766c;--line:#232320;--line-strong:#38352f;--accent:#FB602B;--ok:#7fa66a;--font-display:'JetBrains Mono',ui-monospace,monospace;--font-title:'Fraunces',serif;--font-body:'Inter','Helvetica Neue',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.6}
+body{padding:5rem 2rem 4rem;min-height:100vh}
+a{color:inherit}
+.back{position:fixed;top:1.4rem;left:2rem;z-index:10;font-family:var(--font-display);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;padding:.5rem .8rem;border:1px solid var(--line-strong);border-radius:2px;background:rgba(10,10,10,.7)}
+.back:hover{color:var(--accent);border-color:var(--accent)}
+article{max-width:1100px;margin:0 auto}
+.kicker{font-family:var(--font-display);font-size:.7rem;letter-spacing:.3em;color:var(--accent);text-transform:uppercase;margin-bottom:.8rem}
+h1{font-family:var(--font-title);font-weight:600;font-size:clamp(1.8rem,4vw,2.6rem);margin-bottom:2.5rem}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-family:var(--font-display);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-mute);padding:.7rem .9rem;border-bottom:1px solid var(--line-strong)}
+td{padding:.9rem;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:rgba(251,96,43,.03)}
+.name{font-family:var(--font-title);font-size:1rem}
+.email{color:var(--ink-mute);font-size:.8rem}
+.bar-cell{display:flex;align-items:center;gap:.6rem;min-width:160px}
+.bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar>span{display:block;height:100%;background:linear-gradient(90deg,#ff8a5c,var(--accent))}
+.pct{font-family:var(--font-display);font-size:.8rem;color:var(--accent);min-width:2.6rem;text-align:right}
+.expand{cursor:pointer;font-family:var(--font-display);font-size:.68rem;color:var(--ink-mute);text-decoration:underline}
+.detail-row td{background:var(--bg-2);padding:1rem 1.4rem}
+.detail-row{display:none}
+.detail-row.show{display:table-row}
+.detail-course{display:flex;justify-content:space-between;font-size:.85rem;padding:.35rem 0;border-bottom:1px solid var(--line);color:var(--ink-dim)}
+.loading{text-align:center;padding:6rem 2rem;color:var(--ink-mute);font-family:var(--font-title);font-size:1.2rem}
+.denied{text-align:center;padding:8rem 2rem;color:var(--ink-mute);font-family:var(--font-title);font-size:1.3rem}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Volver al catálogo</a>
+<article id="content"><div class="loading">Cargando…</div></article>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(async () => {
+  const auth = await requireAuth();
+  if (!auth) return;
+  renderAuthBar(auth.profile);
+
+  const article = document.getElementById('content');
+  if (!auth.profile.is_admin) {
+    article.innerHTML = `<div class="denied">No tienes acceso a esta página.<br><br><a href="dashboard.html" style="color:#FB602B">Ir a Mi Progreso →</a></div>`;
+    return;
+  }
+
+  const [catalog, profilesRes, progressRes] = await Promise.all([
+    fetch('data/catalog.json').then(r => r.json()),
+    window.sb.from('profiles').select('*').order('email'),
+    window.sb.from('progress').select('*'),
+  ]);
+  const totalCourses = catalog.length;
+  const titleBySlug = Object.fromEntries(catalog.map(c => [c.slug, c.title_es]));
+  const profiles = profilesRes.data || [];
+  const progress = progressRes.data || [];
+
+  const byUser = {};
+  for (const p of profiles) byUser[p.id] = { profile: p, rows: [] };
+  for (const row of progress) {
+    if (byUser[row.user_id]) byUser[row.user_id].rows.push(row);
+  }
+
+  const users = Object.values(byUser).map(u => {
+    const completed = u.rows.filter(r => r.completed).length;
+    const scored = u.rows.filter(r => r.total);
+    const avg = scored.length
+      ? Math.round(scored.reduce((s, r) => s + (r.score / r.total), 0) / scored.length * 100)
+      : null;
+    return { ...u, completed, avg, pct: Math.round(completed / totalCourses * 100) };
+  }).sort((a, b) => b.completed - a.completed);
+
+  article.innerHTML = `
+    <div class="kicker">◆ Panel de administración</div>
+    <h1>Avance del equipo</h1>
+    <table>
+      <thead><tr><th>Usuario</th><th>Avance</th><th>Promedio quiz</th><th></th></tr></thead>
+      <tbody>
+        ${users.map((u, i) => `
+          <tr>
+            <td><div class="name">${esc(u.profile.full_name || u.profile.email)}</div><div class="email">${esc(u.profile.email)}</div></td>
+            <td>
+              <div class="bar-cell">
+                <div class="bar"><span style="width:${u.pct}%"></span></div>
+                <div class="pct">${u.completed}/${totalCourses}</div>
+              </div>
+            </td>
+            <td>${u.avg !== null ? u.avg + '%' : '—'}</td>
+            <td><span class="expand" data-i="${i}">Ver detalle</span></td>
+          </tr>
+          <tr class="detail-row" id="detail-${i}">
+            <td colspan="4">
+              ${u.rows.length ? u.rows.map(r => `
+                <div class="detail-course">
+                  <span>${esc(titleBySlug[r.guide_slug] || r.guide_slug)}</span>
+                  <span>${r.completed ? '✓' : '…'} ${r.total ? `${r.score}/${r.total}` : ''}</span>
+                </div>
+              `).join('') : '<span style="color:var(--ink-mute)">Sin actividad todavía.</span>'}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  document.querySelectorAll('.expand').forEach(el => {
+    el.addEventListener('click', () => {
+      document.getElementById(`detail-${el.dataset.i}`).classList.toggle('show');
+    });
+  });
+})();
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+</body>
+</html>

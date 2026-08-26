@@ -116,8 +116,14 @@ footer.foot{text-align:center;color:var(--ink-mute);font-family:var(--font-mono)
 <a class="brandmark" href="index.html"><img src="assets/logo.png" alt="Nubeti"></a>
 <a class="back" href="certifications.html">← Volver a certificaciones</a>
 <article id="content"><div class="loading">Cargando ruta…</div></article>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/auth.js"></script>
 <script>
 (async () => {
+  const auth = await requireAuth();
+  if (!auth) return;
+  renderAuthBar(auth.profile);
+
   const params = new URLSearchParams(location.search);
   const slug = params.get('c');
   if(!slug){document.getElementById('content').innerHTML='<div class="loading">Falta parámetro ?c=slug</div>';return;}

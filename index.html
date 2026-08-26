@@ -1929,8 +1929,14 @@ footer b{color:var(--ink);font-weight:500}
     }
   ]
 }</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/auth.js"></script>
 <script id="logic">
 (async () => {
+  const auth = await requireAuth();
+  if (!auth) return;
+  renderAuthBar(auth.profile);
+
   const data = JSON.parse(document.getElementById('data').textContent);
   const app = document.getElementById('app');
 

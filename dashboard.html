@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Progreso · Nubeti Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--bg-2:#141414;--ink:#FDFBF2;--ink-dim:#c9c4b4;--ink-mute:#7a766c;--line:#232320;--line-strong:#38352f;--accent:#FB602B;--ok:#7fa66a;--font-display:'JetBrains Mono',ui-monospace,monospace;--font-title:'Fraunces',serif;--font-body:'Inter','Helvetica Neue',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.6}
+body{padding:5rem 2rem 4rem;min-height:100vh}
+a{color:inherit}
+.back{position:fixed;top:1.4rem;left:2rem;z-index:10;font-family:var(--font-display);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;padding:.5rem .8rem;border:1px solid var(--line-strong);border-radius:2px;background:rgba(10,10,10,.7)}
+.back:hover{color:var(--accent);border-color:var(--accent)}
+article{max-width:1000px;margin:0 auto}
+.kicker{font-family:var(--font-display);font-size:.7rem;letter-spacing:.3em;color:var(--accent);text-transform:uppercase;margin-bottom:.8rem}
+h1{font-family:var(--font-title);font-weight:600;font-size:clamp(1.8rem,4vw,2.6rem);margin-bottom:2.5rem}
+.overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:3rem}
+.stat{border:1px solid var(--line-strong);background:var(--bg-2);padding:1.2rem 1.4rem;position:relative}
+.stat::before{content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent)}
+.stat .k{font-family:var(--font-display);font-size:.65rem;letter-spacing:.2em;color:var(--ink-mute);text-transform:uppercase;margin-bottom:.4rem}
+.stat .v{font-family:var(--font-title);font-size:2rem;color:var(--ink)}
+.stat .v em{color:var(--accent);font-style:normal}
+.cat-block{border:1px solid var(--line);background:var(--bg-2);padding:1.2rem 1.4rem;margin-bottom:1rem}
+.cat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+.cat-head h3{font-family:var(--font-title);font-size:1.1rem;font-weight:600}
+.cat-head .pct{font-family:var(--font-display);color:var(--accent);font-size:.85rem}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:1rem}
+.bar>span{display:block;height:100%;background:linear-gradient(90deg,#ff8a5c,var(--accent))}
+.course-row{display:flex;align-items:center;gap:.8rem;padding:.55rem .3rem;border-bottom:1px solid var(--line);font-size:.9rem}
+.course-row:last-child{border-bottom:0}
+.course-row a{flex:1;text-decoration:none;color:var(--ink-dim);transition:color .15s}
+.course-row a:hover{color:var(--ink)}
+.badge{font-family:var(--font-display);font-size:.65rem;letter-spacing:.08em;padding:.2rem .5rem;border-radius:2px;text-transform:uppercase;white-space:nowrap}
+.badge.done{background:rgba(127,166,106,.15);color:#a8ce8c;border:1px solid #4a6b3a}
+.badge.pending{background:transparent;color:var(--ink-mute);border:1px solid var(--line-strong)}
+.score{font-family:var(--font-display);font-size:.72rem;color:var(--ink-mute);min-width:3.5rem;text-align:right}
+.loading{text-align:center;padding:6rem 2rem;color:var(--ink-mute);font-family:var(--font-title);font-size:1.2rem}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Volver al catálogo</a>
+<article id="content"><div class="loading">Cargando tu progreso…</div></article>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(async () => {
+  const auth = await requireAuth();
+  if (!auth) return;
+  renderAuthBar(auth.profile);
+
+  const [catalog, progressRes] = await Promise.all([
+    fetch('data/catalog.json').then(r => r.json()),
+    window.sb.from('progress').select('*').eq('user_id', auth.session.user.id),
+  ]);
+  const progressMap = Object.fromEntries((progressRes.data || []).map(p => [p.guide_slug, p]));
+
+  const byCategory = {};
+  for (const c of catalog) {
+    byCategory[c.category] = byCategory[c.category] || [];
+    byCategory[c.category].push(c);
+  }
+
+  const total = catalog.length;
+  const completed = catalog.filter(c => progressMap[c.slug]?.completed).length;
+  const scored = catalog.filter(c => progressMap[c.slug]?.total);
+  const avgPct = scored.length
+    ? Math.round(scored.reduce((s, c) => s + (progressMap[c.slug].score / progressMap[c.slug].total), 0) / scored.length * 100)
+    : null;
+
+  const article = document.getElementById('content');
+  article.innerHTML = `
+    <div class="kicker">◆ ${esc(auth.session.user.email)}</div>
+    <h1>Mi Progreso</h1>
+    <div class="overview">
+      <div class="stat"><div class="k">Completadas</div><div class="v"><em>${completed}</em> / ${total}</div></div>
+      <div class="stat"><div class="k">Avance total</div><div class="v"><em>${Math.round(completed/total*100)}</em>%</div></div>
+      <div class="stat"><div class="k">Promedio en quizzes</div><div class="v">${avgPct !== null ? `<em>${avgPct}</em>%` : '—'}</div></div>
+    </div>
+    ${Object.entries(byCategory).map(([cat, courses]) => {
+      const catCompleted = courses.filter(c => progressMap[c.slug]?.completed).length;
+      const pct = Math.round(catCompleted / courses.length * 100);
+      return `
+        <div class="cat-block">
+          <div class="cat-head">
+            <h3>${esc(cat)}</h3>
+            <div class="pct">${catCompleted}/${courses.length} · ${pct}%</div>
+          </div>
+          <div class="bar"><span style="width:${pct}%"></span></div>
+          ${courses.map(c => {
+            const p = progressMap[c.slug];
+            const done = p?.completed;
+            return `
+              <div class="course-row">
+                <a href="guide.html?c=${encodeURIComponent(c.slug)}">${esc(c.title_es)}</a>
+                ${p?.total ? `<span class="score">${p.score}/${p.total}</span>` : ''}
+                <span class="badge ${done ? 'done' : 'pending'}">${done ? '✓ Completada' : 'Pendiente'}</span>
+              </div>`;
+          }).join('')}
+        </div>`;
+    }).join('')}
+  `;
+})();
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+</body>
+</html>
