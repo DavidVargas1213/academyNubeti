@@ -68,6 +68,12 @@ footer{max-width:1400px;margin:4rem auto 0;padding:2rem 3rem 0;border-top:1px so
   .back{left:1rem;top:1rem}
 }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nubeti">
 </head>
 <body>
 <a class="brandmark" href="index.html"><img src="assets/logo.png" alt="Nubeti"></a>
@@ -143,5 +149,6 @@ function render(tracks){
   }).join('');
 }
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
 </body>
 </html>

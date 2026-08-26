@@ -25,6 +25,12 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .error.show{display:block}
 .foot{margin-top:1.6rem;text-align:center;color:var(--ink-mute);font-size:.78rem}
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nubeti">
 </head>
 <body>
 <form class="card" id="loginForm">
@@ -69,5 +75,6 @@ form.addEventListener('submit', async (e) => {
   location.href = 'index.html';
 });
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
 </body>
 </html>
