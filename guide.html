@@ -260,13 +260,18 @@ function render(g) {
     ${g.quiz ? `
       <section class="section">
         <header><div class="num">08</div><h2><small>Práctica de examen</small>${g.quiz.length} preguntas tipo certificación</h2></header>
+        <p style="color:var(--ink-mute);font-size:.85rem;margin-bottom:1.2rem;">Cada respuesta queda fija al elegirla. Las correcciones y explicaciones se muestran al final, al terminar el quiz.</p>
         <div class="quiz" id="quiz"></div>
         <div class="score" id="score">
           <span>Progreso</span>
-          <span><b id="scoreVal">0</b> / ${g.quiz.length} respondidas · <b id="scoreCorrect">0</b> correctas</span>
-          <button id="saveProgressBtn" style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1rem;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;">Guardar mi progreso</button>
+          <span><b id="scoreVal">0</b> / ${g.quiz.length} respondidas</span>
+          <button id="finishBtn" disabled style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1rem;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;">Ver Resultados</button>
         </div>
-        <div id="saveMsg" style="display:none;margin-top:.8rem;font-size:.85rem;color:var(--ok);font-family:var(--font-mono);"></div>
+        <div id="resultsPanel" style="display:none;margin-top:1.2rem;">
+          <div class="exam-focus" id="resultsSummary" style="margin-bottom:1rem;"></div>
+          <button id="retryBtn" style="background:transparent;border:1px solid var(--line-strong);color:var(--ink-dim);padding:.6rem 1.2rem;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;">↻ Repetir Quiz</button>
+        </div>
+        <div id="saveMsg" style="display:none;margin-top:.8rem;font-size:.85rem;font-family:var(--font-mono);"></div>
       </section>
     ` : ''}
 
@@ -279,42 +284,26 @@ function render(g) {
     <footer class="foot">Guía en español · Alibaba Cloud Academy · Preparación de certificaciones</footer>
   `;
 
-  if (g.quiz) renderQuiz(g.quiz);
+  if (g.quiz) initQuiz(g.quiz);
+}
 
-  const saveBtn = document.getElementById('saveProgressBtn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', async () => {
-      const total = g.quiz.length;
-      const answered = document.querySelectorAll('.q input:checked').length;
-      const correct = parseInt(document.getElementById('scoreCorrect').textContent, 10) || 0;
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Guardando…';
-      const { error } = await saveProgress({
-        slug: CURRENT_SLUG,
-        category: CURRENT_CATEGORY,
-        completed: answered === total,
-        score: correct,
-        total: total,
-      });
-      const msg = document.getElementById('saveMsg');
-      msg.style.display = 'block';
-      if (error) {
-        msg.style.color = 'var(--danger)';
-        msg.textContent = 'No se pudo guardar. Intenta de nuevo.';
-      } else {
-        msg.style.color = 'var(--ok)';
-        msg.textContent = answered === total
-          ? `✓ Guardado — ${correct}/${total} correctas. Guía marcada como completada.`
-          : `Guardado (parcial: ${answered}/${total} respondidas). Responde todas para marcarla como completada.`;
-      }
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Guardar mi progreso';
-    });
-  }
+let quizState = { answers: {} };
+
+function initQuiz(questions) {
+  quizState = { answers: {} };
+  renderQuiz(questions);
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('saveMsg').style.display = 'none';
+  const finishBtn = document.getElementById('finishBtn');
+  finishBtn.style.display = '';
+  finishBtn.disabled = true;
+  finishBtn.onclick = () => finishQuiz(questions);
+  updateScore(questions.length);
 }
 
 function renderQuiz(questions) {
   const quiz = document.getElementById('quiz');
+  quiz.innerHTML = '';
   questions.forEach((item, i) => {
     const div = document.createElement('div');
     div.className = 'q';
@@ -323,36 +312,81 @@ function renderQuiz(questions) {
       <div class="options">
         ${item.options.map((opt, j) => `<label><input type="radio" name="q${i}" value="${j}"><span>${esc(opt)}</span></label>`).join('')}
       </div>
-      <button class="reveal">Ver respuesta y explicación</button>
-      <div class="explanation"><b>Correcta: ${String.fromCharCode(65 + item.answer)} · ${esc(item.options[item.answer])}</b>${esc(item.explain || '')}</div>
+      <div class="explanation"></div>
     `;
     quiz.appendChild(div);
-    const labels = div.querySelectorAll('.options label');
     const inputs = div.querySelectorAll('input');
-    const expl = div.querySelector('.explanation');
     inputs.forEach((inp, j) => inp.addEventListener('change', () => {
-      labels.forEach(l => l.classList.remove('correct','wrong'));
-      labels[item.answer].classList.add('correct');
-      if (j !== item.answer) labels[j].classList.add('wrong');
-      expl.classList.add('show');
+      // Se puede cambiar de opción libremente; no se revela correcto/incorrecto hasta el final.
+      quizState.answers[i] = j;
       updateScore(questions.length);
     }));
-    div.querySelector('.reveal').addEventListener('click', () => {
-      labels[item.answer].classList.add('correct');
-      expl.classList.add('show');
-    });
   });
 }
 
 function updateScore(total){
-  const answered = new Set();
+  const answeredCount = Object.keys(quizState.answers).length;
+  document.getElementById('scoreVal').textContent = answeredCount;
+  document.getElementById('finishBtn').disabled = answeredCount < total;
+}
+
+async function finishQuiz(questions) {
+  const total = questions.length;
   let correct = 0;
-  document.querySelectorAll('.q input:checked').forEach(el => {
-    answered.add(el.name);
-    if (el.parentElement.classList.contains('correct')) correct++;
+  const qDivs = document.querySelectorAll('.q');
+  questions.forEach((item, i) => {
+    const div = qDivs[i];
+    const labels = div.querySelectorAll('.options label');
+    div.querySelectorAll('input').forEach(inp => { inp.disabled = true; });
+    const chosen = quizState.answers[i];
+    labels[item.answer].classList.add('correct');
+    if (chosen !== item.answer) labels[chosen].classList.add('wrong');
+    if (chosen === item.answer) correct++;
+    const expl = div.querySelector('.explanation');
+    expl.innerHTML = `<b>Correcta: ${String.fromCharCode(65 + item.answer)} · ${esc(item.options[item.answer])}</b>${esc(item.explain || '')}`;
+    expl.classList.add('show');
   });
-  document.getElementById('scoreVal').textContent = answered.size;
-  document.getElementById('scoreCorrect').textContent = correct;
+
+  document.getElementById('finishBtn').style.display = 'none';
+  document.getElementById('resultsPanel').style.display = 'block';
+
+  const saveMsg = document.getElementById('saveMsg');
+  saveMsg.style.display = 'block';
+  saveMsg.style.color = 'var(--ink-dim)';
+  saveMsg.textContent = 'Guardando resultado…';
+
+  const { data: { session } } = await window.sb.auth.getSession();
+  let attempts = 1;
+  if (session) {
+    const { data: existing } = await window.sb.from('progress')
+      .select('attempts').eq('user_id', session.user.id).eq('guide_slug', CURRENT_SLUG).maybeSingle();
+    attempts = (existing?.attempts || 0) + 1;
+  }
+
+  const { error } = await saveProgress({
+    slug: CURRENT_SLUG,
+    category: CURRENT_CATEGORY,
+    completed: true,
+    score: correct,
+    total: total,
+    attempts: attempts,
+  });
+
+  document.getElementById('resultsSummary').innerHTML =
+    `<strong>${correct} / ${total}</strong> respuestas correctas${attempts > 1 ? ` · Intento nº ${attempts}` : ''}`;
+
+  if (error) {
+    saveMsg.style.color = 'var(--danger)';
+    saveMsg.textContent = 'No se pudo guardar tu resultado. Intenta de nuevo.';
+  } else {
+    saveMsg.style.color = 'var(--ok)';
+    saveMsg.textContent = `✓ Resultado guardado (intento ${attempts}).`;
+  }
+
+  document.getElementById('retryBtn').onclick = () => {
+    initQuiz(questions);
+    document.getElementById('quiz').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 }
 
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

@@ -26,7 +26,7 @@ async function logout() {
 }
 
 // Guarda/actualiza el progreso de un curso para el usuario actual.
-async function saveProgress({ slug, category, completed, score, total }) {
+async function saveProgress({ slug, category, completed, score, total, attempts }) {
   const { data: { session } } = await window.sb.auth.getSession();
   if (!session) return { error: 'no-session' };
   const { error } = await window.sb.from('progress').upsert({
@@ -36,6 +36,7 @@ async function saveProgress({ slug, category, completed, score, total }) {
     completed: !!completed,
     score: score ?? null,
     total: total ?? null,
+    attempts: attempts ?? 1,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,guide_slug' });
   return { error };

@@ -97,6 +97,7 @@ h1{font-family:var(--font-title);font-weight:600;font-size:clamp(1.8rem,4vw,2.6r
             return `
               <div class="course-row">
                 <a href="guide.html?c=${encodeURIComponent(c.slug)}">${esc(c.title_es)}</a>
+                ${p?.attempts > 1 ? `<span class="score">${p.attempts} intentos</span>` : ''}
                 ${p?.total ? `<span class="score">${p.score}/${p.total}</span>` : ''}
                 <span class="badge ${done ? 'done' : 'pending'}">${done ? '✓ Completada' : 'Pendiente'}</span>
               </div>`;

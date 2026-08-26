@@ -103,7 +103,7 @@ tr:hover td{background:rgba(251,96,43,.03)}
               ${u.rows.length ? u.rows.map(r => `
                 <div class="detail-course">
                   <span>${esc(titleBySlug[r.guide_slug] || r.guide_slug)}</span>
-                  <span>${r.completed ? '✓' : '…'} ${r.total ? `${r.score}/${r.total}` : ''}</span>
+                  <span>${r.completed ? '✓' : '…'} ${r.total ? `${r.score}/${r.total}` : ''} ${r.attempts > 1 ? `· ${r.attempts} intentos` : ''}</span>
                 </div>
               `).join('') : '<span style="color:var(--ink-mute)">Sin actividad todavía.</span>'}
             </td>
