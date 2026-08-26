@@ -2,428 +2,174 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-sparkpython",
   "title_en": "How to Use Spark on Cloud Series 2 - Spark Python",
-  "title_es": "Cómo Usar Spark en Cloud Series 2 - Spark Python",
+  "title_es": "Cómo Usar Spark en la Nube Serie 2 - Spark con Python",
+  "title_es_html": "Cómo Usar Spark en la Nube Serie 2 - <em>Spark con Python</em>",
   "duration_es": "46 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_sparkpython",
-  "lead": "Guía completa en español para el curso «How to Use Spark on Cloud Series 2 - Spark Python» de Alibaba Cloud Academy. Cubre en profundidad Apache Spark en Alibaba Cloud. Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «How to Use Spark on Cloud Series 2 - Spark Python» de Alibaba Cloud Academy. Tercer curso de la serie Spark on Cloud: asume que Spark ya está instalado (Setup) y que se entiende su arquitectura de clúster (EMR), y se centra exclusivamente en escribir programas de análisis de datos en PySpark — RDDs, funciones lambda y generadores de Python aplicados a transformaciones distribuidas, DataFrames y una introducción a Structured Streaming.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Apache Spark en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: RDD, DataFrame, Dataset, Executor, Partition.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Apache Spark en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué hace PySpark: el puente entre el lenguaje Python y el motor distribuido de Spark.",
+    "<strong>Aplicar</strong> transformaciones y acciones básicas sobre RDDs.",
+    "<strong>Usar</strong> funciones lambda y generadores de Python dentro de transformaciones de Spark.",
+    "<strong>Preferir</strong> la API de DataFrame sobre RDD cuando el problema lo permite, y explicar por qué.",
+    "<strong>Escribir</strong> un job introductorio de Structured Streaming con PySpark.",
+    "<strong>Reconocer</strong> los errores más comunes al programar en PySpark: evaluación perezosa y funciones no serializables."
   ],
-  "architecture": "Job Spark: SparkSession → lee de OSS (Parquet particionado) → transformaciones lazy → escribe a Hologres/OSS. Deploy: EMR o ACK con Spark Operator. Metastore en DLF (Data Lake Formation). Monitoring en Spark UI.",
+  "architecture": "Una aplicación PySpark corre un proceso Python que actúa como Driver y se comunica con la JVM de Spark a través de Py4J; cuando se define una transformación con una función Python (incluida una lambda o un generador), esa función se serializa y se envía a los Executors, que la ejecutan sobre su porción de los datos. Los RDDs son la abstracción más baja: una colección distribuida e inmutable de objetos Python, sobre la que se aplican transformaciones perezosas (no se ejecutan hasta que una acción las dispara) como map, filter o reduceByKey. Los DataFrames añaden un esquema tabular y pasan por el optimizador Catalyst antes de ejecutarse, generando planes más eficientes que el código Python equivalente escrito directamente sobre RDDs. Structured Streaming reutiliza el mismo motor y la misma API de DataFrame, tratando un flujo continuo de datos como una tabla que crece de forma indefinida, sobre la que se aplican las mismas transformaciones que sobre datos estáticos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Apache Spark en Alibaba Cloud",
-      "title_en": "Introduction to Apache Spark en Alibaba Cloud",
-      "intro": "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · PySpark: el puente entre Python y el motor distribuido de Spark",
+      "title_en": "PySpark: The Bridge Between Python and Spark's Distributed Engine",
+      "intro": "Antes de escribir transformaciones hay que entender qué ocurre realmente cuando se llama a una función Python desde una aplicación Spark — no es magia, es un puente concreto entre dos lenguajes.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Apache Spark en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Py4J</strong>: biblioteca que permite que el proceso Python (el Driver de una aplicación PySpark) invoque objetos y métodos de la JVM donde vive el motor real de Spark, y viceversa.",
+        "<strong>Costo de la serialización</strong>: cada función Python (lambda, función nombrada, o incluso un objeto capturado por closure) que se pasa a una transformación debe serializarse para enviarse a los Executors — un objeto no serializable dentro de esa función provoca un error en tiempo de ejecución, no en tiempo de escritura del código.",
+        "<strong>Overhead de PySpark frente a Scala/Java</strong>: mover datos entre el proceso Python y la JVM (especialmente en UDFs Python fila a fila) tiene un costo de rendimiento que no existe en Scala/Java nativo — una razón para preferir operaciones vectorizadas de DataFrame sobre UDFs Python cuando sea posible.",
+        "<strong>SparkSession como punto de entrada</strong>: toda aplicación PySpark moderna comienza creando o recuperando un SparkSession, a través del cual se construyen RDDs, DataFrames y se ejecutan consultas Spark SQL.",
+        "<strong>Compatibilidad de versión</strong>: la versión de PySpark instalada (vía pip o incluida en el clúster) debe ser compatible con la versión de Spark del clúster contra el que se ejecuta — un desajuste de versiones es una fuente común de errores confusos al arrancar."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Apache Spark en Alibaba Cloud es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "PySpark no reimplementa Spark en Python puro — es una capa sobre la misma JVM de Spark; el código Python define la lógica, pero la ejecución distribuida real ocurre en la JVM, con un costo de serialización en cada frontera entre ambos mundos."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Apache Spark en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · RDDs: transformaciones y acciones básicas",
+      "title_en": "RDDs: Basic Transformations and Actions",
+      "intro": "El RDD (Resilient Distributed Dataset) es la abstracción original de Spark y sigue siendo la base conceptual sobre la que se construyen DataFrames — entenderlo bien facilita razonar sobre el rendimiento de cualquier job.",
       "points": [
-        "<strong>Patrón canónico</strong>: Job Spark: SparkSession → lee de OSS (Parquet particionado) → transformaciones lazy → escribe a Hologres/OSS. Deploy: EMR o ACK con Spark Operator. Metastore en DLF (Data Lake Formation). Monitoring en Spark UI.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Apache Spark en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>RDD</strong> <em>(RDD)</em>: Colección distribuida inmutable — API legacy.",
-        "<strong>DataFrame</strong> <em>(DataFrame)</em>: API estructurada con Catalyst optimizer.",
-        "<strong>Dataset</strong> <em>(Dataset)</em>: DataFrame tipado (Scala/Java).",
-        "<strong>Executor</strong> <em>(Executor)</em>: Proceso worker que ejecuta tasks.",
-        "<strong>Partition</strong> <em>(Partition)</em>: Chunk de datos procesado en paralelo.",
-        "<strong>Shuffle</strong> <em>(Shuffle)</em>: Redistribución cross-partition — costoso.",
-        "<strong>Broadcast</strong> <em>(Broadcast)</em>: Enviar pequeño dataset a todos los executors (evita shuffle).",
-        "<strong>Catalyst</strong> <em>(Catalyst)</em>: Optimizador de queries de Spark SQL."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Inmutabilidad</strong>: un RDD nunca se modifica in-place; cada transformación produce un nuevo RDD, mientras que el original permanece intacto — esto es lo que permite a Spark reconstruir datos perdidos ante un fallo de nodo, reejecutando el linaje de transformaciones.",
+        "<strong>Transformaciones</strong>: operaciones como <code>map()</code>, <code>filter()</code>, <code>flatMap()</code> o <code>reduceByKey()</code> definen un nuevo RDD a partir de uno existente, pero no ejecutan ningún cómputo por sí solas — solo construyen el plan.",
+        "<strong>Acciones</strong>: operaciones como <code>collect()</code>, <code>count()</code>, <code>take(n)</code> o <code>saveAsTextFile()</code> disparan la ejecución real de todas las transformaciones pendientes en el linaje del RDD.",
+        "<strong>Evaluación perezosa (lazy evaluation)</strong>: nada se calcula hasta que una acción lo exige — encadenar diez transformaciones sin llamar a una acción no consume tiempo de cómputo real, solo construye el plan de ejecución.",
+        "<strong>Riesgo de collect()</strong>: traer un RDD grande al Driver con <code>collect()</code> puede agotar su memoria si el resultado no cabe — es preferible usar <code>take(n)</code> para inspección, o escribir el resultado distribuido directamente a almacenamiento en vez de centralizarlo."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe un job que «no parece hacer nada» hasta cierto punto del código, la explicación casi siempre es evaluación perezosa: las transformaciones no ejecutan nada hasta que aparece la primera acción."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Funciones lambda y generadores de Python en transformaciones de Spark",
+      "title_en": "Python Lambdas and Generators in Spark Transformations",
+      "intro": "PySpark aprovecha directamente características del propio lenguaje Python dentro de sus transformaciones — este módulo cubre cómo se usan y dónde generan comportamientos inesperados si no se entienden bien.",
       "points": [
-        "<strong>HA</strong>: AQE habilitado",
-        "<strong>Seguridad</strong>: DataFrame API sobre RDD (Catalyst optimiza)",
-        "<strong>Buenas prácticas</strong>: Particiones ~128-256 MB por partition",
-        "<strong>Buenas prácticas</strong>: Broadcast joins para tablas pequeñas",
-        "<strong>Buenas prácticas</strong>: Parquet + partition pruning en OSS"
+        "<strong>Lambdas en map/filter</strong>: <code>rdd.map(lambda x: x * 2)</code> o <code>rdd.filter(lambda x: x > 0)</code> son el patrón más común para transformaciones simples de una sola expresión, evitando definir una función nombrada aparte para lógica trivial.",
+        "<strong>Funciones nombradas para lógica compleja</strong>: cuando la lógica de la transformación excede una expresión simple, es preferible una función definida con <code>def</code> en vez de una lambda extensa difícil de leer — la claridad importa tanto como la corrección.",
+        "<strong>flatMap con generadores</strong>: <code>flatMap()</code> espera que la función devuelva un iterable por cada elemento de entrada; un generador Python (usando <code>yield</code>) es una forma eficiente de producir esa secuencia sin construir una lista completa en memoria antes de devolverla.",
+        "<strong>Cierre sobre variables externas (closures)</strong>: una lambda o función puede capturar variables definidas fuera de ella; si esa variable es un objeto grande o no serializable (por ejemplo, una conexión de base de datos abierta en el Driver), Spark falla al intentar enviar la función a los Executors.",
+        "<strong>Broadcast para variables compartidas grandes</strong>: cuando una función necesita acceso a una estructura de datos relativamente grande y de solo lectura (como un diccionario de referencia), se recomienda usar una variable de broadcast en vez de capturarla directamente por closure, evitando que se serialice y reenvíe con cada tarea."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Un error de serialización («object not picklable» o similar) casi siempre apunta a una closure que capturó algo que no debería viajar a los Executors — la solución típica es mover ese objeto dentro de la función o usar una variable de broadcast."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · DataFrames: la API estructurada preferida sobre RDD",
+      "title_en": "DataFrames: The Preferred Structured API over RDD",
+      "intro": "Aunque los RDDs siguen existiendo, la mayoría del código PySpark moderno se escribe sobre DataFrames — este módulo explica por qué y cuándo sí conviene bajar de nivel hasta RDD.",
       "points": [
-        "<strong>Antipattern</strong>: Muchas partitions pequeñas (small files problem)",
-        "<strong>Antipattern</strong>: Collect() en DF grande → OOM en driver",
-        "<strong>Antipattern</strong>: UDFs Python cuando existe función nativa",
-        "<strong>Antipattern</strong>: Shuffle innecesario por reorderings",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Esquema tipado</strong>: a diferencia de un RDD de objetos Python genéricos, un DataFrame tiene columnas con nombre y tipo conocido, permitiendo operaciones declarativas similares a SQL (<code>select</code>, <code>filter</code>, <code>groupBy</code>, <code>agg</code>).",
+        "<strong>Optimización con Catalyst</strong>: las operaciones sobre DataFrame se traducen a un plan lógico que el optimizador Catalyst reescribe y optimiza antes de ejecutar, algo que una transformación arbitraria sobre un RDD de objetos Python no puede aprovechar de la misma forma.",
+        "<strong>Interoperabilidad con Spark SQL</strong>: un DataFrame se puede registrar como vista temporal y consultarse con SQL directamente, combinando código Python con sentencias SQL dentro de la misma aplicación.",
+        "<strong>Cuándo bajar a RDD</strong>: cuando la lógica requiere control muy fino sobre el particionamiento físico, estructuras de datos no tabulares complejas, o algoritmos que no se expresan bien de forma declarativa — casos minoritarios frente al uso general de DataFrame.",
+        "<strong>Conversión entre ambos</strong>: <code>df.rdd</code> expone el RDD subyacente de un DataFrame cuando hace falta esa flexibilidad puntual, y <code>rdd.toDF()</code> permite volver a la API estructurada una vez resuelto ese fragmento de lógica de bajo nivel."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Ante la duda entre usar RDD o DataFrame para una transformación tabular estándar (filtros, agregaciones, joins), la respuesta casi siempre es DataFrame, por el beneficio de la optimización de Catalyst."
+      }
+    },
+    {
+      "title_es": "5 · Introducción a Structured Streaming con PySpark",
+      "title_en": "Introduction to Structured Streaming with PySpark",
+      "intro": "Este módulo introduce, a nivel conceptual, cómo la misma API de DataFrame se extiende para procesar datos que llegan de forma continua, sin necesidad de un motor de streaming completamente distinto.",
+      "points": [
+        "<strong>Tabla sin límite</strong>: Structured Streaming trata un flujo de datos entrante como una tabla que crece indefinidamente con el tiempo; las mismas transformaciones de DataFrame (filter, groupBy, agg) se expresan igual que sobre datos estáticos.",
+        "<strong>Fuentes de streaming</strong>: se puede leer de orígenes como archivos que llegan a un directorio monitoreado, o de colas de mensajería, mediante <code>spark.readStream</code> en vez de <code>spark.read</code>.",
+        "<strong>Sinks de salida</strong>: el resultado se escribe de forma incremental hacia un destino (consola para pruebas, archivos, o un sistema externo) mediante <code>writeStream</code>, especificando el modo de salida (append, complete, update).",
+        "<strong>Trigger</strong>: controla la frecuencia con la que se procesan los nuevos datos disponibles — desde procesar tan pronto como haya datos hasta intervalos fijos configurables.",
+        "<strong>Reutilización de conocimiento</strong>: alguien que ya domina transformaciones de DataFrame sobre datos estáticos puede aplicar prácticamente el mismo conocimiento a Structured Streaming, cambiando principalmente cómo se lee la entrada y cómo se escribe la salida."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Structured Streaming no es un motor separado de Spark — es la misma API de DataFrame aplicada a un flujo continuo modelado como una tabla que crece sin fin."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes al programar en PySpark",
+      "title_en": "Common Mistakes When Programming in PySpark",
+      "intro": "Cerramos el curso con los errores de programación que un desarrollador nuevo en PySpark comete con más frecuencia, y que el examen suele plantear como preguntas de diagnóstico.",
+      "points": [
+        "<strong>Esperar ejecución inmediata de una transformación</strong>: escribir una transformación y asumir que ya se ejecutó, sin haber llamado a ninguna acción — un malentendido directo de la evaluación perezosa.",
+        "<strong>Capturar objetos no serializables en una closure</strong>: pasar una lambda que hace referencia a una conexión de red, un archivo abierto, o cualquier objeto que no puede serializarse hacia los Executors.",
+        "<strong>Abuso de collect()</strong>: traer al Driver un volumen de datos que no cabe en su memoria, en vez de procesar el resultado de forma distribuida o inspeccionar solo una muestra con take().",
+        "<strong>Usar UDFs Python cuando existe una función nativa equivalente</strong>: escribir una función Python personalizada para una operación que ya existe como función incorporada de Spark SQL, pagando el costo de serialización innecesariamente.",
+        "<strong>Recalcular el mismo RDD/DataFrame varias veces sin persistir</strong>: si un mismo resultado intermedio se reutiliza varias veces en el código, no marcarlo con <code>cache()</code>/<code>persist()</code> obliga a Spark a recalcularlo desde el origen cada vez que se necesita."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un job PySpark lento o que falla de forma confusa, revisa en este orden: ¿hay collect() innecesario?, ¿hay una closure capturando algo pesado o no serializable?, ¿se recalcula el mismo resultado varias veces sin cache()?"
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "ETL batch nocturno TB-PB"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Feature engineering para ML"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración de ETL SQL a código versionado"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Análisis ad-hoc con pyspark"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Streaming con Structured Streaming"
-    }
+    { "title": "Escenario 1", "text": "Transformar y filtrar una gran colección de registros con lógica Python simple — map/filter con lambdas sobre RDD" },
+    { "title": "Escenario 2", "text": "Expandir cada fila en varios elementos usando lógica de generador — flatMap con una función que usa yield" },
+    { "title": "Escenario 3", "text": "Consultas tabulares con filtros, agregaciones y joins sobre datos estructurados — DataFrame en vez de RDD" },
+    { "title": "Escenario 4", "text": "Función que necesita un diccionario de referencia de tamaño moderado en cada tarea — variable de broadcast en vez de closure directa" },
+    { "title": "Escenario 5", "text": "Procesar archivos que llegan continuamente a un directorio monitoreado — Structured Streaming con readStream" },
+    { "title": "Escenario 6", "text": "Job que falla con un error de serialización al enviar una función a los Executors — revisar qué captura la closure" }
   ],
   "mistakes": [
-    "Muchas partitions pequeñas (small files problem)",
-    "Collect() en DF grande → OOM en driver",
-    "UDFs Python cuando existe función nativa",
-    "Shuffle innecesario por reorderings"
+    "Asumir que una transformación se ejecuta inmediatamente al escribirla, ignorando la evaluación perezosa de Spark",
+    "Capturar un objeto no serializable (como una conexión abierta) dentro de una closure enviada a los Executors",
+    "Usar collect() sobre un RDD/DataFrame grande, agotando la memoria del Driver",
+    "Escribir una UDF Python para una operación que ya existe como función nativa de Spark SQL",
+    "No marcar con cache()/persist() un resultado intermedio reutilizado varias veces, forzando su recálculo repetido",
+    "Confundir Structured Streaming con un motor de streaming completamente distinto, en vez de reconocerlo como la misma API de DataFrame aplicada a un flujo continuo"
   ],
   "cli": [
-    {
-      "cmd": "spark-submit --deploy-mode cluster ...",
-      "desc": "Envío job"
-    },
-    {
-      "cmd": "pyspark",
-      "desc": "Shell interactivo"
-    }
+    { "cmd": "pyspark --master local[*]", "desc": "Abrir una sesión interactiva de PySpark" },
+    { "cmd": "spark-submit --master yarn analisis.py", "desc": "Someter un script PySpark contra un clúster" },
+    { "cmd": "python -c \"import pyspark; print(pyspark.__version__)\"", "desc": "Verificar la versión de PySpark instalada localmente" },
+    { "cmd": "pip install pyspark==<version>", "desc": "Instalar una versión específica de PySpark compatible con el clúster" }
   ],
   "glossary": [
-    {
-      "en": "RDD",
-      "es": "RDD",
-      "def": "Colección distribuida inmutable — API legacy."
-    },
-    {
-      "en": "DataFrame",
-      "es": "DataFrame",
-      "def": "API estructurada con Catalyst optimizer."
-    },
-    {
-      "en": "Dataset",
-      "es": "Dataset",
-      "def": "DataFrame tipado (Scala/Java)."
-    },
-    {
-      "en": "Executor",
-      "es": "Executor",
-      "def": "Proceso worker que ejecuta tasks."
-    },
-    {
-      "en": "Partition",
-      "es": "Partition",
-      "def": "Chunk de datos procesado en paralelo."
-    },
-    {
-      "en": "Shuffle",
-      "es": "Shuffle",
-      "def": "Redistribución cross-partition — costoso."
-    },
-    {
-      "en": "Broadcast",
-      "es": "Broadcast",
-      "def": "Enviar pequeño dataset a todos los executors (evita shuffle)."
-    },
-    {
-      "en": "Catalyst",
-      "es": "Catalyst",
-      "def": "Optimizador de queries de Spark SQL."
-    },
-    {
-      "en": "Adaptive Query Execution",
-      "es": "AQE",
-      "def": "Optimización dinámica en runtime."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "PySpark", "es": "PySpark", "def": "API de Python sobre el motor distribuido de Spark, comunicada con la JVM a través de Py4J." },
+    { "en": "Py4J", "es": "Py4J", "def": "Biblioteca que permite la comunicación entre el proceso Python y la JVM de Spark." },
+    { "en": "RDD", "es": "RDD", "def": "Colección distribuida e inmutable de objetos Python sobre la que se aplican transformaciones y acciones." },
+    { "en": "Transformation", "es": "Transformación", "def": "Operación como map o filter que define un nuevo RDD sin ejecutar cómputo inmediato." },
+    { "en": "Action", "es": "Acción", "def": "Operación como collect o count que dispara la ejecución real del linaje de transformaciones." },
+    { "en": "Lazy Evaluation", "es": "Evaluación perezosa", "def": "Modelo en el que las transformaciones no se ejecutan hasta que una acción las requiere." },
+    { "en": "Lambda", "es": "Función lambda", "def": "Función anónima de Python usada frecuentemente en transformaciones simples de una expresión." },
+    { "en": "Generator", "es": "Generador", "def": "Función Python con yield que produce una secuencia sin construir una lista completa en memoria, útil con flatMap." },
+    { "en": "Closure", "es": "Closure", "def": "Captura de variables externas dentro de una función; puede provocar errores de serialización si captura objetos no serializables." },
+    { "en": "Broadcast Variable", "es": "Variable de broadcast", "def": "Mecanismo para compartir eficientemente una estructura de solo lectura entre todos los Executors, evitando reenviarla en cada tarea." },
+    { "en": "DataFrame", "es": "DataFrame", "def": "API estructurada con esquema tipado, optimizada por Catalyst, preferida sobre RDD para datos tabulares." },
+    { "en": "Catalyst", "es": "Catalyst", "def": "Optimizador de planes de ejecución de Spark SQL/DataFrame." },
+    { "en": "Structured Streaming", "es": "Structured Streaming", "def": "Extensión de la API de DataFrame que trata un flujo continuo de datos como una tabla que crece indefinidamente." },
+    { "en": "readStream / writeStream", "es": "readStream / writeStream", "def": "Métodos para leer una fuente de streaming y escribir el resultado incremental hacia un destino." },
+    { "en": "cache()/persist()", "es": "cache()/persist()", "def": "Operaciones que conservan en memoria/disco un resultado intermedio reutilizado, evitando recalcularlo." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres."
-    },
-    {
-      "q": "¿Qué es <strong>RDD</strong> (RDD) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "DataFrame tipado (Scala/Java).",
-        "Proceso worker que ejecuta tasks."
-      ],
-      "answer": 0,
-      "explain": "RDD (RDD): Colección distribuida inmutable — API legacy."
-    },
-    {
-      "q": "¿Qué es <strong>DataFrame</strong> (DataFrame) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "API estructurada con Catalyst optimizer.",
-        "Colección distribuida inmutable — API legacy.",
-        "DataFrame tipado (Scala/Java).",
-        "Proceso worker que ejecuta tasks."
-      ],
-      "answer": 0,
-      "explain": "DataFrame (DataFrame): API estructurada con Catalyst optimizer."
-    },
-    {
-      "q": "¿Qué es <strong>Dataset</strong> (Dataset) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "DataFrame tipado (Scala/Java).",
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "Proceso worker que ejecuta tasks."
-      ],
-      "answer": 0,
-      "explain": "Dataset (Dataset): DataFrame tipado (Scala/Java)."
-    },
-    {
-      "q": "¿Qué es <strong>Executor</strong> (Executor) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Proceso worker que ejecuta tasks.",
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "DataFrame tipado (Scala/Java)."
-      ],
-      "answer": 0,
-      "explain": "Executor (Executor): Proceso worker que ejecuta tasks."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partition) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Chunk de datos procesado en paralelo.",
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "DataFrame tipado (Scala/Java)."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partition): Chunk de datos procesado en paralelo."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Apache Spark en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Apache Spark en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Apache Spark en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Apache Spark en Alibaba Cloud es la elección típica:",
-      "options": [
-        "ETL batch nocturno TB-PB",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: ETL batch nocturno TB-PB."
-    }
+    { "q": "¿Qué biblioteca permite que el proceso Python de una aplicación PySpark se comunique con la JVM donde vive el motor real de Spark?", "options": ["NumPy", "Py4J", "Pandas", "Pickle"], "answer": 1, "explain": "Py4J es el puente que permite invocar objetos y métodos de la JVM de Spark desde el proceso Python del Driver." },
+    { "q": "Un desarrollador escribe varias transformaciones sobre un RDD y observa que no se ejecuta ningún cómputo hasta cierto punto del código. ¿Qué explica este comportamiento?", "options": ["Un error de sintaxis silencioso", "La evaluación perezosa: las transformaciones no se ejecutan hasta que aparece una acción", "Spark ejecuta las transformaciones en orden inverso", "El clúster no tiene suficientes Executors"], "answer": 1, "explain": "Las transformaciones son perezosas por diseño; solo se ejecutan cuando una acción (como collect o count) las dispara." },
+    { "q": "¿Qué mecanismo de PySpark es útil para expandir una fila de entrada en varios elementos de salida usando una función con yield?", "options": ["map()", "flatMap() combinado con un generador", "collect()", "cache()"], "answer": 1, "explain": "flatMap() espera un iterable por cada elemento de entrada; un generador con yield produce esa secuencia sin construir una lista completa en memoria." },
+    { "q": "¿Qué provoca típicamente un error de serialización al enviar una función a los Executors en PySpark?", "options": ["Usar una función lambda simple", "Una closure que captura un objeto no serializable, como una conexión de red abierta", "Usar DataFrame en vez de RDD", "Llamar a una acción como count()"], "answer": 1, "explain": "Cuando una función captura por closure un objeto que no puede serializarse, Spark falla al intentar enviarla a los Executors." },
+    { "q": "¿Por qué se prefiere generalmente la API de DataFrame sobre RDD para transformaciones tabulares estándar?", "options": ["Porque RDD ya no existe en versiones recientes de Spark", "Porque DataFrame pasa por el optimizador Catalyst, generando planes de ejecución más eficientes", "Porque DataFrame no requiere un SparkSession", "Porque RDD no soporta Python"], "answer": 1, "explain": "El optimizador Catalyst reescribe y optimiza el plan de ejecución de operaciones sobre DataFrame, algo que un RDD de objetos Python arbitrarios no aprovecha de la misma forma." },
+    { "q": "¿Qué riesgo tiene usar collect() sobre un RDD o DataFrame muy grande?", "options": ["Ninguno, collect() siempre es seguro", "Puede agotar la memoria del Driver al traer todo el resultado a una sola máquina", "Convierte automáticamente el resultado en un generador", "Desactiva la evaluación perezosa"], "answer": 1, "explain": "collect() centraliza todo el resultado en el Driver; si el volumen no cabe en su memoria, el job falla." },
+    { "q": "¿Qué modela Structured Streaming al procesar un flujo continuo de datos?", "options": ["Un RDD estático de una sola ejecución", "El flujo como una tabla que crece indefinidamente, sobre la que se aplican las mismas transformaciones de DataFrame", "Un motor de streaming completamente separado de Spark SQL", "Solo permite operaciones sobre RDDs, nunca DataFrames"], "answer": 1, "explain": "Structured Streaming reutiliza la misma API de DataFrame, tratando el flujo entrante como una tabla sin límite que crece con el tiempo." },
+    { "q": "¿Qué mecanismo es preferible a una closure directa cuando una función necesita acceso a un diccionario de referencia relativamente grande dentro de cada tarea?", "options": ["cache()", "Una variable de broadcast", "flatMap()", "writeStream"], "answer": 1, "explain": "Una variable de broadcast comparte la estructura de forma eficiente entre todos los Executors, evitando reenviarla serializada con cada tarea individual." },
+    { "q": "¿Qué antipatrón provoca que Spark recalcule el mismo resultado intermedio desde el origen cada vez que se necesita?", "options": ["Usar cache()/persist() en el resultado intermedio", "No marcar con cache()/persist() un resultado reutilizado varias veces en el código", "Usar DataFrame en vez de RDD", "Usar Structured Streaming"], "answer": 1, "explain": "Sin cache()/persist(), Spark reconstruye el resultado desde el linaje de transformaciones cada vez que se referencia, aunque ya se haya calculado antes." },
+    { "q": "¿Por qué usar una UDF Python en vez de una función nativa de Spark SQL equivalente suele ser una mala práctica?", "options": ["Las UDFs Python están prohibidas por Spark", "Introducen un costo de serialización entre la JVM y Python que las funciones nativas evitan", "Las funciones nativas no pueden combinarse con DataFrames", "Las UDFs Python no pueden recibir parámetros"], "answer": 1, "explain": "Las funciones nativas de Spark SQL se ejecutan optimizadas dentro de la JVM, mientras que las UDFs Python pagan un costo adicional de serialización entre ambos mundos." }
   ],
-  "exam_focus": "DataFrame vs RDD, shuffles y broadcast, Catalyst/AQE, particionamiento.",
+  "exam_focus": "El examen suele evaluar: (a) el rol de Py4J y el costo de serialización en PySpark, (b) evaluación perezosa: transformaciones frente a acciones, (c) el uso correcto de lambdas, generadores y broadcast frente a closures problemáticas, (d) por qué DataFrame es preferible a RDD para datos tabulares, (e) el modelo de tabla sin fin de Structured Streaming.",
   "official_intro": "In this course we will show you how to write basic data analysis programs on Spark in Python. Through these programs we will introduce some concepts like Spark RDD, Dataframe, Streaming, etc. You'll also learn how to use Python's generators, anonymous functions.",
   "recommended_for": "Spark on Cloud, Spark, Cloud Computing, Python",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_sparkpython",

@@ -3,420 +3,179 @@
   "course_id": "Curso Nº certification-clouder-redis",
   "title_en": "Introduction to Redis® OSS-Compatible",
   "title_es": "Introducción a Redis® OSS-Compatible",
+  "title_es_html": "Introducción a <em>Redis® OSS-Compatible</em>",
   "duration_es": "45 minutos",
   "level_es": "Principiante",
   "category_es": "Bases de Datos",
   "subcategory_es": "Base de Datos NoSQL",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_redis",
-  "lead": "Guía completa en español para el curso «Introduction to Redis® OSS-Compatible» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB for Redis / Tair. Redis gestionado con edición Community (compat estándar) o Enterprise / Tair (extensiones Alibaba: TairString, TairHash, TairSearch, persistente en disco). Modos: standalone, master-replica, cluster, read-write splitting. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre ApsaraDB for Redis, el servicio gestionado de Alibaba Cloud compatible con la API abierta de Redis. El eje de esta guía es el modelo de datos en memoria: qué estructuras ofrece Redis más allá de un simple par clave-valor, cómo decide entre velocidad y durabilidad mediante sus dos mecanismos de persistencia, y cómo escala de una instancia única a un clúster con sharding automático.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB for Redis / Tair</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Standard, Enhanced / Tair, Cluster Edition, Read-Write Split, Persistence.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB for Redis / Tair y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una base de datos en memoria resuelve problemas que una base de datos en disco no resuelve igual de bien.",
+    "<strong>Distinguir</strong> las estructuras de datos de Redis: String, Hash, List, Set y Sorted Set, y cuándo usar cada una.",
+    "<strong>Comparar</strong> los dos mecanismos de persistencia de Redis: RDB (snapshot) y AOF (log de comandos).",
+    "<strong>Diseñar</strong> una arquitectura con réplicas para alta disponibilidad y escalado de lectura.",
+    "<strong>Explicar</strong> cómo el modo Cluster distribuye los datos entre nodos mediante hash slots.",
+    "<strong>Aplicar</strong> patrones de uso comunes: caché, sesiones, contadores, colas ligeras y rate limiting.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre los fundamentos de Redis."
   ],
-  "architecture": "App → Redis endpoint (proxy o direct) → cluster con shards + replicas → persistence AOF/RDB → backup a OSS. Sub-second failover. Tair con storage NVMe para casos que requieren persistencia.",
+  "architecture": "Una aplicación típica coloca ApsaraDB for Redis delante de una base de datos relacional como capa de caché: las lecturas frecuentes se sirven primero desde Redis, y solo ante un fallo de caché (cache miss) se consulta la base de datos y se repuebla el valor en Redis con un TTL definido. Para alta disponibilidad, una instancia maestra replica de forma asíncrona hacia una o más réplicas; si la maestra falla, una réplica se promueve automáticamente. Para volúmenes que superan la capacidad de un solo nodo, el modo Cluster particiona el espacio de claves en 16384 hash slots distribuidos entre varios nodos maestros, cada uno con sus propias réplicas. La durabilidad se logra combinando snapshots periódicos (RDB) con un log de comandos (AOF) que puede reproducirse para reconstruir el estado exacto tras un reinicio.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ApsaraDB for Redis / Tair",
-      "title_en": "Introduction to ApsaraDB for Redis / Tair",
-      "intro": "Redis gestionado con edición Community (compat estándar) o Enterprise / Tair (extensiones Alibaba: TairString, TairHash, TairSearch, persistente en disco). Modos: standalone, master-replica, cluster, read-write splitting. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué una base de datos en memoria",
+      "title_en": "Why an In-Memory Database",
+      "intro": "Antes de ver comandos y estructuras, hay que entender la decisión de diseño fundamental de Redis: mantener todos los datos en memoria RAM en vez de en disco, y qué gana y qué sacrifica esa elección.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Redis gestionado con edición Community (compat estándar) o Enterprise / Tair (extensiones Alibaba: TairString, TairHash, TairSearch, persistente en disco).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ApsaraDB for Redis / Tair se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Latencia de microsegundos</strong>: al vivir en memoria, las operaciones de Redis son órdenes de magnitud más rápidas que una consulta a un motor de disco tradicional, lo que lo hace ideal como capa de caché delante de una base de datos más lenta.",
+        "<strong>Modelo clave-valor extendido</strong>: a diferencia de un simple diccionario clave-valor, Redis asocia a cada clave una estructura de datos con semántica propia (lista, conjunto, hash), permitiendo operaciones atómicas específicas sin traer todo el valor a la aplicación para modificarlo.",
+        "<strong>Single-threaded para comandos</strong>: el motor de Redis ejecuta comandos de forma esencialmente secuencial en un solo hilo, lo que elimina la necesidad de locks complejos y hace que cada comando individual sea atómico por diseño.",
+        "<strong>El costo de vivir en memoria</strong>: la capacidad total de datos está limitada por la RAM disponible (mucho más cara y limitada que el disco), por lo que Redis no es la elección correcta como almacén primario de datos que no caben en memoria o que no requieren baja latencia.",
+        "<strong>Cuándo NO usar Redis como fuente única de verdad</strong>: para datos que deben sobrevivir garantizado a cualquier escenario de falla sin ninguna posibilidad de pérdida, o que superan por mucho la RAM disponible, una base de datos en disco (RDS, PolarDB) sigue siendo la opción principal, con Redis como caché complementario."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ApsaraDB for Redis / Tair es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Redis no reemplaza a una base de datos relacional: la complementa. El patrón más común es 'cache-aside', donde Redis acelera lecturas frecuentes mientras la base de datos relacional sigue siendo la fuente de verdad."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ApsaraDB for Redis / Tair no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Estructuras de datos: más que clave-valor",
+      "title_en": "Data Structures: More Than Key-Value",
+      "intro": "La ventaja real de Redis frente a un caché simple es que cada clave puede apuntar a una estructura de datos rica, con comandos atómicos diseñados específicamente para manipularla sin traerla completa a la aplicación.",
       "points": [
-        "<strong>Patrón canónico</strong>: App → Redis endpoint (proxy o direct) → cluster con shards + replicas → persistence AOF/RDB → backup a OSS. Sub-second failover. Tair con storage NVMe para casos que requieren persistencia.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ApsaraDB for Redis / Tair (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Standard Edition</strong> <em>(Standard)</em>: Community Redis, in-memory.",
-        "<strong>Enhanced/Tair</strong> <em>(Enhanced / Tair)</em>: Extensiones Alibaba con más módulos.",
-        "<strong>Cluster</strong> <em>(Cluster Edition)</em>: Sharding automático hasta 128 shards.",
-        "<strong>Read-Write Split</strong> <em>(Read-Write Split)</em>: Réplicas para lecturas escaladas.",
-        "<strong>Persistence</strong> <em>(Persistence)</em>: AOF (append log) + RDB (snapshot).",
-        "<strong>Global Distributed</strong> <em>(Global Distributed)</em>: Multi-región con réplicas activo-activo.",
-        "<strong>Módulos Tair</strong> <em>(TairString/TairHash)</em>: Estructuras avanzadas propietarias."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>String</strong>: la estructura más simple, un valor binario de hasta 512 MB; soporta operaciones atómicas como incrementar un número (<code>INCR</code>), útil para contadores sin necesidad de leer, sumar y volver a escribir manualmente.",
+        "<strong>Hash</strong>: un mapa de campos y valores dentro de una sola clave, ideal para representar un objeto (por ejemplo, el perfil de un usuario) sin serializar y deserializar todo el objeto en cada lectura o escritura de un solo campo.",
+        "<strong>List</strong>: una lista ordenada de valores con operaciones eficientes de inserción y extracción en ambos extremos, base de patrones de cola simple (productor/consumidor) o de historial reciente acotado.",
+        "<strong>Set</strong>: una colección no ordenada de valores únicos, con operaciones eficientes de pertenencia, unión, intersección y diferencia entre conjuntos — útil para etiquetas, seguidores mutuos o deduplicación.",
+        "<strong>Sorted Set (ZSet)</strong>: como un Set, pero cada miembro tiene un score numérico asociado que mantiene la colección ordenada automáticamente; la estructura natural para leaderboards, rankings y colas de prioridad."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona 'tabla de posiciones' o 'ranking en tiempo real' → Sorted Set. Si menciona 'representar un objeto con varios campos' → Hash. Si menciona 'contador atómico' → String con INCR."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Persistencia: RDB vs. AOF",
+      "title_en": "Persistence: RDB vs. AOF",
+      "intro": "Que Redis viva en memoria no significa que los datos se pierdan necesariamente ante un reinicio — Redis ofrece dos mecanismos de persistencia con trade-offs distintos entre rendimiento y durabilidad.",
       "points": [
-        "<strong>HA</strong>: Backup a OSS",
-        "<strong>Buenas prácticas</strong>: Cluster edition para >20GB de datos",
-        "<strong>Buenas prácticas</strong>: AOF everysec + RDB diario",
-        "<strong>Buenas prácticas</strong>: VPC + whitelist obligatorio",
-        "<strong>Buenas prácticas</strong>: TTL en TODAS las keys evitables"
+        "<strong>RDB (snapshot)</strong>: genera una foto completa del dataset en disco a intervalos configurables (por ejemplo, cada 5 minutos si hubo cambios); es compacto y rápido de restaurar, pero puede perder los cambios ocurridos entre el último snapshot y una falla.",
+        "<strong>AOF (Append Only File)</strong>: registra cada comando de escritura en un log secuencial que se reproduce al reiniciar, reconstruyendo el estado exacto; ofrece mayor durabilidad que RDB a cambio de un archivo más grande y una restauración más lenta.",
+        "<strong>Frecuencia de fsync en AOF</strong>: configurable entre sincronizar en cada escritura (máxima durabilidad, más lento), una vez por segundo (equilibrio recomendado, hasta 1 segundo de pérdida potencial) o dejarlo al sistema operativo (más rápido, menos durable).",
+        "<strong>Uso combinado</strong>: en producción es común usar RDB para snapshots periódicos que sirven de base a un backup rápido, junto con AOF para minimizar la ventana de pérdida de datos ante un reinicio inesperado.",
+        "<strong>Trade-off central</strong>: ninguna combinación de persistencia hace que Redis sea tan durable por diseño como un motor de disco transaccional — para datos que no toleran ninguna pérdida bajo ningún escenario, Redis complementa pero no reemplaza a una base de datos con garantías ACID completas."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "RDB = snapshot completo periódico, rápido de restaurar, puede perder los últimos minutos. AOF = log de comandos, restauración más lenta, minimiza la ventana de pérdida de datos."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Replicación y alta disponibilidad",
+      "title_en": "Replication and High Availability",
+      "intro": "Una sola instancia Redis es un punto único de falla; la replicación resuelve tanto la disponibilidad ante fallas como el escalado de lecturas, y es la base sobre la que ApsaraDB for Redis construye sus ediciones gestionadas.",
       "points": [
-        "<strong>Antipattern</strong>: Sin TTL → memoria crece hasta OOM",
-        "<strong>Antipattern</strong>: AOF disabled sin RDB → pérdida de datos",
-        "<strong>Antipattern</strong>: Keys big (Mb) bloqueando el thread",
-        "<strong>Antipattern</strong>: Hot key patterns → shard sobrecargado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Replicación maestro-réplica</strong>: la instancia maestra propaga de forma asíncrona cada escritura hacia una o más réplicas de solo lectura, que pueden servir tráfico de lectura para distribuir la carga sin afectar a la maestra.",
+        "<strong>Failover automático</strong>: en la edición gestionada de Alibaba Cloud, si la maestra falla, una réplica se promueve automáticamente en cuestión de segundos, sin intervención manual, manteniendo la disponibilidad del servicio.",
+        "<strong>Naturaleza asíncrona</strong>: al ser la replicación asíncrona, existe una ventana breve donde una escritura confirmada en la maestra aún no llegó a la réplica — relevante para aplicaciones que leen inmediatamente después de escribir y no toleran ver un dato desactualizado.",
+        "<strong>Edición Standard vs. Cluster</strong>: la edición Standard ofrece maestro + réplica(s) dentro de la capacidad de un solo nodo lógico; la edición Cluster además particiona los datos horizontalmente entre múltiples nodos maestros, cubierta en el siguiente módulo.",
+        "<strong>Zonas de disponibilidad</strong>: distribuir la maestra y sus réplicas en zonas distintas protege ante la caída de un data center completo, no solo ante la falla de un proceso individual."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe 'la maestra falló y el servicio debe seguir disponible sin intervención manual', la respuesta es el failover automático hacia una réplica, disponible en la edición gestionada de Alibaba Cloud."
+      }
+    },
+    {
+      "title_es": "5 · Escalado horizontal: el modo Cluster",
+      "title_en": "Horizontal Scaling: Cluster Mode",
+      "intro": "Cuando el volumen de datos o el throughput requerido excede lo que un solo nodo maestro puede manejar, el modo Cluster distribuye tanto los datos como la carga entre varios nodos.",
+      "points": [
+        "<strong>Hash slots</strong>: el espacio completo de claves se divide en 16384 slots; cada clave se asigna a un slot mediante una función hash sobre la clave (o sobre una porción de ella si se usa un 'hash tag'), y cada slot vive en un nodo maestro específico del clúster.",
+        "<strong>Distribución entre nodos</strong>: cada nodo maestro del clúster es responsable de un subconjunto de los 16384 slots; el cliente (o un proxy) redirige cada operación al nodo correcto según el slot de la clave involucrada.",
+        "<strong>Hash tags para operaciones multi-clave</strong>: operaciones que involucran varias claves a la vez requieren que todas vivan en el mismo slot; usar un hash tag (una porción común entre llaves, como <code>{usuario123}:perfil</code> y <code>{usuario123}:pedidos</code>) fuerza a que ambas claves caigan en el mismo nodo.",
+        "<strong>Réplicas por nodo maestro</strong>: cada nodo maestro del clúster puede tener sus propias réplicas, de forma que un clúster combina sharding horizontal (más capacidad total) con replicación (alta disponibilidad por partición).",
+        "<strong>Cuándo pasar a Cluster</strong>: cuando el dataset ya no cabe en la memoria de un solo nodo, o cuando el throughput de un solo nodo maestro se vuelve el cuello de botella — no es la opción por defecto para cargas moderadas donde Standard con réplicas ya es suficiente."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El modo Cluster resuelve un problema distinto al de la replicación: replicación protege contra fallas y escala lecturas; Cluster escala la capacidad total de datos y el throughput de escritura mediante sharding horizontal."
+      }
+    },
+    {
+      "title_es": "6 · Patrones de uso y errores comunes",
+      "title_en": "Usage Patterns and Common Mistakes",
+      "intro": "Este módulo cierra con los casos de uso más frecuentes de Redis en producción y los antipatrones que con más frecuencia degradan el rendimiento de un clúster que en teoría debería ser extremadamente rápido.",
+      "points": [
+        "<strong>Cache-aside</strong>: el patrón más común — la aplicación consulta Redis primero, y solo ante un fallo de caché consulta la base de datos y repuebla Redis con un TTL, evitando servir datos obsoletos indefinidamente.",
+        "<strong>Session store</strong>: almacenar sesiones de usuario en Redis en vez de en memoria local de cada servidor de aplicación permite escalar horizontalmente los servidores sin perder sesiones activas al balancear tráfico entre ellos.",
+        "<strong>Rate limiting</strong>: usando contadores atómicos (String con <code>INCR</code>) con TTL, es posible limitar cuántas solicitudes acepta un usuario o API key en una ventana de tiempo determinada.",
+        "<strong>Antipatrón</strong>: no configurar TTL en las claves de caché, dejando que la memoria crezca indefinidamente hasta agotar la capacidad disponible (out of memory).",
+        "<strong>Antipatrón</strong>: almacenar valores extremadamente grandes (varios megabytes) en una sola clave, bloqueando el hilo único de Redis mientras procesa esa operación y afectando la latencia de todas las demás solicitudes concurrentes.",
+        "<strong>Antipatrón</strong>: usar Redis como única fuente de verdad para datos críticos que no toleran ninguna pérdida, sin una base de datos transaccional respaldándolos."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un escenario del examen, identifica primero qué estructura de datos encaja (String/Hash/List/Set/ZSet), luego si el problema es de disponibilidad (replicación) o de capacidad/throughput (Cluster), y por último qué mecanismo de persistencia protege el nivel de pérdida de datos tolerable."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Cache aside de DB para queries frecuentes"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Session store distribuido"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Pub/sub y streams"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rate limiting central"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Leaderboards y counters realtime"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Feature store para ML"
-    }
+    { "title": "Escenario 1", "text": "Caché de resultados de consultas frecuentes a una base de datos relacional — patrón cache-aside con TTL" },
+    { "title": "Escenario 2", "text": "Tabla de posiciones de un juego actualizada en tiempo real — Sorted Set" },
+    { "title": "Escenario 3", "text": "Sesiones de usuario compartidas entre múltiples servidores de aplicación detrás de un balanceador — session store en Redis" },
+    { "title": "Escenario 4", "text": "Límite de solicitudes por minuto a una API pública — contador atómico con TTL (rate limiting)" },
+    { "title": "Escenario 5", "text": "Dataset que ya no cabe en la memoria de un solo nodo — migración a modo Cluster con sharding por hash slots" },
+    { "title": "Escenario 6", "text": "Reinicio inesperado de la instancia con la menor pérdida de datos posible — AOF con fsync cada segundo" }
   ],
   "mistakes": [
-    "Sin TTL → memoria crece hasta OOM",
-    "AOF disabled sin RDB → pérdida de datos",
-    "Keys big (Mb) bloqueando el thread",
-    "Hot key patterns → shard sobrecargado"
+    "No configurar TTL en las claves de caché, agotando la memoria disponible con el tiempo",
+    "Almacenar valores extremadamente grandes en una sola clave, bloqueando el hilo único durante esa operación",
+    "Usar Redis como única fuente de verdad para datos críticos sin una base de datos transaccional de respaldo",
+    "No usar hash tags para claves relacionadas en modo Cluster, impidiendo operaciones multi-clave",
+    "Depender solo de RDB en cargas que no toleran perder los últimos minutos de escrituras",
+    "Servir tráfico de lectura pesado directo a la maestra en vez de distribuirlo entre réplicas"
   ],
   "cli": [
-    {
-      "cmd": "aliyun r-kvstore DescribeInstances",
-      "desc": "Listar Redis"
-    },
-    {
-      "cmd": "redis-cli -h endpoint",
-      "desc": "Cliente"
-    }
+    { "cmd": "aliyun r-kvstore DescribeInstances --RegionId cn-hangzhou", "desc": "Listar instancias de ApsaraDB for Redis" },
+    { "cmd": "redis-cli -h <endpoint> -p 6379 SET sesion:u001 activo EX 1800", "desc": "Guardar un valor con expiración de 30 minutos" },
+    { "cmd": "redis-cli ZADD ranking 950 'jugador1'", "desc": "Agregar un miembro con score a un Sorted Set" },
+    { "cmd": "redis-cli HSET perfil:u001 nombre 'Ana' edad 30", "desc": "Escribir varios campos en un Hash" },
+    { "cmd": "redis-cli CLUSTER SLOTS", "desc": "Consultar la distribución de hash slots entre nodos del clúster" }
   ],
   "glossary": [
-    {
-      "en": "Standard",
-      "es": "Standard Edition",
-      "def": "Community Redis, in-memory."
-    },
-    {
-      "en": "Enhanced / Tair",
-      "es": "Enhanced/Tair",
-      "def": "Extensiones Alibaba con más módulos."
-    },
-    {
-      "en": "Cluster Edition",
-      "es": "Cluster",
-      "def": "Sharding automático hasta 128 shards."
-    },
-    {
-      "en": "Read-Write Split",
-      "es": "Read-Write Split",
-      "def": "Réplicas para lecturas escaladas."
-    },
-    {
-      "en": "Persistence",
-      "es": "Persistence",
-      "def": "AOF (append log) + RDB (snapshot)."
-    },
-    {
-      "en": "Global Distributed",
-      "es": "Global Distributed",
-      "def": "Multi-región con réplicas activo-activo."
-    },
-    {
-      "en": "TairString/TairHash",
-      "es": "Módulos Tair",
-      "def": "Estructuras avanzadas propietarias."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "In-Memory Database", "es": "Base de datos en memoria", "def": "Motor que mantiene los datos en RAM en vez de en disco, priorizando latencia sobre capacidad total." },
+    { "en": "String", "es": "String", "def": "Estructura de datos más simple de Redis; valor binario con operaciones atómicas como incremento numérico." },
+    { "en": "Hash", "es": "Hash", "def": "Mapa de campos y valores dentro de una sola clave, ideal para representar objetos." },
+    { "en": "List", "es": "Lista", "def": "Colección ordenada con inserción y extracción eficientes en ambos extremos." },
+    { "en": "Set", "es": "Conjunto", "def": "Colección no ordenada de valores únicos con operaciones de unión, intersección y diferencia." },
+    { "en": "Sorted Set (ZSet)", "es": "Conjunto ordenado", "def": "Conjunto donde cada miembro tiene un score numérico que mantiene el orden automáticamente." },
+    { "en": "RDB", "es": "RDB", "def": "Mecanismo de persistencia por snapshot completo del dataset a intervalos configurables." },
+    { "en": "AOF (Append Only File)", "es": "AOF", "def": "Mecanismo de persistencia que registra cada comando de escritura en un log secuencial reproducible." },
+    { "en": "Master-Replica Replication", "es": "Replicación maestro-réplica", "def": "Propagación asíncrona de escrituras desde una instancia maestra hacia una o más réplicas de solo lectura." },
+    { "en": "Automatic Failover", "es": "Failover automático", "def": "Promoción automática de una réplica a maestra ante la falla de la instancia maestra original." },
+    { "en": "Cluster Mode", "es": "Modo Cluster", "def": "Configuración que particiona los datos horizontalmente entre varios nodos maestros mediante hash slots." },
+    { "en": "Hash Slot", "es": "Hash slot", "def": "Una de las 16384 particiones lógicas del espacio de claves en modo Cluster, asignada a un nodo maestro específico." },
+    { "en": "Hash Tag", "es": "Hash tag", "def": "Porción común de varias claves usada para forzar que caigan en el mismo hash slot, habilitando operaciones multi-clave." },
+    { "en": "Cache-Aside", "es": "Patrón cache-aside", "def": "Patrón donde la aplicación consulta el caché primero y repuebla desde la base de datos solo ante un fallo de caché." },
+    { "en": "TTL (Time To Live)", "es": "TTL", "def": "Tiempo tras el cual una clave expira automáticamente y se elimina de la memoria." },
+    { "en": "Rate Limiting", "es": "Limitación de tasa", "def": "Restricción del número de solicitudes permitidas en una ventana de tiempo, típicamente con un contador atómico y TTL." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ApsaraDB for Redis / Tair?",
-      "options": [
-        "Redis gestionado con edición Community (compat estándar) o Enterprise / Tair (extensiones Alibaba: TairString, TairHash, TairSearch, persistente en disco). Modos: standalone, master-replica, cluster, ",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Redis gestionado con edición Community (compat estándar) o Enterprise / Tair (extensiones Alibaba: TairString, TairHash, TairSearch, persistente en disco). Modos: standalone, master-replica, cluster, read-write splitting."
-    },
-    {
-      "q": "¿Qué es <strong>Standard</strong> (Standard Edition) en ApsaraDB for Redis / Tair?",
-      "options": [
-        "Community Redis, in-memory.",
-        "Extensiones Alibaba con más módulos.",
-        "Sharding automático hasta 128 shards.",
-        "Réplicas para lecturas escaladas."
-      ],
-      "answer": 0,
-      "explain": "Standard (Standard Edition): Community Redis, in-memory."
-    },
-    {
-      "q": "¿Qué es <strong>Enhanced / Tair</strong> (Enhanced/Tair) en ApsaraDB for Redis / Tair?",
-      "options": [
-        "Extensiones Alibaba con más módulos.",
-        "Community Redis, in-memory.",
-        "Sharding automático hasta 128 shards.",
-        "Réplicas para lecturas escaladas."
-      ],
-      "answer": 0,
-      "explain": "Enhanced / Tair (Enhanced/Tair): Extensiones Alibaba con más módulos."
-    },
-    {
-      "q": "¿Qué es <strong>Cluster Edition</strong> (Cluster) en ApsaraDB for Redis / Tair?",
-      "options": [
-        "Sharding automático hasta 128 shards.",
-        "Community Redis, in-memory.",
-        "Extensiones Alibaba con más módulos.",
-        "Réplicas para lecturas escaladas."
-      ],
-      "answer": 0,
-      "explain": "Cluster Edition (Cluster): Sharding automático hasta 128 shards."
-    },
-    {
-      "q": "¿Qué es <strong>Read-Write Split</strong> (Read-Write Split) en ApsaraDB for Redis / Tair?",
-      "options": [
-        "Réplicas para lecturas escaladas.",
-        "Community Redis, in-memory.",
-        "Extensiones Alibaba con más módulos.",
-        "Sharding automático hasta 128 shards."
-      ],
-      "answer": 0,
-      "explain": "Read-Write Split (Read-Write Split): Réplicas para lecturas escaladas."
-    },
-    {
-      "q": "¿Qué es <strong>Persistence</strong> (Persistence) en ApsaraDB for Redis / Tair?",
-      "options": [
-        "AOF (append log) + RDB (snapshot).",
-        "Community Redis, in-memory.",
-        "Extensiones Alibaba con más módulos.",
-        "Sharding automático hasta 128 shards."
-      ],
-      "answer": 0,
-      "explain": "Persistence (Persistence): AOF (append log) + RDB (snapshot)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ApsaraDB for Redis / Tair, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ApsaraDB for Redis / Tair en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB for Redis / Tair, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ApsaraDB for Redis / Tair es la elección típica:",
-      "options": [
-        "Cache aside de DB para queries frecuentes",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Cache aside de DB para queries frecuentes."
-    }
+    { "q": "¿Cuál es la principal razón por la que Redis ofrece latencias mucho menores que una base de datos en disco tradicional?", "options": ["Usa un lenguaje de consulta más simple", "Mantiene los datos en memoria RAM en vez de en disco", "No permite ningún tipo de persistencia", "Solo acepta un cliente conectado a la vez"], "answer": 1, "explain": "Vivir en memoria es la decisión de diseño central que explica la latencia de microsegundos de Redis frente a un motor de disco." },
+    { "q": "Una aplicación necesita implementar una tabla de posiciones (leaderboard) actualizada en tiempo real. ¿Qué estructura de Redis es la más adecuada?", "options": ["String", "Hash", "Sorted Set (ZSet)", "List"], "answer": 2, "explain": "El Sorted Set mantiene los miembros ordenados automáticamente según su score, ideal para rankings en tiempo real." },
+    { "q": "¿Qué diferencia principal existe entre RDB y AOF como mecanismos de persistencia?", "options": ["Son exactamente el mismo mecanismo con nombre distinto", "RDB genera snapshots periódicos completos; AOF registra cada comando de escritura en un log reproducible, ofreciendo mayor durabilidad", "AOF no puede usarse en instancias gestionadas de Alibaba Cloud", "RDB siempre es más durable que AOF"], "answer": 1, "explain": "RDB es más rápido de restaurar pero puede perder cambios recientes; AOF minimiza la ventana de pérdida a cambio de un archivo más grande." },
+    { "q": "¿Qué ocurre cuando la instancia maestra de Redis falla en la edición gestionada de Alibaba Cloud con replicación configurada?", "options": ["El servicio queda inaccesible hasta intervención manual", "Una réplica se promueve automáticamente a maestra, manteniendo la disponibilidad del servicio", "Todos los datos se pierden de forma permanente", "Es necesario recrear la instancia desde cero"], "answer": 1, "explain": "El failover automático promueve una réplica existente sin intervención manual, minimizando el tiempo de interrupción." },
+    { "q": "¿Qué resuelve específicamente el modo Cluster de Redis, a diferencia de la replicación maestro-réplica?", "options": ["Solo mejora la seguridad de la conexión", "Escala la capacidad total de datos y el throughput de escritura mediante sharding horizontal entre varios nodos maestros", "Elimina por completo la necesidad de persistencia", "Solo aplica a lecturas, nunca a escrituras"], "answer": 1, "explain": "La replicación protege contra fallas y escala lecturas; el modo Cluster particiona los datos para escalar capacidad y throughput de escritura." },
+    { "q": "¿Cuántos hash slots componen el espacio de claves en el modo Cluster de Redis?", "options": ["1024", "4096", "16384", "65536"], "answer": 2, "explain": "El espacio de claves se divide en 16384 hash slots distribuidos entre los nodos maestros del clúster." },
+    { "q": "¿Para qué se usa un 'hash tag' en el diseño de claves de un clúster Redis?", "options": ["Para cifrar el valor almacenado", "Para forzar que varias claves relacionadas caigan en el mismo hash slot y así permitir operaciones multi-clave", "Para aumentar automáticamente el TTL de una clave", "Para desactivar la replicación de esa clave específica"], "answer": 1, "explain": "Al compartir una porción común entre claves (el hash tag), se garantiza que todas se asignen al mismo slot, habilitando operaciones que involucran varias claves a la vez." },
+    { "q": "¿Qué patrón de uso describe consultar Redis primero y, solo ante un fallo de caché, consultar la base de datos y repoblar Redis?", "options": ["Rate limiting", "Cache-aside", "Sharding", "Failover automático"], "answer": 1, "explain": "Cache-aside es el patrón más común para usar Redis como capa de aceleración delante de una base de datos más lenta." },
+    { "q": "¿Qué antipatrón describe mejor no configurar TTL en las claves de un caché Redis?", "options": ["Mejora el rendimiento de las lecturas", "Puede agotar la memoria disponible con el tiempo al acumular claves indefinidamente", "Es la práctica recomendada en cualquier escenario", "No tiene ningún efecto sobre el uso de memoria"], "answer": 1, "explain": "Sin expiración, las claves de caché se acumulan sin límite, pudiendo agotar la memoria disponible de la instancia." },
+    { "q": "¿Qué estructura de Redis es más adecuada para representar el perfil de un usuario con varios campos (nombre, edad, ciudad)?", "options": ["List", "Set", "Hash", "Sorted Set"], "answer": 2, "explain": "Hash permite almacenar y actualizar campos individuales de un objeto sin serializar y deserializar el objeto completo." },
+    { "q": "¿Por qué se recomienda evitar almacenar valores extremadamente grandes en una sola clave de Redis?", "options": ["Porque Redis no admite valores mayores a 1 KB", "Porque, al ser esencialmente de un solo hilo, procesar ese valor grande puede bloquear temporalmente otras operaciones concurrentes", "Porque los valores grandes no pueden replicarse", "Porque afecta solo al modo Cluster, no a la edición Standard"], "answer": 1, "explain": "El procesamiento esencialmente secuencial de comandos hace que una operación costosa sobre un valor muy grande retrase las demás solicitudes concurrentes." },
+    { "q": "¿Por qué Redis no se recomienda como única fuente de verdad para datos críticos que no toleran ninguna pérdida?", "options": ["Porque no soporta ningún mecanismo de persistencia", "Porque ni RDB ni AOF ofrecen garantías de durabilidad tan fuertes como un motor de disco transaccional dedicado", "Porque Redis no permite realizar backups", "Porque Redis solo funciona en modo de solo lectura"], "answer": 1, "explain": "Aunque RDB y AOF mejoran la durabilidad, ninguna combinación iguala las garantías ACID completas de un motor transaccional en disco, por lo que Redis complementa pero no reemplaza a una base de datos crítica." }
   ],
-  "exam_focus": "Ediciones y cuándo usar cada una, persistence AOF vs RDB, cluster vs standalone.",
+  "exam_focus": "El examen evalúa: (a) por qué Redis complementa —no reemplaza— a una base de datos en disco, (b) qué estructura de datos aplica según el patrón descrito, (c) RDB vs. AOF según la tolerancia a pérdida de datos, (d) replicación/failover vs. modo Cluster según el problema (disponibilidad vs. capacidad), (e) patrones de uso comunes (cache-aside, sesiones, rate limiting) y sus antipatrones.",
   "official_intro": "After learning this Redis® introduction course, the trainees will master the Redis® database relevant basic concept, installation procedure, cluster, and distributed solution, detail coding use case and daily inspection and troubleshooting skills, thus having a comprehensive understanding of Redis® database.",
   "recommended_for": "Database Engineer, Operation Engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_redis",

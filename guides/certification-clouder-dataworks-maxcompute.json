@@ -2,442 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-dataworks-maxcompute",
   "title_en": "Data Development with DataWorks and MaxCompute",
-  "title_es": "Datos Development con DataWorks y MaxCompute",
+  "title_es": "Desarrollo de Datos con DataWorks y MaxCompute",
+  "title_es_html": "Desarrollo de Datos con <em>DataWorks</em> y <em>MaxCompute</em>",
   "duration_es": "86 minutos",
   "level_es": "Intermedio",
   "category_es": "Analítica",
   "subcategory_es": "Data Development",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-dataworks-maxcompute",
-  "lead": "Guía completa en español para el curso «Data Development with DataWorks and MaxCompute» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Data Development with DataWorks and MaxCompute» de Alibaba Cloud Academy. Es el curso más largo y práctico de la serie DataWorks: en vez de dar un mapa general de módulos, se enfoca de punta a punta en dos disciplinas concretas sobre un motor específico (MaxCompute): construir pipelines de procesamiento de datos con nodos SQL encadenados, y proteger esos pipelines con reglas de calidad de datos (Data Quality) que detienen la propagación de datos incorrectos antes de que lleguen a un reporte de negocio.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Diseñar</strong> un pipeline de procesamiento de datos en capas (staging → limpieza → agregación) sobre tablas de MaxCompute.",
+    "<strong>Escribir</strong> nodos ODPS SQL que transforman, limpian y modelan datos crudos en tablas analíticas listas para consumo.",
+    "<strong>Configurar</strong> reglas de Data Quality (DQC) sobre las tablas de salida: valores nulos, rangos, unicidad y volumen de filas.",
+    "<strong>Distinguir</strong> reglas de calidad bloqueantes de reglas meramente informativas, y cuándo usar cada una.",
+    "<strong>Diagnosticar</strong> un incidente de calidad de datos usando el historial de ejecuciones de reglas DQC.",
+    "<strong>Aplicar</strong> particionamiento y filtros de partición dentro de los nodos SQL para controlar costo y rendimiento.",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre diseño de pipelines de procesamiento y gobierno de calidad de datos."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Los datos crudos llegan a una capa de staging en MaxCompute (vía Data Integration desde RDS, OSS o Kafka). Un primer conjunto de nodos ODPS SQL limpia y normaliza esos datos —tipos, duplicados, valores fuera de rango— hacia una capa intermedia. Un segundo conjunto de nodos agrega y modela esa capa intermedia en tablas analíticas finales (hechos y dimensiones), particionadas por fecha de negocio. Cada tabla de salida crítica tiene reglas de Data Quality asociadas, ejecutadas automáticamente tras el nodo que la produce: si una regla bloqueante falla (por ejemplo, más de 5% de valores nulos en una columna obligatoria), el pipeline se detiene y los nodos downstream no se ejecutan, evitando que un reporte de negocio consuma datos corruptos. El Centro de Operaciones (O&M Center) centraliza el estado de ejecuciones de nodos y de reglas DQC, y las alarmas de ambos se enrutan al mismo canal de notificación del equipo de datos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Diseño de un pipeline de procesamiento en capas",
+      "title_en": "Designing a Layered Data Processing Pipeline",
+      "intro": "Antes de escribir la primera línea de SQL, el curso enseña un patrón de diseño que se repite en casi cualquier pipeline analítico serio: separar el procesamiento en capas con responsabilidades claras en vez de un único script gigante.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Capa de staging (ODS)</strong>: réplica lo más fiel posible de los datos origen, sin transformación de negocio — su único propósito es aislar el resto del pipeline de cambios o caídas del sistema origen.",
+        "<strong>Capa de limpieza/normalización (DWD)</strong>: aplica reglas de calidad básicas — tipos correctos, eliminación de duplicados, estandarización de formatos (fechas, códigos de país) — produciendo datos confiables pero aún granulares.",
+        "<strong>Capa de agregación/modelado (DWS/ADS)</strong>: combina y agrega la capa anterior en tablas de hechos y dimensiones listas para consumo directo por BI o por otros equipos, ya con la granularidad y las métricas de negocio definidas.",
+        "<strong>Por qué separar en capas</strong>: si el sistema origen cambia su formato, el impacto se contiene en la capa de staging; si una regla de negocio cambia, se ajusta en la capa de agregación sin tocar la limpieza de datos base — el acoplamiento entre capas se mantiene bajo control.",
+        "<strong>Cada capa es un conjunto de nodos ODPS SQL</strong> encadenados por dependencias explícitas en el Workflow de DataWorks — el diseño en capas no es solo una convención de nombres, se refleja directamente en la estructura del DAG."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Un pipeline de una sola capa (staging directo a reporte final) es frágil: cualquier cambio en el origen o en la lógica de negocio obliga a tocar el mismo script gigante. El diseño en capas aísla el impacto de cada tipo de cambio."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Nodos ODPS SQL: transformación y modelado",
+      "title_en": "ODPS SQL Nodes: Transformation and Modeling",
+      "intro": "El grueso del trabajo diario en este curso ocurre escribiendo y encadenando nodos SQL sobre MaxCompute — este módulo cubre los patrones más comunes de transformación dentro de un pipeline en capas.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>INSERT OVERWRITE hacia una partición</strong>: el patrón más común — cada ejecución del nodo reemplaza por completo el contenido de la partición correspondiente a bizdate, garantizando que una reejecución (backfill) produzca resultados idénticos y no datos duplicados.",
+        "<strong>Deduplicación</strong>: eliminar registros duplicados de la capa de staging antes de propagarlos, típicamente con funciones de ventana (ROW_NUMBER particionado por clave de negocio, ordenado por timestamp de actualización).",
+        "<strong>Joins entre capas</strong>: combinar una tabla de hechos granular con tablas de dimensión (catálogo de productos, geografía) para enriquecer los datos antes de agregarlos — cuidando siempre filtrar por partición en ambos lados del join.",
+        "<strong>Funciones de ventana para métricas acumuladas</strong>: cálculos como totales corridos o rankings dentro de un grupo se resuelven con funciones de ventana en MaxCompute SQL, evitando subconsultas correlacionadas costosas.",
+        "<strong>UDFs cuando SQL no alcanza</strong>: para lógica de transformación que SQL declarativo no puede expresar razonablemente (parsing de un formato propietario, lógica de negocio muy específica), se registra una función definida por el usuario (UDF) y se invoca desde el nodo SQL."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "INSERT OVERWRITE (no INSERT INTO) es el patrón correcto para un nodo que se reejecuta diariamente sobre una partición — INSERT INTO duplicaría los datos en cada backfill de la misma fecha."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Data Quality Center (DQC): reglas de calidad",
+      "title_en": "Data Quality Center (DQC): Quality Rules",
+      "intro": "Un pipeline que corre sin errores técnicos puede seguir produciendo datos incorrectos — DQC es la capa que valida el contenido de los datos, no solo la ejecución exitosa del código.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>Reglas sobre una tabla/partición</strong>: DQC se asocia a la salida de un nodo (una tabla y, típicamente, su partición del día) y ejecuta un conjunto de verificaciones inmediatamente después de que el nodo termina.",
+        "<strong>Tipos de regla comunes</strong>: porcentaje de valores nulos en una columna obligatoria, rango numérico esperado (p.ej. un precio nunca negativo), unicidad de una clave primaria de negocio, y volumen de filas dentro de un rango esperado (detecta tanto cargas vacías como duplicaciones masivas).",
+        "<strong>Umbral vs. valor absoluto</strong>: las reglas pueden definirse como umbral relativo (no más de 2% de nulos) o como comparación contra el histórico reciente (el volumen de filas no debe desviarse más de 30% respecto al promedio de los últimos 7 días) — esta segunda forma detecta anomalías que un umbral fijo no vería.",
+        "<strong>Historial de ejecuciones de reglas</strong>: cada corrida de una regla DQC queda registrada con su resultado, permitiendo trazar cuándo empezó a degradarse la calidad de una tabla concreta, útil para diagnosticar la causa raíz de un incidente reportado días después.",
+        "<strong>Ownership de reglas</strong>: cada regla debería tener un responsable claro (a menudo el mismo owner de la tabla en Data Map) que reciba la alarma cuando falla, evitando que una regla rota quede ignorada indefinidamente."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "DQC valida el contenido de los datos (¿tienen sentido estos valores?), mientras que el monitoreo estándar de nodos valida solo la ejecución (¿corrió sin error?). Un nodo puede terminar 'exitoso' y aun así producir datos que violan una regla DQC."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Reglas bloqueantes vs. informativas",
+      "title_en": "Blocking vs. Informational Rules",
+      "intro": "No toda regla de calidad debería detener el pipeline — decidir qué reglas son bloqueantes y cuáles son solo informativas es una decisión de diseño que el examen evalúa con precisión.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Regla bloqueante (strong rule)</strong>: si falla, detiene la ejecución de los nodos downstream que dependen de esa tabla — reservada para violaciones que harían que un reporte de negocio muestre información claramente incorrecta o incompleta.",
+        "<strong>Regla informativa (weak rule)</strong>: si falla, genera una alerta pero permite que el pipeline continúe — apropiada para desviaciones que merecen investigación pero no justifican detener todo el flujo de datos del día.",
+        "<strong>Antipatrón: todo bloqueante</strong>: marcar cada regla como bloqueante genera falsos positivos frecuentes que detienen el pipeline por desviaciones menores, entrenando al equipo a ignorar las alarmas — el efecto contrario al buscado.",
+        "<strong>Antipatrón: todo informativo</strong>: sin ninguna regla bloqueante, datos claramente corruptos (una tabla completamente vacía, una clave primaria con duplicados masivos) llegan igualmente a producción y a los reportes de negocio.",
+        "<strong>Criterio práctico</strong>: bloqueante para violaciones que invalidan el uso del dato (tabla vacía, clave duplicada, tipo corrupto); informativo para desviaciones estadísticas que ameritan revisión pero no invalidan necesariamente el resultado (un 3% más de nulos que el promedio histórico)."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe una tabla crítica para facturación o reportes financieros, la regla de unicidad de clave y de volumen mínimo de filas casi siempre debe ser bloqueante — dejarla informativa es el antipatrón que el examen suele señalar como incorrecto."
+      }
+    },
+    {
+      "title_es": "5 · Particionamiento y control de costo en el pipeline",
+      "title_en": "Partitioning and Cost Control in the Pipeline",
+      "intro": "Un pipeline de procesamiento bien diseñado en capas puede seguir siendo costoso si no se respeta la disciplina de particionamiento en cada nodo — este módulo conecta el diseño de pipelines con el control de costo de MaxCompute.",
+      "points": [
+        "<strong>Filtrar por partición en cada nodo</strong>: cada consulta dentro del pipeline (incluidos los joins entre capas) debe filtrar explícitamente por la partición de bizdate correspondiente — omitirlo en un solo nodo intermedio puede multiplicar el costo de todo el pipeline diario.",
+        "<strong>Propagación del filtro en joins</strong>: al unir una tabla de hechos particionada con una tabla de dimensión, filtrar solo la tabla de hechos no es suficiente si la dimensión también es grande y particionada — ambos lados del join deben acotarse.",
+        "<strong>Particiones intermedias como checkpoints de costo</strong>: materializar resultados intermedios en tablas particionadas (en vez de subconsultas anidadas gigantes) permite que MaxCompute reutilice el trabajo ya hecho en reejecuciones parciales del pipeline.",
+        "<strong>Lifecycle en capas de staging</strong>: la capa de staging, al ser una réplica cruda, suele acumular mucho volumen — aplicar una política de Lifecycle que expire particiones antiguas de staging (una vez ya procesadas hacia las capas siguientes) controla el crecimiento de almacenamiento.",
+        "<strong>Costo de una regla DQC mal diseñada</strong>: una regla que escanea la tabla completa sin filtro de partición en cada ejecución diaria añade un costo de cómputo recurrente evitable — las reglas también deben acotarse a la partición recién producida."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El diseño en capas no exime de la disciplina de particionamiento — cada capa, cada join y cada regla DQC debe filtrar explícitamente por partición, o el costo se multiplica silenciosamente en cada ejecución diaria del pipeline completo."
+      }
+    },
+    {
+      "title_es": "6 · Diagnóstico de incidentes y estrategia de examen",
+      "title_en": "Incident Diagnosis and Exam Strategy",
+      "intro": "El cierre del curso conecta todo lo anterior con un escenario realista: un stakeholder reporta que un número en un dashboard 'se ve mal' — cómo rastrear la causa raíz usando las herramientas cubiertas en este curso.",
+      "points": [
+        "<strong>Paso 1: revisar el O&M Center</strong>: confirmar si el nodo que produce la tabla final terminó exitosamente y a tiempo (respetando su baseline) — si falló o se retrasó, ahí está la causa más probable.",
+        "<strong>Paso 2: revisar el historial de reglas DQC</strong>: si el nodo terminó bien pero el dato sigue mal, el historial de ejecuciones de reglas de calidad sobre esa tabla (y sobre sus capas anteriores) suele mostrar en qué fecha empezó la degradación.",
+        "<strong>Paso 3: rastrear hacia atrás por el linaje</strong>: usando Data Map, seguir el linaje de la tabla final hacia sus fuentes en capas anteriores permite identificar en qué transformación específica se introdujo el problema.",
+        "<strong>Antipatrón</strong>: reescribir directamente la tabla final con un parche manual sin identificar la causa raíz en las capas intermedias — el mismo error se repetirá en la próxima ejecución programada del pipeline.",
+        "<strong>Estrategia de examen</strong>: ante un escenario de 'dato incorrecto en producción', el orden correcto de diagnóstico es ejecución del nodo → reglas DQC → linaje hacia el origen — no asumir directamente un problema del motor de cómputo."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Este curso combina el diseño en capas de «Application Development» con la gobernanza de «Basic Knowledge»: un pipeline de procesamiento sin reglas DQC es tan frágil como una regla DQC sin un pipeline bien particionado detrás."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Diseñar un pipeline en capas (staging → limpieza → agregación) para datos de ventas diarias" },
+    { "title": "Escenario 2", "text": "Configurar una regla DQC bloqueante de unicidad sobre la clave primaria de una tabla de facturación" },
+    { "title": "Escenario 3", "text": "Diagnosticar un número incorrecto en un dashboard rastreando el linaje hasta la capa de origen" },
+    { "title": "Escenario 4", "text": "Corregir un nodo que usa INSERT INTO en vez de INSERT OVERWRITE, generando duplicados en cada backfill" },
+    { "title": "Escenario 5", "text": "Decidir si una regla de volumen de filas debe ser bloqueante o informativa para una tabla de reporte interno" },
+    { "title": "Escenario 6", "text": "Aplicar Lifecycle a la capa de staging para controlar el crecimiento de almacenamiento" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Usar INSERT INTO en vez de INSERT OVERWRITE en un nodo que se reejecuta diariamente sobre una partición",
+    "Omitir el filtro de partición en un join entre la tabla de hechos y una tabla de dimensión grande",
+    "Marcar todas las reglas DQC como bloqueantes, generando falsos positivos que entrenan al equipo a ignorarlas",
+    "No definir ninguna regla bloqueante en tablas críticas de facturación, dejando pasar datos corruptos",
+    "Reescribir manualmente una tabla final sin investigar la causa raíz en las capas intermedias",
+    "No aplicar Lifecycle a la capa de staging, dejando crecer el almacenamiento sin control"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "odpscmd -e \"INSERT OVERWRITE TABLE ventas_dwd PARTITION (pt='${bizdate}') SELECT ... FROM ventas_ods WHERE pt='${bizdate}';\"", "desc": "Patrón de transformación por partición dentro de un nodo ODPS SQL" },
+    { "cmd": "aliyun dataworks-public CreateDataQualityRule --TableName ventas_dws --RuleType null_ratio --Threshold 0.02", "desc": "Crear una regla DQC de porcentaje máximo de valores nulos" },
+    { "cmd": "aliyun dataworks-public GetDataQualityResult --RuleId 4321", "desc": "Consultar el historial de ejecuciones de una regla DQC" },
+    { "cmd": "aliyun dataworks-public GetLineage --TableName ventas_dws", "desc": "Consultar el linaje de una tabla hacia sus fuentes en capas anteriores" },
+    { "cmd": "odpscmd -e \"ALTER TABLE ventas_ods SET LIFECYCLE 30;\"", "desc": "Configurar expiración automática de particiones antiguas en la capa de staging" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "ODS (Operational Data Store)", "es": "Capa de staging", "def": "Réplica fiel de los datos origen sin transformación de negocio, primera capa del pipeline." },
+    { "en": "DWD (Data Warehouse Detail)", "es": "Capa de limpieza", "def": "Datos normalizados y deduplicados, aún granulares, tras la primera capa de transformación." },
+    { "en": "DWS / ADS", "es": "Capa de agregación", "def": "Tablas de hechos y dimensiones agregadas, listas para consumo directo por BI." },
+    { "en": "INSERT OVERWRITE", "es": "INSERT OVERWRITE", "def": "Patrón que reemplaza por completo el contenido de una partición, garantizando idempotencia en reejecuciones." },
+    { "en": "Window Function", "es": "Función de ventana", "def": "Función SQL (como ROW_NUMBER) usada para deduplicación y cálculos acumulados sin subconsultas correlacionadas." },
+    { "en": "UDF", "es": "Función definida por el usuario", "def": "Función custom registrada para lógica de transformación que SQL declarativo no puede expresar razonablemente." },
+    { "en": "DQC (Data Quality Center)", "es": "Centro de calidad de datos", "def": "Módulo que ejecuta reglas de validación de contenido sobre tablas producidas por nodos." },
+    { "en": "Blocking Rule (Strong Rule)", "es": "Regla bloqueante", "def": "Regla DQC que, si falla, detiene la ejecución de los nodos downstream." },
+    { "en": "Informational Rule (Weak Rule)", "es": "Regla informativa", "def": "Regla DQC que, si falla, solo genera una alerta sin detener el pipeline." },
+    { "en": "Null Ratio Rule", "es": "Regla de porcentaje de nulos", "def": "Verifica que una columna obligatoria no supere un umbral de valores nulos." },
+    { "en": "Uniqueness Rule", "es": "Regla de unicidad", "def": "Verifica que una clave de negocio no tenga duplicados en la tabla producida." },
+    { "en": "Row Count Rule", "es": "Regla de volumen de filas", "def": "Verifica que el número de filas de la partición esté dentro de un rango esperado respecto al histórico." },
+    { "en": "Lineage", "es": "Linaje", "def": "Trazabilidad de una tabla hacia las tablas y transformaciones de las que depende, usada para diagnóstico." },
+    { "en": "Lifecycle", "es": "Ciclo de vida", "def": "Regla que expira automáticamente particiones antiguas de una tabla, típico en la capa de staging." },
+    { "en": "bizdate", "es": "Fecha de negocio", "def": "Variable de sistema que parametriza la partición sobre la que opera cada ejecución del pipeline." },
+    { "en": "O&M Center", "es": "Centro de Operaciones", "def": "Panel de monitoreo de ejecuciones de nodos, primer punto de diagnóstico ante un incidente." },
+    { "en": "Backfill", "es": "Reejecución histórica", "def": "Reejecución manual de un nodo para una fecha pasada, usada tras corregir un error de lógica." },
+    { "en": "Rule Owner", "es": "Responsable de la regla", "def": "Persona o equipo que recibe la alarma cuando una regla DQC específica falla." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿Por qué se recomienda separar un pipeline de datos en capas (staging, limpieza, agregación) en vez de un único script?", "options": ["Porque MaxCompute lo exige técnicamente", "Porque aísla el impacto de cambios: un cambio en el origen se contiene en staging, un cambio de negocio en la capa de agregación", "Porque reduce el costo de almacenamiento automáticamente", "Porque elimina la necesidad de reglas de calidad"], "answer": 1, "explain": "El diseño en capas contiene el impacto de distintos tipos de cambio, evitando que todo el pipeline dependa de un único script frágil." },
+    { "q": "¿Por qué INSERT OVERWRITE es el patrón correcto para un nodo que procesa una partición diaria, en vez de INSERT INTO?", "options": ["INSERT OVERWRITE es más rápido en todos los casos", "INSERT INTO duplicaría los datos si el nodo se reejecuta (backfill) sobre la misma fecha", "INSERT INTO no existe en MaxCompute SQL", "No hay ninguna diferencia práctica entre ambos"], "answer": 1, "explain": "INSERT OVERWRITE reemplaza el contenido de la partición, garantizando que un backfill produzca el mismo resultado sin duplicar filas." },
+    { "q": "¿Qué diferencia a una regla de Data Quality (DQC) del monitoreo estándar de ejecución de un nodo?", "options": ["Son exactamente lo mismo", "DQC valida el contenido de los datos producidos; el monitoreo estándar solo valida si el nodo terminó sin error técnico", "DQC solo aplica a nodos PyODPS", "El monitoreo estándar es más estricto que DQC"], "answer": 1, "explain": "Un nodo puede ejecutarse exitosamente (sin error técnico) y aun así producir datos que violan una regla de calidad de contenido." },
+    { "q": "Una tabla de facturación tiene una regla de unicidad de clave primaria. ¿Debería configurarse como bloqueante o informativa?", "options": ["Informativa, para no interrumpir el pipeline nunca", "Bloqueante, porque una clave duplicada en facturación invalida el uso correcto del dato", "No aplica ninguna regla DQC a datos de facturación", "Depende exclusivamente del volumen de la tabla"], "answer": 1, "explain": "Violaciones que invalidan el uso del dato (como duplicados en una clave de facturación) deben ser bloqueantes para evitar que lleguen a producción." },
+    { "q": "¿Cuál es el riesgo principal de marcar todas las reglas DQC como bloqueantes sin distinción?", "options": ["Aumenta el costo de almacenamiento", "Genera falsos positivos frecuentes que detienen el pipeline por desviaciones menores, entrenando al equipo a ignorar alarmas", "Reduce automáticamente la calidad de los datos", "No tiene ningún riesgo real"], "answer": 1, "explain": "El exceso de bloqueos por desviaciones menores erosiona la confianza en las alarmas, el efecto contrario al que se busca con DQC." },
+    { "q": "Al unir (join) una tabla de hechos particionada con una tabla de dimensión grande también particionada, ¿qué debe hacerse para controlar el costo?", "options": ["Filtrar por partición solo en la tabla de hechos", "Filtrar por partición en ambos lados del join, no solo en la tabla de hechos", "Evitar particiones en las tablas de dimensión", "El costo no se ve afectado por el particionamiento en joins"], "answer": 1, "explain": "Si la dimensión también es grande y particionada, dejarla sin filtro puede forzar un escaneo completo pese a que la tabla de hechos sí esté filtrada." },
+    { "q": "Un stakeholder reporta que un número en un dashboard 'se ve mal'. ¿Cuál es el primer paso recomendado de diagnóstico?", "options": ["Reescribir directamente la tabla final con el valor correcto", "Revisar el O&M Center para confirmar si el nodo que produce la tabla final terminó exitosamente y a tiempo", "Eliminar todas las reglas DQC de la tabla", "Migrar la tabla a otro Project inmediatamente"], "answer": 1, "explain": "El primer paso lógico es confirmar el estado de ejecución del nodo antes de investigar reglas de calidad o linaje más profundo." },
+    { "q": "¿Por qué reescribir manualmente una tabla final sin identificar la causa raíz en capas intermedias es un antipatrón?", "options": ["Porque MaxCompute no permite reescribir tablas manualmente", "Porque el mismo error se repetirá en la próxima ejecución programada del pipeline si la causa no se corrige", "Porque siempre genera datos duplicados", "No es un antipatrón, es la solución recomendada"], "answer": 1, "explain": "Un parche manual no corrige la lógica que genera el problema; sin arreglar la causa raíz, el error reaparecerá en el siguiente ciclo." },
+    { "q": "¿Qué tipo de regla DQC detecta tanto una carga vacía como una duplicación masiva de filas?", "options": ["Regla de porcentaje de nulos", "Regla de volumen de filas comparada contra el histórico reciente", "Regla de unicidad de clave", "Regla de rango numérico"], "answer": 1, "explain": "Comparar el volumen de filas contra el promedio de días recientes detecta desviaciones fuertes en ambas direcciones (muy pocas o demasiadas filas)." },
+    { "q": "¿Qué herramienta permite rastrear en qué transformación específica se introdujo un dato incorrecto, siguiendo la tabla hacia sus fuentes?", "options": ["Data Security", "Linaje (lineage) vía Data Map", "El Scheduler", "Una regla DQC informativa"], "answer": 1, "explain": "El linaje columnar de Data Map permite trazar hacia atrás por las capas del pipeline hasta encontrar dónde se introdujo el problema." },
+    { "q": "¿Por qué se recomienda aplicar una política de Lifecycle a la capa de staging (ODS)?", "options": ["Porque staging nunca debe tener particiones", "Porque acumula mucho volumen al ser una réplica cruda, y expirar particiones ya procesadas controla el crecimiento de almacenamiento", "Porque DQC lo exige obligatoriamente", "Porque mejora la velocidad de las consultas de agregación automáticamente"], "answer": 1, "explain": "La capa de staging suele crecer rápido; una vez que sus datos ya fueron propagados a capas siguientes, expirar particiones antiguas controla el costo." },
+    { "q": "¿Qué distingue a una regla de umbral relativo de una regla comparada contra el histórico reciente en DQC?", "options": ["Son idénticas en funcionamiento", "El umbral relativo usa un límite fijo (p.ej. no más de 2% de nulos); la comparación histórica detecta desviaciones respecto al comportamiento de días recientes", "Las reglas históricas no pueden ser bloqueantes", "El umbral relativo solo aplica a columnas numéricas"], "answer": 1, "explain": "La comparación contra el histórico detecta anomalías de comportamiento que un umbral fijo simple podría no capturar." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) el diseño de pipelines en capas y por qué contiene el impacto de los cambios, (b) el patrón INSERT OVERWRITE por partición y su relación con backfill idempotente, (c) qué valida DQC frente al monitoreo estándar de ejecución, (d) cuándo una regla debe ser bloqueante frente a informativa, (e) el orden correcto de diagnóstico ante un incidente de datos (ejecución → DQC → linaje), (f) disciplina de particionamiento en joins entre capas.",
   "official_intro": "As an important Platform as a service (PaaS) product in Alibaba Cloud product portfolios. Alibaba Cloud DataWorks offers its users a one-stop solution for data integration, data management, and data governance. DataWorks relies on MaxCompute as its underlying layer and provides features that apply to scenarios such as data mining, cloud data warehouse creation, as well as offline processing and analysis. DataWorks helps you transmit and convert data and perform additional data operations. This course will guide you the basic operation of Data Processing and Data Quality Monitoring by using DataWorks and MaxCompute.",
   "recommended_for": "This training is for people who have database experience.",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-dataworks-maxcompute",

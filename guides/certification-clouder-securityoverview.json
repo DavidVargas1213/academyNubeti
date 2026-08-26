@@ -2,477 +2,192 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-securityoverview",
   "title_en": "Cloud Platform Security Overview",
-  "title_es": "Cloud Platform Seguridad Visión General",
+  "title_es": "Visión General de la Seguridad en la Plataforma Cloud",
+  "title_es_html": "Visión General de la <em>Seguridad en la Plataforma Cloud</em>",
   "duration_es": "61 minutos",
-  "level_es": "50 Minutes",
+  "level_es": "Principiante",
   "category_es": "Seguridad",
   "subcategory_es": "Seguridad en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_securityoverview",
-  "lead": "Guía completa en español para el curso «Cloud Platform Security Overview» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con fundamentos: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía introductoria en español para el curso «Cloud Platform Security Overview» de Alibaba Cloud Academy. Antes de entrar en el detalle técnico de WAF, Anti-DDoS o el hardening de sistema operativo -cubiertos en otras guías del mismo lote-, este curso construye el mapa conceptual completo: el modelo de responsabilidad compartida, las grandes categorías de servicios de seguridad de Alibaba Cloud y la filosofía de defensa en profundidad que las conecta.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> el modelo de responsabilidad compartida y cómo varía la línea de división entre IaaS, PaaS y SaaS.",
+    "<strong>Comparar</strong> el modelo mental de seguridad on-premises frente al modelo elástico y basado en API de la nube pública.",
+    "<strong>Identificar</strong> las categorías de servicios de seguridad de Alibaba Cloud -identidad, red, aplicación, datos, host, auditoría, cumplimiento- y qué problema resuelve cada una.",
+    "<strong>Aplicar</strong> el principio de mínimo privilegio como base del diseño de identidad y acceso.",
+    "<strong>Justificar</strong> la defensa en profundidad como filosofía que conecta las distintas capas de seguridad.",
+    "<strong>Reconocer</strong> las certificaciones de cumplimiento que ofrece la plataforma (ISO 27001, PCI-DSS, GDPR) y por qué importan a un cliente empresarial.",
+    "<strong>Responder</strong> preguntas de examen sobre el panorama de seguridad sin necesidad todavía de dominar la configuración detallada de cada servicio."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Vista de helicóptero, no plano de ingeniería: en la base, Alibaba Cloud asegura los centros de datos físicos, el hardware, la capa de virtualización y la red troncal (seguridad DE la nube). Sobre esa base, el cliente construye y protege su propia porción: identidad con RAM, perímetro de red con Security Group/Cloud Firewall/VPC, mitigación volumétrica con Anti-DDoS, filtrado de aplicación con WAF, cifrado y clasificación de datos con KMS/SDDP, protección de host con Security Center y trazabilidad de cada acción con ActionTrail. El cumplimiento (ISO 27001, PCI-DSS, GDPR) atraviesa todas las capas como evidencia de que el conjunto funciona. Ninguna capa sustituye a las demás: es defensa en profundidad, no un único control mágico.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · De la infraestructura propia a la nube: un cambio de modelo mental",
+      "title_en": "From On-Premises to the Cloud: A Security Mindset Shift",
+      "intro": "Migrar cargas de trabajo a una nube pública no es solo un cambio de ubicación física de los servidores: es un cambio completo de modelo mental de seguridad. Este primer módulo explica por qué el razonamiento que funcionaba en un centro de datos propio deja de ser suficiente.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Perímetro difuso</strong>: en un datacenter propio el firewall perimetral era el borde claro; en la nube cada VPC, cada API pública y cada credencial filtrada puede convertirse en un nuevo borde.",
+        "<strong>Elasticidad</strong>: instancias y servicios se crean y destruyen en minutos, así que un inventario de activos estático queda obsoleto casi de inmediato.",
+        "<strong>APIs como superficie de ataque</strong>: casi toda acción administrativa pasa por una llamada API firmada con AccessKey; proteger esas credenciales es tan crítico como proteger un servidor físico.",
+        "<strong>Multi-tenancy</strong>: distintos clientes comparten el mismo hardware físico bajo aislamiento lógico garantizado por el hipervisor y la red del proveedor.",
+        "<strong>Seguridad como código</strong>: la velocidad de cambio en la nube exige políticas, roles y reglas de firewall definidos como configuración versionada, no como tickets manuales.",
+        "<strong>Del control físico a la confianza contractual</strong>: el cliente ya no puede tocar el servidor, así que parte de la confianza se traslada a certificaciones, SLA y transparencia del proveedor."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Migrar a la nube no reduce automáticamente el riesgo: lo redistribuye. Entender dónde termina la responsabilidad de Alibaba Cloud y dónde empieza la tuya es el primer paso de cualquier estrategia de seguridad."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · El modelo de responsabilidad compartida",
+      "title_en": "The Shared Responsibility Model",
+      "intro": "Es el concepto más preguntado en este examen. Distingue con precisión qué asegura Alibaba Cloud y qué asegura el cliente, y cómo esa línea se mueve según el tipo de servicio contratado.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
-      ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
-    },
-    {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
-      "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>Seguridad DE la nube</strong>: Alibaba Cloud protege los centros de datos físicos, la capa de virtualización, el hardware de red troncal y la disponibilidad de sus servicios gestionados.",
+        "<strong>Seguridad EN la nube</strong>: el cliente es responsable del sistema operativo (cuando aplica), la configuración de red, la gestión de identidades, el cifrado de sus propios datos y el código de su aplicación.",
+        "<strong>IaaS (por ejemplo ECS)</strong>: la línea divisoria queda baja - el cliente administra el sistema operativo, los parches, el antivirus y las reglas de firewall del host.",
+        "<strong>PaaS (por ejemplo una base de datos gestionada)</strong>: Alibaba Cloud sube la línea y gestiona el runtime y el parcheo; el cliente sigue siendo dueño de los datos y del control de acceso a ellos.",
+        "<strong>SaaS</strong>: la línea sube al máximo - el proveedor gestiona casi todo el stack técnico y el cliente se concentra en gestionar usuarios, permisos y datos.",
+        "<strong>Consecuencia práctica</strong>: un incidente causado por un Security Group mal configurado o una AccessKey filtrada es responsabilidad del cliente, aunque haya ocurrido dentro de Alibaba Cloud."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Alibaba Cloud asegura la nube EN SÍ; tú aseguras lo que pones DENTRO de ella. Esa frase resuelve la mayoría de las preguntas de examen sobre este modelo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "3 · Identidad y mínimo privilegio: la primera línea de defensa",
+      "title_en": "Identity and Least Privilege: the First Line of Defense",
+      "intro": "Antes de hablar de firewalls o cifrado, el examen espera que domines la identidad: quién puede hacer qué, y por qué ese 'quién' debe estar lo más acotado posible.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>RAM (Resource Access Management)</strong>: servicio de identidad que permite crear usuarios, grupos y roles sin compartir jamás la cuenta raíz.",
+        "<strong>Principio de mínimo privilegio</strong>: cada identidad recibe solo los permisos estrictamente necesarios para su función, ni uno más.",
+        "<strong>Roles vs usuarios</strong>: un rol es una identidad asumible temporalmente (por una aplicación, un servicio o un usuario federado) sin credenciales de larga duración.",
+        "<strong>MFA</strong>: segundo factor obligatorio para cualquier acceso administrativo, especialmente la cuenta raíz.",
+        "<strong>STS (Security Token Service)</strong>: emite credenciales temporales para escenarios de federación o acceso entre cuentas, evitando distribuir AccessKeys permanentes.",
+        "<strong>Políticas como documento, no como memoria</strong>: cada permiso otorgado debe quedar en una política explícita y auditable, no en configuración improvisada."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando dos opciones parecen igual de seguras, gana la que usa un rol temporal o una política más restrictiva sobre la que otorga acceso amplio por comodidad."
+      }
+    },
+    {
+      "title_es": "4 · Panorama de seguridad de red y aplicación",
+      "title_en": "Network and Application Security at a Glance",
+      "intro": "Este módulo mapea las categorías de seguridad de red y aplicación al nivel de qué problema resuelven, sin entrar en la configuración detallada que corresponde a los cursos especializados del mismo lote.",
+      "points": [
+        "<strong>Security Group</strong>: firewall a nivel de instancia que filtra tráfico entrante y saliente por puerto, protocolo e IP de origen.",
+        "<strong>VPC</strong>: red privada aislada lógicamente donde el cliente define su propia topología, subredes y tablas de rutas.",
+        "<strong>Cloud Firewall</strong>: control centralizado de tráfico entre VPCs, hacia internet y entre hosts, complementario a los Security Groups.",
+        "<strong>Anti-DDoS</strong>: capa de mitigación volumétrica que absorbe tráfico malicioso antes de que llegue a la aplicación (las ediciones Basic/Pro/Premium se cubren en el curso dedicado a Anti-DDoS).",
+        "<strong>WAF</strong>: filtro de capa de aplicación contra ataques como inyección SQL o Cross-Site Scripting, que un firewall de red no puede detectar (su configuración se cubre en el curso dedicado a WAF).",
+        "<strong>Por qué ninguna capa basta sola</strong>: un Security Group bien configurado no detiene un ataque de aplicación, y un WAF no detiene un flood volumétrico - cada capa cubre un tipo de amenaza distinto."
+      ],
+      "keypoint": {
+        "label": "Alcance de este módulo",
+        "text": "Aquí no se profundiza en la configuración de WAF o Anti-DDoS - eso corresponde a las guías especializadas del mismo lote - sino en entender qué problema resuelve cada categoría dentro del panorama general."
+      }
+    },
+    {
+      "title_es": "5 · Panorama de seguridad de datos, host y auditoría",
+      "title_en": "Data, Host, and Audit Security at a Glance",
+      "intro": "Cierra el mapa conceptual con las categorías que protegen el dato en sí, el host que lo procesa y el rastro de quién interactuó con ambos.",
+      "points": [
+        "<strong>KMS (Key Management Service)</strong>: gestión centralizada de claves de cifrado, usada para proteger datos en reposo en OSS, RDS y otros servicios.",
+        "<strong>SDDP (Sensitive Data Discovery and Protection)</strong>: descubre y clasifica automáticamente datos sensibles (PII, información financiera) dentro de los almacenes de datos del cliente.",
+        "<strong>Security Center (SAS)</strong>: protección de host tipo EDR que detecta vulnerabilidades, malware y desviaciones de baseline en las instancias.",
+        "<strong>ActionTrail</strong>: registro inmutable de cada llamada API realizada en la cuenta, esencial para investigar incidentes y demostrar cumplimiento.",
+        "<strong>Por qué la auditoría no es opcional</strong>: sin un registro confiable de quién hizo qué y cuándo, ninguna otra capa de seguridad puede validarse después de un incidente.",
+        "<strong>Relación entre capas</strong>: KMS protege el dato, SAS protege el host que lo procesa, ActionTrail deja constancia de quién accedió a ambos."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "El flujo es: KMS cifra, SDDP clasifica, SAS vigila el host, ActionTrail audita la acción. Cuatro categorías, cuatro preguntas típicas de examen."
+      }
+    },
+    {
+      "title_es": "6 · Defensa en profundidad, cumplimiento y postura continua",
+      "title_en": "Defense in Depth, Compliance, and Continuous Posture",
+      "intro": "El módulo final conecta todo lo anterior con la filosofía que unifica cada categoría de seguridad, y explica por qué la postura de seguridad nunca 'termina'.",
+      "points": [
+        "<strong>Defensa en profundidad</strong>: filosofía que asume que cualquier capa individual puede fallar, por lo que se combinan múltiples controles independientes (identidad, red, aplicación, datos, host, auditoría).",
+        "<strong>Cumplimiento como evidencia</strong>: certificaciones como ISO 27001, PCI-DSS o GDPR no reemplazan la seguridad técnica, pero demuestran ante auditores y clientes que los controles existen y funcionan.",
+        "<strong>Responsabilidad compartida y continua</strong>: la postura de seguridad no se termina al configurar los servicios una vez; requiere revisión periódica frente a nuevas amenazas y cambios de arquitectura.",
+        "<strong>Tendencias</strong>: automatización de la detección (SAS, CloudMonitor), adopción de mínimo privilegio por defecto y migración hacia credenciales temporales en lugar de AccessKeys estáticas.",
+        "<strong>De reactivo a proactivo</strong>: las organizaciones maduras auditan su configuración contra un baseline de forma continua, en lugar de esperar a un incidente para revisar permisos.",
+        "<strong>Este curso como punto de partida</strong>: cada categoría vista aquí (identidad, red, aplicación, datos, host, auditoría) tiene su propio curso especializado para quien necesite profundizar en la configuración."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Si el examen pregunta cuál es la mejor estrategia de seguridad, la respuesta casi nunca es un único servicio: es la combinación de capas más el principio de mínimo privilegio, sostenidos en el tiempo."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Una empresa migra su ERP desde servidores propios a instancias ECS y asume, erróneamente, que Alibaba Cloud se encarga de aplicar los parches del sistema operativo." },
+    { "title": "Escenario 2", "text": "Un equipo usa una base de datos PaaS gestionada: delega correctamente el parcheo del motor a Alibaba Cloud, pero sigue siendo responsable de sus propias políticas RAM y del cifrado de las credenciales de conexión." },
+    { "title": "Escenario 3", "text": "Un arquitecto diseña una postura de seguridad combinando RAM con mínimo privilegio, Security Group restrictivo, WAF delante de la aplicación y ActionTrail activo - ninguna capa sustituye a las demás." },
+    { "title": "Escenario 4", "text": "Un cliente del sector financiero solicita evidencia de las certificaciones ISO 27001 y PCI-DSS de la plataforma antes de aprobar la migración de datos sensibles." },
+    { "title": "Escenario 5", "text": "Tras un incidente con una AccessKey de la cuenta raíz filtrada en un repositorio público, la revisión posterior concluye que el mínimo privilegio y el MFA habrían limitado el daño." },
+    { "title": "Escenario 6", "text": "Una empresa expande operaciones a nuevas regiones y reevalúa su postura de seguridad porque la superficie de ataque y los requisitos de cumplimiento locales cambiaron." }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Asumir que contratar servicios de Alibaba Cloud transfiere toda la responsabilidad de seguridad al proveedor.",
+    "Confundir las certificaciones de cumplimiento de la plataforma con el cumplimiento automático de la aplicación del cliente.",
+    "Tratar la configuración de seguridad como un proyecto de una sola vez en lugar de un proceso continuo de revisión.",
+    "No distinguir cómo cambia la línea de responsabilidad entre IaaS, PaaS y SaaS al diseñar la arquitectura.",
+    "Otorgar permisos amplios por si acaso en lugar de aplicar mínimo privilegio desde el diseño.",
+    "Evaluar cada servicio de seguridad de forma aislada en lugar de como parte de una defensa en profundidad."
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun ram ListUsers", "desc": "Listar usuarios RAM de la cuenta" },
+    { "cmd": "aliyun ram GetAccountSecurityPracticeReport", "desc": "Consultar el reporte de buenas prácticas de seguridad de la cuenta" },
+    { "cmd": "aliyun ram ListPolicies", "desc": "Listar políticas de acceso definidas en RAM" },
+    { "cmd": "aliyun actiontrail DescribeTrails", "desc": "Consultar los trails de auditoría configurados" },
+    { "cmd": "aliyun sas DescribeCloudCenterInstanceInfo", "desc": "Consultar el estado general de seguridad de host reportado por Security Center" },
+    { "cmd": "aliyun kms ListKeys", "desc": "Listar las claves de cifrado gestionadas en KMS" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Shared Responsibility Model", "es": "Modelo de responsabilidad compartida", "def": "Marco que divide la seguridad entre lo que gestiona Alibaba Cloud y lo que gestiona el cliente." },
+    { "en": "Security of the Cloud", "es": "Seguridad DE la nube", "def": "Lo que protege el proveedor: infraestructura física, virtualización y red troncal." },
+    { "en": "Security in the Cloud", "es": "Seguridad EN la nube", "def": "Lo que protege el cliente: sistema operativo, datos, identidad y aplicación." },
+    { "en": "Defense in Depth", "es": "Defensa en profundidad", "def": "Combinación de múltiples capas de control independientes que se refuerzan entre sí." },
+    { "en": "Least Privilege", "es": "Mínimo privilegio", "def": "Otorgar a cada identidad solo el permiso estrictamente necesario para su función." },
+    { "en": "RAM", "es": "Resource Access Management", "def": "Servicio de identidad y control de acceso: usuarios, grupos, roles y políticas." },
+    { "en": "RAM Role", "es": "Rol RAM", "def": "Identidad asumible temporalmente, sin credenciales de larga duración." },
+    { "en": "MFA", "es": "Autenticación multifactor", "def": "Segundo factor de verificación obligatorio para accesos administrativos." },
+    { "en": "STS", "es": "Security Token Service", "def": "Emite credenciales temporales para escenarios de federación o acceso entre cuentas." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall a nivel de instancia que filtra tráfico por puerto, protocolo e IP." },
+    { "en": "VPC", "es": "Red privada virtual", "def": "Red lógicamente aislada donde el cliente define su propia topología." },
+    { "en": "Cloud Firewall", "es": "Cloud Firewall", "def": "Firewall centralizado que controla tráfico entre VPCs y hacia internet." },
+    { "en": "Anti-DDoS", "es": "Anti-DDoS", "def": "Servicio que mitiga tráfico volumétrico malicioso antes de que llegue a la aplicación." },
+    { "en": "WAF", "es": "Firewall de aplicaciones web", "def": "Filtro de capa 7 contra ataques de aplicación como inyección SQL o XSS." },
+    { "en": "KMS", "es": "Servicio de gestión de claves", "def": "Gestión centralizada de claves criptográficas para cifrar datos en reposo." },
+    { "en": "SDDP", "es": "Descubrimiento y protección de datos sensibles", "def": "Clasifica automáticamente PII y otros datos sensibles en los almacenes del cliente." },
+    { "en": "Security Center (SAS)", "es": "Centro de seguridad", "def": "Protección de host tipo EDR con detección de vulnerabilidades y desviaciones de baseline." },
+    { "en": "ActionTrail", "es": "ActionTrail", "def": "Registro inmutable de cada llamada API realizada en la cuenta." },
+    { "en": "Compliance", "es": "Cumplimiento", "def": "Certificaciones de la plataforma como ISO 27001, PCI-DSS y GDPR." },
+    { "en": "Attack Surface", "es": "Superficie de ataque", "def": "Conjunto de puntos expuestos que un atacante podría intentar explotar." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Qué distingue mejor la 'seguridad DE la nube' de la 'seguridad EN la nube' en el modelo de responsabilidad compartida?", "options": ["Alibaba Cloud protege la infraestructura física y la virtualización; el cliente protege su configuración, datos e identidades.", "Ambas son responsabilidad exclusiva del cliente.", "Ambas son responsabilidad exclusiva de Alibaba Cloud.", "La distinción solo aplica a servicios SaaS."], "answer": 0, "explain": "El proveedor asegura la infraestructura subyacente; el cliente asegura lo que configura y almacena dentro de ella." },
+    { "q": "En un servicio IaaS como ECS, ¿quién es responsable de aplicar los parches del sistema operativo?", "options": ["El cliente, ya que en IaaS gestiona el sistema operativo", "Alibaba Cloud siempre, sin excepción", "Ninguno, los parches no son necesarios en la nube", "Un tercero contratado obligatoriamente"], "answer": 0, "explain": "En IaaS la línea de responsabilidad queda baja: el cliente administra el sistema operativo y sus parches." },
+    { "q": "¿Qué principio establece que cada identidad debe recibir solo los permisos estrictamente necesarios para su función?", "options": ["Defensa en profundidad", "Mínimo privilegio", "Responsabilidad compartida", "Alta disponibilidad"], "answer": 1, "explain": "El mínimo privilegio limita el daño potencial de una credencial comprometida." },
+    { "q": "¿Cuál es la función principal de RAM en Alibaba Cloud?", "options": ["Cifrar datos en reposo", "Gestionar usuarios, grupos, roles y políticas de acceso", "Filtrar tráfico de capa de aplicación", "Mitigar ataques volumétricos"], "answer": 1, "explain": "RAM (Resource Access Management) es el servicio de identidad y control de acceso de Alibaba Cloud." },
+    { "q": "¿Qué diferencia a un RAM Role de un usuario RAM tradicional?", "options": ["El rol se asume temporalmente y no requiere credenciales de larga duración", "El rol siempre tiene acceso de administrador", "El rol solo puede usarse desde la consola web", "No hay diferencia real"], "answer": 0, "explain": "Un rol es una identidad asumible, ideal para aplicaciones y federación, sin AccessKeys permanentes." },
+    { "q": "¿Qué capa de seguridad filtra el tráfico entrante y saliente a nivel de instancia por puerto, protocolo e IP?", "options": ["WAF", "KMS", "Security Group", "ActionTrail"], "answer": 2, "explain": "El Security Group opera a nivel de instancia, filtrando por puerto, protocolo e IP de origen." },
+    { "q": "¿Qué servicio detecta y filtra ataques de capa de aplicación como inyección SQL o Cross-Site Scripting?", "options": ["Anti-DDoS", "WAF", "Security Group", "STS"], "answer": 1, "explain": "WAF opera en capa 7 y detecta patrones de ataque a nivel de aplicación." },
+    { "q": "¿Qué servicio centraliza la gestión de claves de cifrado usadas para proteger datos en reposo?", "options": ["ActionTrail", "SDDP", "KMS", "Security Center"], "answer": 2, "explain": "KMS gestiona de forma centralizada las claves criptográficas, integrado con OSS, RDS y otros servicios." },
+    { "q": "¿Qué servicio descubre y clasifica automáticamente información sensible como PII dentro de los almacenes de datos?", "options": ["SDDP", "Cloud Firewall", "RAM", "VPC"], "answer": 0, "explain": "SDDP localiza y clasifica datos sensibles como PII o información financiera." },
+    { "q": "¿Qué servicio ofrece protección de host tipo EDR, detectando vulnerabilidades y desviaciones de baseline?", "options": ["ActionTrail", "Security Center (SAS)", "WAF", "KMS"], "answer": 1, "explain": "Security Center (SAS) vigila el host: vulnerabilidades, malware y desviaciones de configuración base." },
+    { "q": "¿Qué servicio registra de forma inmutable cada llamada API realizada en la cuenta?", "options": ["CloudMonitor", "ActionTrail", "Security Group", "SDDP"], "answer": 1, "explain": "ActionTrail conserva un registro auditable de cada llamada API, esencial para investigar incidentes." },
+    { "q": "¿Cuál es la filosofía que asume que cualquier capa de seguridad individual puede fallar, por lo que se combinan múltiples controles independientes?", "options": ["Mínimo privilegio", "Responsabilidad compartida", "Defensa en profundidad", "Cumplimiento continuo"], "answer": 2, "explain": "La defensa en profundidad combina capas de identidad, red, aplicación, datos, host y auditoría." },
+    { "q": "¿Qué representan certificaciones como ISO 27001 o PCI-DSS en el contexto de la plataforma cloud?", "options": ["Sustituyen la necesidad de configurar seguridad técnica", "Evidencia de que existen y funcionan controles de seguridad auditados", "Solo aplican a clientes fuera de China", "Un servicio de pago opcional dentro de RAM"], "answer": 1, "explain": "Las certificaciones documentan ante auditores y clientes que los controles de seguridad realmente operan." },
+    { "q": "¿Por qué la postura de seguridad en la nube se considera un proceso continuo y no una configuración de una sola vez?", "options": ["Porque las amenazas, la arquitectura y los requisitos de cumplimiento cambian con el tiempo", "Porque Alibaba Cloud exige reconfigurar todo cada mes por contrato", "Porque las políticas RAM expiran automáticamente cada 24 horas", "Porque el modelo de responsabilidad compartida solo aplica el primer año"], "answer": 0, "explain": "La seguridad exige revisión periódica frente a nuevas amenazas, cambios de arquitectura y nuevos requisitos." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen de este curso panorámico no evalúa configuración detallada de WAF, Anti-DDoS o hardening de sistema operativo - eso corresponde a los cursos especializados del mismo lote - sino la comprensión conceptual del modelo de responsabilidad compartida (qué protege Alibaba Cloud frente a qué protege el cliente, y cómo varía según IaaS/PaaS/SaaS), el propósito de cada categoría de servicio de seguridad (identidad, red, aplicación, datos, host, auditoría, cumplimiento) y los principios transversales de mínimo privilegio y defensa en profundidad.",
   "official_intro": "Learn about Alibaba Cloud's security products line and their design strategy. So this course aims to help you better understand the transition from traditional IT infrastructure to cloud infrastructure including current information security best practices and trends. You will get a clear understanding of how to use cloud platform to reduce security risks.",
   "recommended_for": "Cloud security administrators and operators",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_securityoverview",

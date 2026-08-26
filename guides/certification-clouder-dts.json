@@ -2,417 +2,180 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-dts",
   "title_en": "Data Transmission Service Technical Essentials",
-  "title_es": "Datos Transmission Servicio Technical Essentials",
+  "title_es": "Fundamentos Técnicos de Data Transmission Service",
+  "title_es_html": "Fundamentos Técnicos de <em>Data Transmission Service</em>",
   "duration_es": "70 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Cloud Migration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_dts",
-  "lead": "Guía completa en español para el curso «Data Transmission Service Technical Essentials» de Alibaba Cloud Academy. Cubre en profundidad Data Transmission Service (DTS). DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Data Transmission Service Technical Essentials» de Alibaba Cloud Academy. A diferencia de un curso introductorio de migración, este entra en el detalle técnico de DTS: cómo migra el esquema, cómo hace la carga inicial, cómo aplica cambios incrementales leyendo el log de transacciones, y qué combinaciones de origen/destino soporta, con una demo de operación en consola.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Data Transmission Service (DTS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Migration Task, Structure Migration, Full Migration, Incremental Migration, Change Tracking.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Data Transmission Service (DTS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> las tres capacidades de DTS: migración, sincronización (Change Tracking/suscripción) y replicación bidireccional.",
+    "<strong>Describir</strong> las tres fases técnicas de una tarea de migración: estructura, datos completos y datos incrementales.",
+    "<strong>Comprender</strong> el principio de captura de cambios (CDC) basado en el log de transacciones (binlog/WAL/redo log) de la base origen.",
+    "<strong>Configurar</strong> una tarea de migración en la consola de DTS, incluyendo la selección de objetos y precheck.",
+    "<strong>Diagnosticar</strong> problemas comunes de una tarea DTS: retraso (lag), errores de precheck, y conflictos en sincronización bidireccional.",
+    "<strong>Diseñar</strong> una ventana de cutover mínima usando las tres fases de DTS.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre los fundamentos técnicos de DTS."
   ],
-  "architecture": "Estructura → data → incremental (CDC binlog): DTS crea schema en target, hace initial load, luego aplica cambios binlog en tiempo real. Al cortar, apps se apuntan al nuevo. RPO segundos, RTO minutos.",
+  "architecture": "Base origen (on-premise, ECS con base propia, RDS de otro proveedor u otra región) → DTS ejecuta un precheck de conectividad y permisos → fase de estructura (crea schema, tablas, índices en destino) → fase de datos completos (copia snapshot inicial de las filas existentes) → fase incremental (lee continuamente el log de transacciones del origen — binlog en MySQL, WAL en PostgreSQL, redo log en Oracle — y aplica cada cambio en destino en cuanto ocurre) → métricas de retraso (lag) expuestas en la consola → cutover cuando el lag es prácticamente cero.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Data Transmission Service (DTS)",
-      "title_en": "Introduction to Data Transmission Service (DTS)",
-      "intro": "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Las tres capacidades de DTS",
+      "title_en": "Three Capabilities of DTS",
+      "intro": "Antes de configurar nada, el curso distingue los tres modos de operación de DTS — el examen suele pedir identificar cuál aplica a un escenario dado.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Data Transmission Service (DTS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Migración (Data Migration)</strong>: mover datos de un origen a un destino una sola vez (con o sin fase incremental posterior) para completar una migración definitiva — el caso típico de mover una base on-premise a la nube.",
+        "<strong>Sincronización / Change Tracking</strong>: capturar cambios continuos de una base y publicarlos hacia un consumidor (otra base, un tópico Kafka, o código de aplicación vía SDK) sin que eso implique mover 'la base completa' a otro lugar — útil para alimentar un data lake o un sistema de caché en tiempo casi real.",
+        "<strong>Replicación bidireccional (Bidirectional Sync)</strong>: dos bases activas simultáneamente, cada una escribiendo, con DTS replicando los cambios de una hacia la otra y viceversa — necesaria para arquitecturas activo-activo multi-región, con reglas para resolver conflictos de escritura concurrente.",
+        "<strong>Por qué importa distinguirlas</strong>: elegir 'migración' cuando el caso de uso real es 'sincronización continua hacia un data lake' produce una tarea que no está pensada para el patrón de consumo correcto — el examen premia identificar el modo correcto antes que memorizar pasos de configuración."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Data Transmission Service (DTS) es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Migración = mover una vez y terminar. Sincronización = capturar cambios de forma continua hacia un consumidor. Bidireccional = ambas bases activas al mismo tiempo con reglas de conflicto."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Data Transmission Service (DTS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Las tres fases técnicas de una migración",
+      "title_en": "The Three Migration Phases",
+      "intro": "El corazón técnico del curso: cómo DTS logra migrar sin downtime prolongado, descomponiendo la tarea en tres fases con propósitos distintos.",
       "points": [
-        "<strong>Patrón canónico</strong>: Estructura → data → incremental (CDC binlog): DTS crea schema en target, hace initial load, luego aplica cambios binlog en tiempo real. Al cortar, apps se apuntan al nuevo. RPO segundos, RTO minutos.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Data Transmission Service (DTS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Tarea de migración</strong> <em>(Migration Task)</em>: One-shot o continua.",
-        "<strong>Migración de estructura</strong> <em>(Structure Migration)</em>: Schemas, tablas, índices.",
-        "<strong>Migración full</strong> <em>(Full Migration)</em>: Copia inicial de datos.",
-        "<strong>Migración incremental</strong> <em>(Incremental Migration)</em>: Aplica binlog/WAL cambios continuos.",
-        "<strong>Change Tracking</strong> <em>(Change Tracking)</em>: Publica CDC hacia consumidores (Kafka, código).",
-        "<strong>Sync bidireccional</strong> <em>(Bidirectional Sync)</em>: Ambas puntas escriben; DTS resuelve conflictos.",
-        "<strong>Verificación de datos</strong> <em>(Data Verification)</em>: Compara integridad source vs target."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Fase 1 — Migración de estructura (Structure Migration)</strong>: DTS lee el esquema del origen (tablas, columnas, tipos de dato, índices, claves primarias) y lo recrea en el destino antes de mover ningún dato — sin esta fase, la fase de datos no tendría dónde escribir.",
+        "<strong>Fase 2 — Migración de datos completos (Full Data Migration)</strong>: DTS toma una instantánea consistente de las filas existentes en el origen y las copia al destino — es la fase más pesada en tiempo, proporcional al volumen total de datos históricos.",
+        "<strong>Fase 3 — Migración incremental (Incremental Migration)</strong>: mientras la fase 2 corre (y después de que termina), DTS empieza a leer el log de transacciones del origen para capturar cada INSERT/UPDATE/DELETE ocurrido desde el inicio de la fase 2, y los aplica en destino en cuanto llegan — así se cierra la brecha entre 'la foto que se tomó' y 'lo que sigue cambiando en vivo'.",
+        "<strong>Por qué el orden importa</strong>: la fase incremental debe empezar a capturar el log <em>desde un punto anterior o igual</em> al inicio del snapshot de la fase 2 — si empezara después, cualquier cambio ocurrido durante la copia completa se perdería silenciosamente.",
+        "<strong>El resultado combinado</strong>: al terminar las tres fases y con el lag incremental cerca de cero, el destino refleja el origen prácticamente en tiempo real, permitiendo una ventana de cutover de minutos en vez de horas o días."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pide el orden correcto de las fases de DTS, la secuencia es siempre <em>estructura → datos completos → incremental</em>, nunca al revés."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Cómo funciona la captura de cambios (CDC)",
+      "title_en": "How Change Data Capture Works",
+      "intro": "La fase incremental no es magia: se apoya en un mecanismo técnico específico de cada motor de base de datos que el examen espera que reconozcas.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Migration en 3 fases: structure → full → incremental",
-        "<strong>Buenas prácticas</strong>: Verificación al final",
-        "<strong>Buenas prácticas</strong>: Ventana de cutover corta",
-        "<strong>Buenas prácticas</strong>: Binlog retention suficiente en la fuente",
-        "<strong>Buenas prácticas</strong>: Monitorear lag continuamente"
+        "<strong>El log de transacciones como fuente de verdad</strong>: casi todo motor de base de datos transaccional escribe un log secuencial de cada cambio antes de aplicarlo a las tablas (para poder recuperarse ante una caída) — DTS lee ese mismo log en vez de hacer polling repetido de las tablas.",
+        "<strong>Ejemplos por motor</strong>: MySQL expone el binlog, PostgreSQL usa Write-Ahead Log (WAL) vía replicación lógica, Oracle usa el redo log — DTS implementa un lector específico para cada uno, por eso no todos los orígenes soportan exactamente las mismas capacidades.",
+        "<strong>Ventaja frente al polling</strong>: leer el log es mucho más eficiente que consultar repetidamente 'qué cambió desde la última vez' con SQL, y captura también los borrados, que un polling basado en fecha de modificación normalmente no detecta.",
+        "<strong>Requisito de retención del log</strong>: si el binlog/WAL del origen se purga antes de que DTS lo haya leído (por ejemplo, por una política de retención muy corta), la tarea incremental se queda irrecuperablemente atrás y requiere reiniciar desde una nueva fase completa.",
+        "<strong>Permisos necesarios</strong>: la cuenta de base de datos que usa DTS necesita permisos específicos para leer el log de replicación (p.ej. REPLICATION SLAVE en MySQL), no solo permisos de lectura sobre las tablas."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "DTS no vigila las tablas repetidamente — lee el <em>log de transacciones</em> del motor origen, el mismo mecanismo que ese motor usa internamente para su propia replicación."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Configurar y operar una tarea en consola",
+      "title_en": "Console Operation Demo",
+      "intro": "El curso incluye una demostración práctica de creación de tarea — este módulo cubre los pasos y decisiones que el examen puede preguntar sobre el flujo operativo real.",
       "points": [
-        "<strong>Antipattern</strong>: Cutover sin ventana de verificación",
-        "<strong>Antipattern</strong>: Binlog retention muy corto — DTS se queda atrás",
-        "<strong>Antipattern</strong>: Sync bidireccional sin resolver conflictos por diseño",
-        "<strong>Antipattern</strong>: No probar rollback",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Selección de origen y destino</strong>: se especifican los endpoints (host, puerto, credenciales) de ambas bases; DTS necesita conectividad de red hacia ambas (a través de VPC, Express Connect o internet según el caso).",
+        "<strong>Precheck</strong>: antes de iniciar, DTS ejecuta verificaciones automáticas — conectividad, permisos suficientes, compatibilidad de versión de motor y objetos no soportados — y bloquea el inicio de la tarea si algo crítico falla.",
+        "<strong>Selección de objetos</strong>: se elige qué bases, esquemas o tablas específicas migrar — no es obligatorio migrar la instancia completa; se puede acotar el alcance a lo estrictamente necesario.",
+        "<strong>Monitoreo del progreso</strong>: la consola muestra el estado de cada fase (estructura, completa, incremental) y, una vez en fase incremental, la métrica de retraso (lag) en segundos — el indicador clave para decidir cuándo es seguro hacer el cutover.",
+        "<strong>Pausar y reanudar</strong>: una tarea puede pausarse (por ejemplo, para reducir carga en el origen durante un pico de tráfico) y reanudarse después sin perder el punto de captura incremental."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el precheck falla por permisos insuficientes en la cuenta de base de datos, la tarea no debe forzarse a iniciar — corregir los permisos y volver a ejecutar el precheck es el paso correcto."
+      }
+    },
+    {
+      "title_es": "5 · Sincronización bidireccional y sus matices",
+      "title_en": "Bidirectional Sync Nuances",
+      "intro": "El modo más avanzado de DTS introduce un problema que la migración simple no tiene: qué pasa cuando ambos lados escriben el mismo dato casi al mismo tiempo.",
+      "points": [
+        "<strong>El problema del conflicto</strong>: en una arquitectura activo-activo, la misma fila puede modificarse en la base A y en la base B casi simultáneamente antes de que la replicación alcance a propagar el primer cambio — DTS necesita una regla para decidir cuál cambio prevalece.",
+        "<strong>Estrategias de resolución</strong>: DTS ofrece reglas configurables como 'el cambio más reciente gana' (basado en timestamp) o reglas personalizadas por tabla, según el nivel de tolerancia de la aplicación a inconsistencias temporales.",
+        "<strong>Evitar bucles infinitos de replicación</strong>: si A replica hacia B y B replica hacia A sin ningún control, un mismo cambio podría reenviarse indefinidamente entre ambas — DTS marca el origen de cada cambio para no reenviarlo de vuelta a la base que lo originó.",
+        "<strong>No es apto para cualquier caso</strong>: si la aplicación no está diseñada para tolerar conflictos ocasionales (por ejemplo, sistemas financieros con reglas estrictas de consistencia), la replicación bidireccional puede introducir más riesgo del que resuelve — conviene evaluarla solo cuando el negocio realmente necesita escritura activa en ambos lados."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La replicación bidireccional resuelve <em>disponibilidad geográfica de escritura</em>, pero introduce el costo de gestionar conflictos — no es un simple 'doble de migración normal'."
+      }
+    },
+    {
+      "title_es": "6 · Diagnóstico, errores comunes y estrategia de examen",
+      "title_en": "Troubleshooting and Exam Strategy",
+      "intro": "El cierre del curso cubre qué hacer cuando una tarea de DTS no se comporta como se espera — la parte más práctica y más preguntada en escenarios de examen.",
+      "points": [
+        "<strong>Retraso (lag) creciente</strong>: si el lag incremental crece en vez de estabilizarse cerca de cero, suele indicar que el volumen de cambios en origen supera la capacidad de aplicación en destino — hay que revisar la especificación de la tarea DTS o del destino, no solo esperar.",
+        "<strong>Antipatrón</strong>: hacer el cutover final sin verificar que el lag esté cerca de cero — cortar con retraso pendiente significa perder los últimos cambios no aplicados.",
+        "<strong>Antipatrón</strong>: configurar una retención de binlog/WAL demasiado corta en el origen, arriesgando que DTS no alcance a leerlo si la tarea se pausa por tiempo prolongado.",
+        "<strong>Antipatrón</strong>: activar sincronización bidireccional sin definir explícitamente la estrategia de resolución de conflictos, dejándolo en un comportamiento por defecto no evaluado para el caso de negocio.",
+        "<strong>Antipatrón</strong>: no probar el plan de rollback antes del cutover en producción — si algo sale mal tras conmutar el tráfico, se necesita un camino de vuelta ya validado.",
+        "<strong>Regla de oro</strong>: ante un escenario de examen que describe una migración crítica sin tolerancia a pérdida de datos, la respuesta correcta siempre incluye verificar el lag antes del cutover y probar el rollback."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Cuando el enunciado mencione 'mínima interrupción' o 'cero pérdida de datos', la respuesta correcta combina las tres fases de DTS con verificación de lag antes del corte — nunca un corte directo sin fase incremental."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Migración lift-and-shift on-premise → Alibaba Cloud"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cross-cloud (AWS RDS → Alibaba RDS)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Sincronización dual (activo-activo)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CDC hacia data lake (MySQL → OSS/MaxCompute)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "DR con réplica cross-región continua"
-    }
+    { "title": "Escenario 1", "text": "Migración definitiva de una base MySQL on-premise hacia ApsaraDB RDS con downtime mínimo" },
+    { "title": "Escenario 2", "text": "Alimentar un data lake en tiempo casi real capturando cambios de una base transaccional sin migrarla" },
+    { "title": "Escenario 3", "text": "Arquitectura activo-activo entre dos regiones con escritura en ambos lados" },
+    { "title": "Escenario 4", "text": "Migración cross-cloud desde una base gestionada de otro proveedor hacia Alibaba Cloud" },
+    { "title": "Escenario 5", "text": "Publicar cambios de una tabla de inventario hacia un tópico Kafka para consumo por microservicios" }
   ],
   "mistakes": [
-    "Cutover sin ventana de verificación",
-    "Binlog retention muy corto — DTS se queda atrás",
-    "Sync bidireccional sin resolver conflictos por diseño",
-    "No probar rollback"
+    "Hacer el cutover sin verificar que el retraso (lag) incremental esté cerca de cero",
+    "Configurar retención de binlog/WAL demasiado corta en el origen, arriesgando que DTS pierda el punto de captura",
+    "Activar sincronización bidireccional sin definir explícitamente la estrategia de resolución de conflictos",
+    "No probar el plan de rollback antes de conmutar el tráfico de producción",
+    "Otorgar solo permisos de lectura de tablas a la cuenta de DTS sin el permiso de replicación necesario para leer el log"
   ],
   "cli": [
-    {
-      "cmd": "aliyun dts CreateMigrationJob",
-      "desc": "Crear job de migración"
-    },
-    {
-      "cmd": "aliyun dts DescribeMigrationJobs",
-      "desc": "Estado"
-    }
+    { "cmd": "aliyun dts CreateMigrationJob --SourceEndpoint mysql-origen --DestinationEndpoint rds-destino", "desc": "Crear una tarea de migración especificando origen y destino" },
+    { "cmd": "aliyun dts DescribeMigrationJobs --RegionId cn-hangzhou", "desc": "Listar tareas de migración y su estado actual" },
+    { "cmd": "aliyun dts DescribeMigrationJobDetail --MigrationJobId dtsxxxxx", "desc": "Consultar el detalle de fase y el lag incremental de una tarea" },
+    { "cmd": "aliyun dts StartMigrationJob --MigrationJobId dtsxxxxx", "desc": "Iniciar una tarea de migración tras pasar el precheck" },
+    { "cmd": "aliyun dts SuspendMigrationJob --MigrationJobId dtsxxxxx", "desc": "Pausar una tarea de migración incremental temporalmente" }
   ],
   "glossary": [
-    {
-      "en": "Migration Task",
-      "es": "Tarea de migración",
-      "def": "One-shot o continua."
-    },
-    {
-      "en": "Structure Migration",
-      "es": "Migración de estructura",
-      "def": "Schemas, tablas, índices."
-    },
-    {
-      "en": "Full Migration",
-      "es": "Migración full",
-      "def": "Copia inicial de datos."
-    },
-    {
-      "en": "Incremental Migration",
-      "es": "Migración incremental",
-      "def": "Aplica binlog/WAL cambios continuos."
-    },
-    {
-      "en": "Change Tracking",
-      "es": "Change Tracking",
-      "def": "Publica CDC hacia consumidores (Kafka, código)."
-    },
-    {
-      "en": "Bidirectional Sync",
-      "es": "Sync bidireccional",
-      "def": "Ambas puntas escriben; DTS resuelve conflictos."
-    },
-    {
-      "en": "Data Verification",
-      "es": "Verificación de datos",
-      "def": "Compara integridad source vs target."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Data Migration", "es": "Migración de datos", "def": "Modo de DTS para mover datos de origen a destino de forma definitiva, una sola vez." },
+    { "en": "Change Tracking / Subscription", "es": "Change Tracking", "def": "Modo de DTS que publica cambios continuos hacia un consumidor sin implicar una migración completa." },
+    { "en": "Bidirectional Sync", "es": "Sincronización bidireccional", "def": "Modo de DTS donde ambas bases están activas y se replican cambios mutuamente, con reglas de resolución de conflictos." },
+    { "en": "Structure Migration", "es": "Migración de estructura", "def": "Primera fase de una tarea DTS: recrea esquema, tablas e índices en el destino." },
+    { "en": "Full Data Migration", "es": "Migración de datos completos", "def": "Segunda fase: copia un snapshot consistente de las filas existentes en el origen." },
+    { "en": "Incremental Migration", "es": "Migración incremental", "def": "Tercera fase: aplica en destino los cambios capturados del log de transacciones desde el inicio del snapshot." },
+    { "en": "Change Data Capture (CDC)", "es": "Captura de cambios", "def": "Técnica de leer el log de transacciones del motor origen para detectar cambios, en vez de hacer polling de las tablas." },
+    { "en": "Binlog (MySQL)", "es": "Binlog", "def": "Log binario de transacciones de MySQL, fuente de la fase incremental de DTS en ese motor." },
+    { "en": "WAL (PostgreSQL)", "es": "Write-Ahead Log", "def": "Log de escritura anticipada de PostgreSQL, leído vía replicación lógica para captura de cambios." },
+    { "en": "Redo Log (Oracle)", "es": "Redo log", "def": "Log de recuperación de Oracle usado como fuente de captura de cambios incremental." },
+    { "en": "Precheck", "es": "Verificación previa", "def": "Conjunto de validaciones automáticas de conectividad, permisos y compatibilidad antes de iniciar una tarea DTS." },
+    { "en": "Lag", "es": "Retraso", "def": "Diferencia de tiempo entre un cambio ocurrido en origen y su aplicación en destino durante la fase incremental." },
+    { "en": "Cutover", "es": "Cutover", "def": "Momento en que se conmuta el tráfico de producción del origen al destino, idealmente con lag cercano a cero." },
+    { "en": "Conflict resolution", "es": "Resolución de conflictos", "def": "Regla que decide qué cambio prevalece cuando ambos lados de una sincronización bidireccional modifican el mismo dato casi simultáneamente." },
+    { "en": "Replication loop prevention", "es": "Prevención de bucle de replicación", "def": "Mecanismo que evita que un cambio se reenvíe indefinidamente entre dos bases en sincronización bidireccional." },
+    { "en": "Data Verification", "es": "Verificación de datos", "def": "Comparación de integridad entre origen y destino tras completar una migración." },
+    { "en": "Object selection", "es": "Selección de objetos", "def": "Capacidad de acotar una tarea DTS a bases, esquemas o tablas específicas en vez de la instancia completa." },
+    { "en": "REPLICATION SLAVE (MySQL privilege)", "es": "Privilegio de replicación", "def": "Permiso necesario en la cuenta de base de datos usada por DTS para leer el log de transacciones, distinto de un permiso de solo lectura de tablas." },
+    { "en": "Downtime-minimized migration", "es": "Migración de downtime mínimo", "def": "Patrón resultante de combinar las tres fases de DTS: estructura, completa e incremental, con una ventana de cutover corta." },
+    { "en": "Rollback plan", "es": "Plan de reversión", "def": "Procedimiento validado para volver al origen si el cutover hacia el destino falla o presenta problemas." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Data Transmission Service (DTS)?",
-      "options": [
-        "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migracio",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas."
-    },
-    {
-      "q": "¿Qué es <strong>Migration Task</strong> (Tarea de migración) en Data Transmission Service (DTS)?",
-      "options": [
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Copia inicial de datos.",
-        "Aplica binlog/WAL cambios continuos."
-      ],
-      "answer": 0,
-      "explain": "Migration Task (Tarea de migración): One-shot o continua."
-    },
-    {
-      "q": "¿Qué es <strong>Structure Migration</strong> (Migración de estructura) en Data Transmission Service (DTS)?",
-      "options": [
-        "Schemas, tablas, índices.",
-        "One-shot o continua.",
-        "Copia inicial de datos.",
-        "Aplica binlog/WAL cambios continuos."
-      ],
-      "answer": 0,
-      "explain": "Structure Migration (Migración de estructura): Schemas, tablas, índices."
-    },
-    {
-      "q": "¿Qué es <strong>Full Migration</strong> (Migración full) en Data Transmission Service (DTS)?",
-      "options": [
-        "Copia inicial de datos.",
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Aplica binlog/WAL cambios continuos."
-      ],
-      "answer": 0,
-      "explain": "Full Migration (Migración full): Copia inicial de datos."
-    },
-    {
-      "q": "¿Qué es <strong>Incremental Migration</strong> (Migración incremental) en Data Transmission Service (DTS)?",
-      "options": [
-        "Aplica binlog/WAL cambios continuos.",
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Copia inicial de datos."
-      ],
-      "answer": 0,
-      "explain": "Incremental Migration (Migración incremental): Aplica binlog/WAL cambios continuos."
-    },
-    {
-      "q": "¿Qué es <strong>Change Tracking</strong> (Change Tracking) en Data Transmission Service (DTS)?",
-      "options": [
-        "Publica CDC hacia consumidores (Kafka, código).",
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Copia inicial de datos."
-      ],
-      "answer": 0,
-      "explain": "Change Tracking (Change Tracking): Publica CDC hacia consumidores (Kafka, código)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Data Transmission Service (DTS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Data Transmission Service (DTS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Data Transmission Service (DTS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Data Transmission Service (DTS) es la elección típica:",
-      "options": [
-        "Migración lift-and-shift on-premise → Alibaba Cloud",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Migración lift-and-shift on-premise → Alibaba Cloud."
-    }
+    { "q": "¿Cuál de las siguientes NO es una de las tres capacidades principales de DTS descritas en el curso?", "options": ["Migración de datos (una sola vez)", "Sincronización / Change Tracking continua", "Replicación bidireccional", "Compresión de imágenes on-the-fly"], "answer": 3, "explain": "Las tres capacidades de DTS son migración, sincronización/Change Tracking y replicación bidireccional; el procesamiento de imágenes es una función de OSS, no de DTS." },
+    { "q": "¿Cuál es el orden correcto de las tres fases técnicas de una tarea de migración DTS?", "options": ["Incremental → completa → estructura", "Estructura → datos completos → incremental", "Datos completos → estructura → incremental", "Incremental → estructura → datos completos"], "answer": 1, "explain": "Primero se recrea el esquema (estructura), luego se copia el snapshot de datos existentes (completa), y finalmente se capturan los cambios continuos (incremental)." },
+    { "q": "¿Por qué la fase incremental debe empezar a capturar el log desde un punto anterior o igual al inicio del snapshot de la fase de datos completos?", "options": ["Por estética en la consola", "Para no perder cambios ocurridos durante la copia del snapshot inicial", "Porque DTS lo exige por límite de licencia", "No hay ninguna razón técnica, es arbitrario"], "answer": 1, "explain": "Si la captura incremental empezara después del inicio del snapshot, los cambios ocurridos durante la copia se perderían silenciosamente." },
+    { "q": "¿Qué mecanismo usa DTS para capturar cambios en MySQL durante la fase incremental?", "options": ["Polling repetido con SELECT cada segundo", "Lectura del binlog (log binario de transacciones)", "Escaneo completo de la tabla cada minuto", "Notificaciones push del cliente de la aplicación"], "answer": 1, "explain": "DTS lee el binlog de MySQL, el mismo log que el motor usa internamente para su propia replicación, mucho más eficiente que el polling." },
+    { "q": "¿Qué ocurre si el binlog/WAL del origen se purga antes de que DTS lo haya leído por completo?", "options": ["No pasa nada, DTS lo reconstruye automáticamente", "La tarea incremental se queda irrecuperablemente atrás y requiere reiniciar desde una nueva fase completa", "El destino se borra automáticamente", "DTS cambia de proveedor de base de datos automáticamente"], "answer": 1, "explain": "Si el log necesario ya no existe en origen, DTS no puede reconstruir los cambios perdidos y hay que reiniciar el proceso de migración." },
+    { "q": "¿Qué es el 'precheck' en una tarea de DTS?", "options": ["Un paso opcional que rara vez se ejecuta", "Un conjunto de verificaciones automáticas de conectividad, permisos y compatibilidad antes de iniciar la tarea", "Un tipo de cifrado adicional", "Una fase posterior al cutover"], "answer": 1, "explain": "El precheck valida condiciones críticas antes de permitir que la tarea inicie, evitando fallos a mitad de una migración en curso." },
+    { "q": "En sincronización bidireccional, ¿qué problema aparece que no existe en una migración simple de una sola dirección?", "options": ["Ninguno, es exactamente igual", "Conflictos cuando ambas bases modifican el mismo dato casi simultáneamente", "La necesidad de un precheck", "La necesidad de definir el esquema"], "answer": 1, "explain": "Al tener escritura activa en ambos lados, DTS debe resolver qué cambio prevalece cuando hay conflicto temporal entre ambas bases." },
+    { "q": "¿Qué mecanismo evita que un cambio se reenvíe indefinidamente entre dos bases en sincronización bidireccional?", "options": ["No existe tal mecanismo, es un riesgo aceptado", "DTS marca el origen de cada cambio para no reenviarlo de vuelta a la base que lo originó", "Se apaga la sincronización automáticamente cada hora", "Se requiere reiniciar la tarea manualmente cada vez"], "answer": 1, "explain": "DTS previene bucles infinitos de replicación etiquetando el origen del cambio antes de propagarlo." },
+    { "q": "¿Cuál es la señal correcta en consola para decidir que es seguro hacer el cutover final?", "options": ["Que la fase de estructura haya terminado, sin más", "Que el lag (retraso) de la fase incremental esté cerca de cero", "Que hayan pasado 24 horas desde el inicio", "Que el precheck se haya ejecutado una vez"], "answer": 1, "explain": "El lag cercano a cero indica que el destino está prácticamente sincronizado con el origen, minimizando la pérdida de datos al cortar." },
+    { "q": "¿Qué permiso adicional (más allá de lectura de tablas) necesita la cuenta de base de datos usada por DTS para la fase incremental en MySQL?", "options": ["Ninguno adicional", "Un permiso de tipo replicación (p.ej. REPLICATION SLAVE) para leer el log de transacciones", "Permiso de administrador del sistema operativo", "Permiso de facturación de la cuenta"], "answer": 1, "explain": "Leer el binlog requiere un privilegio de replicación específico, distinto de un simple permiso de lectura sobre las tablas de datos." },
+    { "q": "¿Cuál es un antipatrón claro al operar una tarea de DTS crítica según el curso?", "options": ["Verificar el lag antes de hacer cutover", "Hacer el cutover sin verificar que el lag esté cerca de cero", "Ejecutar el precheck antes de iniciar la tarea", "Definir explícitamente la estrategia de resolución de conflictos en sincronización bidireccional"], "answer": 1, "explain": "Cortar el tráfico sin verificar que el retraso incremental esté resuelto puede provocar pérdida de los últimos cambios no replicados." },
+    { "q": "¿Cuándo es apropiado usar el modo Change Tracking / Subscription de DTS en vez de una migración completa?", "options": ["Cuando se quiere mover la base completa de forma definitiva y apagar el origen", "Cuando se necesita capturar cambios continuos hacia un consumidor (p.ej. un data lake o Kafka) sin migrar la base entera", "Nunca, Change Tracking está descontinuado", "Solo para bases de datos NoSQL"], "answer": 1, "explain": "Change Tracking está pensado para alimentar consumidores externos con cambios en tiempo casi real, sin implicar una migración definitiva del origen." }
   ],
-  "exam_focus": "3 fases de migración, CDC vs bulk, sync bidireccional caveats, ventana de cutover.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar los tres modos de DTS (migración, Change Tracking, bidireccional) según el escenario, (b) el orden y propósito de las tres fases de migración (estructura, completa, incremental), (c) el principio de CDC basado en el log de transacciones y sus variantes por motor, (d) cuándo es seguro hacer cutover según el lag, (e) los matices de resolución de conflictos en sincronización bidireccional.",
   "official_intro": "This course describes the features, scenarios, and migration principles of Data Transmission Service (DTS) to help you understand DTS technical details. Meanwhile, this course aims to enhance your data migration experience through a console operations demo.",
   "recommended_for": "IT Operation Engineer, Database Administrator, Data Migration Architect",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_dts",

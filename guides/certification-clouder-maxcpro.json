@@ -2,442 +2,176 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-maxcpro",
   "title_en": "Alibaba Cloud MaxCompute - Programming Model",
-  "title_es": "Alibaba Cloud MaxCompute - Programming Model",
+  "title_es": "Alibaba Cloud MaxCompute - Modelo de Programación",
+  "title_es_html": "Alibaba Cloud MaxCompute - <em>Modelo de Programación</em>",
   "duration_es": "64 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_maxcpro",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud MaxCompute - Programming Model» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud MaxCompute - Programming Model» de Alibaba Cloud Academy. Este módulo cubre lo que hace MaxCompute cuando SQL no alcanza: el framework propio de MapReduce (MC MR, distinto de Hadoop MapReduce) y el modelo Graph para computación iterativa sobre estructuras de grafo — sus interfaces núcleo y su ciclo de desarrollo, prueba y publicación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Reconocer</strong> en qué escenarios el modelo de programación es preferible a una consulta SQL declarativa.",
+    "<strong>Describir</strong> el ciclo de vida de un job MapReduce propio de MaxCompute, de Mapper a Reducer.",
+    "<strong>Identificar</strong> las interfaces núcleo de MC MapReduce: Mapper, Reducer, TableInfo y Resource.",
+    "<strong>Explicar</strong> el modelo de computación iterativa de Graph (BSP) y su interfaz Vertex.",
+    "<strong>Distinguir</strong> Graph de MapReduce según el tipo de problema que cada uno resuelve mejor.",
+    "<strong>Seguir</strong> el proceso de desarrollo local, prueba y publicación de un job MR o Graph en producción."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Tanto MC MapReduce como Graph son frameworks de programación que se ejecutan sobre el mismo motor de cómputo interno de MaxCompute, empaquetados como JAR de Java y sometidos como Instances igual que una consulta SQL. Un job MapReduce lee de una o más tablas de entrada a través de TableInfo, distribuye el trabajo en Mappers que emiten pares clave-valor intermedios, y agrega los resultados en Reducers que escriben a una tabla de salida. Un job Graph, en cambio, carga el grafo completo (vértices y aristas) en memoria distribuida y ejecuta una secuencia de supersteps al estilo BSP (Bulk Synchronous Parallel): en cada superstep, cada Vertex procesa los mensajes recibidos del superstep anterior, actualiza su propio estado y envía nuevos mensajes a sus vecinos, hasta que el grafo converge o se alcanza un límite de iteraciones. Ambos frameworks se desarrollan y prueban localmente antes de empaquetarse como Resource y ejecutarse contra el Project real.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Cuándo el modelo de programación reemplaza a SQL",
+      "title_en": "When the Programming Model Replaces SQL",
+      "intro": "SQL cubre la gran mayoría de las necesidades analíticas de MaxCompute, pero no todas. Este módulo abre el curso delimitando exactamente qué tipo de problema justifica salir de SQL hacia MapReduce o Graph.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Lógica procedural compleja</strong>: algoritmos con estado que se acumula fila a fila de forma no trivial (por ejemplo, parsers, máquinas de estado, lógica de negocio con muchas ramas) son incómodos de expresar en SQL puro, aunque técnicamente posible con UDFs.",
+        "<strong>Problemas iterativos sobre grafos</strong>: cálculo de rutas más cortas, componentes conectados, PageRank — algoritmos que requieren varias pasadas sobre una estructura de relaciones no encajan bien ni en SQL ni en un único job MapReduce.",
+        "<strong>Control fino sobre el particionamiento del trabajo</strong>: cuando el desarrollador necesita decidir explícitamente cómo se agrupan y procesan los datos entre Mappers y Reducers, más allá de lo que un optimizador SQL decide automáticamente.",
+        "<strong>Costo de desarrollo</strong>: MapReduce y Graph exigen escribir y probar código Java, con un ciclo de desarrollo más largo que una consulta SQL — la decisión de usarlos debe justificarse porque SQL (con o sin UDF) realmente no resuelve el problema de forma razonable.",
+        "<strong>Regla práctica</strong>: si el problema se puede expresar como una agregación, un join o una transformación fila a fila, SQL (con UDF si hace falta) es casi siempre la opción correcta; si el problema es inherentemente iterativo sobre relaciones, Graph entra en juego; si es una transformación masiva con lógica procedural compleja, MapReduce propio."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen premia reconocer la señal correcta: «relaciones/iterativo» apunta a Graph, «lógica procedural compleja sin relaciones» apunta a MC MapReduce, y la mayoría de todo lo demás sigue siendo SQL."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · MapReduce propio de MaxCompute: conceptos y ciclo de desarrollo",
+      "title_en": "MaxCompute's Own MapReduce: Concepts and Development Cycle",
+      "intro": "El MapReduce de MaxCompute (a veces llamado MC MR) comparte el nombre y la idea general con el MapReduce de Hadoop, pero es un framework propio con su propio SDK — no hay compatibilidad binaria entre ambos.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>No es Hadoop MapReduce</strong>: aunque el modelo conceptual (Map → Shuffle → Reduce) es el mismo, MC MapReduce usa sus propias clases base (<code>com.aliyun.odps.mapred.Mapper</code>, <code>Reducer</code>) y su propio runtime; un JAR de Hadoop MapReduce no se ejecuta directamente en MaxCompute.",
+        "<strong>Entrada y salida vía TableInfo</strong>: en lugar de leer archivos de HDFS, un job MC MR declara sus tablas de entrada y salida mediante <code>TableInfo</code>, que MaxCompute resuelve internamente contra el almacenamiento columnar del Project.",
+        "<strong>Ciclo de desarrollo</strong>: se escribe el código Java localmente, se prueba contra un entorno de ejecución local que simula el comportamiento distribuido (sin necesidad de someter un job real cada vez), y solo al validar la lógica se empaqueta como JAR.",
+        "<strong>Publicación</strong>: el JAR se registra como Resource del Project (<code>add jar</code>), y el job se somete indicando la clase principal y los parámetros de entrada/salida, igual que se sometería cualquier Instance.",
+        "<strong>Costo de cómputo</strong>: un job MC MR consume cuota de cómputo del Project igual que una consulta SQL — no es «gratis» por estar escrito en Java, y sigue siendo tan sensible al volumen de datos leídos como cualquier otra tarea."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si una pregunta insinúa que se puede reutilizar directamente un JAR de Hadoop MapReduce en MaxCompute, es un distractor — hay que reescribirlo contra el SDK propio de MC MapReduce."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Interfaces núcleo de MapReduce: Mapper, Reducer, Resource",
+      "title_en": "Core MapReduce Interfaces: Mapper, Reducer, Resource",
+      "intro": "Escribir un job MC MR correcto exige conocer con precisión el contrato de sus clases base — el examen suele preguntar directamente qué método hace qué.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>Mapper</strong>: clase que extiende la base de MapReduce e implementa el método de procesamiento por registro; recibe una fila de la tabla de entrada y emite cero, una o varias parejas clave-valor intermedias.",
+        "<strong>Reducer</strong>: clase que recibe, para cada clave, el conjunto completo de valores intermedios asociados (ya agrupados tras el shuffle) y produce la salida final escrita hacia la tabla de destino.",
+        "<strong>Resource</strong>: archivo adicional (otro JAR, un archivo de texto, incluso una tabla) que un job puede declarar como dependencia y cargar en tiempo de ejecución — por ejemplo, un diccionario de referencia usado dentro del Mapper.",
+        "<strong>Combiner opcional</strong>: al igual que en MapReduce clásico, se puede declarar una función de reducción local tras el Map para reducir el volumen de datos que cruza el shuffle, cuando la operación lo permite (asociativa y conmutativa).",
+        "<strong>Configuración del job</strong>: parámetros como el número de instancias de Reducer, la memoria por tarea o el orden de las claves intermedias se configuran de forma explícita al construir el job, a diferencia de una consulta SQL donde el optimizador decide automáticamente."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "Mapper procesa fila a fila y emite pares clave-valor; Reducer recibe todos los valores de una misma clave ya agrupados. Confundir cuál de los dos agrupa por clave es el error más común en preguntas de este módulo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Graph: computación iterativa sobre estructuras de grafo",
+      "title_en": "Graph: Iterative Computation over Graph Structures",
+      "intro": "Graph resuelve una familia de problemas que ni SQL ni MapReduce manejan con naturalidad: algoritmos que necesitan varias pasadas sobre una red de nodos y relaciones hasta converger.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Modelo BSP (Bulk Synchronous Parallel)</strong>: el cómputo avanza en supersteps sincronizados; en cada superstep, todos los vértices procesan en paralelo los mensajes recibidos del superstep anterior antes de que el sistema avance al siguiente.",
+        "<strong>Vértices y aristas</strong>: el grafo se representa como un conjunto de vértices (con un valor de estado propio) conectados por aristas (que pueden llevar también un valor, por ejemplo un peso); ambos se cargan típicamente desde tablas de MaxCompute.",
+        "<strong>Paso de mensajes</strong>: en cada superstep, un vértice puede enviar mensajes a sus vecinos a través de las aristas; esos mensajes solo estarán disponibles para el vértice destino en el superstep siguiente, nunca en el mismo.",
+        "<strong>Convergencia</strong>: el job termina cuando ningún vértice tiene mensajes pendientes de procesar (o se marca a sí mismo como inactivo) y no quedan mensajes en tránsito, o cuando se alcanza un número máximo de supersteps configurado.",
+        "<strong>Casos de uso típicos</strong>: PageRank (cada vértice reparte su «puntaje» entre sus vecinos en cada superstep), componentes conectados (propagar el identificador mínimo del componente hasta que todos los vértices conectados coincidan), rutas más cortas (propagar la distancia mínima conocida)."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Un mensaje enviado por un vértice en el superstep N solo es visible para el vértice destino en el superstep N+1 — esta sincronía estricta es lo que distingue al modelo BSP de un procesamiento asíncrono."
+      }
+    },
+    {
+      "title_es": "5 · Interfaces núcleo de Graph: Vertex y WorkerContext",
+      "title_en": "Core Graph Interfaces: Vertex and WorkerContext",
+      "intro": "Al igual que con MapReduce, el examen espera precisión sobre qué clase representa qué responsabilidad dentro del SDK de Graph.",
+      "points": [
+        "<strong>Vertex</strong>: clase base que el desarrollador extiende para definir el comportamiento de cada nodo del grafo en cada superstep — típicamente implementa un método que se invoca una vez por superstep con los mensajes entrantes.",
+        "<strong>Estado del vértice</strong>: cada Vertex mantiene un valor propio (por ejemplo, el puntaje de PageRank acumulado) que persiste y se actualiza a través de los sucesivos supersteps.",
+        "<strong>Envío de mensajes</strong>: dentro de la lógica de un Vertex, se invoca un método para enviar un mensaje a un vértice vecino específico identificado por su ID, que ese vecino recibirá en el siguiente superstep.",
+        "<strong>WorkerContext</strong>: expone información y utilidades a nivel de todo el job (como el número de superstep actual o agregadores globales), útil para lógica que necesita coordinarse más allá de un único vértice.",
+        "<strong>Aggregator</strong>: mecanismo opcional para calcular un valor global compartido por todos los vértices durante un superstep (por ejemplo, contar cuántos vértices siguen activos), disponible al inicio del superstep siguiente."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado habla de «lógica de un nodo individual en cada iteración», la respuesta apunta a Vertex; si habla de «un valor agregado visible por todo el job», la respuesta apunta a Aggregator/WorkerContext."
+      }
+    },
+    {
+      "title_es": "6 · Desarrollo, prueba y publicación de un job MR o Graph",
+      "title_en": "Development, Testing and Release Process",
+      "intro": "Tanto MapReduce como Graph siguen un ciclo de vida similar antes de llegar a producción, y el examen evalúa que se conozca el orden correcto de los pasos.",
+      "points": [
+        "<strong>Desarrollo local</strong>: el código se escribe y compila en un entorno local, apoyado en el SDK de MaxCompute, que incluye utilidades para simular la ejecución sin someter un job real contra el Project.",
+        "<strong>Prueba con datos de muestra</strong>: antes de correr contra el volumen completo de producción, se valida la lógica contra un subconjunto pequeño de datos, detectando errores de programación sin gastar cuota de cómputo del Project.",
+        "<strong>Empaquetado</strong>: el código validado se compila como JAR y se registra como Resource del Project mediante <code>add jar</code>, quedando disponible para ser referenciado por su nombre en la sumisión del job.",
+        "<strong>Sumisión</strong>: se somete el job indicando la clase principal, los parámetros de entrada/salida y cualquier configuración adicional (número de Reducers, número de supersteps máximo en Graph, etc.); MaxCompute lo ejecuta como una Instance con su propio historial.",
+        "<strong>Monitoreo e iteración</strong>: los logs de la Instance permiten diagnosticar fallos de ejecución a escala real (que no siempre aparecen con datos de muestra pequeños); es normal iterar entre pruebas locales y sumisiones reales antes de considerar el job listo para producción."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "El orden correcto es siempre: desarrollo y prueba local con datos pequeños → empaquetado como Resource → sumisión como job real → monitoreo de logs. Saltarse la prueba local con datos de muestra es el antipatrón más citado por el examen en este módulo."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Calcular PageRank sobre una red de páginas web representada como tabla de aristas — Graph con supersteps" },
+    { "title": "Escenario 2", "text": "Parsear logs con una máquina de estados compleja antes de estructurarlos en columnas — MC MapReduce" },
+    { "title": "Escenario 3", "text": "Encontrar componentes conectados en un grafo social de usuarios — Graph propagando el ID mínimo del componente" },
+    { "title": "Escenario 4", "text": "Transformación de agregación simple sobre una tabla de ventas — SQL, no justifica el modelo de programación" },
+    { "title": "Escenario 5", "text": "Job MapReduce que necesita cargar un diccionario de referencia dentro del Mapper — declarar el diccionario como Resource" },
+    { "title": "Escenario 6", "text": "Calcular la ruta más corta entre nodos de una red de transporte — Graph propagando la distancia mínima por superstep" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Intentar reutilizar directamente un JAR de Hadoop MapReduce en MaxCompute, ignorando que MC MapReduce es un SDK propio",
+    "Usar MapReduce o Graph para un problema que una simple consulta SQL con agregación resolvería de forma más simple",
+    "Confundir el rol de Mapper (procesa fila a fila) con el de Reducer (agrupa por clave)",
+    "Enviar un mensaje desde un Vertex y esperar que esté disponible en el mismo superstep en vez del siguiente",
+    "Someter un job Graph o MapReduce directamente contra datos de producción sin validar la lógica con una muestra pequeña primero",
+    "No declarar como Resource un archivo de referencia que el job necesita, provocando errores de ejecución en tiempo real"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "odpscmd -e 'add jar mi_mapreduce.jar -f;'", "desc": "Registrar el JAR de un job MC MapReduce como Resource" },
+    { "cmd": "odpscmd -e 'jar -resources mi_mapreduce.jar -classpath ./mi_mapreduce.jar com.miempresa.WordCount /entrada /salida;'", "desc": "Someter un job MapReduce propio de MaxCompute" },
+    { "cmd": "odpscmd -e 'add jar mi_grafo.jar -f;'", "desc": "Registrar el JAR de un job Graph como Resource" },
+    { "cmd": "odpscmd -e 'list instances;'", "desc": "Revisar el historial de Instances de jobs MR/Graph sometidos" },
+    { "cmd": "odpscmd -e 'desc instance <instance_id>;'", "desc": "Inspeccionar logs y estado de un job específico" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "MC MapReduce", "es": "MapReduce de MaxCompute", "def": "Framework propio de MaxCompute para lógica procedural que no encaja en SQL, distinto de Hadoop MapReduce." },
+    { "en": "Mapper", "es": "Mapper", "def": "Clase que procesa cada fila de entrada y emite pares clave-valor intermedios." },
+    { "en": "Reducer", "es": "Reducer", "def": "Clase que recibe todos los valores agrupados por una misma clave y produce la salida final." },
+    { "en": "TableInfo", "es": "TableInfo", "def": "Mecanismo para declarar las tablas de entrada y salida de un job MC MapReduce." },
+    { "en": "Resource", "es": "Resource", "def": "Archivo (JAR u otro) registrado en el Project y referenciable desde un job en tiempo de ejecución." },
+    { "en": "Combiner", "es": "Combiner", "def": "Reducción local opcional tras el Map para disminuir el volumen de datos que cruza el shuffle." },
+    { "en": "Graph", "es": "Graph", "def": "Framework de MaxCompute para computación iterativa sobre estructuras de grafo, basado en el modelo BSP." },
+    { "en": "BSP (Bulk Synchronous Parallel)", "es": "BSP", "def": "Modelo de ejecución por supersteps sincronizados usado por Graph." },
+    { "en": "Superstep", "es": "Superstep", "def": "Iteración sincronizada del modelo BSP en la que todos los vértices procesan mensajes en paralelo." },
+    { "en": "Vertex", "es": "Vertex", "def": "Clase base que define el comportamiento de cada nodo del grafo en cada superstep." },
+    { "en": "WorkerContext", "es": "WorkerContext", "def": "Interfaz que expone información y utilidades a nivel de todo el job Graph." },
+    { "en": "Aggregator", "es": "Aggregator", "def": "Mecanismo de Graph para calcular un valor global compartido entre vértices durante un superstep." },
+    { "en": "Instance", "es": "Instance", "def": "Ejecución concreta de un job MR o Graph sometido, con su propio ID, estado y logs." },
+    { "en": "add jar", "es": "add jar", "def": "Comando de odpscmd para registrar un JAR como Resource del Project." },
+    { "en": "PageRank", "es": "PageRank", "def": "Algoritmo iterativo clásico de ranking de nodos, caso de uso típico de Graph." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿En qué tipo de problema el modelo Graph es preferible frente a MapReduce o SQL?", "options": ["Agregaciones simples sobre una tabla", "Algoritmos iterativos sobre relaciones, como PageRank o componentes conectados", "Filtrado básico de filas por una condición", "Conversión de tipos de datos en una columna"], "answer": 1, "explain": "Graph está diseñado específicamente para problemas iterativos sobre estructuras de grafo que requieren varias pasadas sobre las relaciones entre nodos." },
+    { "q": "¿Es posible ejecutar directamente un JAR de Hadoop MapReduce clásico dentro de MaxCompute?", "options": ["Sí, sin ninguna modificación", "No, MC MapReduce es un SDK propio sin compatibilidad binaria con Hadoop MapReduce", "Solo si el clúster EMR está conectado", "Solo para jobs de menos de 1 GB"], "answer": 1, "explain": "Aunque comparten el modelo conceptual, MC MapReduce usa sus propias clases base y runtime; no hay compatibilidad binaria con Hadoop MapReduce." },
+    { "q": "¿Qué componente de un job MC MapReduce procesa cada fila de entrada y emite pares clave-valor intermedios?", "options": ["Reducer", "TableInfo", "Mapper", "WorkerContext"], "answer": 2, "explain": "El Mapper procesa las filas de entrada de forma independiente y emite pares clave-valor intermedios que luego se agrupan por clave." },
+    { "q": "¿Qué recibe un Reducer en un job MC MapReduce?", "options": ["Una sola fila de la tabla de entrada", "Todos los valores intermedios asociados a una misma clave, ya agrupados", "El código fuente del Mapper", "El esquema completo de la tabla de salida"], "answer": 1, "explain": "El Reducer recibe, para cada clave, el conjunto agrupado de valores intermedios producidos por los Mappers." },
+    { "q": "En el modelo BSP de Graph, ¿cuándo está disponible un mensaje enviado por un vértice en el superstep N?", "options": ["En el mismo superstep N", "En el superstep N+1, para el vértice destino", "Nunca, los mensajes se descartan al final del job", "Solo si el Aggregator lo replica"], "answer": 1, "explain": "Un mensaje enviado en el superstep N solo es visible para el vértice destino en el superstep siguiente, N+1, por la sincronía estricta del modelo BSP." },
+    { "q": "¿Qué representa la clase Vertex dentro del SDK de Graph?", "options": ["El job completo de Graph", "El comportamiento de cada nodo del grafo en cada superstep", "El almacenamiento de las tablas de entrada", "El sistema de permisos del Project"], "answer": 1, "explain": "Vertex es la clase base que el desarrollador extiende para definir cómo se comporta cada nodo del grafo en cada iteración." },
+    { "q": "¿Qué mecanismo de Graph permite calcular un valor global compartido por todos los vértices durante un superstep?", "options": ["TableInfo", "Combiner", "Aggregator", "Resource"], "answer": 2, "explain": "El Aggregator calcula un valor agregado visible por todo el job, disponible al inicio del superstep siguiente." },
+    { "q": "Un job MapReduce necesita usar un diccionario de referencia dentro del Mapper. ¿Cómo se hace disponible ese archivo al job?", "options": ["Copiándolo manualmente al servidor de MaxCompute", "Declarándolo como Resource del Project", "Insertándolo como fila de la tabla de entrada", "No es posible usar archivos externos dentro de un Mapper"], "answer": 1, "explain": "Los archivos adicionales que un job necesita en tiempo de ejecución se registran y referencian como Resource del Project." },
+    { "q": "¿Cuál es el primer paso recomendado en el ciclo de desarrollo de un job MC MapReduce o Graph?", "options": ["Someterlo directamente contra datos de producción", "Desarrollarlo y probarlo localmente con datos de muestra antes de someterlo a escala real", "Registrar el Resource antes de escribir el código", "Desactivar Project Protection"], "answer": 1, "explain": "El ciclo correcto empieza con desarrollo y prueba local con una muestra pequeña, antes de empaquetar y someter el job contra datos reales." },
+    { "q": "¿Qué caso de uso NO justifica salir de SQL hacia el modelo de programación de MaxCompute?", "options": ["Calcular PageRank sobre una red de páginas web", "Una agregación simple de ventas por región y mes", "Propagar componentes conectados en un grafo social", "Parsear logs con una máquina de estados compleja"], "answer": 1, "explain": "Una agregación simple es el caso canónico donde SQL declarativo es la opción correcta, sin necesidad de MapReduce ni Graph." },
+    { "q": "¿Qué comando de odpscmd se usa para registrar el JAR de un job MC MapReduce como Resource del Project?", "options": ["tunnel upload", "add jar", "grant select", "create role"], "answer": 1, "explain": "add jar registra un archivo JAR como Resource del Project, disponible para ser referenciado al someter el job." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) cuándo el modelo de programación es preferible a SQL, (b) los roles exactos de Mapper y Reducer en MC MapReduce, (c) la sincronía del modelo BSP y el rol de Vertex/Aggregator en Graph, (d) el orden correcto del ciclo de desarrollo, prueba y publicación de un job.",
   "official_intro": "This course explains the basic principle, framework and application scenario of MR, including the development process, core interface the release process. The knowledge of Graph programming model , core interface of Graph and the process of development, test and release are also included.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_maxcpro",

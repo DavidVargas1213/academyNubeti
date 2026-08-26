@@ -2,417 +2,177 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-devops",
   "title_en": "An Introduction Of DevOps",
-  "title_es": "An Introducción Of DevOps",
+  "title_es": "Introducción a DevOps",
+  "title_es_html": "Introducción a <em>DevOps</em>",
   "duration_es": "35 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "DevOps",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_devops",
-  "lead": "Guía completa en español para el curso «An Introduction Of DevOps» de Alibaba Cloud Academy. Cubre en profundidad DevOps en Alibaba Cloud. Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «An Introduction Of DevOps» de Alibaba Cloud Academy. No es un curso de una herramienta concreta, sino de la cultura y el movimiento DevOps: de dónde viene, qué problema resuelve frente al desarrollo tradicional, qué principios lo sostienen (CALMS) y cómo se traduce en herramientas concretas dentro del ecosistema Alibaba Cloud (Cloud Effect / Yunxiao, Container Registry, ACK).",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DevOps en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pipeline, Stage, Artifact, ACR, Trigger.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DevOps en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> el origen histórico de DevOps y el problema organizacional que buscaba resolver.",
+    "<strong>Distinguir</strong> DevOps de metodologías previas (Waterfall, Agile) y explicar en qué se apoya y en qué se diferencia de Agile.",
+    "<strong>Aplicar</strong> el marco CALMS (Culture, Automation, Lean, Measurement, Sharing) para evaluar la madurez DevOps de un equipo.",
+    "<strong>Relacionar</strong> las prácticas DevOps (CI/CD, Infraestructura como Código, monitoreo continuo) con las herramientas de Alibaba Cloud que las habilitan.",
+    "<strong>Analizar</strong> casos de estudio clásicos que ilustran el impacto de adoptar (o no adoptar) DevOps.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre los fundamentos de DevOps."
   ],
-  "architecture": "Commit → GitLab/CodePipeline → build (imagen a ACR) → test unit + integration → security scan (SAST/DAST) → deploy a staging con canary → validation → prod → monitoreo ARMS. Feature flags para rollout controlado.",
+  "architecture": "DevOps no describe un único diagrama de infraestructura, sino un flujo de trabajo continuo: Plan → Code → Build → Test → Release → Deploy → Operate → Monitor, retroalimentando el resultado del monitoreo hacia el siguiente ciclo de planificación. En Alibaba Cloud ese ciclo se apoya en Yunxiao/Cloud Effect para planificación y pipelines, Container Registry (ACR) para artefactos versionados, ACK/ECS para el runtime de despliegue, y CloudMonitor/ARMS/SLS para la fase de observación que cierra el ciclo.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DevOps en Alibaba Cloud",
-      "title_en": "Introduction to DevOps en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · De dónde viene DevOps y qué problema resuelve",
+      "title_en": "Origins of DevOps",
+      "intro": "El curso empieza por el contexto histórico: DevOps no apareció como un producto de software, sino como respuesta a un conflicto organizacional muy concreto entre dos equipos con incentivos opuestos.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DevOps en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El conflicto original</strong>: en el modelo tradicional, Desarrollo (Dev) se mide por cuánto código nuevo entrega, y Operaciones (Ops) se mide por cuánta estabilidad mantiene — esos incentivos entran en tensión, porque cada cambio nuevo es, desde la óptica de Ops, un riesgo de romper la estabilidad.",
+        "<strong>El origen del término</strong>: DevOps surge a finales de la década de 2000, popularizado en conferencias como devopsdays, como una corriente que propone romper el muro entre ambos equipos en vez de gestionar el conflicto con más procesos de aprobación.",
+        "<strong>Qué es DevOps en una frase</strong>: una combinación de filosofía cultural, prácticas de trabajo y herramientas que busca acortar el ciclo entre escribir código y tenerlo operando de forma confiable en producción.",
+        "<strong>No es solo herramientas</strong>: comprar una herramienta de CI/CD sin cambiar la cultura de colaboración entre Dev y Ops no produce los beneficios de DevOps — el curso insiste en que la cultura es condición necesaria, las herramientas son el habilitador."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DevOps en Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "DevOps nace para resolver un problema de <em>incentivos organizacionales desalineados</em>, no un problema de falta de herramientas. El examen distingue con cuidado entre «adoptar DevOps» y «comprar una herramienta de automatización»."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DevOps en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · DevOps frente a metodologías previas",
+      "title_en": "DevOps vs. Traditional Methodologies",
+      "intro": "Para ubicar DevOps en el tiempo, el curso lo compara con Waterfall y con Agile, mostrando qué hereda de cada uno y qué extiende.",
       "points": [
-        "<strong>Patrón canónico</strong>: Commit → GitLab/CodePipeline → build (imagen a ACR) → test unit + integration → security scan (SAST/DAST) → deploy a staging con canary → validation → prod → monitoreo ARMS. Feature flags para rollout controlado.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DevOps en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Pipeline</strong> <em>(Pipeline)</em>: Definición del flujo CI/CD.",
-        "<strong>Stage</strong> <em>(Stage)</em>: Fase (build, test, deploy).",
-        "<strong>Artifact</strong> <em>(Artifact)</em>: JAR, imagen, binary generado.",
-        "<strong>Container Registry</strong> <em>(ACR)</em>: Registry de imágenes con scan integrado.",
-        "<strong>Trigger</strong> <em>(Trigger)</em>: Evento que dispara pipeline (push, PR, cron).",
-        "<strong>GitOps</strong> <em>(GitOps)</em>: Estado deseado en git; controller reconcilia.",
-        "<strong>Feature flag</strong> <em>(Feature Flag)</em>: Switch runtime para features."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Waterfall (cascada)</strong>: fases secuenciales y rígidas (requisitos → diseño → construcción → pruebas → despliegue) con ciclos de entrega de meses o años — cualquier cambio de requisito a mitad de proyecto es costoso de absorber.",
+        "<strong>Agile</strong>: introduce iteraciones cortas (sprints) y retroalimentación temprana del negocio, pero históricamente se centró en el proceso de Desarrollo — el software 'terminado' de un sprint aún debía cruzar el muro hacia Operaciones para llegar a producción.",
+        "<strong>Qué añade DevOps</strong>: extiende la iteración rápida de Agile más allá del desarrollo, hasta el despliegue y la operación — el objetivo ya no es solo 'código terminado cada sprint', sino 'código funcionando en producción de forma continua y segura'.",
+        "<strong>Relación con Lean</strong>: DevOps toma del pensamiento Lean (manufactura) la idea de eliminar desperdicio en el flujo de valor — cada aprobación manual innecesaria, cada entorno distinto entre pruebas y producción, es una fuente de fricción a eliminar.",
+        "<strong>No reemplaza a Agile</strong>: Agile organiza cómo se planifica y construye el trabajo; DevOps extiende ese flujo hacia el despliegue y la operación — en la práctica conviven, no compiten."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta «¿qué extiende DevOps respecto a Agile?», la respuesta es: lleva la iteración rápida más allá del desarrollo, hasta el despliegue y la operación continua en producción."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · El marco CALMS",
+      "title_en": "The CALMS Framework",
+      "intro": "CALMS es el acrónimo más citado para describir los cinco pilares de una organización DevOps madura. El examen suele preguntar directamente por cada letra.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Pipelines-as-code (YAML) versionados",
-        "<strong>Buenas prácticas</strong>: Security scan bloqueante en build",
-        "<strong>Buenas prácticas</strong>: Environments efímeros para PR",
-        "<strong>Buenas prácticas</strong>: Canary + rollback automático",
-        "<strong>Buenas prácticas</strong>: GitOps para K8s"
+        "<strong>Culture (Cultura)</strong>: colaboración y responsabilidad compartida entre Dev y Ops — ambos equipos responden juntos por el resultado en producción, no solo por su fase del proceso.",
+        "<strong>Automation (Automatización)</strong>: eliminar pasos manuales repetitivos (build, pruebas, despliegue, aprovisionamiento de infraestructura) reemplazándolos por pipelines y scripts reproducibles.",
+        "<strong>Lean (Ajustado)</strong>: entregar en lotes pequeños y frecuentes en vez de grandes lanzamientos infrecuentes — reduce el riesgo de cada cambio individual y acelera la retroalimentación.",
+        "<strong>Measurement (Medición)</strong>: instrumentar el sistema para medir lo que realmente importa (tiempo de despliegue, tasa de fallos de cambio, tiempo de recuperación) en vez de gestionar 'a ciegas' por intuición.",
+        "<strong>Sharing (Compartir)</strong>: compartir conocimiento, herramientas y responsabilidad entre equipos — documentar postmortems sin culpar a personas (blameless), y difundir aprendizajes entre silos."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "CALMS = <strong>C</strong>ulture, <strong>A</strong>utomation, <strong>L</strong>ean, <strong>M</strong>easurement, <strong>S</strong>haring. El examen puede pedir identificar en qué pilar de CALMS encaja una práctica descrita en el enunciado."
+      }
+    },
+    {
+      "title_es": "4 · Prácticas DevOps y su equivalente en Alibaba Cloud",
+      "title_en": "DevOps Practices and Alibaba Cloud Tooling",
+      "intro": "Este módulo conecta cada práctica DevOps con las herramientas reales que la habilitan en el ecosistema Alibaba Cloud — el puente entre teoría y curso técnico posterior.",
+      "points": [
+        "<strong>Integración continua (CI)</strong>: cada cambio de código se compila y prueba automáticamente al hacer commit — en Alibaba Cloud se orquesta con pipelines de Yunxiao/Cloud Effect, integrables con Jenkins o GitLab CI existentes.",
+        "<strong>Entrega/despliegue continuo (CD)</strong>: el artefacto validado (imagen de contenedor, paquete) se publica automáticamente hacia un entorno — Container Registry (ACR) versiona las imágenes y ACK/ECS las ejecuta.",
+        "<strong>Infraestructura como Código (IaC)</strong>: describir la infraestructura en archivos versionados (en vez de clics manuales en consola) para que sea reproducible y auditable — Resource Orchestration Service (ROS) cumple ese rol en Alibaba Cloud.",
+        "<strong>Monitoreo continuo</strong>: observar el sistema en producción para retroalimentar el siguiente ciclo de desarrollo — CloudMonitor (métricas de infraestructura), ARMS (rendimiento de aplicación) y SLS (logs) cierran el ciclo Plan-Code-Build-...-Monitor.",
+        "<strong>Gestión de configuración y secretos</strong>: las credenciales y parámetros de entorno no deben vivir en el código fuente — se gestionan mediante variables de entorno y servicios dedicados de gestión de secretos separados del repositorio."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "El examen puede describir una práctica ('cada commit dispara pruebas automáticas') y pedir que identifiques si es CI, CD o IaC — presta atención a si el resultado es código probado, código desplegado, o infraestructura descrita en archivos."
+      }
+    },
+    {
+      "title_es": "5 · Casos de estudio clásicos",
+      "title_en": "Classic Case Studies",
+      "intro": "El curso cierra con ejemplos que ilustran, en términos generales, el contraste entre organizaciones que operan con ciclos de entrega largos y aquellas que adoptaron entrega continua.",
+      "points": [
+        "<strong>El patrón del 'gran lanzamiento' fallido</strong>: organizaciones que acumulan meses de cambios en un único despliegue tienden a sufrir más incidentes por lanzamiento, porque es difícil aislar qué cambio específico causó el problema entre cientos acumulados.",
+        "<strong>El patrón de entrega continua</strong>: organizaciones que despliegan cambios pequeños y frecuentes detectan y corrigen problemas más rápido, porque cada despliegue introduce una superficie de cambio mucho menor y más fácil de diagnosticar.",
+        "<strong>Métricas que distinguen la madurez</strong>: frecuencia de despliegue, tiempo de entrega de un cambio (lead time), tasa de fallos por cambio, y tiempo medio de recuperación — estas cuatro métricas (popularizadas por estudios de la industria como DORA) son el estándar de facto para medir desempeño DevOps.",
+        "<strong>Lección transversal</strong>: la automatización por sí sola no garantiza el éxito si la cultura organizacional sigue penalizando el error individual — equipos con automatización pero sin cultura 'blameless' tienden a ocultar problemas en vez de exponerlos temprano."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Los casos de estudio del curso refuerzan que las <em>cuatro métricas clave</em> (frecuencia de despliegue, lead time, tasa de fallos, tiempo de recuperación) son la forma estándar de medir si una organización realmente practica DevOps o solo tiene herramientas de automatización."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas del examen sobre fundamentos de DevOps suelen distinguir entre comprensión superficial (memorizar el acrónimo) y comprensión aplicada (identificar el pilar correcto en un escenario).",
       "points": [
-        "<strong>Antipattern</strong>: Pipelines en UI sin versionar",
-        "<strong>Antipattern</strong>: Deploy directo a producción sin approval",
-        "<strong>Antipattern</strong>: Sin rollback strategy",
-        "<strong>Antipattern</strong>: Secrets en el pipeline en claro",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: pensar que instalar una herramienta de CI/CD es 'ya hacer DevOps' sin cambiar cómo colaboran Dev y Ops — la herramienta sin la cultura no produce el efecto esperado.",
+        "<strong>Antipatrón</strong>: culpar a una persona específica tras un incidente en vez de hacer un postmortem 'blameless' centrado en el proceso — desincentiva reportar problemas temprano.",
+        "<strong>Antipatrón</strong>: seguir haciendo despliegues grandes e infrecuentes mientras se dice adoptar DevOps — la frecuencia de despliegue pequeña y regular es una señal medible de madurez real.",
+        "<strong>Antipatrón</strong>: no medir nada y gestionar solo por percepción — sin las métricas de frecuencia de despliegue, lead time, tasa de fallos y tiempo de recuperación, no hay forma objetiva de saber si se está mejorando.",
+        "<strong>Regla de oro</strong>: ante una pregunta que describe un síntoma organizacional (conflicto Dev-Ops, lanzamientos riesgosos, incidentes no documentados), identifica primero si el problema es de <em>cultura</em> o de <em>automatización</em> antes de elegir la respuesta."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Cuando dos opciones parezcan válidas, prioriza la que combina <em>cambio cultural + automatización</em> sobre la que ofrece solo una herramienta — DevOps es, ante todo, una respuesta organizacional."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "CI/CD end-to-end para microservicios"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "GitOps con Flux/ArgoCD en ACK"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Security scanning integrado (ACR image scan)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Deploy automatizado a múltiples ambientes"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Rollback automático por SLO violations"
-    }
+    { "title": "Escenario 1", "text": "Equipo con conflicto recurrente entre Desarrollo (quiere lanzar rápido) y Operaciones (quiere estabilidad) — se necesita alinear incentivos, no solo herramientas" },
+    { "title": "Escenario 2", "text": "Organización que hace un único gran lanzamiento trimestral con alta tasa de incidentes — candidata a migrar a entregas pequeñas y frecuentes" },
+    { "title": "Escenario 3", "text": "Equipo que automatizó el pipeline pero sigue culpando a individuos tras cada incidente — falta el pilar de cultura 'blameless'" },
+    { "title": "Escenario 4", "text": "Empresa que quiere medir objetivamente su madurez DevOps antes de invertir más en herramientas — aplicar las cuatro métricas DORA" },
+    { "title": "Escenario 5", "text": "Infraestructura configurada manualmente en consola sin registro — candidata a Infraestructura como Código con ROS" }
   ],
   "mistakes": [
-    "Pipelines en UI sin versionar",
-    "Deploy directo a producción sin approval",
-    "Sin rollback strategy",
-    "Secrets en el pipeline en claro"
+    "Confundir 'comprar una herramienta de CI/CD' con 'haber adoptado DevOps'",
+    "Culpar a individuos tras un incidente en vez de hacer un postmortem centrado en el proceso",
+    "Seguir haciendo lanzamientos grandes e infrecuentes mientras se afirma practicar DevOps",
+    "No medir frecuencia de despliegue, lead time, tasa de fallos ni tiempo de recuperación",
+    "Tratar Infraestructura como Código como opcional en vez de como base de la reproducibilidad"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cr GetInstance",
-      "desc": "Ver ACR"
-    },
-    {
-      "cmd": "Consola Yunxiao",
-      "desc": "Pipelines"
-    }
+    { "cmd": "aliyun devops CreatePipeline --Name build-and-deploy", "desc": "Crear un pipeline en el servicio de DevOps de Alibaba Cloud" },
+    { "cmd": "aliyun cr GetRepoList", "desc": "Listar repositorios de imágenes en Container Registry (ACR)" },
+    { "cmd": "aliyun ros CreateStack --TemplateBody @infra.yaml", "desc": "Aprovisionar infraestructura como código con Resource Orchestration Service" },
+    { "cmd": "aliyun arms QueryApplicationList", "desc": "Consultar aplicaciones monitoreadas en ARMS (Application Real-Time Monitoring Service)" }
   ],
   "glossary": [
-    {
-      "en": "Pipeline",
-      "es": "Pipeline",
-      "def": "Definición del flujo CI/CD."
-    },
-    {
-      "en": "Stage",
-      "es": "Stage",
-      "def": "Fase (build, test, deploy)."
-    },
-    {
-      "en": "Artifact",
-      "es": "Artifact",
-      "def": "JAR, imagen, binary generado."
-    },
-    {
-      "en": "ACR",
-      "es": "Container Registry",
-      "def": "Registry de imágenes con scan integrado."
-    },
-    {
-      "en": "Trigger",
-      "es": "Trigger",
-      "def": "Evento que dispara pipeline (push, PR, cron)."
-    },
-    {
-      "en": "GitOps",
-      "es": "GitOps",
-      "def": "Estado deseado en git; controller reconcilia."
-    },
-    {
-      "en": "Feature Flag",
-      "es": "Feature flag",
-      "def": "Switch runtime para features."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DevOps", "es": "DevOps", "def": "Filosofía cultural, prácticas y herramientas que buscan acortar el ciclo entre escribir código y operarlo de forma confiable en producción." },
+    { "en": "CALMS", "es": "CALMS", "def": "Marco de cinco pilares: Culture, Automation, Lean, Measurement, Sharing, usado para evaluar madurez DevOps." },
+    { "en": "Waterfall", "es": "Cascada", "def": "Metodología secuencial y rígida de desarrollo, con fases largas y cambios costosos de absorber a mitad de proyecto." },
+    { "en": "Agile", "es": "Agile", "def": "Metodología de iteraciones cortas (sprints) enfocada en el proceso de desarrollo, precursora directa de DevOps." },
+    { "en": "Continuous Integration (CI)", "es": "Integración continua", "def": "Práctica de compilar y probar automáticamente cada cambio de código al integrarse al repositorio principal." },
+    { "en": "Continuous Delivery/Deployment (CD)", "es": "Entrega/despliegue continuo", "def": "Práctica de publicar automáticamente un artefacto validado hacia un entorno, hasta producción." },
+    { "en": "Infrastructure as Code (IaC)", "es": "Infraestructura como código", "def": "Describir la infraestructura en archivos versionados en vez de configurarla manualmente, para reproducibilidad y auditoría." },
+    { "en": "Blameless postmortem", "es": "Postmortem sin culpables", "def": "Análisis de incidentes centrado en el proceso y el sistema, no en culpar a individuos, para incentivar reportar problemas temprano." },
+    { "en": "Lead time", "es": "Tiempo de entrega (lead time)", "def": "Tiempo desde que un cambio se confirma en el código hasta que está en producción." },
+    { "en": "Deployment frequency", "es": "Frecuencia de despliegue", "def": "Cuántas veces se despliega a producción en un periodo dado; una de las cuatro métricas clave de madurez DevOps." },
+    { "en": "Change failure rate", "es": "Tasa de fallos por cambio", "def": "Porcentaje de despliegues que causan un incidente o requieren corrección posterior." },
+    { "en": "Mean time to recovery (MTTR)", "es": "Tiempo medio de recuperación", "def": "Tiempo promedio que toma restaurar el servicio tras un incidente en producción." },
+    { "en": "Lean", "es": "Lean", "def": "Filosofía de eliminar desperdicio en el flujo de valor, aplicada a lotes de entrega pequeños y frecuentes." },
+    { "en": "Cloud Effect / Yunxiao", "es": "Cloud Effect / Yunxiao", "def": "Plataforma de gestión de proyectos y pipelines de Alibaba Cloud para planificación y CI/CD." },
+    { "en": "Container Registry (ACR)", "es": "Container Registry", "def": "Registro de imágenes de contenedor de Alibaba Cloud, con escaneo de seguridad integrado, usado en la fase de entrega." },
+    { "en": "Resource Orchestration Service (ROS)", "es": "ROS", "def": "Servicio de Infraestructura como Código de Alibaba Cloud, equivalente a CloudFormation, para aprovisionar recursos desde plantillas." },
+    { "en": "ARMS", "es": "ARMS", "def": "Application Real-Time Monitoring Service: monitoreo de rendimiento de aplicación, parte de la fase de observación del ciclo DevOps." },
+    { "en": "SLS (Log Service)", "es": "SLS", "def": "Servicio de gestión de logs de Alibaba Cloud, usado para centralizar y analizar registros de aplicación e infraestructura." },
+    { "en": "Feedback loop", "es": "Ciclo de retroalimentación", "def": "Mecanismo por el cual la observación en producción informa el siguiente ciclo de planificación y desarrollo." },
+    { "en": "Toolchain", "es": "Cadena de herramientas", "def": "Conjunto de herramientas que en conjunto habilitan las prácticas DevOps (CI/CD, IaC, monitoreo) de punta a punta." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DevOps en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → ob",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad."
-    },
-    {
-      "q": "¿Qué es <strong>Pipeline</strong> (Pipeline) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Pipeline (Pipeline): Definición del flujo CI/CD."
-    },
-    {
-      "q": "¿Qué es <strong>Stage</strong> (Stage) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Fase (build, test, deploy).",
-        "Definición del flujo CI/CD.",
-        "JAR, imagen, binary generado.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Stage (Stage): Fase (build, test, deploy)."
-    },
-    {
-      "q": "¿Qué es <strong>Artifact</strong> (Artifact) en DevOps en Alibaba Cloud?",
-      "options": [
-        "JAR, imagen, binary generado.",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Artifact (Artifact): JAR, imagen, binary generado."
-    },
-    {
-      "q": "¿Qué es <strong>ACR</strong> (Container Registry) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Registry de imágenes con scan integrado.",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado."
-      ],
-      "answer": 0,
-      "explain": "ACR (Container Registry): Registry de imágenes con scan integrado."
-    },
-    {
-      "q": "¿Qué es <strong>Trigger</strong> (Trigger) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Evento que dispara pipeline (push, PR, cron).",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado."
-      ],
-      "answer": 0,
-      "explain": "Trigger (Trigger): Evento que dispara pipeline (push, PR, cron)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DevOps en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DevOps en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DevOps en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DevOps en Alibaba Cloud es la elección típica:",
-      "options": [
-        "CI/CD end-to-end para microservicios",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: CI/CD end-to-end para microservicios."
-    }
+    { "q": "¿Qué problema organizacional motivó originalmente el movimiento DevOps?", "options": ["La falta de lenguajes de programación modernos", "El conflicto de incentivos entre Desarrollo (entregar rápido) y Operaciones (mantener estabilidad)", "El alto costo de los servidores físicos", "La ausencia de metodologías Agile"], "answer": 1, "explain": "DevOps nace como respuesta a la tensión estructural entre los incentivos de Dev y Ops, no como un problema puramente técnico." },
+    { "q": "¿Qué extiende DevOps respecto a Agile?", "options": ["Elimina por completo las iteraciones cortas", "Lleva la iteración rápida más allá del desarrollo, hasta el despliegue y la operación continua en producción", "Reemplaza completamente la necesidad de pruebas", "Solo aplica a proyectos de gran tamaño"], "answer": 1, "explain": "Agile se enfocó históricamente en el proceso de desarrollo; DevOps extiende ese ciclo rápido hasta el despliegue y la operación." },
+    { "q": "En el marco CALMS, ¿qué representa la letra 'S'?", "options": ["Security (Seguridad)", "Sharing (Compartir conocimiento y responsabilidad)", "Scaling (Escalado)", "Sprint"], "answer": 1, "explain": "CALMS = Culture, Automation, Lean, Measurement, Sharing — la S es Sharing, compartir conocimiento y responsabilidad entre equipos." },
+    { "q": "Un equipo automatizó completamente su pipeline de CI/CD, pero sigue culpando a personas específicas tras cada incidente. ¿Qué pilar de CALMS le falta?", "options": ["Automation", "Culture", "Measurement", "Lean"], "answer": 1, "explain": "La automatización está presente, pero la cultura de responsabilidad compartida y postmortems sin culpables (Culture) es la que falta." },
+    { "q": "¿Cuál de las siguientes es una de las cuatro métricas clave (tipo DORA) usadas para medir madurez DevOps?", "options": ["Número de líneas de código escritas por día", "Frecuencia de despliegue", "Cantidad de reuniones semanales", "Número de servidores físicos comprados"], "answer": 1, "explain": "La frecuencia de despliegue, junto con lead time, tasa de fallos por cambio y tiempo medio de recuperación, son las métricas estándar." },
+    { "q": "¿Qué práctica describe mejor la Infraestructura como Código (IaC)?", "options": ["Configurar servidores manualmente por consola cada vez", "Describir la infraestructura en archivos versionados para que sea reproducible y auditable", "Escribir el código de la aplicación sin pruebas", "Monitorear logs en tiempo real"], "answer": 1, "explain": "IaC reemplaza la configuración manual repetitiva por definiciones versionadas y reproducibles de la infraestructura." },
+    { "q": "¿Por qué el curso advierte que 'comprar una herramienta de CI/CD' no equivale a 'adoptar DevOps'?", "options": ["Porque las herramientas de CI/CD no existen realmente", "Porque sin el cambio cultural de colaboración entre Dev y Ops, la herramienta no produce por sí sola los beneficios esperados", "Porque CI/CD solo sirve para proyectos pequeños", "Porque las herramientas de CI/CD son gratuitas siempre"], "answer": 1, "explain": "La cultura es condición necesaria; las herramientas son el habilitador, no un sustituto de la colaboración organizacional." },
+    { "q": "¿Qué patrón describen los casos de estudio como más propenso a incidentes: los lanzamientos grandes e infrecuentes o los pequeños y frecuentes?", "options": ["Los lanzamientos pequeños y frecuentes son más propensos a incidentes", "Los lanzamientos grandes e infrecuentes tienden a sufrir más incidentes, porque es difícil aislar qué cambio causó el problema", "Ambos tienen exactamente el mismo riesgo", "El tamaño del lanzamiento no influye en el riesgo"], "answer": 1, "explain": "Acumular muchos cambios en un solo lanzamiento dificulta diagnosticar cuál causó un problema específico, elevando el riesgo por evento." },
+    { "q": "¿Qué servicio de Alibaba Cloud cumple el rol de registro versionado de imágenes de contenedor en el ciclo de entrega continua?", "options": ["ROS", "Container Registry (ACR)", "SLS", "CloudMonitor"], "answer": 1, "explain": "ACR versiona y almacena las imágenes de contenedor generadas en el pipeline, listas para desplegarse." },
+    { "q": "¿Qué papel cumple el monitoreo (CloudMonitor/ARMS/SLS) dentro del ciclo DevOps Plan-Code-Build-...-Monitor?", "options": ["Ninguno, el ciclo termina en el despliegue", "Cierra el ciclo retroalimentando información de producción hacia la siguiente fase de planificación", "Solo sirve para facturación", "Reemplaza la necesidad de pruebas automatizadas"], "answer": 1, "explain": "El monitoreo cierra el ciclo continuo, alimentando con datos reales de producción la siguiente iteración de planificación y desarrollo." },
+    { "q": "¿Qué corriente de pensamiento, originaria de manufactura, aporta a DevOps la idea de entregar en lotes pequeños y frecuentes?", "options": ["Waterfall", "Lean", "Scrum exclusivamente", "Six Sigma exclusivamente"], "answer": 1, "explain": "El pensamiento Lean, centrado en eliminar desperdicio del flujo de valor, es la base de la práctica de entregas pequeñas y frecuentes." },
+    { "q": "Según la estrategia de examen del curso, ante un enunciado que describe un conflicto Dev-Ops, ¿qué se debe identificar primero?", "options": ["Qué proveedor cloud usa la empresa", "Si el problema es de cultura organizacional o de automatización antes de elegir la respuesta", "El precio de las instancias ECS", "El tamaño del equipo de desarrollo"], "answer": 1, "explain": "El curso insiste en distinguir primero si el síntoma descrito es cultural o técnico, porque la respuesta correcta suele depender de esa distinción." }
   ],
-  "exam_focus": "CI/CD stages, GitOps, ACR con scanning, canary + rollback, feature flags.",
+  "exam_focus": "El examen suele evaluar: (a) el origen histórico y el problema organizacional que resuelve DevOps, (b) la diferencia entre DevOps, Agile y Waterfall, (c) los cinco pilares del marco CALMS aplicados a un escenario, (d) el mapeo de prácticas DevOps (CI, CD, IaC, monitoreo) a herramientas concretas de Alibaba Cloud, (e) las cuatro métricas clave para medir madurez DevOps.",
   "official_intro": "What is DevOps? Its a combination of cultural philosophies, practices, and tools that increases a team’s ability to rapidly deliver services. In this clouder course, you’ll learn the concept and history of DevOps, how it works compared with traditional methodology, tools that support DevOps and recap the ideas with some classic case studies.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_devops",

@@ -2,415 +2,176 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datalakeanalytics",
   "title_en": "Quick Start Guide of Data Lake Analytics",
-  "title_es": "Quick Start Guía of Datos Lake Analítica",
+  "title_es": "Guía de Inicio Rápido de Data Lake Analytics",
+  "title_es_html": "Guía de Inicio Rápido de <em>Data Lake Analytics</em>",
   "duration_es": "40 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datalakeanalytics",
-  "lead": "Guía completa en español para el curso «Quick Start Guide of Data Lake Analytics» de Alibaba Cloud Academy. Cubre en profundidad Analytics Case Studies. Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Quick Start Guide of Data Lake Analytics» de Alibaba Cloud Academy, centrado en Data Lake Analytics (DLA): el servicio serverless de Alibaba Cloud que ejecuta SQL estándar directamente sobre datos que YA viven en OSS, RDS, PolarDB o Table Store — sin necesidad de un solo paso de ETL previo. Es un modelo mental distinto al de MaxCompute: en vez de cargar los datos a un warehouse antes de consultarlos, DLA consulta el dato donde ya está.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Analytics Case Studies</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Data Model, Feature, KPI, Cohort, Funnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Analytics Case Studies y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia entre 'mover el dato al motor' (ETL clásico hacia un warehouse) y 'llevar el motor al dato' (federación de consultas de DLA).",
+    "<strong>Distinguir</strong> los conceptos fundamentales de DLA: Virtual Cluster, Schema, tabla externa y Data Catalog.",
+    "<strong>Conectar</strong> DLA a fuentes heterogéneas: OSS (CSV/JSON/Parquet), RDS/PolarDB, Table Store.",
+    "<strong>Ejecutar</strong> consultas SQL estándar (compatibles con el ecosistema Presto) sobre datos en distintos formatos sin moverlos.",
+    "<strong>Consultar</strong> datos de múltiples fuentes en un mismo JOIN federado, cruzando OSS con una base relacional.",
+    "<strong>Ubicar</strong> a DLA frente a MaxCompute y EMR dentro del ecosistema analítico de Alibaba Cloud.",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre cuándo DLA es la opción correcta frente a un ETL tradicional."
   ],
-  "architecture": "Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
+  "architecture": "DLA no almacena datos propios — orquesta un Virtual Cluster (recursos de cómputo elásticos, basados en un motor compatible con Presto) que ejecuta SQL directamente contra fuentes externas registradas como Schemas: un bucket OSS con archivos CSV/JSON/Parquet, una base RDS/PolarDB, o una tabla de Table Store. El Data Catalog mantiene el mapeo entre esas fuentes y una estructura de tablas consultable por SQL, sin que exista una copia física adicional del dato dentro de DLA. Una consulta puede unir (JOIN) datos de distintas fuentes en la misma sentencia SQL — por ejemplo, cruzar logs crudos en OSS con una tabla de clientes en RDS — algo que ni MaxCompute ni una base relacional aislada pueden hacer sin antes mover uno de los dos conjuntos de datos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Analytics Case Studies",
-      "title_en": "Introduction to Analytics Case Studies",
-      "intro": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema: analizar datos sin moverlos primero",
+      "title_en": "The Problem: Analyzing Data Without Moving It First",
+      "intro": "Antes de tocar la consola, el curso plantea el problema que resuelve DLA: en un flujo analítico clásico, antes de poder hacer una sola consulta SQL hay que cargar (ETL) los datos a un warehouse — un paso que consume tiempo, cómputo y, sobre todo, retrasa cualquier exploración puntual.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Analytics Case Studies se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El flujo tradicional</strong>: datos crudos en OSS → proceso de ETL (DataWorks Data Integration o similar) → tabla en MaxCompute → recién ahí se puede consultar con SQL. Cada exploración nueva de un dataset no cargado antes exige repetir ese ciclo completo.",
+        "<strong>El problema que resuelve DLA</strong>: ejecutar SQL directamente sobre los archivos tal como están en OSS (CSV, JSON, Parquet) o sobre una base RDS/PolarDB en vivo, sin ningún paso de carga previo — se define un Schema que apunta a la fuente, y ya se puede consultar.",
+        "<strong>Cuándo tiene sentido este modelo</strong>: exploración ad-hoc de un dataset nuevo antes de decidir si vale la pena cargarlo formalmente; análisis puntuales de baja frecuencia donde montar un pipeline de ETL completo no se justifica; consultas federadas que cruzan varias fuentes que viven en sistemas distintos.",
+        "<strong>Cuándo NO es la opción óptima</strong>: cargas analíticas recurrentes de alto volumen y alta frecuencia, donde tener los datos ya materializados en un formato columnar optimizado (como en MaxCompute) rinde mucho mejor en costo y velocidad a largo plazo.",
+        "<strong>Sin ETL no significa sin costo</strong>: DLA sigue cobrando por el cómputo consumido en cada consulta (basado en los datos escaneados) — la ventaja no es que sea gratis, sino que elimina el costo de tiempo y operación de mantener un pipeline de carga previo."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Analytics Case Studies es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es DLA?» sino «¿el escenario necesita explorar datos sin ETL previo, o es una carga analítica recurrente que se beneficia de estar materializada?». DLA gana en el primer caso, MaxCompute en el segundo."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Analytics Case Studies no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Virtual Cluster, Schema y Data Catalog",
+      "title_en": "Virtual Cluster, Schema and Data Catalog",
+      "intro": "El vocabulario de DLA se parece al de un motor SQL tradicional, pero con matices propios de su naturaleza serverless y federada — el examen distingue estos términos con precisión.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Analytics Case Studies (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Data model</strong> <em>(Data Model)</em>: Estrella/copo de nieve con hechos y dimensiones.",
-        "<strong>Feature</strong> <em>(Feature)</em>: Variable derivada usada por modelo/reporte.",
-        "<strong>KPI</strong> <em>(KPI)</em>: Métrica clave del negocio.",
-        "<strong>Cohort</strong> <em>(Cohort)</em>: Grupo definido por atributo común (fecha registro).",
-        "<strong>Funnel</strong> <em>(Funnel)</em>: Secuencia de pasos con conversión.",
-        "<strong>Retention</strong> <em>(Retention)</em>: % de usuarios activos tras N días.",
-        "<strong>A/B test</strong> <em>(A/B Test)</em>: Comparación estadística de variantes."
+        "<strong>Virtual Cluster</strong>: la unidad de cómputo que ejecuta las consultas — se dimensiona en unidades de capacidad (ACU) y escala independientemente de las fuentes de datos que consulta; no existe un 'cluster' físico dedicado que el usuario administre.",
+        "<strong>Schema</strong>: el espacio de nombres que agrupa las tablas provenientes de una fuente concreta — por ejemplo, un Schema puede mapear todos los objetos de un prefijo de un bucket OSS como si fueran tablas.",
+        "<strong>Tabla externa</strong>: la definición SQL de una tabla cuyo contenido físico vive fuera de DLA — se declara su ubicación (ruta en OSS, conexión a RDS) y su esquema de columnas, y DLA la trata como cualquier tabla consultable.",
+        "<strong>Data Catalog</strong>: el registro central de metadata que asocia Schemas y tablas externas con sus fuentes físicas — compatible con el formato de metastore usado por Hive/Presto, lo que permite compartir ese catálogo con otros motores como EMR.",
+        "<strong>Formatos de archivo soportados en OSS</strong>: CSV, JSON, Parquet y ORC son los más comunes — Parquet y ORC (formatos columnares) ofrecen mejor rendimiento de consulta que CSV/JSON porque permiten leer solo las columnas necesarias."
       ],
       "keypoint": {
         "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+        "text": "El Virtual Cluster es cómputo puro y elástico; el Data Catalog es metadata pura; ninguno de los dos almacena el dato en sí — el dato real siempre sigue viviendo en OSS, RDS, PolarDB o Table Store."
       }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "3 · Consultar datos en OSS sin cargarlos",
+      "title_en": "Querying Data in OSS Without Loading It",
+      "intro": "El caso de uso más emblemático de DLA: convertir un directorio de archivos en OSS en algo directamente consultable con SELECT, sin ningún paso de ingestión.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Definir una tabla externa sobre OSS</strong>: se especifica la ruta del bucket/prefijo, el formato de archivo (CSV, JSON, Parquet) y el esquema de columnas — DLA no copia los archivos, solo aprende a interpretarlos al momento de la consulta.",
+        "<strong>Particionamiento por prefijo de carpeta</strong>: igual que en un data lake tradicional, organizar los archivos en OSS bajo una convención de carpetas (p.ej. <code>/logs/año=2026/mes=08/dia=24/</code>) permite que DLA aplique poda de partición y evite leer archivos irrelevantes.",
+        "<strong>Ventaja frente a cargar a MaxCompute primero</strong>: para explorar rápidamente si un dataset nuevo en OSS tiene el formato y calidad esperados, DLA permite un SELECT inmediato — evita gastar tiempo de ingeniería en un ETL que quizás se descarte tras la exploración inicial.",
+        "<strong>Rendimiento según formato</strong>: una consulta sobre archivos Parquet particionados correctamente puede acercarse al rendimiento de una tabla nativa; la misma consulta sobre CSV sin particionar es notablemente más lenta, porque obliga a leer y parsear todo el archivo fila por fila.",
+        "<strong>Escritura de resultados</strong>: DLA también puede escribir el resultado de una consulta (CREATE TABLE AS SELECT) de vuelta a OSS en un formato optimizado como Parquet, formalizando el hallazgo de una exploración en un dataset reutilizable."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe la necesidad de 'explorar rápidamente un dataset recién llegado a OSS sin construir un pipeline de ingestión', la respuesta es Data Lake Analytics — no MaxCompute, que exigiría cargar los datos primero."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Consultas federadas: cruzar varias fuentes",
+      "title_en": "Federated Queries: Joining Multiple Sources",
+      "intro": "La capacidad más distintiva de DLA frente a un motor SQL tradicional: unir en una sola consulta datos que físicamente viven en sistemas completamente distintos.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Data model documentado con owner",
-        "<strong>Buenas prácticas</strong>: Features versionadas + testadas",
-        "<strong>Buenas prácticas</strong>: KPIs con definición única cross-empresa",
-        "<strong>Buenas prácticas</strong>: Cohort analysis mensual",
-        "<strong>Buenas prácticas</strong>: A/B tests con significancia estadística"
+        "<strong>JOIN entre OSS y RDS</strong>: una consulta puede combinar logs crudos almacenados como archivos en OSS con una tabla de clientes que vive en una base RDS MySQL, sin haber movido ningún dato de un sistema al otro previamente.",
+        "<strong>JOIN entre OSS y Table Store</strong>: de la misma forma, se pueden enriquecer eventos de OSS con datos de perfil almacenados en Table Store (la base NoSQL de Alibaba Cloud), útil para personalización y analítica de producto.",
+        "<strong>Por qué esto es difícil sin DLA</strong>: sin federación de consultas, cruzar dos fuentes distintas exige primero replicar una de ellas hacia el sistema de la otra (o hacia un tercer sistema común), un paso de ingeniería adicional que DLA evita para análisis puntuales.",
+        "<strong>Límite práctico</strong>: las consultas federadas tienen un costo de rendimiento frente a tener todo materializado en un mismo motor — para cargas recurrentes de alto volumen, sigue siendo preferible consolidar los datos en una sola plataforma (MaxCompute) en vez de federar en cada ejecución.",
+        "<strong>Conexión con herramientas de BI</strong>: al exponer una interfaz SQL estándar compatible con JDBC/ODBC, los resultados de una consulta federada de DLA pueden conectarse directamente a Quick BI para un análisis visual inmediato."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "La federación de consultas es la razón de ser de DLA frente a alternativas: resuelve el caso de 'necesito cruzar estas dos fuentes una vez, hoy' sin justificar construir un pipeline de replicación permanente entre ellas."
+      }
+    },
+    {
+      "title_es": "5 · DLA frente a MaxCompute y EMR",
+      "title_en": "DLA vs. MaxCompute and EMR",
+      "intro": "Ningún proyecto de datos real usa un solo motor — este módulo posiciona a DLA frente a sus vecinos más cercanos, una distinción que el examen evalúa con frecuencia.",
+      "points": [
+        "<strong>DLA vs. MaxCompute</strong>: MaxCompute exige cargar los datos como tablas propias (mejor rendimiento y costo a escala para cargas recurrentes); DLA consulta el dato donde ya está (mejor para exploración puntual y consultas federadas sin ETL previo).",
+        "<strong>DLA vs. EMR</strong>: EMR ofrece clústeres Hadoop/Spark/Presto que el cliente dimensiona y administra con más control fino; DLA es serverless puro — no hay nodos que configurar ni versión de motor que mantener, a cambio de menos perillas de ajuste.",
+        "<strong>Compatibilidad de metastore</strong>: el Data Catalog de DLA es compatible con el formato usado por Hive/Presto, lo que permite que un mismo catálogo de tablas externas sea consultado tanto desde DLA como desde un clúster EMR, sin duplicar definiciones.",
+        "<strong>Complementariedad, no exclusión</strong>: un flujo real puede usar DLA para explorar y validar un dataset nuevo en OSS, y una vez confirmado su valor, formalizar su ingesta recurrente hacia MaxCompute vía DataWorks Data Integration.",
+        "<strong>Facturación</strong>: DLA cobra por unidades de cómputo (ACU) consumidas durante cada consulta, sin cargo por infraestructura ociosa — coherente con su propósito de análisis exploratorio esporádico más que de cargas constantes."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "Dato nuevo en OSS → explorar con DLA (sin ETL) → si el valor se confirma y el uso será recurrente → formalizar la ingesta con DataWorks hacia MaxCompute para las cargas de producción de alto volumen."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "El cierre del curso repasa los antipatrones más frecuentes al decidir entre DLA y una alternativa con ETL tradicional.",
       "points": [
-        "<strong>Antipattern</strong>: KPIs con definiciones distintas por área",
-        "<strong>Antipattern</strong>: Features sin versionar",
-        "<strong>Antipattern</strong>: Cohorts mezclando temporalidades",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: usar DLA como motor principal de un dashboard de producción con miles de consultas diarias sobre CSV sin particionar — el costo y la latencia superan ampliamente a tener los datos materializados en MaxCompute.",
+        "<strong>Antipatrón</strong>: construir un pipeline de ETL completo hacia MaxCompute solo para hacer una exploración puntual de un dataset que probablemente se descarte — DLA resuelve ese caso sin la inversión de ingeniería.",
+        "<strong>Antipatrón</strong>: consultar archivos CSV sin particionar por carpeta cuando el volumen es grande, forzando a DLA a leer todo el contenido en cada consulta.",
+        "<strong>Antipatrón</strong>: ignorar Parquet/ORC como formato de escritura al formalizar un dataset descubierto vía DLA, perdiendo la ventaja de lectura columnar en consultas futuras.",
+        "<strong>Estrategia</strong>: ante una pregunta de examen sobre elegir el motor correcto, primero determina si el escenario describe exploración puntual/federación (DLA) o carga analítica recurrente de alto volumen (MaxCompute)."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "DLA gana cuando la pregunta clave es 'necesito consultar esto ya, sin construir un pipeline'. MaxCompute gana cuando la pregunta es 'esto se va a consultar todos los días, a gran escala, para siempre'."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Análisis de comportamiento de usuario"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Segmentación (persona)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Optimización de operaciones logísticas"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Efectividad de campañas de marketing"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Detección de patrones en delivery/mobility"
-    }
+    { "title": "Escenario 1", "text": "Explorar un dataset de logs recién llegado a OSS para validar su formato antes de decidir cargarlo formalmente" },
+    { "title": "Escenario 2", "text": "Cruzar logs crudos en OSS con una tabla de clientes en RDS en una sola consulta federada" },
+    { "title": "Escenario 3", "text": "Ejecutar un análisis puntual de bajo volumen que no justifica construir un pipeline de ETL completo" },
+    { "title": "Escenario 4", "text": "Formalizar un dataset validado en DLA hacia una ingesta recurrente en MaxCompute vía DataWorks" },
+    { "title": "Escenario 5", "text": "Conectar Quick BI directamente a una consulta federada de DLA para un reporte ad-hoc" }
   ],
   "mistakes": [
-    "KPIs con definiciones distintas por área",
-    "Features sin versionar",
-    "Cohorts mezclando temporalidades"
+    "Usar DLA como motor principal de un dashboard de producción de alto volumen en vez de MaxCompute",
+    "Construir un pipeline de ETL completo solo para una exploración puntual que DLA resolvería sin ingesta",
+    "Consultar archivos CSV masivos sin particionar por carpeta en OSS",
+    "No escribir el resultado de una exploración validada en formato columnar (Parquet) para consultas futuras",
+    "Asumir que DLA es gratuito por no requerir ETL, ignorando el costo por cómputo consumido en cada consulta"
   ],
   "cli": [
-    {
-      "cmd": "odps SQL",
-      "desc": "Analytics SQL"
-    },
-    {
-      "cmd": "Quick BI",
-      "desc": "Visualización"
-    }
+    { "cmd": "aliyun dla CreateVirtualCluster --VcName mi-vc --CuSize 8", "desc": "Crear un Virtual Cluster de cómputo para DLA" },
+    { "cmd": "CREATE EXTERNAL TABLE logs (ts STRING, evento STRING) STORED AS PARQUET LOCATION 'oss://mi-bucket/logs/';", "desc": "Definir una tabla externa sobre archivos Parquet en OSS" },
+    { "cmd": "SELECT o.evento, c.nombre FROM logs o JOIN rds_clientes.clientes c ON o.cliente_id = c.id;", "desc": "Consulta federada uniendo OSS con una tabla de RDS" },
+    { "cmd": "CREATE TABLE AS SELECT ... FROM logs WHERE ...;", "desc": "Materializar el resultado de una exploración en una nueva tabla" },
+    { "cmd": "aliyun dla GetVirtualClusterUsage --VcName mi-vc", "desc": "Consultar el consumo de cómputo (ACU) de un Virtual Cluster" }
   ],
   "glossary": [
-    {
-      "en": "Data Model",
-      "es": "Data model",
-      "def": "Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "en": "Feature",
-      "es": "Feature",
-      "def": "Variable derivada usada por modelo/reporte."
-    },
-    {
-      "en": "KPI",
-      "es": "KPI",
-      "def": "Métrica clave del negocio."
-    },
-    {
-      "en": "Cohort",
-      "es": "Cohort",
-      "def": "Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "en": "Funnel",
-      "es": "Funnel",
-      "def": "Secuencia de pasos con conversión."
-    },
-    {
-      "en": "Retention",
-      "es": "Retention",
-      "def": "% de usuarios activos tras N días."
-    },
-    {
-      "en": "A/B Test",
-      "es": "A/B test",
-      "def": "Comparación estadística de variantes."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Data Lake Analytics (DLA)", "es": "Data Lake Analytics", "def": "Servicio serverless de Alibaba Cloud que ejecuta SQL estándar directamente sobre datos en OSS, RDS, PolarDB o Table Store." },
+    { "en": "Virtual Cluster", "es": "Clúster virtual", "def": "Unidad de cómputo elástica de DLA que ejecuta las consultas, dimensionada en unidades de capacidad (ACU)." },
+    { "en": "Schema", "es": "Schema", "def": "Espacio de nombres que agrupa tablas provenientes de una fuente de datos concreta." },
+    { "en": "External Table", "es": "Tabla externa", "def": "Definición SQL de una tabla cuyo contenido físico reside fuera de DLA, en OSS, RDS u otra fuente." },
+    { "en": "Data Catalog", "es": "Catálogo de datos", "def": "Registro central de metadata que asocia Schemas y tablas externas con sus fuentes físicas." },
+    { "en": "Federated Query", "es": "Consulta federada", "def": "Consulta SQL que une datos de múltiples fuentes distintas (p.ej. OSS y RDS) en una sola sentencia." },
+    { "en": "ACU (Analytics Compute Unit)", "es": "Unidad de cómputo analítico", "def": "Unidad de medida de capacidad de cómputo de un Virtual Cluster de DLA." },
+    { "en": "Parquet / ORC", "es": "Parquet / ORC", "def": "Formatos de archivo columnar que ofrecen mejor rendimiento de consulta que CSV/JSON al leer solo las columnas necesarias." },
+    { "en": "Partition Pruning", "es": "Poda de partición", "def": "Optimización que evita leer archivos irrelevantes cuando los datos están organizados por prefijo de carpeta." },
+    { "en": "CREATE TABLE AS SELECT (CTAS)", "es": "CTAS", "def": "Sentencia que materializa el resultado de una consulta como una nueva tabla, típicamente en formato columnar." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Data warehouse serverless que exige cargar los datos como tablas propias, preferible para cargas recurrentes de alto volumen." },
+    { "en": "E-MapReduce (EMR)", "es": "E-MapReduce", "def": "Clústeres Hadoop/Spark/Presto gestionados con más control de configuración que DLA." },
+    { "en": "Metastore", "es": "Metastore", "def": "Formato de metadata compatible con Hive/Presto que permite compartir el Data Catalog entre DLA y EMR." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de BI que puede conectarse vía JDBC/ODBC a los resultados de consultas de DLA." },
+    { "en": "Table Store", "es": "Table Store", "def": "Base de datos NoSQL de Alibaba Cloud que puede federarse en consultas de DLA." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Analytics Case Studies?",
-      "options": [
-        "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo →",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción."
-    },
-    {
-      "q": "¿Qué es <strong>Data Model</strong> (Data model) en Analytics Case Studies?",
-      "options": [
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Data Model (Data model): Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "q": "¿Qué es <strong>Feature</strong> (Feature) en Analytics Case Studies?",
-      "options": [
-        "Variable derivada usada por modelo/reporte.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Feature (Feature): Variable derivada usada por modelo/reporte."
-    },
-    {
-      "q": "¿Qué es <strong>KPI</strong> (KPI) en Analytics Case Studies?",
-      "options": [
-        "Métrica clave del negocio.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "KPI (KPI): Métrica clave del negocio."
-    },
-    {
-      "q": "¿Qué es <strong>Cohort</strong> (Cohort) en Analytics Case Studies?",
-      "options": [
-        "Grupo definido por atributo común (fecha registro).",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Cohort (Cohort): Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "q": "¿Qué es <strong>Funnel</strong> (Funnel) en Analytics Case Studies?",
-      "options": [
-        "Secuencia de pasos con conversión.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Funnel (Funnel): Secuencia de pasos con conversión."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Analytics Case Studies, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Analytics Case Studies en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Analytics Case Studies, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Analytics Case Studies es la elección típica:",
-      "options": [
-        "Análisis de comportamiento de usuario",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Análisis de comportamiento de usuario."
-    }
+    { "q": "¿Cuál es la diferencia principal de modelo mental entre DLA y un flujo ETL tradicional hacia MaxCompute?", "options": ["No hay ninguna diferencia real", "DLA consulta el dato donde ya está, sin moverlo; el ETL tradicional mueve el dato hacia el motor antes de poder consultarlo", "DLA es más lento en todos los casos posibles", "MaxCompute no permite usar SQL"], "answer": 1, "explain": "DLA elimina el paso de carga previa, ejecutando SQL federado directamente sobre las fuentes originales." },
+    { "q": "¿Qué es un Virtual Cluster en DLA?", "options": ["Una copia física de los datos en DLA", "La unidad de cómputo elástica que ejecuta las consultas, dimensionada en ACU", "Un tipo de tabla externa", "El nombre del catálogo de metadata"], "answer": 1, "explain": "El Virtual Cluster es cómputo puro; no almacena datos, solo ejecuta las consultas sobre las fuentes registradas." },
+    { "q": "¿Qué permite hacer una tabla externa definida sobre un bucket OSS en DLA?", "options": ["Copiar automáticamente los archivos a un almacenamiento propio de DLA", "Consultar con SQL los archivos tal como están en OSS, sin proceso de carga previo", "Convertir los archivos a formato Parquet automáticamente sin configuración", "Eliminar los archivos originales tras la primera consulta"], "answer": 1, "explain": "DLA interpreta los archivos al momento de la consulta según el esquema declarado, sin duplicar el contenido físico." },
+    { "q": "¿Qué formato de archivo en OSS ofrece mejor rendimiento de consulta para DLA por permitir lectura columnar?", "options": ["CSV", "JSON", "Parquet", "TXT plano"], "answer": 2, "explain": "Parquet (y ORC) son formatos columnares que permiten leer solo las columnas necesarias, acelerando las consultas frente a CSV/JSON." },
+    { "q": "¿Qué capacidad distintiva de DLA permite unir en una sola consulta datos de OSS con datos de una base RDS?", "options": ["Lifecycle", "Consultas federadas (federated queries)", "ACU sizing", "Data Security"], "answer": 1, "explain": "Las consultas federadas de DLA permiten cruzar fuentes heterogéneas sin necesidad de replicar previamente los datos hacia un sistema común." },
+    { "q": "Un equipo quiere validar rápidamente si un dataset recién llegado a OSS tiene el formato esperado, antes de invertir en construir un pipeline de carga. ¿Qué servicio es el más adecuado?", "options": ["MaxCompute, cargando primero los datos", "Data Lake Analytics, consultando directamente sin ETL previo", "EMR, levantando un clúster Hadoop completo", "No es posible validar sin cargar los datos primero"], "answer": 1, "explain": "DLA permite un SELECT inmediato sobre los archivos en OSS, evitando invertir ingeniería en un ETL que podría descartarse tras la exploración." },
+    { "q": "¿Por qué DLA no es la opción óptima para un dashboard de producción con miles de consultas diarias de alto volumen?", "options": ["Porque DLA no soporta SQL estándar", "Porque para cargas recurrentes de alto volumen, tener los datos materializados en un motor como MaxCompute rinde mejor en costo y velocidad", "Porque DLA no puede conectarse a Quick BI", "Porque DLA solo admite un usuario concurrente"], "answer": 1, "explain": "El modelo federado de DLA tiene un costo de rendimiento frente a datos ya materializados en un formato optimizado para consultas recurrentes." },
+    { "q": "¿Qué es el Data Catalog en DLA y con qué otro servicio es compatible su formato de metadata?", "options": ["Es un dashboard de BI, sin compatibilidad con otros servicios", "El registro central de metadata que asocia Schemas con fuentes físicas, compatible con el metastore de Hive/Presto usado también por EMR", "Es el nombre del Virtual Cluster", "Solo funciona con Table Store"], "answer": 1, "explain": "La compatibilidad con el formato de Hive/Presto permite compartir el mismo catálogo de tablas entre DLA y EMR sin duplicar definiciones." },
+    { "q": "¿Cómo se factura el uso de Data Lake Analytics?", "options": ["Es completamente gratuito siempre", "Por unidades de cómputo (ACU) consumidas durante cada consulta, sin cargo por infraestructura ociosa", "Por el número de tablas externas definidas, independiente del uso", "Por una suscripción mensual fija obligatoria"], "answer": 1, "explain": "DLA cobra según el cómputo realmente consumido en cada consulta, coherente con su propósito de análisis exploratorio esporádico." },
+    { "q": "¿Qué antipatrón describe consultar archivos CSV masivos sin particionar por carpeta en OSS mediante DLA?", "options": ["Es la práctica recomendada siempre", "Fuerza a DLA a leer todo el contenido en cada consulta, degradando rendimiento y aumentando costo", "Mejora automáticamente el rendimiento de las consultas", "No tiene ningún impacto práctico"], "answer": 1, "explain": "Sin particionamiento por carpeta, DLA no puede aplicar poda de partición y debe escanear el conjunto completo en cada consulta." },
+    { "q": "Un dataset explorado con éxito en DLA resulta tener uso recurrente diario de alto volumen. ¿Cuál es el siguiente paso recomendado?", "options": ["Seguir usando DLA indefinidamente sin cambios", "Formalizar su ingesta hacia MaxCompute (vía DataWorks Data Integration) para las cargas de producción recurrentes", "Eliminar el dataset una vez explorado", "Migrarlo obligatoriamente a Table Store"], "answer": 1, "explain": "Una vez confirmado el valor recurrente del dataset, materializarlo en MaxCompute ofrece mejor costo y rendimiento a largo plazo que federar cada consulta." },
+    { "q": "¿Qué diferencia principal existe entre DLA y EMR en cuanto a administración?", "options": ["Son exactamente el mismo servicio", "DLA es serverless puro sin nodos que configurar; EMR ofrece clústeres que el cliente dimensiona y administra con más control fino", "EMR no soporta SQL de ningún tipo", "DLA requiere configurar manualmente cada nodo del clúster"], "answer": 1, "explain": "DLA elimina la gestión de infraestructura a cambio de menos control de ajuste fino, mientras EMR da más control pero exige administrar el clúster." }
   ],
-  "exam_focus": "Data modeling star/snowflake, feature engineering, KPI governance, cohorts.",
+  "exam_focus": "El examen suele evaluar: (a) cuándo DLA es preferible frente a un ETL tradicional hacia MaxCompute, (b) los conceptos de Virtual Cluster, Schema, tabla externa y Data Catalog, (c) el valor de las consultas federadas entre fuentes heterogéneas, (d) el impacto del formato de archivo (CSV vs. Parquet/ORC) y el particionamiento en el rendimiento, (e) la complementariedad entre DLA, MaxCompute y EMR en un flujo de datos real.",
   "official_intro": "Data Lake Analytics does not require any ETL tools. This service allows you to use standard SQL syntax and business intelligence (BI) tools to efficiently analyze your data stored in the cloud with extremely low costs. Through the introduction and usage of the product, this course enables learners to quickly get started with Data Lake Analytics.",
   "recommended_for": "This training is for people who have basic coding and data analysis experience",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datalakeanalytics",

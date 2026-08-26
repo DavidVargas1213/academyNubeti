@@ -2,479 +2,156 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-staticweb",
   "title_en": "Using OSS to Publish a Static Website",
-  "title_es": "Usar OSS to Publish a Static Sitio Web",
+  "title_es": "Publicar un Sitio Web Estático con OSS",
+  "title_es_html": "Publicar un <em>Sitio Web Estático</em> con OSS",
   "duration_es": "26 minutos",
   "level_es": "Principiante",
   "category_es": "Almacenamiento",
   "subcategory_es": "Essential Storage Service",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_staticweb",
-  "lead": "Guía completa en español para el curso «Using OSS to Publish a Static Website» de Alibaba Cloud Academy. Cubre en profundidad Object Storage Service (OSS). OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-region, versionado, lifecycle y control fino de permisos. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Using OSS to Publish a Static Website» de Alibaba Cloud Academy: un curso corto y muy práctico sobre cómo publicar un sitio sin backend dinámico (HTML/CSS/JS, una SPA compilada, documentación estática) directamente desde un bucket de Object Storage Service. No profundiza en toda la superficie de OSS — se enfoca en la receta concreta de hosting estático: preparar el bucket, activarlo como sitio web, enlazar un dominio propio y servir en HTTPS con CDN.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Object Storage Service (OSS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Bucket, Object, Key, Standard, Infrequent Access (IA).",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Object Storage Service (OSS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué OSS es una alternativa válida a un servidor web dedicado para sitios sin lógica de servidor.",
+    "<strong>Preparar</strong> un bucket para servir HTML/CSS/JS con los permisos y tipos de contenido correctos.",
+    "<strong>Configurar</strong> Static Website Hosting: documento índice y documento de error.",
+    "<strong>Enlazar</strong> un dominio propio mediante CNAME y proteger el sitio con HTTPS.",
+    "<strong>Optimizar</strong> la entrega con CDN y cabeceras de caché adecuadas.",
+    "<strong>Diagnosticar</strong> los errores más comunes al publicar un sitio estático sobre OSS."
   ],
-  "architecture": "Bucket con Standard para hot data + regla lifecycle que baja a IA a 30 días, Archive a 90, Cold Archive a 365. CDN al frente para reducir egress. Cross-region replication a bucket en otra región como DR. RAM policy limitando qué usuarios ven qué prefijos.",
+  "architecture": "Un bucket configurado con Static Website Hosting define un documento índice (p.ej. index.html) y un documento de error (p.ej. 404.html); su ACL o Bucket Policy permite lectura pública únicamente sobre los archivos del sitio. El dominio propio del cliente se enlaza al bucket mediante un registro CNAME apuntando al endpoint público del bucket. Delante de ese endpoint se coloca un CDN, que además de reducir latencia para usuarios distribuidos añade el certificado SSL/TLS necesario para servir en HTTPS con el dominio propio (OSS por sí solo no emite un certificado para un dominio personalizado). Cada objeto lleva cabeceras Cache-Control que controlan cuánto tiempo el navegador y el CDN pueden servir una copia en caché antes de revalidar contra el bucket; tras cada despliegue conviene invalidar (purgar) la caché del CDN para los archivos que cambiaron.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Object Storage Service (OSS)",
-      "title_en": "Introduction to Object Storage Service (OSS)",
-      "intro": "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-region, versionado, lifecycle y control fino de permisos. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué OSS para un sitio estático",
+      "title_en": "Why OSS for a Static Site",
+      "intro": "Antes de la parte práctica conviene entender qué tipo de sitio encaja en este patrón, y cuál no, para no forzar OSS a hacer algo para lo que no está pensado.",
       "points": [
-        "<strong>Problema que resuelve</strong>: OSS es almacenamiento de objetos ilimitado y durable (11 nueves).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Object Storage Service (OSS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Encaja bien</strong>: landing pages, portafolios, documentación técnica generada estáticamente, y aplicaciones de tipo SPA (React, Vue, Angular) cuyo build final es solo HTML/CSS/JS servido al navegador.",
+        "<strong>No encaja</strong>: cualquier sitio que necesite ejecutar código en el servidor en cada petición (autenticación de sesión server-side, renderizado dinámico por usuario, escritura directa a una base de datos desde el backend) — para eso se necesita un servicio de cómputo (ECS, Function Compute) delante o detrás.",
+        "<strong>Ventaja principal</strong>: no hay servidor que parchear, escalar ni caer — el bucket absorbe prácticamente cualquier volumen de tráfico de lectura sin configuración adicional.",
+        "<strong>Costo</strong>: se paga por almacenamiento (mínimo, para un sitio de pocos MB) y por tráfico de salida — de ahí que anteponer un CDN no sea solo una mejora de velocidad, sino también de costo a partir de cierto volumen de visitas."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Object Storage Service (OSS) es una pieza fundamental de Almacenamiento en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "La pregunta que decide si OSS sirve para tu sitio no es 'qué tan grande es', sino '¿necesita ejecutar lógica en el servidor por cada visita?'. Si la respuesta es no, OSS es una opción legítima y muy simple de operar." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Object Storage Service (OSS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Preparar el bucket y subir el sitio",
+      "title_en": "Prepare the Bucket and Upload the Site",
+      "intro": "El primer paso práctico es crear el bucket en la región más cercana a la mayoría de los usuarios del sitio y subir los archivos manteniendo la misma estructura de carpetas que tendría en un servidor web.",
       "points": [
-        "<strong>Patrón canónico</strong>: Bucket con Standard para hot data + regla lifecycle que baja a IA a 30 días, Archive a 90, Cold Archive a 365. CDN al frente para reducir egress. Cross-region replication a bucket en otra región como DR. RAM policy limitando qué usuarios ven qué prefijos.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Región</strong>: elegir la región geográficamente más cercana al público objetivo reduce la latencia base, sobre todo si más adelante no se usa CDN.",
+        "<strong>Estructura de Keys</strong>: al subir el sitio, cada ruta relativa del build (p.ej. <code>assets/css/main.css</code>) se convierte en la Key del objeto — hay que preservar exactamente esa estructura para que los enlaces relativos del HTML sigan funcionando.",
+        "<strong>Content-Type correcto</strong>: cada objeto debe llevar el metadato Content-Type correcto (<code>text/html</code>, <code>text/css</code>, <code>application/javascript</code>...); si se sube con una herramienta que no lo detecta bien, el navegador puede interpretar el archivo de forma incorrecta.",
+        "<strong>Permisos mínimos necesarios</strong>: en vez de marcar todo el bucket como público, es preferible restringir la lectura pública solo al prefijo donde vive el sitio, si el bucket también almacena otros datos no destinados al público."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Object Storage Service (OSS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip práctico", "text": "Sube el sitio con una herramienta que preserve Content-Type automáticamente (el plugin de tu CI/CD o <code>ossutil</code>) en vez de arrastrar archivos manualmente uno por uno desde la consola." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Configurar Static Website Hosting",
+      "title_en": "Configure Static Website Hosting",
+      "intro": "Con los archivos ya en el bucket, hay que decirle explícitamente a OSS que se comporte como un servidor web, no solo como almacenamiento de objetos.",
       "points": [
-        "<strong>Bucket</strong> <em>(Bucket)</em>: Contenedor lógico con nombre global. Vive en una región.",
-        "<strong>Objeto</strong> <em>(Object)</em>: Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "<strong>Key</strong> <em>(Key)</em>: Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "<strong>Standard</strong> <em>(Standard)</em>: Acceso frecuente, mayor $/GB, menor $/GET.",
-        "<strong>IA</strong> <em>(Infrequent Access (IA))</em>: Acceso poco frecuente, mínimo 30 días de almacenaje.",
-        "<strong>Archive</strong> <em>(Archive)</em>: Frío, mínimo 60 días, restauración en minutos.",
-        "<strong>Cold Archive</strong> <em>(Cold Archive)</em>: Muy frío, mínimo 180 días, restauración horas.",
-        "<strong>Ciclo de vida</strong> <em>(Lifecycle)</em>: Regla automática: mover clase o borrar tras X días."
+        "<strong>Documento índice</strong>: el archivo que se sirve cuando la petición apunta a una carpeta o a la raíz del sitio (p.ej. <code>index.html</code>) — equivalente al comportamiento por defecto de cualquier servidor web.",
+        "<strong>Documento de error</strong>: el archivo que se sirve cuando la Key solicitada no existe (p.ej. <code>404.html</code> o, en el caso de una SPA con rutas del lado del cliente, a veces se apunta de nuevo a <code>index.html</code> para que el router de JavaScript tome el control).",
+        "<strong>Activación</strong>: esta configuración se aplica a nivel de bucket completo — un mismo bucket no puede servir dos sitios estáticos independientes con reglas de índice/error distintas sin usar prefijos y reglas de enrutamiento adicionales.",
+        "<strong>Prueba directa</strong>: antes de enlazar un dominio propio, el sitio ya es accesible por la URL pública del bucket — es el paso correcto para verificar que todo funciona antes de tocar DNS."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Antipatrón frecuente", "text": "Olvidar configurar el documento de error para una SPA hace que cualquier ruta que no sea la raíz (p.ej. <code>/perfil</code> recargada directamente) devuelva un error en vez de dejar que el router de JavaScript la resuelva." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Dominio personalizado y HTTPS",
+      "title_en": "Custom Domain and HTTPS",
+      "intro": "Servir el sitio desde la URL genérica del bucket funciona para pruebas, pero un sitio real necesita un dominio propio y una conexión cifrada.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>CNAME</strong>: el dominio propio (p.ej. <code>www.miempresa.com</code>) se enlaza al bucket creando un registro CNAME en el proveedor DNS que apunte al endpoint público del bucket.",
+        "<strong>OSS no emite certificados para dominios propios por sí solo</strong>: para servir el dominio personalizado en HTTPS, es necesario colocar un CDN delante del bucket y asociarle un certificado SSL/TLS — ya sea uno propio, uno emitido gratuitamente por el CDN, o uno gestionado en un servicio de certificados.",
+        "<strong>Verificación de dominio</strong>: antes de que el CNAME funcione, suele requerirse validar la propiedad del dominio en la consola, y en algunos casos esperar la propagación DNS (minutos a horas según el TTL configurado).",
+        "<strong>Redirección HTTP → HTTPS</strong>: una vez el certificado está activo en el CDN, conviene forzar la redirección de todo el tráfico HTTP hacia HTTPS para evitar servir contenido sin cifrar."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El bucket por sí solo resuelve el 'dónde están los archivos'; el dominio propio y HTTPS son responsabilidad de la capa DNS + CDN que se coloca delante, no de OSS directamente." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Optimización con CDN y cache",
+      "title_en": "Optimizing with CDN and Caching",
+      "intro": "Una vez el sitio funciona, la siguiente pregunta es cómo servirlo rápido y barato a usuarios distribuidos geográficamente.",
       "points": [
-        "<strong>HA</strong>: Habilitar versioning y MFA delete en buckets críticos",
-        "<strong>HA</strong>: CRR para DR + Object Lock si necesitas WORM",
-        "<strong>Seguridad</strong>: Bloquear ACL public — usar bucket policy explícita",
-        "<strong>Seguridad</strong>: Habilitar versioning y MFA delete en buckets críticos",
-        "<strong>Seguridad</strong>: SSE-KMS para datos regulados",
-        "<strong>Costo</strong>: Lifecycle desde el día 1 — evita facturas sorpresa",
-        "<strong>Buenas prácticas</strong>: CDN al frente si sirves contenido público"
+        "<strong>Cache-Control</strong>: cada objeto puede llevar una cabecera que indique cuánto tiempo el navegador y el CDN pueden servir una copia local antes de revalidar — archivos con nombre versionado (hash en el nombre) pueden cachearse por mucho tiempo; <code>index.html</code> suele cachearse poco o nada para que los usuarios reciban el último deploy rápido.",
+        "<strong>Reducción de egress</strong>: cada solicitud servida desde el edge del CDN en vez de directamente desde el bucket reduce tanto la latencia percibida como el costo de tráfico saliente de OSS.",
+        "<strong>Invalidación tras deploy</strong>: si los nombres de archivo no cambian entre versiones (p.ej. siempre <code>main.js</code>), hay que purgar manualmente la caché del CDN tras cada publicación, o los usuarios seguirán viendo la versión anterior hasta que expire el TTL.",
+        "<strong>Compresión</strong>: habilitar compresión (gzip/Brotli) en el CDN para los archivos de texto (HTML, CSS, JS) reduce el tiempo de carga sin cambiar nada en el bucket."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario menciona archivos con nombre fijo que no reflejan los cambios del usuario tras un deploy, la causa casi siempre es una caché no invalidada, no un problema del propio bucket." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Errores comunes al publicar",
+      "title_en": "Common Publishing Mistakes",
+      "intro": "La mayoría de problemas al publicar un sitio estático en OSS son de configuración, no de capacidad del servicio — y suelen repetirse entre equipos que lo hacen por primera vez.",
       "points": [
-        "<strong>Antipattern</strong>: Buckets public-read-write — riesgo de data leak y facturas por egress abusivo",
-        "<strong>Antipattern</strong>: Guardar millones de objetos pequeños en Standard sin lifecycle",
-        "<strong>Antipattern</strong>: No usar multipart para archivos >100 MB — reinicios de upload dolorosos",
-        "<strong>Antipattern</strong>: Confundir clase Archive con Cold Archive (SLA de restauración muy distintos)",
-        "<strong>Antipattern</strong>: Compartir AccessKey en vez de presigned URLs",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Permisos insuficientes</strong>: dejar el bucket en modo private sin ninguna regla de lectura pública para el prefijo del sitio hace que todo el sitio devuelva error de acceso denegado.",
+        "<strong>Documento de error mal configurado</strong>: en una SPA, no redirigir las rutas desconocidas a <code>index.html</code> rompe la navegación directa a rutas internas.",
+        "<strong>Content-Type incorrecto</strong>: archivos JS o CSS servidos con el Content-Type equivocado pueden ser bloqueados o mal interpretados por el navegador.",
+        "<strong>Caché no invalidada</strong>: publicar una nueva versión y no purgar el CDN, dejando a los usuarios ver contenido desactualizado durante horas.",
+        "<strong>HTTP sin redirección a HTTPS</strong>: dejar accesible la versión sin cifrar del sitio tras haber configurado el certificado en el CDN."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante un síntoma de 'el sitio no se ve bien', diagnostica en este orden: permisos del bucket → configuración de índice/error → Content-Type de los archivos → estado de la caché del CDN. Ese orden cubre la gran mayoría de casos reales." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Backups incrementales y respaldos de bases de datos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Almacenamiento de imágenes/video para web con CDN"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Data lake — MaxCompute y EMR leen directamente de OSS"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Distribución de firmware/software con URLs presigned"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Archivo legal a largo plazo (Cold Archive, ¢/GB/mes)"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Hosting de sitios estáticos"
-    }
+    { "title": "Escenario 1", "text": "Landing page de marketing para el lanzamiento de un producto" },
+    { "title": "Escenario 2", "text": "Build estático de una SPA en React o Vue servido sin backend propio" },
+    { "title": "Escenario 3", "text": "Portafolio personal o sitio de currículum" },
+    { "title": "Escenario 4", "text": "Documentación técnica generada estáticamente (a partir de Markdown)" },
+    { "title": "Escenario 5", "text": "Página de aterrizaje temporal para una campaña con tráfico impredecible" }
   ],
   "mistakes": [
-    "Buckets public-read-write — riesgo de data leak y facturas por egress abusivo",
-    "Guardar millones de objetos pequeños en Standard sin lifecycle",
-    "No usar multipart para archivos >100 MB — reinicios de upload dolorosos",
-    "Confundir clase Archive con Cold Archive (SLA de restauración muy distintos)",
-    "Compartir AccessKey en vez de presigned URLs"
+    "Dejar el bucket completamente privado sin regla de lectura pública sobre el prefijo del sitio",
+    "No configurar el documento de error para redirigir rutas de una SPA hacia index.html",
+    "Subir archivos con un Content-Type incorrecto o ausente",
+    "No purgar la caché del CDN después de publicar una nueva versión con nombres de archivo fijos",
+    "Dejar accesible la versión HTTP sin redirección forzada a HTTPS",
+    "Marcar todo el bucket como público cuando también almacena datos que no deberían ser públicos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun oss mb oss://mi-bucket",
-      "desc": "Crear bucket"
-    },
-    {
-      "cmd": "aliyun oss cp archivo.zip oss://mi-bucket/",
-      "desc": "Subir objeto"
-    },
-    {
-      "cmd": "aliyun oss ls oss://mi-bucket --recursive",
-      "desc": "Listar objetos"
-    },
-    {
-      "cmd": "aliyun oss sign oss://mi-bucket/archivo.zip --timeout 3600",
-      "desc": "Presigned URL 1h"
-    }
+    { "cmd": "aliyun oss mb oss://mi-sitio-web --region cn-hangzhou", "desc": "Crear el bucket que alojará el sitio" },
+    { "cmd": "ossutil cp -r ./dist oss://mi-sitio-web/ --meta Cache-Control:max-age=3600", "desc": "Subir el build del sitio preservando estructura y fijando Cache-Control" },
+    { "cmd": "aliyun oss website --method put oss://mi-sitio-web --index-document index.html --error-document 404.html", "desc": "Activar Static Website Hosting con documento índice y de error" },
+    { "cmd": "aliyun oss set-acl oss://mi-sitio-web/index.html --acl public-read", "desc": "Dar lectura pública a un objeto del sitio" },
+    { "cmd": "aliyun cdn RefreshObjectCaches --ObjectPath https://www.misitio.com/index.html --ObjectType File", "desc": "Purgar la caché del CDN tras un nuevo deploy" }
   ],
   "glossary": [
-    {
-      "en": "Bucket",
-      "es": "Bucket",
-      "def": "Contenedor lógico con nombre global. Vive en una región."
-    },
-    {
-      "en": "Object",
-      "es": "Objeto",
-      "def": "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB."
-    },
-    {
-      "en": "Key",
-      "es": "Key",
-      "def": "Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-    },
-    {
-      "en": "Standard",
-      "es": "Standard",
-      "def": "Acceso frecuente, mayor $/GB, menor $/GET."
-    },
-    {
-      "en": "Infrequent Access (IA)",
-      "es": "IA",
-      "def": "Acceso poco frecuente, mínimo 30 días de almacenaje."
-    },
-    {
-      "en": "Archive",
-      "es": "Archive",
-      "def": "Frío, mínimo 60 días, restauración en minutos."
-    },
-    {
-      "en": "Cold Archive",
-      "es": "Cold Archive",
-      "def": "Muy frío, mínimo 180 días, restauración horas."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Ciclo de vida",
-      "def": "Regla automática: mover clase o borrar tras X días."
-    },
-    {
-      "en": "Versioning",
-      "es": "Versionado",
-      "def": "Mantiene versiones históricas; protege de borrado accidental."
-    },
-    {
-      "en": "CRR",
-      "es": "Cross-Region Replication",
-      "def": "Réplica asíncrona a bucket en otra región."
-    },
-    {
-      "en": "ACL",
-      "es": "ACL",
-      "def": "private (default) / public-read / public-read-write. Preferir bucket policy."
-    },
-    {
-      "en": "Bucket Policy",
-      "es": "Bucket Policy",
-      "def": "JSON con permisos granulares por RAM/IP/prefijo/hora."
-    },
-    {
-      "en": "Presigned URL",
-      "es": "URL prefirmada",
-      "def": "Enlace temporal firmado — acceso sin credenciales."
-    },
-    {
-      "en": "SSE-OSS / SSE-KMS",
-      "es": "Cifrado servidor",
-      "def": "AES-256 gestionado por OSS o con claves KMS."
-    },
-    {
-      "en": "Multipart Upload",
-      "es": "Upload multiparte",
-      "def": "Subir archivos grandes en partes paralelas."
-    },
-    {
-      "en": "Transfer Acceleration",
-      "es": "Aceleración",
-      "def": "Endpoint edge que acelera uploads globales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Static Website Hosting", "es": "Hosting de sitio estático", "def": "Configuración de un bucket para servir HTML/CSS/JS directamente por HTTP, sin servidor de aplicación." },
+    { "en": "Index Document", "es": "Documento índice", "def": "Archivo servido por defecto al pedir la raíz del sitio o una carpeta, típicamente index.html." },
+    { "en": "Error Document", "es": "Documento de error", "def": "Archivo servido cuando la Key solicitada no existe en el bucket." },
+    { "en": "CNAME", "es": "CNAME", "def": "Registro DNS que apunta un dominio propio al endpoint público del bucket." },
+    { "en": "Custom Domain", "es": "Dominio personalizado", "def": "Dominio propio del cliente enlazado al bucket en vez de usar la URL genérica de OSS." },
+    { "en": "CDN", "es": "CDN", "def": "Red de distribución de contenido que cachea el sitio en nodos edge cercanos al usuario, reduciendo latencia y egress." },
+    { "en": "SSL/TLS Certificate", "es": "Certificado SSL/TLS", "def": "Certificado que habilita HTTPS para el dominio propio, normalmente asociado al CDN, no al bucket directamente." },
+    { "en": "Cache-Control", "es": "Cache-Control", "def": "Cabecera HTTP que define cuánto tiempo un objeto puede servirse desde caché antes de revalidar." },
+    { "en": "Content-Type / MIME Type", "es": "Tipo de contenido", "def": "Metadato que indica al navegador cómo interpretar cada archivo (HTML, CSS, JS, imagen...)." },
+    { "en": "ACL public-read", "es": "ACL de lectura pública", "def": "Permiso que permite que cualquiera lea un objeto o bucket sin autenticación." },
+    { "en": "Bucket Policy", "es": "Política de bucket", "def": "Documento JSON alternativo al ACL para dar permisos granulares de lectura sobre un prefijo específico." },
+    { "en": "Cache Purge / Refresh", "es": "Purga de caché", "def": "Acción de invalidar manualmente el contenido cacheado en el CDN tras publicar una nueva versión." },
+    { "en": "SPA Routing", "es": "Enrutamiento de SPA", "def": "Patrón donde el router de JavaScript maneja las rutas en el navegador; requiere redirigir errores 404 a index.html." },
+    { "en": "Endpoint", "es": "Endpoint", "def": "URL base pública del bucket antes de enlazar un dominio propio." },
+    { "en": "HTTP to HTTPS Redirect", "es": "Redirección HTTP a HTTPS", "def": "Regla que fuerza a los visitantes a usar la conexión cifrada del sitio." },
+    { "en": "Gzip / Brotli Compression", "es": "Compresión Gzip/Brotli", "def": "Compresión de archivos de texto en el CDN para reducir el tiempo de carga." },
+    { "en": "Versioned Filename (cache busting)", "es": "Nombre de archivo versionado", "def": "Técnica de incluir un hash en el nombre del archivo para poder cachearlo indefinidamente sin servir contenido obsoleto." },
+    { "en": "Region", "es": "Región", "def": "Ubicación geográfica del bucket, elegida idealmente cerca de la mayoría de los usuarios del sitio." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Object Storage Service (OSS)?",
-      "options": [
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-region, versionado, lifecycle y control fino de permisos."
-    },
-    {
-      "q": "¿Qué es <strong>Bucket</strong> (Bucket) en Object Storage Service (OSS)?",
-      "options": [
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "Acceso frecuente, mayor $/GB, menor $/GET."
-      ],
-      "answer": 0,
-      "explain": "Bucket (Bucket): Contenedor lógico con nombre global. Vive en una región."
-    },
-    {
-      "q": "¿Qué es <strong>Object</strong> (Objeto) en Object Storage Service (OSS)?",
-      "options": [
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "Acceso frecuente, mayor $/GB, menor $/GET."
-      ],
-      "answer": 0,
-      "explain": "Object (Objeto): Archivo + metadatos + key (nombre con /). Hasta 48.8 TB."
-    },
-    {
-      "q": "¿Qué es <strong>Key</strong> (Key) en Object Storage Service (OSS)?",
-      "options": [
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Acceso frecuente, mayor $/GB, menor $/GET."
-      ],
-      "answer": 0,
-      "explain": "Key (Key): Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-    },
-    {
-      "q": "¿Qué es <strong>Standard</strong> (Standard) en Object Storage Service (OSS)?",
-      "options": [
-        "Acceso frecuente, mayor $/GB, menor $/GET.",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-      ],
-      "answer": 0,
-      "explain": "Standard (Standard): Acceso frecuente, mayor $/GB, menor $/GET."
-    },
-    {
-      "q": "¿Qué es <strong>Infrequent Access (IA)</strong> (IA) en Object Storage Service (OSS)?",
-      "options": [
-        "Acceso poco frecuente, mínimo 30 días de almacenaje.",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-      ],
-      "answer": 0,
-      "explain": "Infrequent Access (IA) (IA): Acceso poco frecuente, mínimo 30 días de almacenaje."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Object Storage Service (OSS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Object Storage Service (OSS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Object Storage Service (OSS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Object Storage Service (OSS) es la elección típica:",
-      "options": [
-        "Backups incrementales y respaldos de bases de datos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Backups incrementales y respaldos de bases de datos."
-    }
+    { "q": "¿Qué tipo de sitio encaja bien con OSS como Static Website Hosting?", "options": ["Un sitio que ejecuta lógica de servidor en cada petición", "Una landing page o el build compilado de una SPA sin backend propio", "Una aplicación que escribe directamente a una base de datos desde el servidor en cada request", "Cualquier sitio que necesite sesiones autenticadas del lado del servidor"], "answer": 1, "explain": "OSS sirve contenido estático (HTML/CSS/JS); cualquier lógica de servidor por petición necesita un servicio de cómputo aparte." },
+    { "q": "¿Qué archivo se sirve por defecto cuando un visitante pide la raíz del sitio alojado en OSS?", "options": ["El primer archivo alfabéticamente del bucket", "El Error Document", "El Index Document configurado (p.ej. index.html)", "No se sirve nada hasta configurar un dominio propio"], "answer": 2, "explain": "El Index Document es el archivo designado para responder peticiones a la raíz o a una carpeta." },
+    { "q": "Una SPA con rutas del lado del cliente muestra error al recargar una ruta interna (p.ej. /perfil) directamente en el navegador. ¿Cuál es la causa más probable?", "options": ["El bucket está en la región equivocada", "El documento de error no está redirigiendo hacia index.html", "El certificado SSL expiró", "El CDN no tiene suficiente capacidad"], "answer": 1, "explain": "Sin redirigir las rutas desconocidas hacia index.html, el router de JavaScript nunca llega a tomar el control de esa ruta." },
+    { "q": "¿Por qué es necesario colocar un CDN delante del bucket para servir el dominio propio en HTTPS?", "options": ["Porque OSS no admite tráfico HTTPS bajo ninguna circunstancia", "Porque OSS por sí solo no emite certificados SSL/TLS para dominios personalizados", "Porque el CDN es obligatorio para cualquier tráfico, sin excepción", "Porque HTTPS solo funciona si el bucket es privado"], "answer": 1, "explain": "El bucket sirve el contenido; el certificado para el dominio propio se asocia normalmente al CDN colocado delante, no al bucket directamente." },
+    { "q": "¿Qué mecanismo enlaza un dominio propio (p.ej. www.miempresa.com) con el bucket de OSS?", "options": ["Un registro CNAME apuntando al endpoint del bucket", "Una regla de Lifecycle", "Una Bucket Policy", "Un cambio en el ACL del bucket"], "answer": 0, "explain": "El CNAME en el proveedor DNS es lo que redirige el dominio propio hacia el endpoint público del bucket." },
+    { "q": "Tras publicar una nueva versión del sitio, los usuarios siguen viendo contenido antiguo durante varias horas. ¿Cuál es la causa más probable si los nombres de archivo no cambiaron?", "options": ["El bucket se quedó sin espacio", "La caché del CDN no fue invalidada tras el deploy", "El documento índice se corrompió", "El ACL cambió automáticamente a private"], "answer": 1, "explain": "Si el CDN sigue sirviendo una copia cacheada con el mismo nombre de archivo, hay que purgarla explícitamente tras cada deploy." },
+    { "q": "¿Qué metadato determina cómo interpreta el navegador un archivo servido desde OSS?", "options": ["La Key del objeto", "El Content-Type (tipo MIME)", "El nombre del bucket", "La región del bucket"], "answer": 1, "explain": "El Content-Type le indica al navegador si debe tratar el archivo como HTML, CSS, JavaScript, imagen, etc." },
+    { "q": "¿Cuál es una técnica común para poder cachear un archivo de forma casi indefinida sin servir contenido obsoleto tras un deploy?", "options": ["Deshabilitar el CDN por completo", "Incluir un hash o versión en el nombre del archivo (cache busting)", "Cambiar el ACL a public-read-write", "Aumentar el tamaño del bucket"], "answer": 1, "explain": "Un nombre de archivo versionado cambia en cada build, así que el CDN nunca sirve una copia obsoleta bajo el mismo nombre." },
+    { "q": "¿Qué ocurre si se deja el bucket en modo private sin ninguna regla de lectura pública para el prefijo del sitio?", "options": ["El sitio funciona igual, solo más lento", "Los visitantes reciben un error de acceso denegado al intentar cargar el sitio", "OSS lo hace público automáticamente al activar Static Website Hosting", "Solo afecta a las imágenes, no al HTML"], "answer": 1, "explain": "Sin permiso de lectura pública (ACL o Bucket Policy), cualquier visitante anónimo recibe un error de acceso denegado." },
+    { "q": "¿Por qué conviene elegir la región del bucket cerca de la mayoría de los usuarios del sitio, incluso si luego se usa un CDN?", "options": ["Es irrelevante una vez hay CDN", "Reduce la latencia del origen cuando el CDN necesita ir al bucket por contenido no cacheado", "OSS solo funciona en la región donde vive el usuario", "Cambia el precio por GB almacenado"], "answer": 1, "explain": "El CDN reduce la mayoría de las peticiones al origen, pero las que sí llegan al bucket (cache miss) siguen beneficiándose de una región cercana." },
+    { "q": "¿Cuál es la diferencia entre el Index Document y el Error Document en Static Website Hosting?", "options": ["Son el mismo archivo siempre", "Index Document responde a la raíz/carpetas; Error Document responde cuando la Key solicitada no existe", "Error Document solo aplica a archivos de imagen", "Index Document es obligatorio solo en producción"], "answer": 1, "explain": "Cada uno resuelve un caso distinto: acceso a la raíz o carpeta (Index) frente a una Key inexistente (Error)." },
+    { "q": "Un equipo publica CSS y JS con Content-Type incorrecto. ¿Cuál es el riesgo principal?", "options": ["Ninguno, el navegador siempre lo detecta correctamente", "El navegador puede interpretar o bloquear el archivo de forma incorrecta", "El bucket rechaza la subida automáticamente", "El precio de almacenamiento aumenta"], "answer": 1, "explain": "Un Content-Type incorrecto puede hacer que el navegador no ejecute o no aplique correctamente el CSS/JS del sitio." }
   ],
-  "exam_focus": "Preguntas: (a) qué storage class elegir según patrón de acceso, (b) lifecycle design, (c) permisos ACL vs bucket policy vs RAM policy, (d) versioning + CRR para DR, (e) presigned URLs vs public ACL.",
+  "exam_focus": "El examen suele evaluar: (a) configuración correcta de Index/Error Document, (b) por qué se necesita un CDN para HTTPS en un dominio propio, (c) diagnóstico de sitios que no cargan (permisos, Content-Type, caché), (d) diferencia entre optimizar con CDN/Cache-Control y la configuración base del bucket.",
   "official_intro": "Learn how to publish a static website using Alibaba Cloud services and complete the ICP process.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_staticweb",

@@ -2,428 +2,182 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-autoscaling",
   "title_en": "Use Cloud Resources Flexibly According to Business Requirement",
-  "title_es": "Uso Flexible de Recursos Cloud según Requerimientos de Negocio",
+  "title_es": "Usar Recursos Cloud de Forma Flexible según las Necesidades del Negocio",
+  "title_es_html": "Usar Recursos Cloud de Forma <em>Flexible</em> según las Necesidades del Negocio",
   "duration_es": "71 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_autoscaling",
-  "lead": "Guía completa en español para el curso «Use Cloud Resources Flexibly According to Business Requirement» de Alibaba Cloud Academy. Cubre en profundidad Optimización de Costos. Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Use Cloud Resources Flexibly According to Business Requirement» de Alibaba Cloud Academy, centrada en Auto Scaling (弹性伸缩): el servicio que crea y destruye instancias ECS automáticamente según reglas de demanda, calendario o salud. Cubre grupos de escalado, reglas de escalado, cooldown, lifecycle hooks e integración con SLB y CloudMonitor — el conjunto de conceptos que el examen evalúa con más frecuencia sobre elasticidad.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Optimización de Costos</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pay-as-you-go, Subscription, Reserved Instance, Savings Plan, Spot / Preemptible.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Optimización de Costos y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una arquitectura elástica reduce tanto el riesgo de caída como el sobrecosto frente a una capacidad fija.",
+    "<strong>Configurar</strong> un grupo de escalado (Scaling Group) con sus límites mínimo, máximo y deseado de instancias.",
+    "<strong>Diseñar</strong> reglas de escalado simples, por pasos (step) y de seguimiento de objetivo (target tracking) según el patrón de carga.",
+    "<strong>Aplicar</strong> el período de enfriamiento (cooldown) para evitar oscilaciones de escalado (flapping).",
+    "<strong>Usar</strong> lifecycle hooks para ejecutar tareas antes de que una instancia entre o salga del grupo.",
+    "<strong>Integrar</strong> Auto Scaling con SLB, RDS whitelist y CloudMonitor para un flujo de escalado end-to-end.",
+    "<strong>Resolver</strong> con confianza las preguntas del examen sobre elasticidad y arquitecturas de auto-escalado."
   ],
-  "architecture": "Cost Center consolida spend → tags por proyecto/equipo → alertas por budget → recomendaciones automáticas (right-sizing, reservas) → scripts de cleanup (unused EIPs, snapshots huérfanos).",
+  "architecture": "Un Scaling Group define un rango de instancias (mínimo, máximo, deseado) asociado a una Scaling Configuration (imagen, tipo de instancia, Security Group) y, opcionalmente, a un SLB y a instancias RDS cuya whitelist se actualiza automáticamente. Una o más Scaling Rules (simple, por pasos o target tracking) se disparan por alarmas de CloudMonitor (CPU, memoria, tráfico de red) o por un calendario (Scheduled Task). Cuando se dispara un scale-out, Auto Scaling lanza instancias nuevas desde la Scaling Configuration, ejecuta lifecycle hooks de «Pending Add» para inicializar software, y las registra en el SLB; en un scale-in, ejecuta lifecycle hooks de «Pending Remove» para drenar conexiones antes de liberar la instancia. Un período de cooldown evita que se disparen scaling activities en cadena antes de que el efecto de la anterior se refleje en las métricas.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Optimización de Costos",
-      "title_en": "Introduction to Optimización de Costos",
-      "intro": "Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué la capacidad fija no basta",
+      "title_en": "Why Fixed Capacity Falls Short",
+      "intro": "Antes de configurar Auto Scaling conviene entender el problema que resuelve: dimensionar manualmente para el pico deja recursos ociosos la mayor parte del tiempo, y dimensionar para el promedio deja el sistema sin capacidad en los picos.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Optimización de Costos se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El dilema de la capacidad fija</strong>: aprovisionar para el pico de tráfico significa pagar por capacidad ociosa el resto del tiempo; aprovisionar para el promedio significa caídas de servicio durante picos previstos o inesperados.",
+        "<strong>Elasticidad como respuesta</strong>: Auto Scaling ajusta automáticamente el número de instancias ECS activas según la demanda real, medida por métricas de CloudMonitor o según un calendario predefinido.",
+        "<strong>Costo y disponibilidad</strong>: el resultado directo es pagar solo por la capacidad que efectivamente se usa en cada momento, sin sacrificar disponibilidad durante los picos, siempre que las reglas de escalado estén bien calibradas.",
+        "<strong>No es exclusivo de web</strong>: aunque el caso de uso típico es tráfico web variable, Auto Scaling también aplica a colas de procesamiento batch, workers de renderizado y cualquier carga cuyo volumen de trabajo fluctúe con el tiempo."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Optimización de Costos es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen distingue entre escalar verticalmente (cambiar el tipo de una instancia existente, con downtime) y escalar horizontalmente (añadir/quitar instancias, sin downtime) — Auto Scaling gestiona exclusivamente el segundo caso."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Optimización de Costos no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · El grupo de escalado (Scaling Group)",
+      "title_en": "Scaling Groups",
+      "intro": "El Scaling Group es el contenedor central de Auto Scaling: define los límites dentro de los cuales el servicio puede operar y qué recursos asociados (SLB, RDS) debe mantener sincronizados.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cost Center consolida spend → tags por proyecto/equipo → alertas por budget → recomendaciones automáticas (right-sizing, reservas) → scripts de cleanup (unused EIPs, snapshots huérfanos).",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Optimización de Costos (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>PayG</strong> <em>(Pay-as-you-go)</em>: Facturación por uso (default).",
-        "<strong>Subscription</strong> <em>(Subscription)</em>: Compra anticipada mensual/anual.",
-        "<strong>RI</strong> <em>(Reserved Instance)</em>: Compromiso 1-3 años con descuento.",
-        "<strong>Savings Plan</strong> <em>(Savings Plan)</em>: Compromiso $/hora flexible.",
-        "<strong>Spot</strong> <em>(Spot / Preemptible)</em>: Descuento agresivo, interrumpible.",
-        "<strong>Cost Center</strong> <em>(Cost Center)</em>: Consolidación de spend.",
-        "<strong>Budget</strong> <em>(Budget)</em>: Presupuesto con alerta.",
-        "<strong>Right-sizing</strong> <em>(Right-sizing)</em>: Ajustar recursos a uso real."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Capacidad mínima, máxima y deseada</strong>: el mínimo garantiza un piso de instancias siempre activas; el máximo pone un techo de costo y evita un escalado descontrolado; la capacidad deseada es el número objetivo que Auto Scaling intenta mantener en cada momento.",
+        "<strong>Scaling Configuration</strong>: plantilla asociada al grupo que define imagen, tipo de instancia, Security Group y User Data — cada instancia nueva del grupo se lanza siguiendo esta configuración, garantizando instancias idénticas y reproducibles.",
+        "<strong>Multi-zona</strong>: un Scaling Group puede distribuir instancias en varias zonas de disponibilidad de la misma región, de forma que una falla de zona no reduzca la capacidad total a cero.",
+        "<strong>Vinculación con SLB</strong>: al asociar un SLB al grupo, cada instancia nueva se registra automáticamente como backend, y cada instancia retirada se desregistra sin intervención manual.",
+        "<strong>Vinculación con RDS</strong>: de forma similar, la IP de cada instancia nueva puede añadirse automáticamente a la whitelist de una instancia RDS, evitando gestionar esa lista a mano en cada escalado."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona «nunca debe haber menos de N instancias corriendo», la respuesta apunta a la capacidad mínima del Scaling Group, no a una regla de escalado."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Reglas de escalado: simple, por pasos y target tracking",
+      "title_en": "Scaling Rules",
+      "intro": "Una vez definido el grupo, las reglas de escalado determinan cuándo y cuánto ajustar la capacidad. El examen distingue con precisión los tres tipos disponibles.",
       "points": [
-        "<strong>Costo</strong>: Baseline con RI/Savings + picos PayG",
-        "<strong>Costo</strong>: Spot para batch idempotente",
-        "<strong>Costo</strong>: Lifecycle OSS Standard → IA → Archive",
-        "<strong>Buenas prácticas</strong>: Tag obligatorio (project/env/owner)",
-        "<strong>Buenas prácticas</strong>: Auto-stop dev/test fuera de horario"
+        "<strong>Regla simple</strong>: añade o quita un número fijo de instancias (o un porcentaje) cuando se dispara una alarma — sencilla de configurar pero poco granular ante distintos niveles de severidad de carga.",
+        "<strong>Regla por pasos (step scaling)</strong>: define distintos incrementos según el nivel de la métrica (p.ej. +1 instancia si CPU &gt; 60%, +3 instancias si CPU &gt; 90%) — responde de forma proporcional a la severidad del pico.",
+        "<strong>Target tracking</strong>: en vez de definir umbrales manualmente, se fija un valor objetivo (p.ej. CPU promedio al 50%) y Auto Scaling calcula automáticamente cuántas instancias añadir o quitar para mantenerse cerca de ese objetivo — la opción que menos ajuste manual requiere.",
+        "<strong>Scheduled Task</strong>: complementa las reglas basadas en métricas con ajustes de capacidad programados en el tiempo (p.ej. subir capacidad cada día laborable a las 8am), útil para patrones de tráfico predecibles.",
+        "<strong>Combinación de reglas</strong>: es habitual combinar target tracking como mecanismo principal con un Scheduled Task para anticipar picos conocidos (lanzamientos, campañas) antes de que la métrica los detecte."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "Simple = un solo salto fijo. Por pasos = varios saltos según severidad. Target tracking = mantener un valor objetivo sin definir umbrales manualmente. Scheduled = por calendario, no por métrica."
+      }
+    },
+    {
+      "title_es": "4 · Cooldown y lifecycle hooks",
+      "title_en": "Cooldown Period and Lifecycle Hooks",
+      "intro": "Dos mecanismos evitan que el auto-escalado se comporte de forma errática o destruya instancias antes de que terminen su trabajo: el período de enfriamiento y los lifecycle hooks.",
+      "points": [
+        "<strong>Cooldown period</strong>: intervalo mínimo entre dos operaciones de escalado consecutivas disparadas por eventos; sin cooldown, una métrica que oscila alrededor de un umbral puede disparar escalados en cadena (flapping), añadiendo y quitando instancias repetidamente.",
+        "<strong>Lifecycle hook «Pending Add»</strong>: pausa una instancia recién lanzada en un estado intermedio antes de unirse formalmente al grupo, dando tiempo a ejecutar scripts de inicialización (instalar dependencias, precalentar caché) antes de recibir tráfico real.",
+        "<strong>Lifecycle hook «Pending Remove»</strong>: pausa una instancia marcada para eliminación antes de destruirla, permitiendo drenar conexiones activas, subir logs finales o completar trabajos en curso — evita cortar tareas a la mitad durante un scale-in.",
+        "<strong>Límite práctico</strong>: se pueden definir varios lifecycle hooks por grupo, cada uno con su propio timeout, tras el cual la instancia continúa su transición automáticamente aunque el hook no haya terminado."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El cooldown evita escalar demasiado seguido; los lifecycle hooks evitan escalar demasiado rápido para una instancia individual. Son mecanismos complementarios, no intercambiables."
+      }
+    },
+    {
+      "title_es": "5 · Integración con el resto del ecosistema",
+      "title_en": "Integrating with SLB, RDS and CloudMonitor",
+      "intro": "Auto Scaling rara vez se usa aislado: su valor real aparece al integrarse con balanceo de carga, bases de datos y observabilidad.",
+      "points": [
+        "<strong>SLB</strong>: distribuye el tráfico entrante entre las instancias vivas del grupo en cada momento; sin esta integración, cada escalado requeriría reconfigurar manualmente los backends del balanceador.",
+        "<strong>RDS whitelist automática</strong>: evita que cada instancia nueva quede bloqueada al intentar conectarse a la base de datos por no estar en la lista blanca — Auto Scaling la actualiza como parte del propio flujo de scale-out/scale-in.",
+        "<strong>CloudMonitor</strong>: es la fuente de las métricas que disparan las reglas de escalado basadas en eventos; sin alarmas correctamente configuradas, target tracking y step scaling no tienen datos sobre los que actuar.",
+        "<strong>User Data / cloud-init</strong>: dentro de la Scaling Configuration, automatiza la instalación de software en cada instancia nueva, evitando depender de una imagen personalizada que haya que actualizar manualmente en cada cambio de versión."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado describe una instancia nueva que «no recibe tráfico inmediatamente» o «tarda en estar lista», la causa suele ser un lifecycle hook Pending Add ejecutando inicialización, no un fallo del sistema."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Buena parte de las preguntas difíciles sobre Auto Scaling están inspiradas en configuraciones mal calibradas observadas en clientes reales.",
       "points": [
-        "<strong>Antipattern</strong>: Todo PayG cuando hay carga estable",
-        "<strong>Antipattern</strong>: Sin tags — imposible atribuir",
-        "<strong>Antipattern</strong>: EIPs huérfanas facturando",
-        "<strong>Antipattern</strong>: Storage sin lifecycle",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: definir un máximo de instancias tan bajo que el grupo no puede absorber un pico real, generando una caída de servicio a pesar de tener Auto Scaling configurado.",
+        "<strong>Antipatrón</strong>: no configurar cooldown, provocando flapping (escalar arriba y abajo repetidamente) cuando la métrica oscila cerca del umbral.",
+        "<strong>Antipatrón</strong>: no usar un lifecycle hook Pending Remove en cargas con estado (colas, trabajos largos), cortando tareas a la mitad en cada scale-in.",
+        "<strong>Antipatrón</strong>: mezclar instancias creadas manualmente fuera del Scaling Group esperando que participen del auto-escalado sin adjuntarlas explícitamente.",
+        "<strong>Antipatrón</strong>: usar solo Scheduled Task para tráfico verdaderamente impredecible, ignorando la necesidad de reglas basadas en métricas.",
+        "<strong>Regla de oro</strong>: ante dos configuraciones plausibles, la correcta suele combinar target tracking (reacción a la demanda real) con un colchón razonable entre mínimo y máximo, y cooldown para estabilidad."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Identifica primero si la pregunta trata sobre el grupo (límites, zonas), la regla (cuándo escalar) o el ciclo de vida de la instancia individual (hooks) — son tres capas distintas del mismo sistema."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Cargas 24/7 → Reserved / Savings Plan (30-70% off)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas variables → pay-as-you-go + auto-scale"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Batch tolerante → spot (70-90% off)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Dev/test → apagado nocturno"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Datos fríos → lifecycle a Archive OSS"
-    }
+    { "title": "Escenario 1", "text": "E-commerce con picos en campañas de descuento — target tracking sobre CPU + Scheduled Task previo al lanzamiento" },
+    { "title": "Escenario 2", "text": "API con tráfico impredecible las 24 horas — step scaling con SLB integrado" },
+    { "title": "Escenario 3", "text": "Cola de procesamiento de imágenes por lotes — scale-out por longitud de cola, lifecycle hook Pending Remove para no cortar trabajos" },
+    { "title": "Escenario 4", "text": "Backend conectado a RDS — whitelist automática al escalar para evitar conexiones rechazadas" },
+    { "title": "Escenario 5", "text": "Sitio corporativo con tráfico previsible por horario laboral — Scheduled Task ajustando capacidad por franja horaria" },
+    { "title": "Escenario 6", "text": "Instancias nuevas que requieren precalentar caché antes de recibir tráfico — lifecycle hook Pending Add" }
   ],
   "mistakes": [
-    "Todo PayG cuando hay carga estable",
-    "Sin tags — imposible atribuir",
-    "EIPs huérfanas facturando",
-    "Storage sin lifecycle"
+    "Definir un máximo de instancias tan bajo que el grupo no absorbe un pico real",
+    "No configurar cooldown, provocando flapping cuando la métrica oscila cerca del umbral",
+    "No usar lifecycle hook Pending Remove en cargas con estado, cortando trabajos a la mitad en un scale-in",
+    "Crear instancias manuales fuera del Scaling Group esperando que participen del auto-escalado",
+    "Usar solo Scheduled Task para tráfico verdaderamente impredecible, ignorando reglas basadas en métricas",
+    "No integrar el Scaling Group con la whitelist de RDS, generando errores de conexión en instancias nuevas"
   ],
   "cli": [
-    {
-      "cmd": "aliyun bssopenapi QueryCostUnit",
-      "desc": "Cost Center"
-    },
-    {
-      "cmd": "aliyun ecs DescribeInstances --Tag ..",
-      "desc": "Filtrar por tag"
-    }
+    { "cmd": "aliyun ess CreateScalingGroup --MinSize 2 --MaxSize 10 --ScalingGroupName web-asg", "desc": "Crear un grupo de escalado con límites mín/máx" },
+    { "cmd": "aliyun ess CreateScalingConfiguration --ScalingGroupId asg-xxxxx --ImageId centos_7_9_x64_20G_alibase --InstanceType ecs.g6.large", "desc": "Definir la plantilla de instancia del grupo" },
+    { "cmd": "aliyun ess CreateScalingRule --ScalingGroupId asg-xxxxx --AdjustmentType TotalCapacity --ScalingRuleType TargetTrackingScalingRule", "desc": "Crear una regla de target tracking" },
+    { "cmd": "aliyun ess CreateLifecycleHook --ScalingGroupId asg-xxxxx --LifecycleTransition SCALE_IN --DefaultResult CONTINUE", "desc": "Crear un lifecycle hook para el scale-in" },
+    { "cmd": "aliyun ess CreateScheduledTask --ScalingGroupId asg-xxxxx --LaunchTime 2026-08-13T08:00Z --DesiredCapacity 6", "desc": "Programar un ajuste de capacidad por calendario" },
+    { "cmd": "aliyun ess DescribeScalingActivities --ScalingGroupId asg-xxxxx", "desc": "Revisar el historial de eventos de escalado del grupo" }
   ],
   "glossary": [
-    {
-      "en": "Pay-as-you-go",
-      "es": "PayG",
-      "def": "Facturación por uso (default)."
-    },
-    {
-      "en": "Subscription",
-      "es": "Subscription",
-      "def": "Compra anticipada mensual/anual."
-    },
-    {
-      "en": "Reserved Instance",
-      "es": "RI",
-      "def": "Compromiso 1-3 años con descuento."
-    },
-    {
-      "en": "Savings Plan",
-      "es": "Savings Plan",
-      "def": "Compromiso $/hora flexible."
-    },
-    {
-      "en": "Spot / Preemptible",
-      "es": "Spot",
-      "def": "Descuento agresivo, interrumpible."
-    },
-    {
-      "en": "Cost Center",
-      "es": "Cost Center",
-      "def": "Consolidación de spend."
-    },
-    {
-      "en": "Budget",
-      "es": "Budget",
-      "def": "Presupuesto con alerta."
-    },
-    {
-      "en": "Right-sizing",
-      "es": "Right-sizing",
-      "def": "Ajustar recursos a uso real."
-    },
-    {
-      "en": "Tagging",
-      "es": "Tagging",
-      "def": "Etiquetado para atribución."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Scaling Group", "es": "Grupo de escalado", "def": "Contenedor que define capacidad mínima, máxima y deseada de instancias, y sus recursos asociados (SLB, RDS)." },
+    { "en": "Scaling Configuration", "es": "Configuración de escalado", "def": "Plantilla con imagen, tipo de instancia y Security Group usada para lanzar cada instancia nueva del grupo." },
+    { "en": "Scaling Rule", "es": "Regla de escalado", "def": "Define cuándo y cuánto ajustar la capacidad: simple, por pasos (step) o target tracking." },
+    { "en": "Target Tracking", "es": "Seguimiento de objetivo", "def": "Regla que mantiene automáticamente una métrica cerca de un valor objetivo, sin definir umbrales manuales." },
+    { "en": "Step Scaling", "es": "Escalado por pasos", "def": "Regla que aplica incrementos distintos según la severidad de la métrica que dispara la alarma." },
+    { "en": "Cooldown Period", "es": "Período de enfriamiento", "def": "Intervalo mínimo entre dos operaciones de escalado consecutivas, para evitar flapping." },
+    { "en": "Lifecycle Hook", "es": "Lifecycle hook", "def": "Mecanismo que pausa una instancia en estado Pending Add/Remove para ejecutar tareas antes de unirse o salir del grupo." },
+    { "en": "Scheduled Task", "es": "Tarea programada", "def": "Ajuste de capacidad disparado por calendario en vez de por métrica." },
+    { "en": "Desired Capacity", "es": "Capacidad deseada", "def": "Número objetivo de instancias que Auto Scaling intenta mantener activas en cada momento." },
+    { "en": "Min/Max Size", "es": "Tamaño mínimo/máximo", "def": "Límites inferior y superior del número de instancias que el grupo puede tener." },
+    { "en": "Flapping", "es": "Oscilación de escalado", "def": "Escalar arriba y abajo repetidamente por falta de cooldown ante una métrica inestable cerca del umbral." },
+    { "en": "SLB integration", "es": "Integración con SLB", "def": "Registro/desregistro automático de instancias del grupo como backends del balanceador de carga." },
+    { "en": "RDS whitelist sync", "es": "Sincronización de whitelist RDS", "def": "Actualización automática de la lista blanca de acceso a RDS cuando el grupo escala." },
+    { "en": "Horizontal scaling", "es": "Escalado horizontal", "def": "Añadir o quitar instancias, en contraposición a cambiar el tamaño de una instancia existente." },
+    { "en": "Vertical scaling", "es": "Escalado vertical", "def": "Cambiar el tipo/tamaño de una instancia existente, generalmente con interrupción del servicio." },
+    { "en": "CloudMonitor alarm", "es": "Alarma de CloudMonitor", "def": "Condición sobre una métrica que, al cumplirse, dispara una regla de escalado basada en eventos." },
+    { "en": "Multi-zone scaling group", "es": "Grupo de escalado multi-zona", "def": "Distribuye instancias del grupo en varias zonas de disponibilidad para tolerar la falla de una." },
+    { "en": "Pending Add / Pending Remove", "es": "Estados de transición del ciclo de vida", "def": "Estados intermedios de una instancia mientras se ejecuta un lifecycle hook, antes de unirse o salir del grupo." },
+    { "en": "User Data", "es": "Datos de usuario", "def": "Script ejecutado en el primer arranque de cada instancia lanzada por el grupo, vía la Scaling Configuration." },
+    { "en": "Scaling Activity", "es": "Actividad de escalado", "def": "Registro histórico de un evento de scale-out o scale-in ejecutado por el grupo." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Optimización de Costos?",
-      "options": [
-        "Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, aut",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies)."
-    },
-    {
-      "q": "¿Qué es <strong>Pay-as-you-go</strong> (PayG) en Optimización de Costos?",
-      "options": [
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso 1-3 años con descuento.",
-        "Compromiso $/hora flexible."
-      ],
-      "answer": 0,
-      "explain": "Pay-as-you-go (PayG): Facturación por uso (default)."
-    },
-    {
-      "q": "¿Qué es <strong>Subscription</strong> (Subscription) en Optimización de Costos?",
-      "options": [
-        "Compra anticipada mensual/anual.",
-        "Facturación por uso (default).",
-        "Compromiso 1-3 años con descuento.",
-        "Compromiso $/hora flexible."
-      ],
-      "answer": 0,
-      "explain": "Subscription (Subscription): Compra anticipada mensual/anual."
-    },
-    {
-      "q": "¿Qué es <strong>Reserved Instance</strong> (RI) en Optimización de Costos?",
-      "options": [
-        "Compromiso 1-3 años con descuento.",
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso $/hora flexible."
-      ],
-      "answer": 0,
-      "explain": "Reserved Instance (RI): Compromiso 1-3 años con descuento."
-    },
-    {
-      "q": "¿Qué es <strong>Savings Plan</strong> (Savings Plan) en Optimización de Costos?",
-      "options": [
-        "Compromiso $/hora flexible.",
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso 1-3 años con descuento."
-      ],
-      "answer": 0,
-      "explain": "Savings Plan (Savings Plan): Compromiso $/hora flexible."
-    },
-    {
-      "q": "¿Qué es <strong>Spot / Preemptible</strong> (Spot) en Optimización de Costos?",
-      "options": [
-        "Descuento agresivo, interrumpible.",
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso 1-3 años con descuento."
-      ],
-      "answer": 0,
-      "explain": "Spot / Preemptible (Spot): Descuento agresivo, interrumpible."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Optimización de Costos, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Optimización de Costos en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Optimización de Costos, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Optimización de Costos es la elección típica:",
-      "options": [
-        "Cargas 24/7 → Reserved / Savings Plan (30-70% off)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Cargas 24/7 → Reserved / Savings Plan (30-70% off)."
-    }
+    { "q": "¿Cuál es el problema principal de dimensionar una arquitectura con capacidad fija para el pico de tráfico?", "options": ["No es posible aprovisionar para el pico", "Se paga por capacidad ociosa la mayor parte del tiempo", "El pico nunca ocurre en la práctica", "El SLB no soporta capacidad fija"], "answer": 1, "explain": "Dimensionar para el pico deja recursos sin usar fuera de esos momentos, generando sobrecosto constante." },
+    { "q": "¿Qué límite del Scaling Group garantiza que siempre haya al menos N instancias corriendo?", "options": ["Capacidad máxima", "Capacidad deseada", "Capacidad mínima", "Cooldown period"], "answer": 2, "explain": "La capacidad mínima es el piso que el grupo nunca debe cruzar hacia abajo." },
+    { "q": "¿Qué tipo de regla de escalado mantiene automáticamente una métrica cerca de un valor objetivo sin definir umbrales manuales?", "options": ["Regla simple", "Regla por pasos (step scaling)", "Target tracking", "Scheduled Task"], "answer": 2, "explain": "Target tracking calcula automáticamente los ajustes necesarios para mantenerse cerca del objetivo definido." },
+    { "q": "Una métrica oscila justo alrededor del umbral de escalado, provocando que el grupo añada y quite instancias repetidamente. ¿Qué mecanismo previene este comportamiento?", "options": ["Lifecycle hook", "Cooldown period", "Scaling Configuration", "SLB"], "answer": 1, "explain": "El período de enfriamiento evita que se disparen escalados consecutivos antes de que el efecto del anterior se refleje en las métricas." },
+    { "q": "¿Para qué se usa un lifecycle hook en estado 'Pending Remove'?", "options": ["Para acelerar la eliminación de la instancia", "Para drenar conexiones o completar trabajos antes de destruir la instancia", "Para asignar una IP elástica", "Para aumentar el tamaño de la instancia"], "answer": 1, "explain": "El hook Pending Remove da tiempo a terminar tareas en curso antes de que la instancia se elimine definitivamente." },
+    { "q": "¿Qué integración evita que una instancia nueva del grupo sea rechazada al conectarse a una base de datos RDS?", "options": ["El cooldown period", "La sincronización automática de la whitelist de RDS", "El lifecycle hook Pending Add únicamente", "El Scheduled Task"], "answer": 1, "explain": "Auto Scaling puede añadir automáticamente la IP de cada instancia nueva a la whitelist de RDS al escalar." },
+    { "q": "¿Qué tipo de ajuste de capacidad se dispara por calendario en vez de por una métrica de carga?", "options": ["Step scaling", "Target tracking", "Scheduled Task", "Regla simple"], "answer": 2, "explain": "Scheduled Task ajusta la capacidad en un momento predefinido, independientemente de las métricas en tiempo real." },
+    { "q": "¿Qué diferencia a una regla de escalado 'por pasos' de una regla 'simple'?", "options": ["No hay diferencia", "La regla por pasos aplica incrementos distintos según la severidad de la métrica; la simple aplica un ajuste fijo", "La regla simple solo funciona con RDS", "La regla por pasos no requiere CloudMonitor"], "answer": 1, "explain": "Step scaling responde proporcionalmente a distintos niveles de severidad, mientras que la regla simple usa un único ajuste fijo." },
+    { "q": "¿Qué antipatrón describe crear instancias manualmente y esperar que Auto Scaling las gestione junto con las del grupo?", "options": ["Es la práctica recomendada", "Un antipatrón: solo las instancias del Scaling Group participan del auto-escalado", "Solo funciona si están en la misma zona", "Solo funciona con instancias Spot"], "answer": 1, "explain": "Las instancias creadas fuera del grupo no son gestionadas por sus reglas de escalado ni por sus lifecycle hooks." },
+    { "q": "¿Qué combinación de reglas es recomendable para un e-commerce con picos previsibles de campañas y tráfico variable el resto del tiempo?", "options": ["Solo Scheduled Task", "Solo regla simple", "Target tracking como mecanismo principal más un Scheduled Task previo a la campaña", "Ninguna regla, solo capacidad fija"], "answer": 2, "explain": "Combinar target tracking con un ajuste programado antes de un pico conocido anticipa la demanda sin depender solo de la reacción a métricas." },
+    { "q": "¿Qué distingue al escalado horizontal del escalado vertical?", "options": ["Son sinónimos", "El horizontal añade/quita instancias; el vertical cambia el tipo de una instancia existente, normalmente con interrupción", "El vertical siempre es automático y el horizontal manual", "El horizontal requiere apagar la instancia"], "answer": 1, "explain": "Auto Scaling gestiona escalado horizontal; cambiar el tipo de una instancia existente es escalado vertical y suele requerir downtime." },
+    { "q": "¿Qué recurso del Scaling Group define la imagen, el tipo de instancia y el Security Group que usará cada instancia nueva?", "options": ["La Scaling Rule", "El Lifecycle Hook", "La Scaling Configuration", "El Scheduled Task"], "answer": 2, "explain": "La Scaling Configuration es la plantilla que define cómo se lanza cada instancia nueva del grupo." }
   ],
-  "exam_focus": "Modelos de facturación, right-sizing, cost centers, tagging strategy.",
+  "exam_focus": "El examen evalúa principalmente: (a) los límites de un Scaling Group (mínimo, máximo, deseado), (b) diferenciar reglas simple, por pasos y target tracking, (c) el propósito del cooldown frente al de los lifecycle hooks, (d) la integración de Auto Scaling con SLB y la whitelist de RDS, (e) reconocer escalado horizontal vs. vertical.",
   "official_intro": "The purpose of this course is to help students familiarize themselves with the basic functions and characteristics of alibaba cloud auto scaling product, learn the basic operations and how to use auto scaling product to achieve the flexible architecture design of the platform, and to automatically adjust the flexible computing resources according to business needs and strategies.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_autoscaling",

@@ -2,423 +2,187 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datamigration",
   "title_en": "Unstructured Data Migration",
-  "title_es": "Unstructured Datos Migración",
+  "title_es": "Migración de Datos No Estructurados",
+  "title_es_html": "Migración de <em>Datos No Estructurados</em>",
   "duration_es": "65 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Cloud Migration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datamigration",
-  "lead": "Guía completa en español para el curso «Unstructured Data Migration» de Alibaba Cloud Academy. Cubre en profundidad Migración a Alibaba Cloud. Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Unstructured Data Migration» de Alibaba Cloud Academy. El curso se centra en un problema muy concreto: el 80-90% de los datos de una organización son no estructurados (imágenes, video, logs, documentos, backups) y moverlos a la nube plantea retos distintos a migrar una base de datos relacional. Cubre OSSImport, el SDK de OSS y las estrategias para migrar volúmenes masivos de archivos sin perder metadatos ni disponibilidad.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Migración a Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: SMC, DTS, OSSImport, Cloud Migration Hub, CADT.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Migración a Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué los datos no estructurados presentan retos de migración distintos a los de una base de datos relacional.",
+    "<strong>Distinguir</strong> las rutas de migración disponibles: OSSImport, SDK de OSS, ossutil y servicios de terceros (Data Online Migration).",
+    "<strong>Configurar</strong> una tarea de OSSImport para migrar desde un origen local, otro cloud (S3, Azure Blob) o un clúster HDFS hacia un bucket OSS.",
+    "<strong>Diseñar</strong> una estrategia de migración incremental que minimice la ventana de sincronización final (cutover).",
+    "<strong>Verificar</strong> la integridad de los datos migrados (conteo de objetos, tamaño total, checksums).",
+    "<strong>Optimizar</strong> el rendimiento de una migración masiva ajustando concurrencia y tamaño de bloque.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre migración de datos no estructurados."
   ],
-  "architecture": "Assess (CADT análisis) → Plan (6R por app) → SMC replica VMs → DTS sincroniza DBs → OSS import archivos → cutover (DNS switch) → optimize (right-sizing, reservas). Backup con HBR previo al cutover.",
+  "architecture": "Origen (sistema de archivos local, HDFS, bucket de otro proveedor cloud u otro bucket OSS) → OSSImport (desplegado como clúster de workers Java, uno o varios nodos) lee el origen, calcula qué objetos son nuevos o han cambiado, y los escribe en el bucket OSS destino preservando la jerarquía de Keys y los metadatos HTTP. Una base de datos de control (embebida o externa) lleva el registro de qué objetos ya se migraron para permitir reanudar la tarea tras un fallo. Para migraciones recurrentes o de bajo volumen, el SDK de OSS o ossutil permiten scripts a medida. Tras la migración completa, una fase de verificación compara conteo y tamaño entre origen y destino antes del cutover de la aplicación.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Migración a Alibaba Cloud",
-      "title_en": "Introduction to Migración a Alibaba Cloud",
-      "intro": "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué hace distinta a la migración de datos no estructurados",
+      "title_en": "Unstructured Data Basics",
+      "intro": "Antes de mover un solo archivo hay que entender por qué este problema no se resuelve igual que una migración de base de datos. El examen empieza precisamente por esta distinción conceptual.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Migración a Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Datos estructurados vs. no estructurados</strong>: una fila de base de datos tiene un esquema fijo y se puede replicar por filas; un archivo (imagen, video, PDF, log) no tiene esquema — la unidad de migración es el objeto completo, no un registro parcial.",
+        "<strong>Volumen y escala</strong>: mientras una base de datos transaccional puede pesar gigabytes, un histórico de datos no estructurados (fotos de usuario, logs de aplicación, video de seguridad) fácilmente alcanza terabytes o petabytes, lo que descarta copiar todo por una única conexión de red convencional.",
+        "<strong>Metadatos como parte del dato</strong>: Content-Type, fecha de creación, permisos y metadatos personalizados de cada archivo deben preservarse durante la migración — perderlos rompe aplicaciones que dependen de ellos (p.ej. un visor de imágenes que confía en el Content-Type).",
+        "<strong>Cambios incrementales difíciles de detectar</strong>: a diferencia de un binlog de base de datos, un sistema de archivos no siempre expone un log de cambios — detectar qué archivos son nuevos suele depender de comparar fecha de modificación o hacer un listado completo.",
+        "<strong>Consistencia durante la migración</strong>: si la aplicación sigue escribiendo archivos nuevos mientras se migra, la tarea debe soportar múltiples pasadas incrementales para converger, en vez de una sola copia puntual."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Migración a Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen típica busca que reconozcas que la migración de datos no estructurados es un problema de <em>volumen + metadatos + reanudabilidad</em>, no un problema de replicación de esquema como en una base de datos."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Migración a Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · OSSImport: la herramienta central de migración",
+      "title_en": "OSSImport Overview",
+      "intro": "OSSImport es la herramienta que Alibaba Cloud ofrece específicamente para mover datos no estructurados masivos hacia OSS. El examen pregunta tanto por su arquitectura como por cuándo NO es la herramienta correcta.",
       "points": [
-        "<strong>Patrón canónico</strong>: Assess (CADT análisis) → Plan (6R por app) → SMC replica VMs → DTS sincroniza DBs → OSS import archivos → cutover (DNS switch) → optimize (right-sizing, reservas). Backup con HBR previo al cutover.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Migración a Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Server Migration Center</strong> <em>(SMC)</em>: Replica VMs on-prem → imágenes ECS.",
-        "<strong>Data Transmission Service</strong> <em>(DTS)</em>: Migración de bases.",
-        "<strong>OSSImport</strong> <em>(OSSImport)</em>: Herramienta para migrar archivos a OSS.",
-        "<strong>Migration Hub</strong> <em>(Cloud Migration Hub)</em>: Consola central de proyecto.",
-        "<strong>Cloud Architect Design Tool</strong> <em>(CADT)</em>: Herramienta de diseño y assessment.",
-        "<strong>6R Framework</strong> <em>(6R)</em>: Rehost, Replatform, Refactor, Repurchase, Retire, Retain.",
-        "<strong>Hybrid Backup Recovery</strong> <em>(HBR)</em>: Backup on-prem + cloud.",
-        "<strong>Cutover</strong> <em>(Cutover)</em>: Corte del tráfico al ambiente nuevo."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Qué es</strong>: una aplicación Java descargable (no es un comando de la CLI <code>aliyun</code>) que se ejecuta como uno o varios workers, cada uno leyendo una porción del origen y escribiendo en el bucket destino en paralelo.",
+        "<strong>Orígenes soportados</strong>: sistema de archivos local, otro bucket OSS (incluso entre regiones o cuentas), Amazon S3, Azure Blob Storage, Qiniu Kodo, HDFS y URLs HTTP/HTTPS listadas en un archivo.",
+        "<strong>Modo Job vs. modo Task</strong>: un Job agrupa varias Tasks; cada Task migra un subconjunto del origen (p.ej. un prefijo). Dividir en Tasks permite paralelizar y reanudar solo la parte que falló, sin repetir todo el Job.",
+        "<strong>Base de datos de control</strong>: OSSImport registra en una base de datos local (HSQLDB embebida) qué objetos ya se transfirieron, para poder reanudar tras una interrupción sin duplicar trabajo.",
+        "<strong>Modo Sync (incremental)</strong>: además de la migración completa (Full Import), OSSImport soporta ejecuciones repetidas en modo sincronización que solo transfieren objetos nuevos o modificados desde la última corrida — la base del patrón de migración incremental multi-pasada.",
+        "<strong>Cuándo NO usar OSSImport</strong>: para volúmenes pequeños y puntuales, el SDK de OSS o <code>ossutil cp</code> son más simples; para migración continua en tiempo real desde una aplicación en producción, conviene escribir directamente a OSS desde el código en vez de un proceso batch periódico."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe «migrar petabytes desde un bucket S3 hacia OSS con reanudación ante fallos», la respuesta es OSSImport. Si describe «subir un archivo puntual desde un script», la respuesta es el SDK de OSS o ossutil."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · SDK de OSS y ossutil para migraciones a medida",
+      "title_en": "OSS SDK and ossutil",
+      "intro": "No toda migración de datos no estructurados requiere OSSImport. El curso cubre las alternativas para casos donde se necesita lógica personalizada durante la transferencia.",
       "points": [
-        "<strong>Costo</strong>: Right-sizing post-migración",
-        "<strong>Buenas prácticas</strong>: Assessment antes de mover — no migrar todo por defecto",
-        "<strong>Buenas prácticas</strong>: Piloto con 1 app no crítica primero",
-        "<strong>Buenas prácticas</strong>: DTS 3-fase para bases",
-        "<strong>Buenas prácticas</strong>: Ventana de cutover corta con rollback"
+        "<strong>SDK de OSS</strong>: disponible en Java, Python, Go, Node.js, PHP y más — permite escribir un migrador a medida que, por ejemplo, transforme el nombre del archivo, filtre por tipo o aplique lógica de negocio antes de subir cada objeto.",
+        "<strong>ossutil</strong>: herramienta de línea de comandos oficial (distinta de la CLI general <code>aliyun</code>) especializada en operaciones OSS — subir, descargar, sincronizar carpetas (<code>ossutil sync</code>) y gestionar configuración de buckets desde la terminal.",
+        "<strong>Carga multiparte en el SDK</strong>: para archivos individuales grandes (videos, backups) el propio SDK expone la API de Multipart Upload, dividiendo el archivo y subiendo partes en paralelo con reintentos independientes por parte.",
+        "<strong>Migración con transformación</strong>: cuando el destino necesita una estructura de Keys distinta al origen (p.ej. reorganizar por fecha), un script con el SDK es más flexible que OSSImport, que preserva la jerarquía original por defecto.",
+        "<strong>Data Online Migration</strong>: para migraciones desde otros proveedores cloud sin instalar nada del lado del cliente, Alibaba Cloud ofrece también un servicio gestionado de migración online que se configura desde la consola, útil cuando no se puede desplegar OSSImport en la red de origen."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "OSSImport migra <em>tal cual</em>; el SDK/ossutil se usan cuando la migración requiere <em>transformar</em> algo en el camino (nombre, estructura, formato)."
+      }
+    },
+    {
+      "title_es": "4 · Diseñar la estrategia de migración",
+      "title_en": "Migration Strategy Design",
+      "intro": "La certificación evalúa que sepas planificar la migración, no solo ejecutar un comando. Este módulo cubre el orden de pasos recomendado por Alibaba Cloud.",
+      "points": [
+        "<strong>Evaluar el volumen y el ancho de banda disponible</strong>: calcular cuánto tiempo tomará la transferencia con el ancho de banda real de la red de origen antes de comprometerse a una ventana de corte; si el volumen es de decenas de terabytes y la red es limitada, considerar transporte físico (dispositivo de migración offline).",
+        "<strong>Migración completa (Full Import) fuera de horas pico</strong>: primera pasada masiva que mueve el grueso de los datos históricos, ejecutada cuando el impacto en la red de origen es menor.",
+        "<strong>Pasadas incrementales sucesivas</strong>: mientras la aplicación sigue escribiendo en el origen, ejecutar el modo Sync repetidamente para ir cerrando la brecha de datos nuevos, cada vez con menos objetos pendientes.",
+        "<strong>Ventana de cutover corta</strong>: solo cuando la brecha incremental es mínima se detiene la escritura en el origen, se ejecuta una última pasada de sincronización y se redirige la aplicación a OSS — minimizando el downtime real.",
+        "<strong>Verificación post-migración</strong>: comparar número de objetos y tamaño total entre origen y destino (y, si es crítico, checksums) antes de dar por completada la migración y desactivar el origen."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "El patrón correcto es <em>Full Import → N pasadas incrementales → ventana corta de cutover</em> — nunca un único corte largo copiando todo de una vez si la aplicación no puede detenerse por horas."
+      }
+    },
+    {
+      "title_es": "5 · Rendimiento, costo y seguridad de la migración",
+      "title_en": "Performance, Cost and Security",
+      "intro": "Una migración mal ajustada puede saturar la red de origen o tardar días de más. Este módulo cubre los parámetros que el examen espera que sepas ajustar.",
+      "points": [
+        "<strong>Concurrencia (thread count)</strong>: OSSImport permite configurar cuántos hilos/objetos se transfieren en paralelo por worker — subirlo acelera la migración pero puede saturar el ancho de banda de salida del origen; hay que balancear contra el uso normal de la red.",
+        "<strong>Múltiples workers</strong>: para volúmenes muy grandes, desplegar OSSImport en varias máquinas (cada una procesando una porción del origen) escala la migración horizontalmente más allá de lo que permite un solo proceso.",
+        "<strong>Clase de almacenamiento del destino</strong>: subir directamente a Standard es más simple, pero si los datos migrados son históricos y de acceso poco frecuente, definir la clase de almacenamiento (IA/Archive) desde la propia tarea de migración ahorra un paso posterior de Lifecycle.",
+        "<strong>Cifrado y credenciales</strong>: OSSImport y el SDK deben usar credenciales de un usuario RAM con permisos mínimos (solo escritura en el bucket destino y lectura en el origen), nunca el AccessKey de la cuenta raíz; habilitar SSE-OSS o SSE-KMS en el bucket destino para cifrado en reposo.",
+        "<strong>Costo de egress del origen</strong>: si el origen es otro proveedor cloud, la transferencia saliente desde ese proveedor suele tener costo — hay que considerarlo en el presupuesto total de la migración, no solo el costo de OSS en destino."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Ajusta primero la <strong>concurrencia</strong> según el ancho de banda disponible, después decide la <strong>clase de almacenamiento</strong> del destino, y protege todo con <strong>RAM de mínimo privilegio</strong>."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de preguntas difíciles del examen sobre migración de datos no estructurados están inspiradas en fallos reales de proyectos de migración mal planificados.",
       "points": [
-        "<strong>Antipattern</strong>: Migrar sin assessment",
-        "<strong>Antipattern</strong>: Lift-and-shift de todo sin refactorizar los quick wins",
-        "<strong>Antipattern</strong>: Cutover sin plan de rollback",
-        "<strong>Antipattern</strong>: No optimizar costo post-migración",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: hacer una única migración completa y apagar el origen inmediatamente sin verificar integridad — cualquier objeto no transferido se pierde silenciosamente.",
+        "<strong>Antipatrón</strong>: ignorar los metadatos personalizados del origen (Content-Type, cache headers) y dejar que OSS asigne valores por defecto, rompiendo el comportamiento de la aplicación migrada.",
+        "<strong>Antipatrón</strong>: usar OSSImport para un volumen pequeño y puntual cuando un simple <code>ossutil cp</code> o el SDK resuelven el caso más rápido y con menos configuración.",
+        "<strong>Antipatrón</strong>: no calcular el tiempo real de transferencia según el ancho de banda disponible, prometiendo una ventana de cutover irrealista.",
+        "<strong>Antipatrón</strong>: embeber el AccessKey de la cuenta raíz en el script o configuración de OSSImport en vez de usar un rol/usuario RAM con permisos acotados.",
+        "<strong>Regla de oro</strong>: ante dos opciones del examen, descarta la que promete migrar «todo de una vez sin verificación» — la respuesta correcta casi siempre incluye una fase de verificación o una estrategia incremental."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Cuando el enunciado describe un volumen grande y una aplicación que no puede detenerse por mucho tiempo, la respuesta correcta combina <em>OSSImport + pasadas incrementales + verificación</em>, no una copia única."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Lift-and-shift de data center on-premise"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Migración desde otro cloud (AWS/Azure)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración de bases con mínima downtime (DTS)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Migración de unstructured data (OSSImport)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Migración híbrida (algunas cargas quedan on-prem)"
-    }
+    { "title": "Escenario 1", "text": "Migrar un histórico de fotos de usuario desde un NAS local hacia OSS con OSSImport en modo Full Import" },
+    { "title": "Escenario 2", "text": "Mover un bucket completo de Amazon S3 a OSS preservando estructura de carpetas y metadatos" },
+    { "title": "Escenario 3", "text": "Sincronizar de forma incremental un directorio que sigue recibiendo archivos nuevos hasta el cutover" },
+    { "title": "Escenario 4", "text": "Migrar logs de aplicación desde HDFS hacia OSS para análisis posterior con MaxCompute" },
+    { "title": "Escenario 5", "text": "Subir un solo archivo grande de forma puntual desde un script — SDK de OSS con Multipart Upload" },
+    { "title": "Escenario 6", "text": "Migración desde un proveedor cloud sin poder instalar software en su red — Data Online Migration gestionado" }
   ],
   "mistakes": [
-    "Migrar sin assessment",
-    "Lift-and-shift de todo sin refactorizar los quick wins",
-    "Cutover sin plan de rollback",
-    "No optimizar costo post-migración"
+    "Migrar todo de una vez y apagar el origen sin verificar conteo y tamaño en destino",
+    "Perder metadatos personalizados (Content-Type, cache headers) al no configurarlos en la tarea de migración",
+    "Usar OSSImport para una transferencia puntual pequeña que ossutil resuelve en un comando",
+    "No calcular el tiempo real de migración según el ancho de banda disponible en el origen",
+    "Embeber el AccessKey de la cuenta raíz en la configuración de la herramienta de migración",
+    "No planificar pasadas incrementales, forzando una ventana de cutover innecesariamente larga"
   ],
   "cli": [
-    {
-      "cmd": "aliyun smc CreateReplicationJob",
-      "desc": "Migrar VM"
-    },
-    {
-      "cmd": "aliyun dts CreateMigrationJob",
-      "desc": "Migrar DB"
-    }
+    { "cmd": "java -jar ossimport2.jar -c local_job/", "desc": "Ejecutar un Job de OSSImport configurado en modo Full Import" },
+    { "cmd": "ossutil cp -r ./fotos oss://mi-bucket/fotos/ -u", "desc": "Subir un directorio local a OSS con ossutil, actualizando solo lo modificado" },
+    { "cmd": "ossutil ls oss://mi-bucket --recursive | wc -l", "desc": "Contar objetos en el destino para verificar integridad tras la migración" },
+    { "cmd": "aliyun oss cp s3://bucket-origen oss://mi-bucket --recursive", "desc": "Copia directa entre proveedores usando la CLI de Alibaba Cloud" },
+    { "cmd": "ossutil stat oss://mi-bucket/archivo.jpg", "desc": "Revisar metadatos de un objeto migrado (Content-Type, tamaño, ETag)" },
+    { "cmd": "ossutil sync ./data oss://mi-bucket/data --delete", "desc": "Sincronización incremental que refleja borrados del origen en el destino" }
   ],
   "glossary": [
-    {
-      "en": "SMC",
-      "es": "Server Migration Center",
-      "def": "Replica VMs on-prem → imágenes ECS."
-    },
-    {
-      "en": "DTS",
-      "es": "Data Transmission Service",
-      "def": "Migración de bases."
-    },
-    {
-      "en": "OSSImport",
-      "es": "OSSImport",
-      "def": "Herramienta para migrar archivos a OSS."
-    },
-    {
-      "en": "Cloud Migration Hub",
-      "es": "Migration Hub",
-      "def": "Consola central de proyecto."
-    },
-    {
-      "en": "CADT",
-      "es": "Cloud Architect Design Tool",
-      "def": "Herramienta de diseño y assessment."
-    },
-    {
-      "en": "6R",
-      "es": "6R Framework",
-      "def": "Rehost, Replatform, Refactor, Repurchase, Retire, Retain."
-    },
-    {
-      "en": "HBR",
-      "es": "Hybrid Backup Recovery",
-      "def": "Backup on-prem + cloud."
-    },
-    {
-      "en": "Cutover",
-      "es": "Cutover",
-      "def": "Corte del tráfico al ambiente nuevo."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Unstructured data", "es": "Datos no estructurados", "def": "Datos sin esquema fijo: imágenes, video, audio, logs, documentos. Se migran como objetos completos, no como registros." },
+    { "en": "OSSImport", "es": "OSSImport", "def": "Herramienta Java de Alibaba Cloud para migrar volúmenes masivos de datos no estructurados hacia OSS desde múltiples orígenes." },
+    { "en": "Job / Task", "es": "Job / Task", "def": "Un Job de OSSImport agrupa varias Tasks; cada Task migra un subconjunto del origen, permitiendo paralelismo y reanudación granular." },
+    { "en": "Full Import", "es": "Migración completa", "def": "Primera pasada de OSSImport que transfiere todo el contenido del origen al destino." },
+    { "en": "Sync mode", "es": "Modo sincronización", "def": "Ejecuciones repetidas de OSSImport que solo transfieren objetos nuevos o modificados desde la última corrida." },
+    { "en": "ossutil", "es": "ossutil", "def": "CLI oficial especializada en operaciones sobre OSS: subir, descargar, sincronizar y gestionar buckets." },
+    { "en": "OSS SDK", "es": "SDK de OSS", "def": "Bibliotecas oficiales (Java, Python, Go, Node.js, etc.) para integrar operaciones OSS, incluidas migraciones a medida, en código propio." },
+    { "en": "Multipart Upload", "es": "Carga multiparte", "def": "Mecanismo para subir archivos grandes en partes paralelas y reanudables, usado tanto por el SDK como por ossutil." },
+    { "en": "Metadata preservation", "es": "Preservación de metadatos", "def": "Requisito de conservar Content-Type y metadatos personalizados del origen durante la migración." },
+    { "en": "Cutover window", "es": "Ventana de cutover", "def": "Periodo en que se detiene la escritura en el origen, se sincroniza el remanente y se conmuta la aplicación al destino." },
+    { "en": "Data Online Migration", "es": "Migración de datos en línea", "def": "Servicio gestionado de Alibaba Cloud para migrar datos desde otros proveedores cloud sin instalar software en la red de origen." },
+    { "en": "Verification (checksum)", "es": "Verificación de integridad", "def": "Comparación de conteo de objetos, tamaño total o checksums entre origen y destino tras la migración." },
+    { "en": "RAM user (least privilege)", "es": "Usuario RAM de mínimo privilegio", "def": "Identidad con permisos acotados usada por la herramienta de migración en vez del AccessKey de la cuenta raíz." },
+    { "en": "SSE-OSS / SSE-KMS", "es": "Cifrado del lado del servidor", "def": "Cifrado en reposo de los objetos migrados, gestionado por OSS (SSE-OSS) o por el usuario vía KMS (SSE-KMS)." },
+    { "en": "Storage class on ingest", "es": "Clase de almacenamiento al ingresar", "def": "Definir la clase (Standard/IA/Archive) directamente en la tarea de migración para datos históricos poco accedidos." },
+    { "en": "Concurrency / thread count", "es": "Concurrencia", "def": "Número de transferencias paralelas configurables en OSSImport; afecta velocidad de migración y uso de ancho de banda del origen." },
+    { "en": "Offline migration device", "es": "Dispositivo de migración offline", "def": "Transporte físico de datos usado cuando el volumen es tan grande que transferirlo por red tomaría un tiempo impráctico." },
+    { "en": "HDFS", "es": "HDFS", "def": "Sistema de archivos distribuido de Hadoop, uno de los orígenes soportados por OSSImport." },
+    { "en": "Bucket", "es": "Bucket", "def": "Contenedor de destino en OSS donde se escriben los objetos migrados." },
+    { "en": "Egress cost", "es": "Costo de salida (egress)", "def": "Costo de transferencia saliente que puede cobrar el proveedor de origen al migrar datos hacia Alibaba Cloud." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Migración a Alibaba Cloud?",
-      "options": [
-        "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurcha",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia."
-    },
-    {
-      "q": "¿Qué es <strong>SMC</strong> (Server Migration Center) en Migración a Alibaba Cloud?",
-      "options": [
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "SMC (Server Migration Center): Replica VMs on-prem → imágenes ECS."
-    },
-    {
-      "q": "¿Qué es <strong>DTS</strong> (Data Transmission Service) en Migración a Alibaba Cloud?",
-      "options": [
-        "Migración de bases.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Herramienta para migrar archivos a OSS.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "DTS (Data Transmission Service): Migración de bases."
-    },
-    {
-      "q": "¿Qué es <strong>OSSImport</strong> (OSSImport) en Migración a Alibaba Cloud?",
-      "options": [
-        "Herramienta para migrar archivos a OSS.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "OSSImport (OSSImport): Herramienta para migrar archivos a OSS."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Migration Hub</strong> (Migration Hub) en Migración a Alibaba Cloud?",
-      "options": [
-        "Consola central de proyecto.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS."
-      ],
-      "answer": 0,
-      "explain": "Cloud Migration Hub (Migration Hub): Consola central de proyecto."
-    },
-    {
-      "q": "¿Qué es <strong>CADT</strong> (Cloud Architect Design Tool) en Migración a Alibaba Cloud?",
-      "options": [
-        "Herramienta de diseño y assessment.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS."
-      ],
-      "answer": 0,
-      "explain": "CADT (Cloud Architect Design Tool): Herramienta de diseño y assessment."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Migración a Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Migración a Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Migración a Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Migración a Alibaba Cloud es la elección típica:",
-      "options": [
-        "Lift-and-shift de data center on-premise",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Lift-and-shift de data center on-premise."
-    }
+    { "q": "¿Por qué la migración de datos no estructurados plantea retos distintos a migrar una base de datos relacional?", "options": ["Porque no se puede usar ningún tipo de red para transferirlos", "Porque la unidad de migración es el objeto completo (con sus metadatos), no un registro parcial de un esquema fijo", "Porque los datos no estructurados nunca superan 1 GB en total", "Porque no existen herramientas para migrarlos"], "answer": 1, "explain": "Un archivo no tiene esquema como una fila de base de datos; se migra como objeto completo, y sus metadatos (Content-Type, etc.) forman parte esencial del dato." },
+    { "q": "¿Qué es OSSImport?", "options": ["Un comando de la CLI general aliyun", "Una herramienta Java descargable para migrar volúmenes masivos de datos no estructurados hacia OSS", "Un servicio de base de datos", "Una clase de almacenamiento de OSS"], "answer": 1, "explain": "OSSImport es una aplicación Java independiente (no un subcomando de la CLI aliyun) diseñada específicamente para migraciones masivas hacia OSS." },
+    { "q": "¿Cuál de los siguientes NO es un origen soportado nativamente por OSSImport?", "options": ["Sistema de archivos local", "Amazon S3", "Una base de datos relacional MySQL", "HDFS"], "answer": 2, "explain": "OSSImport migra datos no estructurados desde sistemas de archivos, otros object stores u HDFS — no está diseñado para migrar bases de datos relacionales (para eso existe DTS)." },
+    { "q": "¿Qué diferencia a un Job de una Task en OSSImport?", "options": ["Son sinónimos exactos", "Un Job agrupa varias Tasks; cada Task migra un subconjunto del origen, permitiendo paralelismo y reanudación granular", "Una Task agrupa varios Jobs", "Task solo aplica a migraciones desde HDFS"], "answer": 1, "explain": "El Job es el contenedor de la migración completa; dividirlo en Tasks permite paralelizar y reanudar solo la parte fallida sin repetir todo." },
+    { "q": "Una aplicación sigue escribiendo archivos nuevos en el origen mientras se migra a OSS. ¿Cuál es la estrategia recomendada?", "options": ["Detener la aplicación por varios días hasta terminar la copia completa", "Full Import inicial seguido de pasadas incrementales en modo Sync hasta una ventana de cutover corta", "Ignorar los archivos nuevos y migrar solo una vez", "Migrar solo los archivos más antiguos"], "answer": 1, "explain": "El patrón recomendado combina una migración completa inicial con sincronizaciones incrementales repetidas, cerrando con una ventana de corte breve." },
+    { "q": "¿Qué herramienta es más adecuada para subir un único archivo grande de forma puntual desde un script personalizado?", "options": ["OSSImport en modo clúster", "El SDK de OSS con Multipart Upload", "Data Online Migration", "HDFS"], "answer": 1, "explain": "Para casos puntuales con lógica a medida, el SDK de OSS (con carga multiparte para archivos grandes) es más simple que desplegar OSSImport." },
+    { "q": "¿Qué riesgo corre una migración que no verifica conteo de objetos y tamaño entre origen y destino antes de apagar el origen?", "options": ["Ningún riesgo, la verificación es opcional siempre", "Que algunos objetos no transferidos se pierdan silenciosamente", "Que el bucket destino se elimine automáticamente", "Que el origen se cifre automáticamente"], "answer": 1, "explain": "Sin verificación, no hay garantía de que todos los objetos hayan llegado al destino antes de eliminar la fuente original." },
+    { "q": "¿Qué parámetro de OSSImport se ajusta principalmente para acelerar una migración masiva, respetando el ancho de banda disponible en el origen?", "options": ["La clase de almacenamiento del destino", "La concurrencia (thread count) y el número de workers", "El nombre del bucket", "El tipo de cifrado KMS"], "answer": 1, "explain": "Aumentar hilos y desplegar más workers paraleliza la transferencia, pero debe balancearse contra el ancho de banda real disponible en el origen." },
+    { "q": "¿Cuál es la práctica correcta de credenciales al configurar OSSImport o un script con el SDK de OSS?", "options": ["Usar el AccessKey de la cuenta raíz para simplificar la configuración", "Usar un usuario o rol RAM con permisos mínimos necesarios sobre origen y destino", "No usar ninguna credencial", "Compartir la misma clave entre todos los proyectos de la empresa"], "answer": 1, "explain": "El principio de mínimo privilegio aplica también a herramientas de migración: nunca se debe usar la cuenta raíz." },
+    { "q": "Un equipo necesita migrar terabytes desde una red con ancho de banda muy limitado, donde la transferencia por red tomaría semanas. ¿Qué alternativa existe?", "options": ["Cancelar la migración definitivamente", "Un dispositivo de migración offline (transporte físico de datos)", "Reducir la resolución de las imágenes antes de migrar", "Usar solo el SDK de OSS sin cambios"], "answer": 1, "explain": "Cuando la red es el cuello de botella, el transporte físico de datos evita semanas de transferencia por internet." },
+    { "q": "¿Qué ocurre si se ignoran los metadatos personalizados (Content-Type, cache headers) durante la migración?", "options": ["No pasa nada, OSS los recalcula siempre correctamente", "La aplicación migrada puede comportarse mal si depende de esos metadatos (p.ej. un visor de imágenes)", "El objeto se rechaza automáticamente", "El bucket se vuelve público automáticamente"], "answer": 1, "explain": "Los metadatos forman parte del comportamiento esperado del objeto en la aplicación; perderlos puede romper funcionalidad dependiente de ellos." },
+    { "q": "¿Cuál es la utilidad principal de ossutil frente al SDK de OSS?", "options": ["ossutil es exclusivamente para bases de datos", "ossutil es una CLI lista para usar sin escribir código, ideal para operaciones rápidas y scripts de sincronización simples", "ossutil solo funciona con HDFS", "ossutil reemplaza completamente a OSSImport en todos los casos"], "answer": 1, "explain": "ossutil ofrece comandos listos (cp, sync, stat) sin necesidad de programar, útil para operaciones puntuales o scripts simples de shell." },
+    { "q": "¿Cuándo conviene usar Data Online Migration en vez de OSSImport?", "options": ["Cuando no se puede instalar software en la red de origen (por ejemplo, en otro proveedor cloud restringido)", "Cuando el origen es un archivo local de 1 KB", "Nunca, Data Online Migration está descontinuado", "Solo para migrar bases de datos relacionales"], "answer": 0, "explain": "Data Online Migration es un servicio gestionado que no requiere desplegar software del lado del cliente, útil cuando eso no es posible." }
   ],
-  "exam_focus": "6R framework, DTS 3 fases, SMC, cutover strategy, OSSImport.",
+  "exam_focus": "El examen suele evaluar: (a) por qué la migración de datos no estructurados difiere de la migración de bases de datos, (b) arquitectura de OSSImport (Job/Task, Full Import vs. Sync), (c) cuándo usar OSSImport vs. SDK/ossutil vs. Data Online Migration, (d) diseño de una estrategia incremental con ventana de cutover corta, (e) verificación de integridad y buenas prácticas de seguridad (RAM, cifrado).",
   "official_intro": "Experts estimate that 80 to 90 percent of the data in any organization is unstructured. Many organizations believe that their unstructured data stores include information that could help them make better business decisions. but to analyze unstructured data, there are some main challenges in terms of data migration. This course introduces the basic concepts of unstructured data, Alibaba Cloud unstructured data migration tools and service, Alibaba Cloud unstructured data SDK and how to use OssImport tool for unstructured data migration.",
   "recommended_for": "This training is for people who have basic coding and storage experience",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datamigration",

@@ -2,413 +2,192 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-distributed",
   "title_en": "Distributed Storage Introduction",
-  "title_es": "Distributed Almacenamiento Introducción",
+  "title_es": "Introducción al Almacenamiento Distribuido",
+  "title_es_html": "Introducción al <em>Almacenamiento Distribuido</em>",
   "duration_es": "63 minutos",
   "level_es": "Principiante",
   "category_es": "Almacenamiento",
   "subcategory_es": "Essential Storage Service",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_distributed",
-  "lead": "Guía completa en español para el curso «Distributed Storage Introduction» de Alibaba Cloud Academy. Cubre en profundidad Almacenamiento en Alibaba Cloud. Alibaba ofrece 3 tipos de storage: block (EBS/ESSD para ECS), file (NAS/CPFS para múltiples clientes) y object (OSS ilimitado). Elección depende de: patrón acceso, latencia, compartición, capacidad y costo. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Distributed Storage Introduction» de Alibaba Cloud Academy: los fundamentos teóricos que sostienen todos los servicios de almacenamiento en la nube (OSS, EBS, NAS). No es un curso sobre un producto concreto, sino sobre las técnicas — sharding, replicación, quorum, erasure coding, consenso — que hacen posible almacenar datos de forma duradera y disponible a escala de miles de discos. Termina conectando esa teoría con Pangu, el motor de almacenamiento distribuido que Alibaba Cloud usa internamente para construir OSS, Block Storage y NAS.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Almacenamiento en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Block Storage, File Storage, Object Storage, Snapshot, Replication.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Almacenamiento en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué un servidor de almacenamiento único (o un array RAID tradicional) deja de ser viable a partir de cierta escala.",
+    "<strong>Describir</strong> la anatomía de un sistema de almacenamiento distribuido: servidores de metadatos, servidores de datos (chunk servers) y biblioteca cliente.",
+    "<strong>Aplicar</strong> el teorema CAP para razonar sobre las decisiones de consistencia y disponibilidad de un sistema distribuido.",
+    "<strong>Comparar</strong> replicación y erasure coding como estrategias de tolerancia a fallos, y cuándo conviene cada una.",
+    "<strong>Entender</strong> el rol de un protocolo de consenso (Paxos/Raft) en la coordinación de un clúster de almacenamiento.",
+    "<strong>Relacionar</strong> estos conceptos con Pangu, el sistema de almacenamiento distribuido que sostiene OSS, Block Storage y NAS en Alibaba Cloud.",
+    "<strong>Elegir</strong>, dado un escenario, el tipo de almacenamiento (block, file u object) más adecuado según su fundamento distribuido."
   ],
-  "architecture": "Aplicación web → OSS para assets estáticos (CDN al frente) + EBS ESSD para OS/DB + NAS para shared files entre workers. Backups: snapshots EBS + HBR consolidando todo a OSS + cross-region replication para DR.",
+  "architecture": "Todo sistema de almacenamiento distribuido moderno separa el plano de metadatos del plano de datos. Un clúster de metadatos (elegido y coordinado mediante un protocolo de consenso como Raft) mantiene el namespace: qué archivos/objetos existen, en qué chunk servers viven sus réplicas y su estado. El cliente consulta primero al plano de metadatos para saber dónde están los datos, y luego lee/escribe directamente contra los chunk servers, evitando que el plano de metadatos se convierta en cuello de botella de throughput. Cada bloque de datos se replica (normalmente 3 copias) o se codifica con erasure coding a través de distintos dominios de falla — discos, racks, zonas — para que ninguna falla individual cause pérdida de datos. Procesos en segundo plano (scrubbing, rebalanceo, reconstrucción) detectan y reparan corrupción o pérdida de réplicas sin intervención humana. En Alibaba Cloud, esta arquitectura genérica se materializa en Pangu, el sistema de archivos distribuido interno (documentado públicamente por Alibaba) que actúa como capa común bajo OSS, Block Storage (EBS/ESSD) y NAS — cada servicio expone una interfaz distinta (HTTP/objeto, bloque, POSIX/archivo) sobre el mismo fundamento de almacenamiento distribuido.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Almacenamiento en Alibaba Cloud",
-      "title_en": "Introduction to Almacenamiento en Alibaba Cloud",
-      "intro": "Alibaba ofrece 3 tipos de storage: block (EBS/ESSD para ECS), file (NAS/CPFS para múltiples clientes) y object (OSS ilimitado). Elección depende de: patrón acceso, latencia, compartición, capacidad y costo. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué el almacenamiento tradicional deja de escalar",
+      "title_en": "Why Traditional Storage Doesn't Scale",
+      "intro": "Antes de estudiar sistemas distribuidos hay que entender el problema que resuelven: un servidor de archivos o un array de discos único tiene límites físicos de capacidad, throughput y disponibilidad que ninguna mejora de hardware individual elimina del todo.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba ofrece 3 tipos de storage: block (EBS/ESSD para ECS), file (NAS/CPFS para múltiples clientes) y object (OSS ilimitado).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Almacenamiento en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Techo de escalado vertical</strong>: un servidor NAS/SAN tradicional crece agregando discos a un chasis limitado — llega un punto en que no caben más discos ni más controladoras de red.",
+        "<strong>Punto único de falla</strong>: si el servidor o su controladora RAID falla, todos los datos quedan inaccesibles hasta reparar o restaurar desde backup, con downtime medido en horas.",
+        "<strong>Costo de la redundancia centralizada</strong>: duplicar un array completo (hardware + red + energía) en otro data center para tolerancia a desastres es costoso y lento de operar manualmente.",
+        "<strong>Patrón de acceso cambiante</strong>: aplicaciones modernas (analítica, IA, microservicios) generan millones de operaciones concurrentes desde muchos clientes — un único servidor no puede atenderlas todas con baja latencia.",
+        "<strong>La respuesta</strong>: repartir los datos entre muchos nodos baratos y estándar (commodity hardware), asumiendo que los fallos individuales de disco/nodo/red son la norma, no la excepción, y diseñando el software para tolerarlos automáticamente."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Almacenamiento en Alibaba Cloud es una pieza fundamental de Almacenamiento en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Un sistema distribuido no evita las fallas de hardware — las da por hechas desde el diseño. La disponibilidad no viene de que el hardware no falle, sino de que el sistema siga sirviendo datos aunque partes de él estén fallando." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Almacenamiento en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Anatomía de un sistema de almacenamiento distribuido",
+      "title_en": "Anatomy of a Distributed Storage System",
+      "intro": "Casi todos los sistemas de almacenamiento distribuido a gran escala (Google File System, HDFS, Ceph, Pangu) comparten la misma separación de responsabilidades entre metadatos y datos.",
       "points": [
-        "<strong>Patrón canónico</strong>: Aplicación web → OSS para assets estáticos (CDN al frente) + EBS ESSD para OS/DB + NAS para shared files entre workers. Backups: snapshots EBS + HBR consolidando todo a OSS + cross-region replication para DR.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Servidor de metadatos (namespace)</strong>: mantiene la estructura lógica — qué archivos/objetos existen, su tamaño, permisos y en qué nodos están sus réplicas. Es pequeño en volumen pero crítico: si se pierde, se pierde la capacidad de encontrar los datos.",
+        "<strong>Chunk server / data node</strong>: almacena los bloques (chunks) reales de datos, típicamente de tamaño fijo (decenas o cientos de MB). Un archivo grande se parte en muchos chunks distribuidos entre distintos servidores.",
+        "<strong>Biblioteca cliente</strong>: el proceso que primero pregunta al servicio de metadatos dónde están los chunks de un archivo, y luego habla directamente con los chunk servers para leer/escribir — así el tráfico de datos (grande) no pasa por el cuello de botella de metadatos (pequeño).",
+        "<strong>Sharding / particionamiento</strong>: el namespace de metadatos también se reparte entre varios servidores (por rango o por hash) cuando el número de archivos/objetos es demasiado grande para uno solo.",
+        "<strong>Heartbeats</strong>: los chunk servers reportan periódicamente su estado al plano de metadatos; si uno deja de responder, el sistema lo marca como sospechoso y empieza a replicar sus chunks en otro nodo."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Almacenamiento en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «un componente pequeño que sabe dónde está todo, pero no mueve los datos en sí», se refiere al plano de metadatos, no al de datos." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Replicación, quorum y el teorema CAP",
+      "title_en": "Replication, Quorum and the CAP Theorem",
+      "intro": "Replicar datos en varios nodos da tolerancia a fallos, pero introduce la pregunta de cómo mantener esas copias sincronizadas — y ahí aparece la tensión fundamental que describe el teorema CAP.",
       "points": [
-        "<strong>Block storage</strong> <em>(Block Storage)</em>: Discos atados a instancia (EBS).",
-        "<strong>File storage</strong> <em>(File Storage)</em>: POSIX FS compartido (NAS/CPFS).",
-        "<strong>Object storage</strong> <em>(Object Storage)</em>: Key-value ilimitado (OSS).",
-        "<strong>Snapshot</strong> <em>(Snapshot)</em>: Copia incremental de disco.",
-        "<strong>Replication</strong> <em>(Replication)</em>: Cross-region para DR.",
-        "<strong>Lifecycle</strong> <em>(Lifecycle)</em>: Reglas de retención/transición."
+        "<strong>Replication Factor (RF)</strong>: número de copias de cada chunk (típicamente 3). Con RF=3, el sistema tolera la pérdida simultánea de hasta 2 réplicas sin perder el dato.",
+        "<strong>Quorum de lectura/escritura</strong>: en vez de exigir que las N réplicas confirmen cada escritura, basta con que un subconjunto (quorum) lo haga — p.ej. W+R > N garantiza que toda lectura vea al menos una copia de la última escritura confirmada.",
+        "<strong>Teorema CAP</strong>: ante una partición de red (P), un sistema distribuido debe elegir entre Consistencia (C — todos los nodos ven el mismo dato al instante) y Disponibilidad (A — el sistema sigue respondiendo aunque algunos nodos estén aislados). No se pueden garantizar las tres simultáneamente.",
+        "<strong>Consistencia fuerte vs. eventual</strong>: consistencia fuerte significa que toda lectura ve la escritura más reciente confirmada; consistencia eventual permite que, temporalmente, distintas réplicas devuelvan valores distintos, convergiendo con el tiempo.",
+        "<strong>Trade-off práctico</strong>: sistemas de metadatos (que deben ser siempre correctos) suelen priorizar consistencia fuerte vía consenso; sistemas de objetos de alto volumen a veces relajan a consistencia eventual para maximizar disponibilidad y throughput."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Memoriza", "text": "CAP no dice «elige 2 de 3» en abstracto — dice que, cuando SÍ hay una partición de red (algo inevitable a escala), tienes que elegir entre seguir respondiendo con riesgo de inconsistencia (A) o rechazar respuestas hasta resolver la partición (C)." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Erasure Coding frente a replicación",
+      "title_en": "Erasure Coding vs. Replication",
+      "intro": "Replicar 3 copias completas de cada dato es simple y rápido de leer, pero consume 3 veces el espacio. Erasure coding ofrece una alternativa mucho más eficiente en espacio, a costa de más cómputo.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Replicación simple</strong>: guardar N copias idénticas. Con RF=3, el overhead de almacenamiento es 200% (se usan 3x los bytes originales). Reconstruir un nodo caído es trivial: copiar de otra réplica.",
+        "<strong>Erasure coding (p.ej. esquema 6+3)</strong>: divide el dato en k fragmentos y calcula m fragmentos de paridad adicionales; el dato se puede reconstruir con cualquier k de los k+m fragmentos. Con 6+3, el overhead baja a 50% en vez del 200% de RF=3, tolerando hasta 3 fragmentos perdidos.",
+        "<strong>Costo de CPU</strong>: erasure coding requiere calcular codificación/decodificación (similar a RAID 6 pero distribuido) — más carga de CPU que una copia simple, y una reconstrucción más lenta ante fallo de nodo.",
+        "<strong>Cuándo usar cada uno</strong>: replicación para datos calientes con alta frecuencia de lectura/escritura donde la latencia importa más que el espacio; erasure coding para datos fríos o de gran volumen (archivado, backups) donde minimizar costo de almacenamiento importa más que la velocidad de reconstrucción.",
+        "<strong>Aplicación real</strong>: las clases de almacenamiento frío de OSS (Archive, Cold Archive) usan esquemas más agresivos de erasure coding internamente, lo cual explica por qué son más baratas pero tardan más en restaurarse."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta «cómo reducir el overhead de almacenamiento de redundancia sin perder tolerancia a fallos», la respuesta es erasure coding, no aumentar el replication factor." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Consenso distribuido: cómo un clúster se pone de acuerdo",
+      "title_en": "Distributed Consensus: Paxos and Raft",
+      "intro": "El plano de metadatos no puede ser un único servidor (sería el punto único de falla que justamente se quiere evitar) — necesita varios nodos que se pongan de acuerdo sobre el estado, incluso si algunos fallan o la red se particiona.",
       "points": [
-        "<strong>HA</strong>: Backups off-region",
-        "<strong>Costo</strong>: Lifecycle desde el día 1",
-        "<strong>Buenas prácticas</strong>: Elegir tipo por patrón, no por hábito",
-        "<strong>Buenas prácticas</strong>: OSS + CDN para todo lo estático",
-        "<strong>Buenas prácticas</strong>: EBS solo para OS y datos hot"
+        "<strong>El problema del consenso</strong>: varios nodos deben acordar un único valor (p.ej. «quién es el líder» o «cuál fue la última escritura confirmada») aunque algunos mensajes se pierdan o algunos nodos fallen.",
+        "<strong>Paxos y Raft</strong>: son los dos protocolos de consenso más usados en sistemas distribuidos de producción. Raft se diseñó explícitamente para ser más fácil de entender e implementar correctamente que Paxos, manteniendo las mismas garantías.",
+        "<strong>Elección de líder</strong>: en Raft, un nodo se elige como líder por un período (term); solo el líder acepta escrituras y las replica al resto — si el líder deja de responder, el clúster elige uno nuevo automáticamente.",
+        "<strong>Tolerancia a fallos por mayoría</strong>: un clúster de consenso con N nodos tolera hasta ⌊(N-1)/2⌋ fallos simultáneos — por eso los clústeres de metadatos suelen tener un número impar de nodos (3, 5, 7).",
+        "<strong>Uso en almacenamiento distribuido</strong>: el consenso no gestiona los datos en sí (serían demasiado grandes/lentos), sino el plano de metadatos y coordinación — quién es el chunk server primario de una réplica, qué transacciones de metadatos se confirmaron."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El consenso resuelve «¿en qué estado estamos de acuerdo?», no «¿cómo movemos los bytes?». Es la base de la consistencia del plano de metadatos, mientras que la replicación/erasure coding resuelve la durabilidad del plano de datos." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "6 · Pangu: el motor de almacenamiento distribuido de Alibaba Cloud",
+      "title_en": "Pangu: Alibaba Cloud's Distributed Storage Engine",
+      "intro": "Toda la teoría anterior no es abstracta para Alibaba Cloud: Pangu es el sistema de almacenamiento distribuido interno, documentado públicamente por la propia compañía, que sirve de base común a varios de sus servicios de storage y de datos.",
+      "points": [
+        "<strong>Qué es Pangu</strong>: el sistema de archivos distribuido de bajo nivel desarrollado por Alibaba Cloud como parte de su plataforma Apsara, en producción desde hace más de una década.",
+        "<strong>Servicios que se apoyan en él</strong>: según la documentación pública de Alibaba, Pangu actúa como núcleo de almacenamiento unificado detrás de OSS, Block Storage (EBS/ESSD), NAS, y también de servicios de datos como MaxCompute y Table Store.",
+        "<strong>Replicación por triplicado</strong>: Pangu escribe cada dato en tres copias (o su equivalente en erasure coding) distribuidas entre distintos dominios de falla, siguiendo el mismo principio de replicación descrito en este curso.",
+        "<strong>Coordinación vía consenso</strong>: la documentación de Alibaba describe el uso de un protocolo tipo Raft para el servicio de bloqueo distribuido y la coordinación de metadatos de Pangu.",
+        "<strong>Por qué importa para el examen</strong>: entender que OSS, EBS y NAS no son sistemas independientes desde cero, sino interfaces distintas (objeto, bloque, archivo) sobre el mismo fundamento distribuido, explica por qué comparten conceptos como durabilidad alta, replicación entre zonas y recuperación automática ante fallo de disco."
+      ],
+      "keypoint": { "label": "Dato verificable", "text": "Pangu es información pública documentada por Alibaba Cloud (no una cifra inventada): es su sistema de archivos distribuido interno, base común de varios servicios de almacenamiento y datos de la plataforma." }
+    },
+    {
+      "title_es": "7 · De la teoría a la elección de servicio: Block, File y Object",
+      "title_en": "From Theory to Service Choice: Block, File and Object",
+      "intro": "Con los fundamentos de almacenamiento distribuido claros, la pregunta práctica que resuelve el examen es: dado un patrón de acceso, ¿qué interfaz de almacenamiento elegir?",
+      "points": [
+        "<strong>Block Storage (EBS/ESSD)</strong>: expone un disco virtual atado a una sola instancia a la vez; baja latencia, ideal para sistemas de archivos de SO y bases de datos que necesitan operaciones de bloque rápidas y consistentes.",
+        "<strong>File Storage (NAS/CPFS)</strong>: expone un sistema de archivos POSIX compartido, montable simultáneamente por múltiples instancias — resuelve el caso de \"muchos clientes, un mismo árbol de archivos\".",
+        "<strong>Object Storage (OSS)</strong>: expone un espacio de nombres plano accesible por HTTP/API, sin límite práctico de capacidad — pensado para datos no estructurados a gran escala (backups, media, data lakes), no para acceso tipo sistema de archivos.",
+        "<strong>Regla de decisión rápida</strong>: ¿necesita ser el disco de arranque de una VM? → Block. ¿Necesita compartirse simultáneamente entre varias VMs con semántica de archivos? → File. ¿Es contenido no estructurado accedido por URL/API a gran escala? → Object.",
+        "<strong>Todos comparten el mismo fundamento</strong>: independientemente de la interfaz elegida, la durabilidad y disponibilidad provienen de las mismas técnicas — replicación/erasure coding entre dominios de falla y coordinación por consenso — vistas en este curso."
+      ],
+      "keypoint": { "label": "Tip de examen", "text": "Cuando el enunciado describe el patrón de acceso (compartido vs. exclusivo, estructurado vs. no estructurado, por bloque vs. por API), casi siempre está pidiendo que identifiques Block, File u Object — no un producto concreto por nombre." }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas más difíciles del examen sobre almacenamiento distribuido suelen mezclar dos conceptos con nombres parecidos para ver si realmente entiendes la diferencia.",
       "points": [
-        "<strong>Antipattern</strong>: OSS como filesystem POSIX (no lo es)",
-        "<strong>Antipattern</strong>: NAS para archivos gigantes (mejor OSS)",
-        "<strong>Antipattern</strong>: EBS gigante para datos que podrían estar en OSS",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: confundir replicación con backup — una réplica sincronizada replica también los errores/borrados del usuario en tiempo casi real; un backup es una copia punto-en-el-tiempo independiente.",
+        "<strong>Antipatrón</strong>: asumir que más réplicas siempre es mejor sin considerar el costo — RF=5 casi nunca se justifica frente a RF=3 + buen monitoreo, salvo requisitos de compliance extremos.",
+        "<strong>Antipatrón</strong>: pensar que consistencia eventual significa \"datos incorrectos\" — significa que la convergencia toma tiempo, no que el sistema sea poco confiable.",
+        "<strong>Antipatrón</strong>: elegir erasure coding para datos calientes de baja latencia — el costo de CPU de reconstrucción lo hace peor que replicación simple para ese caso.",
+        "<strong>Regla de oro</strong>: ante una pregunta ambigua entre dos técnicas de tolerancia a fallos, la respuesta correcta suele depender del patrón de acceso (caliente/frío) descrito en el enunciado, no de cuál técnica sea \"más avanzada\"."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Lee el escenario buscando dos señales: (1) ¿el dato es de acceso frecuente o esporádico? y (2) ¿la prioridad es consistencia estricta o disponibilidad máxima? Esas dos respuestas casi siempre apuntan a la técnica correcta." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "OS y bases de datos → Block (EBS ESSD)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Contenido web y backups → Object (OSS)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Shared FS entre múltiples ECS → File (NAS)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "HPC training data → CPFS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Cold archive → OSS Archive/Cold Archive"
-    }
+    { "title": "Escenario 1", "text": "Diseñar el backend de almacenamiento de una base de datos distribuida — quorum de escritura W+R > N para consistencia fuerte" },
+    { "title": "Escenario 2", "text": "Archivo frío de bajo costo a gran escala — erasure coding en vez de replicación simple" },
+    { "title": "Escenario 3", "text": "Servicio de metadatos crítico que no puede tener punto único de falla — clúster de consenso Raft de 3 o 5 nodos" },
+    { "title": "Escenario 4", "text": "Elegir entre Block, File y Object para una nueva arquitectura según el patrón de acceso descrito" },
+    { "title": "Escenario 5", "text": "Explicar por qué OSS, EBS y NAS comparten garantías similares de durabilidad — mismo motor de almacenamiento distribuido subyacente" }
   ],
   "mistakes": [
-    "OSS como filesystem POSIX (no lo es)",
-    "NAS para archivos gigantes (mejor OSS)",
-    "EBS gigante para datos que podrían estar en OSS"
+    "Confundir replicación (copia sincronizada) con backup (copia punto-en-el-tiempo independiente)",
+    "Elegir erasure coding para datos calientes de baja latencia, ignorando el costo de CPU de reconstrucción",
+    "Asumir que consistencia eventual implica datos incorrectos, en vez de convergencia con retraso",
+    "Diseñar un clúster de metadatos con un número par de nodos, reduciendo la tolerancia real a fallos por mayoría",
+    "Tratar OSS como si fuera un sistema de archivos POSIX solo porque su almacenamiento subyacente es un sistema de archivos distribuido",
+    "Aumentar el replication factor como primera respuesta a un problema de durabilidad sin evaluar erasure coding"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs DescribeDisks",
-      "desc": "Discos EBS"
-    },
-    {
-      "cmd": "aliyun nas DescribeFileSystems",
-      "desc": "NAS"
-    },
-    {
-      "cmd": "aliyun oss ls",
-      "desc": "OSS"
-    }
+    { "cmd": "aliyun ecs DescribeDisks --RegionId cn-hangzhou", "desc": "Listar discos de bloque (EBS/ESSD), la interfaz de bloque sobre el almacenamiento distribuido" },
+    { "cmd": "aliyun nas DescribeFileSystems --RegionId cn-hangzhou", "desc": "Listar sistemas de archivos NAS, la interfaz de archivo compartido" },
+    { "cmd": "aliyun oss ls oss://mi-bucket --recursive", "desc": "Listar objetos en un bucket OSS, la interfaz de objeto vía HTTP/API" },
+    { "cmd": "ossutil stat oss://mi-bucket/archivo.zip", "desc": "Ver metadatos y estado de replicación de un objeto" },
+    { "cmd": "aliyun ecs DescribeDiskMonitorData --DiskId d-xxxxx", "desc": "Consultar métricas de IOPS/latencia de un disco, útil para diagnosticar el patrón de acceso real" }
   ],
   "glossary": [
-    {
-      "en": "Block Storage",
-      "es": "Block storage",
-      "def": "Discos atados a instancia (EBS)."
-    },
-    {
-      "en": "File Storage",
-      "es": "File storage",
-      "def": "POSIX FS compartido (NAS/CPFS)."
-    },
-    {
-      "en": "Object Storage",
-      "es": "Object storage",
-      "def": "Key-value ilimitado (OSS)."
-    },
-    {
-      "en": "Snapshot",
-      "es": "Snapshot",
-      "def": "Copia incremental de disco."
-    },
-    {
-      "en": "Replication",
-      "es": "Replication",
-      "def": "Cross-region para DR."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Reglas de retención/transición."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Sharding / Partitioning", "es": "Particionamiento", "def": "Dividir el namespace o los datos entre varios nodos, por rango o por hash, para escalar horizontalmente." },
+    { "en": "Replication Factor (RF)", "es": "Factor de replicación", "def": "Número de copias completas de cada chunk de datos; RF=3 es el valor típico en sistemas distribuidos de producción." },
+    { "en": "Quorum", "es": "Quorum", "def": "Subconjunto mínimo de réplicas que deben confirmar una operación de lectura/escritura para considerarla válida." },
+    { "en": "CAP Theorem", "es": "Teorema CAP", "def": "Ante una partición de red, un sistema distribuido debe elegir entre Consistencia y Disponibilidad; no puede garantizar ambas a la vez." },
+    { "en": "Strong Consistency", "es": "Consistencia fuerte", "def": "Toda lectura ve siempre la escritura confirmada más reciente." },
+    { "en": "Eventual Consistency", "es": "Consistencia eventual", "def": "Las réplicas pueden divergir temporalmente, convergiendo al mismo valor con el tiempo." },
+    { "en": "Erasure Coding", "es": "Codificación de borrado", "def": "Divide un dato en k fragmentos + m de paridad; se reconstruye con cualquier k de los k+m, con menor overhead que la replicación simple." },
+    { "en": "Chunk Server", "es": "Servidor de datos", "def": "Nodo que almacena físicamente los bloques (chunks) de datos del sistema distribuido." },
+    { "en": "Metadata Server", "es": "Servidor de metadatos", "def": "Nodo (o clúster) que mantiene el namespace: qué existe y dónde están sus réplicas." },
+    { "en": "Failure Domain", "es": "Dominio de falla", "def": "Unidad de infraestructura (disco, rack, zona) cuya falla no debe afectar a más de una réplica del mismo dato." },
+    { "en": "Self-healing / Rebalancing", "es": "Auto-reparación", "def": "Proceso automático que detecta réplicas perdidas o corruptas y las reconstruye en otro nodo sin intervención manual." },
+    { "en": "Consensus Protocol (Paxos/Raft)", "es": "Protocolo de consenso", "def": "Algoritmo que permite a varios nodos acordar un estado común incluso ante fallos parciales o mensajes perdidos." },
+    { "en": "Leader Election", "es": "Elección de líder", "def": "Proceso mediante el cual un clúster de consenso elige automáticamente un nuevo líder si el actual deja de responder." },
+    { "en": "Durability", "es": "Durabilidad", "def": "Probabilidad de que un dato almacenado no se pierda con el tiempo, típicamente expresada en 'nueves' (p.ej. 99.9999999999%)." },
+    { "en": "Availability", "es": "Disponibilidad", "def": "Probabilidad de que el sistema responda exitosamente a una solicitud en un momento dado." },
+    { "en": "Pangu", "es": "Pangu", "def": "Sistema de almacenamiento distribuido interno de Alibaba Cloud, base de OSS, Block Storage, NAS y otros servicios de datos." },
+    { "en": "Append-only", "es": "Solo-anexar", "def": "Modelo de escritura donde los datos se agregan al final de un archivo/log en vez de modificarse in situ, simplificando la consistencia distribuida." },
+    { "en": "Scrubbing", "es": "Verificación de integridad", "def": "Proceso periódico que compara checksums de las réplicas para detectar corrupción silenciosa (bit-rot) antes de que cause pérdida de datos." },
+    { "en": "Horizontal Scaling", "es": "Escalado horizontal", "def": "Aumentar capacidad agregando más nodos, en vez de agregar recursos a un nodo único (escalado vertical)." },
+    { "en": "Namespace", "es": "Espacio de nombres", "def": "Estructura lógica que organiza qué archivos/objetos existen y sus rutas o claves." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Almacenamiento en Alibaba Cloud?",
-      "options": [
-        "Alibaba ofrece 3 tipos de storage: block (EBS/ESSD para ECS), file (NAS/CPFS para múltiples clientes) y object (OSS ilimitado). Elección depende de: patrón acceso, latencia, compartición, capacidad y ",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba ofrece 3 tipos de storage: block (EBS/ESSD para ECS), file (NAS/CPFS para múltiples clientes) y object (OSS ilimitado). Elección depende de: patrón acceso, latencia, compartición, capacidad y costo."
-    },
-    {
-      "q": "¿Qué es <strong>Block Storage</strong> (Block storage) en Almacenamiento en Alibaba Cloud?",
-      "options": [
-        "Discos atados a instancia (EBS).",
-        "POSIX FS compartido (NAS/CPFS).",
-        "Key-value ilimitado (OSS).",
-        "Copia incremental de disco."
-      ],
-      "answer": 0,
-      "explain": "Block Storage (Block storage): Discos atados a instancia (EBS)."
-    },
-    {
-      "q": "¿Qué es <strong>File Storage</strong> (File storage) en Almacenamiento en Alibaba Cloud?",
-      "options": [
-        "POSIX FS compartido (NAS/CPFS).",
-        "Discos atados a instancia (EBS).",
-        "Key-value ilimitado (OSS).",
-        "Copia incremental de disco."
-      ],
-      "answer": 0,
-      "explain": "File Storage (File storage): POSIX FS compartido (NAS/CPFS)."
-    },
-    {
-      "q": "¿Qué es <strong>Object Storage</strong> (Object storage) en Almacenamiento en Alibaba Cloud?",
-      "options": [
-        "Key-value ilimitado (OSS).",
-        "Discos atados a instancia (EBS).",
-        "POSIX FS compartido (NAS/CPFS).",
-        "Copia incremental de disco."
-      ],
-      "answer": 0,
-      "explain": "Object Storage (Object storage): Key-value ilimitado (OSS)."
-    },
-    {
-      "q": "¿Qué es <strong>Snapshot</strong> (Snapshot) en Almacenamiento en Alibaba Cloud?",
-      "options": [
-        "Copia incremental de disco.",
-        "Discos atados a instancia (EBS).",
-        "POSIX FS compartido (NAS/CPFS).",
-        "Key-value ilimitado (OSS)."
-      ],
-      "answer": 0,
-      "explain": "Snapshot (Snapshot): Copia incremental de disco."
-    },
-    {
-      "q": "¿Qué es <strong>Replication</strong> (Replication) en Almacenamiento en Alibaba Cloud?",
-      "options": [
-        "Cross-region para DR.",
-        "Discos atados a instancia (EBS).",
-        "POSIX FS compartido (NAS/CPFS).",
-        "Key-value ilimitado (OSS)."
-      ],
-      "answer": 0,
-      "explain": "Replication (Replication): Cross-region para DR."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Almacenamiento en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Almacenamiento en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Almacenamiento en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Almacenamiento en Alibaba Cloud es la elección típica:",
-      "options": [
-        "OS y bases de datos → Block (EBS ESSD)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: OS y bases de datos → Block (EBS ESSD)."
-    }
+    { "q": "¿Cuál es la principal limitación de un servidor de almacenamiento tradicional (no distribuido) a gran escala?", "options": ["No soporta cifrado", "Tiene un techo físico de capacidad/throughput y es un punto único de falla", "Es más barato que el almacenamiento distribuido", "No puede usarse con aplicaciones web"], "answer": 1, "explain": "Un servidor único tiene límites físicos de escalado vertical y, si falla, deja los datos inaccesibles — el problema central que resuelve el almacenamiento distribuido." },
+    { "q": "En la arquitectura típica de un sistema de almacenamiento distribuido, ¿qué función cumple el plano de metadatos?", "options": ["Almacena físicamente todos los bytes de datos", "Mantiene el namespace: qué existe y en qué chunk servers están sus réplicas", "Reemplaza al cliente en las operaciones de lectura", "Solo se usa para facturación"], "answer": 1, "explain": "El plano de metadatos es la 'guía telefónica' del sistema: sabe dónde está cada dato, pero no mueve los bytes en sí — eso lo hacen los chunk servers directamente con el cliente." },
+    { "q": "Según el teorema CAP, ¿qué debe elegir un sistema distribuido cuando ocurre una partición de red?", "options": ["Entre Consistencia y Disponibilidad", "Entre velocidad y seguridad", "Entre costo y capacidad", "El teorema CAP no aplica a particiones de red"], "answer": 0, "explain": "CAP establece que, ante una partición de red (P, inevitable a escala), el sistema debe priorizar Consistencia o Disponibilidad, sin poder garantizar ambas simultáneamente." },
+    { "q": "¿Qué ventaja principal ofrece erasure coding frente a la replicación simple (RF=3)?", "options": ["Menor uso de CPU", "Menor overhead de almacenamiento para la misma tolerancia a fallos", "Reconstrucción más rápida ante fallo de nodo", "Mejor latencia de lectura"], "answer": 1, "explain": "Un esquema como 6+3 reduce el overhead de almacenamiento a 50% frente al 200% de RF=3, a costa de mayor cómputo en la codificación/reconstrucción." },
+    { "q": "Un clúster de metadatos usa un protocolo de consenso tipo Raft con 5 nodos. ¿Cuántos fallos simultáneos puede tolerar sin perder disponibilidad de escritura?", "options": ["1", "2", "4", "5"], "answer": 1, "explain": "Un clúster de consenso con N nodos tolera hasta ⌊(N-1)/2⌋ fallos; con N=5, eso son 2 nodos." },
+    { "q": "¿Cuál es la diferencia principal entre replicación y backup?", "options": ["Son exactamente lo mismo", "La replicación mantiene copias sincronizadas casi en tiempo real (incluyendo errores/borrados); el backup es una copia independiente punto-en-el-tiempo", "El backup siempre es más rápido de restaurar que la replicación", "La replicación solo aplica a bases de datos, nunca a almacenamiento de archivos"], "answer": 1, "explain": "Un borrado accidental se replica también a las réplicas casi de inmediato; un backup punto-en-el-tiempo permite recuperar un estado anterior al error." },
+    { "q": "¿Qué es Pangu según la documentación pública de Alibaba Cloud?", "options": ["Un producto de facturación", "El sistema de almacenamiento distribuido interno que sirve de base a OSS, Block Storage y NAS, entre otros servicios", "Un servicio de red privada virtual (VPC)", "Una herramienta de línea de comandos para desarrolladores"], "answer": 1, "explain": "Pangu es el sistema de archivos/almacenamiento distribuido de bajo nivel de Alibaba Cloud, documentado públicamente como núcleo común de varios servicios de storage y datos." },
+    { "q": "Un equipo necesita elegir el tipo de almacenamiento para datos que deben ser accedidos simultáneamente, con semántica de archivos POSIX, por 20 instancias ECS. ¿Qué categoría corresponde?", "options": ["Block Storage", "File Storage (NAS)", "Object Storage", "Ninguna, se necesita una base de datos"], "answer": 1, "explain": "El acceso compartido simultáneo con semántica de archivos es exactamente el caso de uso de File Storage (NAS), no de Block (exclusivo a una instancia) ni de Object (API/HTTP, no POSIX)." },
+    { "q": "¿Por qué erasure coding no es la mejor opción para datos calientes de baja latencia?", "options": ["Porque no ofrece tolerancia a fallos", "Porque el cómputo de codificación/decodificación añade latencia frente a leer una copia simple", "Porque erasure coding no existe en almacenamiento distribuido real", "Porque solo funciona con datos cifrados"], "answer": 1, "explain": "Reconstruir un fragmento con erasure coding exige cómputo adicional; para datos calientes de alta frecuencia, una réplica simple es más rápida de leer." },
+    { "q": "¿Qué significa 'consistencia eventual' en un sistema distribuido?", "options": ["Los datos se pierden eventualmente", "Las réplicas pueden divergir temporalmente pero convergen al mismo valor con el tiempo", "El sistema nunca es consistente", "Es sinónimo exacto de consistencia fuerte"], "answer": 1, "explain": "Consistencia eventual permite una ventana de divergencia entre réplicas, priorizando disponibilidad, con la garantía de que convergerán eventualmente." },
+    { "q": "¿Cuál es el rol de los 'heartbeats' entre chunk servers y el plano de metadatos?", "options": ["Cifrar el tráfico de red", "Reportar periódicamente el estado del nodo, permitiendo detectar fallos y disparar re-replicación", "Facturar el uso de almacenamiento", "Comprimir los datos antes de escribirlos"], "answer": 1, "explain": "Los heartbeats permiten al plano de metadatos detectar cuándo un chunk server deja de responder y disparar la reconstrucción de sus réplicas en otro nodo." },
+    { "q": "¿Qué interfaz de almacenamiento es la más adecuada para un data lake de objetos no estructurados accedido por analítica masiva (MaxCompute/EMR)?", "options": ["Block Storage", "File Storage", "Object Storage", "Ninguna, se necesita una base de datos relacional"], "answer": 2, "explain": "Object Storage está pensado para datos no estructurados a gran escala accedidos por API/HTTP, el patrón típico de un data lake." },
+    { "q": "¿Por qué los clústeres de consenso suelen tener un número impar de nodos (3, 5, 7)?", "options": ["Por convención estética, no tiene efecto técnico", "Porque maximiza la tolerancia a fallos por mayoría sin desperdiciar nodos", "Porque los protocolos de consenso no funcionan con números pares", "Porque reduce el costo de licenciamiento"], "answer": 1, "explain": "Con número impar se maximiza la tolerancia a fallos relativa al número total de nodos usados; un nodo par añade costo sin mejorar la tolerancia a fallos frente al impar inmediatamente menor." },
+    { "q": "Un dato de archivo legal debe conservarse 7 años, accedido casi nunca, priorizando el menor costo de almacenamiento posible. ¿Qué técnica de tolerancia a fallos es más adecuada?", "options": ["Replicación simple con RF=5", "Erasure coding con overhead bajo (p.ej. esquema tipo 6+3)", "No aplicar ninguna redundancia", "Guardar una única copia sin protección"], "answer": 1, "explain": "Para datos fríos de bajo acceso, erasure coding minimiza el costo de almacenamiento manteniendo tolerancia a fallos, a costa de una restauración más lenta — aceptable para este caso de uso." }
   ],
-  "exam_focus": "3 tipos storage y cuándo cada uno, snapshots vs backup, lifecycle.",
+  "exam_focus": "El examen suele evaluar: (a) razonar con el teorema CAP ante escenarios de partición de red, (b) elegir entre replicación y erasure coding según el patrón de acceso (caliente/frío), (c) distinguir el rol del plano de metadatos del plano de datos, (d) reconocer qué interfaz de almacenamiento (block/file/object) corresponde a un escenario dado.",
   "official_intro": "Distributed Storage Introduction Clouder at a Glance Video Course Duration 63 Minutes Available Languages English Course Type Online USD 10.00 Buy Now Take Exam Learn for Free (Membership) Introduction The current approach to storage does not work anymore: it is not flexible enough, fast enough or the cost is prohibitively high. By designing a distributed storage system solves all of these issues at once. Through this course, you will learn, you can learn about the concepts and features of distributed storage system and its benefits compared to traditional storage.",
   "recommended_for": "System Architect, Operation Engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_distributed",

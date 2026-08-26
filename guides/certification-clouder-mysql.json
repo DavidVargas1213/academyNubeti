@@ -453,7 +453,7 @@
         "Backend transaccional de aplicaciones web/móviles",
         "Enrutamiento DNS global",
         "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
+        "Renderizado de video 3D con GPU"
       ],
       "answer": 0,
       "explain": "Caso de uso canónico: Backend transaccional de aplicaciones web/móviles."

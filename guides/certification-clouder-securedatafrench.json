@@ -2,477 +2,162 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-securedatafrench",
   "title_en": "Secure Your Data in Alibaba Cloud (French version)",
-  "title_es": "Secure Your Datos in Alibaba Cloud (French version)",
+  "title_es": "Asegura tus Datos en Alibaba Cloud (versión francesa)",
+  "title_es_html": "Asegura tus Datos en Alibaba Cloud <em>(versión francesa)</em>",
   "duration_es": "40 minutos",
   "level_es": "Intermedio",
   "category_es": "Seguridad",
   "subcategory_es": "Data Security",
-  "language_es": "Inglés",
+  "language_es": "Francés",
   "url": "https://edu.alibabacloud.com/certification/clouder_securedatafrench",
-  "lead": "Guía completa en español para el curso «Secure Your Data in Alibaba Cloud (French version)» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Versión condensada en español de la grabación en francés «Secure Your Data in Alibaba Cloud» — mismo temario técnico que el curso en inglés (cifrado en reposo con KMS, cifrado en tránsito con SSL, descubrimiento y enmascaramiento de datos sensibles con SDDP) pero en formato más breve. El video está en francés y el material/examen en inglés; esta guía resume en español lo esencial para aprobar sin depender del idioma de la grabación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Identificar</strong> los tres estados de un dato en la nube — reposo, tránsito, uso — y el control que corresponde a cada uno.",
+    "<strong>Diferenciar</strong> los modelos de llave de KMS: gestionada por el servicio (SSE), propia del cliente (BYOK) y el patrón práctico de Envelope Encryption.",
+    "<strong>Emitir y administrar</strong> un certificado SSL/TLS en Alibaba Cloud para proteger la comunicación con el usuario.",
+    "<strong>Descubrir y enmascarar</strong> datos sensibles (PII, tarjetas) usando SDDP sin revisión manual dato por dato.",
+    "<strong>Combinar</strong> cifrado con control de acceso (RAM/Bucket Policy) y backup remoto como capas independientes de una misma estrategia.",
+    "<strong>Gestionar</strong> el ciclo de vida básico de una llave: cuándo rotarla y cuándo revocarla."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Modelo condensado de protección de datos en cuatro capas: primero, SDDP identifica automáticamente qué datos son sensibles dentro de OSS, RDS y MaxCompute; segundo, KMS cifra esos datos en reposo mediante una CMK — gestionada por el servicio si basta con SSE, o gestionada por el cliente (BYOK) si se necesita auditoría propia — usando Envelope Encryption como mecanismo real (una data key cifra el contenido, la CMK cifra la data key); tercero, SSL Certificates Service emite el certificado que cifra el tránsito entre el usuario y la aplicación; cuarto, RAM Policy y las políticas de bucket deciden quién puede solicitar el dato en primer lugar, y un backup remoto a otra región queda como último respaldo si alguna de las capas anteriores falla.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Estados del dato y superficie de cifrado",
+      "title_en": "Data States and the Encryption Surface",
+      "intro": "Todo dato en la nube pasa por tres estados posibles, y cada uno tiene una superficie de ataque distinta. Esta lección introductoria condensa lo que en la versión larga del curso ocupa un módulo completo: ubicar el dato antes de decidir cómo protegerlo.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>En reposo</strong>: almacenado en OSS, en disco o en una base de datos como RDS — se protege con cifrado gestionado a través de KMS.",
+        "<strong>En tránsito</strong>: viajando por la red entre el cliente y el servicio, o entre servicios — se protege con TLS/SSL.",
+        "<strong>En uso</strong>: siendo procesado en memoria por la aplicación en ese instante — el más difícil de proteger, mencionado aquí solo como parte del modelo completo.",
+        "<strong>Ningún estado sustituye a otro</strong>: cifrar el disco no protege el tráfico de red, y cifrar el tráfico no protege lo que queda guardado — hay que cubrir cada uno por separado.",
+        "<strong>Cómo lo pregunta el examen</strong>: si el escenario describe un dato «almacenado», piensa en KMS; si lo describe «enviado» o «transmitido», piensa en SSL/TLS."
       ],
       "keypoint": {
-        "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "label": "Idea central",
+        "text": "La primera pregunta ante cualquier escenario de examen no es «qué servicio usar» sino «en qué estado está el dato en ese momento»."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · KMS y las tres formas de cifrar en reposo",
+      "title_en": "KMS and Three Ways to Encrypt at Rest",
+      "intro": "KMS centraliza la gestión de llaves para todo cifrado en reposo de la plataforma. Esta lección resume los tres modelos que el examen espera que sepas distinguir sin dudar.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>SSE (Server-Side Encryption)</strong>: la llave la crea y administra el propio servicio (OSS, RDS); activación inmediata, cero configuración adicional, pero auditoría limitada del uso de la llave.",
+        "<strong>BYOK (llave propia del cliente / CMK)</strong>: el cliente crea su Customer Master Key dentro de KMS, decide cuándo rotarla o revocarla, y puede consultar el registro de cada operación — el modelo que exige un regulador estricto.",
+        "<strong>Envelope Encryption</strong>: en la práctica ni SSE ni BYOK cifran el contenido directamente con la CMK — generan una data key que cifra el contenido, y la CMK solo cifra esa data key; así se evita el límite de tamaño de las operaciones de KMS.",
+        "<strong>AES vs. RSA a nivel conceptual</strong>: el contenido masivo se cifra con un algoritmo simétrico como AES por velocidad; llaves y handshakes usan cifrado asimétrico como RSA — Envelope Encryption combina ambos mundos en un mismo flujo.",
+        "<strong>Aplicado a OSS, disco y RDS</strong>: el mismo principio se activa como una opción al crear el bucket, la instancia de ECS o la base de datos — es una decisión de diseño inicial, no siempre algo que se pueda añadir después sin migrar los datos."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "SSE = rápido y simple, sin auditoría fina. BYOK = control total y auditable. Si el enunciado menciona compliance o auditoría de uso de la llave, la respuesta casi nunca es SSE."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · TLS/SSL: cifrar el dato mientras viaja",
+      "title_en": "TLS/SSL: Encrypting Data in Motion",
+      "intro": "Un dato perfectamente cifrado en reposo sigue viajando en texto plano si no hay TLS configurado en el punto de entrada. Esta lección cubre cómo Alibaba Cloud resuelve esa parte del problema.",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>TLS/SSL</strong>: cifra la sesión entre cliente y servidor mediante un handshake inicial y cifrado simétrico durante el resto de la conexión — es lo que convierte HTTP en HTTPS.",
+        "<strong>SSL Certificates Service</strong>: servicio para solicitar, emitir e instalar certificados en Alibaba Cloud, con opciones gratuitas de validación básica y opciones pagadas con mayor nivel de validación.",
+        "<strong>Dónde se termina el TLS</strong>: normalmente en el SLB o en el CDN, punto donde el tráfico se descifra antes de continuar internamente — puede volver a cifrarse si el diseño exige TLS de extremo a extremo.",
+        "<strong>Vigencia y renovación</strong>: un certificado vencido rompe la confianza del navegador de inmediato; conviene monitorear la expiración y renovar antes de que ocurra, no después.",
+        "<strong>No sustituye al cifrado en reposo</strong>: TLS protege el viaje, no el destino — el dato sigue necesitando su propio cifrado una vez almacenado, cubierto en la lección anterior."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "TLS y cifrado en reposo resuelven problemas distintos y ninguno reemplaza al otro; el examen los trata como capas separadas del mismo objetivo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · SDDP: encontrar y enmascarar lo sensible",
+      "title_en": "SDDP: Finding and Masking Sensitive Data",
+      "intro": "Antes de cifrar o restringir algo hay que saber que existe. SDDP resuelve el problema de descubrir datos sensibles a escala, sin depender de que un humano revise manualmente cada tabla o bucket.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Descubrimiento automático</strong>: SDDP escanea OSS, RDS y MaxCompute buscando patrones típicos de datos sensibles — tarjetas, identificaciones, correos — sin reglas manuales por cada caso.",
+        "<strong>Clasificación</strong>: cada hallazgo recibe un nivel de sensibilidad, permitiendo priorizar la protección donde el riesgo es mayor en vez de tratar todo el dataset igual.",
+        "<strong>Data Masking (enmascaramiento)</strong>: reemplaza el valor real por una versión parcial — por ejemplo, ocultar todos los dígitos de una tarjeta salvo los últimos cuatro.",
+        "<strong>Masking estático vs. dinámico</strong>: el estático crea una copia enmascarada fija (útil en entornos de prueba); el dinámico enmascara el valor solo al consultarlo, según quién pregunta, sin alterar el dato original.",
+        "<strong>Diferencia con cifrado</strong>: cifrar bloquea el acceso a quien no debería verlo; enmascarar limita cuánto ve incluso alguien con acceso legítimo — no son intercambiables."
+      ],
+      "keypoint": {
+        "label": "Idea central",
+        "text": "SDDP responde primero «dónde está lo sensible» y después «cómo mostrarlo con seguridad» — descubrimiento antes que protección."
+      }
+    },
+    {
+      "title_es": "5 · Control de acceso, rotación de llaves y backup remoto",
+      "title_en": "Access Control, Key Rotation and Remote Backup",
+      "intro": "Lección de cierre que reúne tres piezas que completan la estrategia: quién puede pedir el dato, qué pasa con la llave con el paso del tiempo, y qué red de seguridad queda si algo falla.",
+      "points": [
+        "<strong>RAM Policy + Bucket Policy/ACL</strong>: dos filtros independientes del cifrado — definen qué identidad puede operar sobre qué recurso, incluso antes de que el contenido se descifre.",
+        "<strong>Cifrado sin control de acceso no basta</strong>: un recurso público con cifrado en reposo sigue exponiendo el contenido a cualquiera con la URL correcta; son capas distintas y ambas son necesarias.",
+        "<strong>Rotación de llaves</strong>: cambiar periódicamente el material de una CMK limita el daño si esa llave se compromete algún día — puede automatizarse en KMS.",
+        "<strong>Revocación</strong>: deshabilitar una CMK detiene de inmediato su uso sin eliminarla, útil como primera respuesta ante sospecha de fuga.",
+        "<strong>Backup remoto como red de seguridad</strong>: una copia automática hacia otra región protege ante un desastre o un borrado accidental — se menciona a nivel conceptual aquí; el detalle de RTO/RPO pertenece al curso dedicado de backup."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Una llave sin rotación es un riesgo que no se ve hasta que ya es tarde — tan importante como elegir bien entre SSE y BYOK es no abandonar la llave una vez creada."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Clínica digital cifra historiales en RDS y debe poder auditar cada acceso ante un regulador de salud — BYOK con CMK propia, no SSE" },
+    { "title": "Escenario 2", "text": "Equipo interno sube reportes a OSS sin requisito de auditoría fina de la llave — SSE-OSS gestionado automáticamente" },
+    { "title": "Escenario 3", "text": "Plataforma de pagos necesita HTTPS con certificado renovado antes de expirar — SSL Certificates Service delante del balanceador" },
+    { "title": "Escenario 4", "text": "Departamento legal necesita ubicar todos los correos y números de identificación almacenados sin revisión manual — SDDP discovery" },
+    { "title": "Escenario 5", "text": "Call center debe verificar una tarjeta sin exponer el número completo a los agentes — Data Masking dinámico" },
+    { "title": "Escenario 6", "text": "Revisión interna encuentra una CMK activa sin rotar desde su creación — se activa rotación automática como corrección" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Dar por hecho que un servicio en la nube ya cifra los datos sin activarlo explícitamente",
+    "Elegir SSE cuando el requisito real es poder auditar cada uso de la llave (caso para BYOK)",
+    "Proteger el almacenamiento pero dejar sin TLS la conexión hacia la aplicación",
+    "Mantener un recurso con acceso público asumiendo que el cifrado en reposo ya lo protege por completo",
+    "Cifrar todo el dataset por igual en vez de clasificar primero qué es realmente sensible",
+    "Crear una CMK y nunca revisar ni rotar su material criptográfico"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun kms CreateKey --Description \"cmk-datos-clientes\" --KeySpec Aliyun_AES_256", "desc": "Crear una CMK simétrica para cifrado en reposo" },
+    { "cmd": "aliyun kms GenerateDataKey --KeyId <key-id> --KeySpec AES_256", "desc": "Generar una data key cifrada por la CMK (Envelope Encryption)" },
+    { "cmd": "aliyun kms EnableKeyRotation --KeyId <key-id> --RotationInterval 180d", "desc": "Programar la rotación automática de una CMK" },
+    { "cmd": "aliyun cas CreateCertificateRequest --Domain www.midominio.com", "desc": "Solicitar un certificado SSL para un dominio" },
+    { "cmd": "aliyun cas DescribeCertificateList", "desc": "Consultar los certificados emitidos y su fecha de expiración" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "KMS (Key Management Service)", "es": "Servicio de gestión de llaves", "def": "Servicio central de Alibaba Cloud para crear y controlar llaves criptográficas usadas por otros servicios." },
+    { "en": "CMK (Customer Master Key)", "es": "Llave maestra del cliente", "def": "Llave raíz en KMS que cifra llaves de datos en vez de cifrar directamente grandes volúmenes." },
+    { "en": "SSE (Server-Side Encryption)", "es": "Cifrado del lado del servidor", "def": "La llave la crea y gestiona el propio servicio, sin intervención manual del usuario." },
+    { "en": "BYOK (Bring Your Own Key)", "es": "Llave propia del cliente", "def": "El cliente crea y controla su CMK en KMS, con auditoría completa de cada uso." },
+    { "en": "Envelope Encryption", "es": "Cifrado de sobre", "def": "Una data key cifra el contenido real; la CMK cifra esa data key en vez del contenido directamente." },
+    { "en": "Data Key", "es": "Llave de datos", "def": "Llave simétrica usada para cifrar el contenido; permanece cifrada por la CMK cuando no está en uso." },
+    { "en": "AES", "es": "AES", "def": "Cifrado simétrico usado para proteger volúmenes grandes de datos por su velocidad." },
+    { "en": "RSA", "es": "RSA", "def": "Cifrado asimétrico usado típicamente en el handshake TLS o para proteger llaves, no grandes volúmenes." },
+    { "en": "TLS/SSL", "es": "TLS/SSL", "def": "Protocolo que cifra la comunicación de red entre cliente y servidor." },
+    { "en": "SSL Certificates Service", "es": "Servicio de certificados SSL", "def": "Servicio de Alibaba Cloud para emitir, instalar y renovar certificados TLS." },
+    { "en": "SDDP (Sensitive Data Discovery and Protection)", "es": "Descubrimiento y protección de datos sensibles", "def": "Servicio que escanea y clasifica automáticamente datos sensibles en el almacenamiento de la cuenta." },
+    { "en": "Data Masking", "es": "Enmascaramiento de datos", "def": "Ocultar parte de un valor sensible mostrando solo una versión parcial u ofuscada." },
+    { "en": "PII", "es": "Información de identificación personal", "def": "Cualquier dato que permita identificar a una persona específica." },
+    { "en": "RAM Policy", "es": "Política RAM", "def": "Permisos por identidad que controlan qué usuario o rol puede operar sobre qué recurso." },
+    { "en": "Bucket Policy / ACL", "es": "Política o ACL de bucket", "def": "Restricción de acceso a nivel de recurso de almacenamiento, complementaria a RAM Policy." },
+    { "en": "Key Rotation", "es": "Rotación de llaves", "def": "Reemplazo periódico del material criptográfico de una llave para limitar el daño ante un compromiso." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Qué control corresponde a un dato que está guardado en OSS sin moverse en este momento?", "options": ["SSL/TLS", "Cifrado en reposo gestionado por KMS", "Anti-DDoS Premium", "Rate limiting"], "answer": 1, "explain": "El dato en reposo se protege mediante cifrado gestionado a través de KMS, no mediante controles de red." },
+    { "q": "Un banco necesita registrar exactamente cada vez que alguien descifra un dato con su llave. ¿Qué modelo de KMS elegir?", "options": ["SSE gestionado automáticamente por el servicio", "BYOK con una CMK propia y auditoría completa", "Ninguno, KMS no registra el uso de llaves", "Data Masking estático"], "answer": 1, "explain": "Solo BYOK da al cliente el control y el registro de auditoría necesarios para cumplir ese requisito." },
+    { "q": "¿Por qué se usa Envelope Encryption en vez de cifrar todo el contenido directamente con la CMK?", "options": ["Porque la CMK no admite cifrado simétrico", "Porque las operaciones sobre la CMK tienen límites y una data key cifra el contenido mientras la CMK solo cifra esa data key", "Porque es un requisito legal en Francia", "Porque evita usar TLS"], "answer": 1, "explain": "Envelope Encryption evita los límites de tamaño de las operaciones directas de KMS al delegar el cifrado masivo en una data key." },
+    { "q": "¿Qué protege TLS/SSL que el cifrado en reposo no cubre?", "options": ["El dato mientras viaja por la red entre cliente y servidor", "El dato guardado en un disco de ECS", "Las tablas de una base de datos RDS", "Los objetos archivados en Cold Archive"], "answer": 0, "explain": "TLS/SSL cifra la comunicación en tránsito; el cifrado en reposo protege el dato ya almacenado, son capas distintas." },
+    { "q": "¿Qué es lo primero que hace SDDP antes de poder aplicar cualquier enmascaramiento?", "options": ["Cifra automáticamente toda la cuenta", "Descubre y clasifica dónde existen datos sensibles en el almacenamiento", "Genera certificados SSL", "Rota las CMK activas"], "answer": 1, "explain": "SDDP primero localiza y clasifica los datos sensibles; sin ese paso no hay nada que enmascarar de forma dirigida." },
+    { "q": "Un agente de call center necesita confirmar una tarjeta sin ver el número completo. ¿Qué técnica aplica?", "options": ["Cifrado en reposo con BYOK", "Data Masking dinámico", "Rotación de llaves", "Cross-Region Replication"], "answer": 1, "explain": "El enmascaramiento dinámico muestra una versión parcial del valor según quién consulta, sin exponer el dato completo." },
+    { "q": "Un bucket tiene cifrado en reposo activo pero también acceso público de lectura. ¿Está el contenido protegido de un desconocido con la URL?", "options": ["Sí, el cifrado siempre basta por sí solo", "No, porque el control de acceso es una capa distinta del cifrado del almacenamiento subyacente", "Solo si el bucket usa Cold Archive", "Solo si tiene versionado activado"], "answer": 1, "explain": "El acceso público anula la protección práctica aunque el contenido esté cifrado en reposo; son controles independientes." },
+    { "q": "¿Qué efecto tiene deshabilitar una CMK en KMS sin eliminarla?", "options": ["Borra permanentemente los datos cifrados con ella", "Bloquea de inmediato nuevas operaciones de cifrado/descifrado con esa llave, de forma reversible", "Genera automáticamente un certificado SSL nuevo", "Activa el enmascaramiento dinámico en toda la cuenta"], "answer": 1, "explain": "Deshabilitar la CMK es una respuesta rápida y reversible ante sospecha de compromiso, sin destruir la llave." },
+    { "q": "¿Cuál es el riesgo principal de nunca rotar una CMK?", "options": ["Aumenta el costo mensual del servicio", "Si la llave se compromete, todo lo cifrado con ella queda expuesto y el riesgo no se detecta hasta que ya ocurrió", "Bloquea la creación de nuevos buckets", "Fuerza la eliminación automática de la llave a los 90 días"], "answer": 1, "explain": "Una llave sin rotación acumula un riesgo silencioso: funciona con normalidad hasta que se filtra." },
+    { "q": "¿Qué algoritmo se usa típicamente para cifrar grandes volúmenes de contenido por su velocidad?", "options": ["RSA", "AES", "SHA-256", "Base64 (que no es cifrado)"], "answer": 1, "explain": "AES, al ser simétrico, cifra grandes volúmenes de forma mucho más eficiente que un algoritmo asimétrico como RSA." },
+    { "q": "¿Qué diferencia hay entre cifrar un dato y enmascararlo (Data Masking)?", "options": ["Ninguna, son intercambiables", "El cifrado bloquea a quien no debería tener acceso; el masking limita cuánto ve incluso quien sí tiene acceso legítimo", "El masking siempre reemplaza al cifrado", "El cifrado solo aplica a certificados SSL"], "answer": 1, "explain": "Son controles complementarios que resuelven problemas distintos: acceso no autorizado versus exposición innecesaria a un usuario autorizado." },
+    { "q": "¿Cuál de las siguientes NO forma parte de la estrategia de protección de datos cubierta en este curso?", "options": ["Cifrado en reposo con KMS", "Cifrado en tránsito con SSL/TLS", "Reglas de firewall de aplicación web (WAF) para bloquear inyección SQL", "Descubrimiento y clasificación de datos sensibles con SDDP"], "answer": 2, "explain": "WAF pertenece al curso de seguridad de aplicación web; este curso se centra en cifrado, gestión de llaves y clasificación de datos." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen (en inglés, aunque la grabación esté en francés) evalúa reconocer el estado del dato y el control correspondiente: KMS con SSE o BYOK para reposo, SSL Certificates Service para tránsito, SDDP para descubrimiento y enmascaramiento, y control de acceso vía RAM/Bucket Policy como capa aparte del cifrado. También espera que sepas qué implica rotar o deshabilitar una CMK.",
   "official_intro": "With this certification course, you will: Understand where data should be secured in Alibab Cloud, such as: storage technology, backup and recovery solutions, how to transmit data securely, which encryption algorithm to choose, and so on. Master the core skills of data security protection on Alibaba Cloud platform, including: How to implement automatic remote backup of data, how to implement encrypted storage in cloud environment, how to generate SSL certificate, etc.",
   "recommended_for": "Cloud security administrator, Data security adminstrator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_securedatafrench",

@@ -3,451 +3,214 @@
   "course_id": "Curso Nº certification-clouder-slb",
   "title_en": "Handle Large Traffic with Load Balancer",
   "title_es": "Manejar Tráfico Alto con Balanceador de Carga",
+  "title_es_html": "Manejar Tráfico Alto con <em>Balanceador de Carga</em>",
   "duration_es": "46 minutos",
   "level_es": "Principiante",
   "category_es": "Redes y CDN",
   "subcategory_es": "Red en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_slb",
-  "lead": "Guía completa en español para el curso «Handle Large Traffic with Load Balancer» de Alibaba Cloud Academy. Cubre en profundidad Server Load Balancer (SLB / ALB / NLB). SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido para millones de conexiones concurrentes). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Handle Large Traffic with Load Balancer» de Alibaba Cloud Academy, centrada en Server Load Balancer: la familia de balanceadores CLB, ALB y NLB que reparte el tráfico entrante entre múltiples servidores backend. Cubre cuándo elegir cada variante, cómo diseñar listeners y grupos backend, los mecanismos de salud y persistencia de sesión, y la terminación SSL — con la profundidad conceptual que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Server Load Balancer (SLB / ALB / NLB)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: CLB, ALB, NLB, Listener, Backend Server Group.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Server Load Balancer (SLB / ALB / NLB) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué un solo servidor no basta para tráfico alto y qué problema resuelve un balanceador de carga.",
+    "<strong>Distinguir</strong> CLB, ALB y NLB por capa OSI, capacidad y caso de uso, y elegir el correcto según el escenario.",
+    "<strong>Configurar</strong> listeners, grupos de servidores backend y reglas de enrutamiento por dominio/ruta.",
+    "<strong>Diseñar</strong> health checks efectivos que reflejen la salud real de la aplicación, no solo la conectividad de red.",
+    "<strong>Aplicar</strong> persistencia de sesión (sticky sessions) y terminación SSL sin comprometer la distribución de carga.",
+    "<strong>Diseñar</strong> despliegues blue-green y canary usando pesos de backend.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre Server Load Balancer."
   ],
-  "architecture": "Frontend público → SLB con listener HTTPS:443 (termina SSL) → backend server group con 4+ instancias ECS en 2 zonas. Health checks cada 5 s. Reglas L7 para /api → api-servers y /static → CDN origin. Métricas fluyen a CloudMonitor; alertas si backends unhealthy > 30%.",
+  "architecture": "Los clientes llegan a una IP pública (o EIP) asociada a la instancia de balanceador, desplegada simultáneamente en dos o más zonas de disponibilidad para que la caída de un data center no derribe el servicio. Un Listener escucha en un puerto y protocolo concretos (p.ej. HTTPS:443) y, si el protocolo es de capa 7, aplica reglas de enrutamiento por dominio o ruta (/api hacia un grupo de servidores, /static hacia otro) antes de reenviar la conexión a un Backend Server Group. Cada grupo contiene instancias ECS repartidas en varias zonas, monitoreadas por un Health Check periódico que retira automáticamente cualquier backend que deje de responder correctamente. El certificado SSL se termina en el balanceador —los backends reciben tráfico HTTP plano salvo que se exija re-cifrado por compliance— y las métricas de tráfico, latencia y estado de los backends fluyen hacia CloudMonitor para alarmas.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Server Load Balancer (SLB / ALB / NLB)",
-      "title_en": "Introduction to Server Load Balancer (SLB / ALB / NLB)",
-      "intro": "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido para millones de conexiones concurrentes). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema del tráfico concentrado en un solo servidor",
+      "title_en": "The Problem of Traffic Concentrated on a Single Server",
+      "intro": "Antes de comparar productos hay que entender la razón de ser del balanceo de carga: un único servidor, sin importar cuán potente sea, tiene un límite de conexiones concurrentes y es un punto único de falla.",
       "points": [
-        "<strong>Problema que resuelve</strong>: SLB distribuye tráfico entrante entre múltiples backends.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Server Load Balancer (SLB / ALB / NLB) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Saturación</strong>: cuando el tráfico supera la capacidad de un servidor, las respuestas se degradan (latencia alta) o el servicio deja de responder por completo.",
+        "<strong>Punto único de falla</strong>: si ese único servidor cae por mantenimiento o error, todo el servicio se interrumpe — no hay a dónde redirigir el tráfico.",
+        "<strong>Escalado horizontal como solución</strong>: en vez de un servidor cada vez más grande (escalado vertical, con límite físico), se despliegan varias instancias idénticas y se reparte el tráfico entre ellas.",
+        "<strong>El balanceador como pieza que hace posible el escalado horizontal</strong>: sin un punto de entrada único que decida a qué backend enviar cada solicitud, el cliente tendría que saber de antemano cuántos servidores existen y elegir uno — inviable en producción."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Server Load Balancer (SLB / ALB / NLB) es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Un balanceador de carga no es solo «repartir tráfico» — es lo que convierte un grupo de servidores individuales, cada uno con un punto único de falla, en un servicio con alta disponibilidad y capacidad elástica."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Server Load Balancer (SLB / ALB / NLB) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · CLB, ALB y NLB: tres balanceadores, tres capas",
+      "title_en": "CLB, ALB and NLB: Three Load Balancers, Three Layers",
+      "intro": "Alibaba Cloud no ofrece un único producto de balanceo sino tres, cada uno optimizado para una capa de red distinta — el examen pregunta con frecuencia cuál elegir según el protocolo y volumen del escenario.",
       "points": [
-        "<strong>Patrón canónico</strong>: Frontend público → SLB con listener HTTPS:443 (termina SSL) → backend server group con 4+ instancias ECS en 2 zonas. Health checks cada 5 s. Reglas L7 para /api → api-servers y /static → CDN origin. Métricas fluyen a CloudMonitor; alertas si backends unhealthy > 30%.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Server Load Balancer (SLB / ALB / NLB) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Classic Load Balancer</strong> <em>(CLB)</em>: Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas.",
-        "<strong>Application Load Balancer</strong> <em>(ALB)</em>: L7 con reglas de host, path, header, cookie, redirects, WAF.",
-        "<strong>Network Load Balancer</strong> <em>(NLB)</em>: L4 ultra-alto rendimiento (millones QPS), static IP por zona.",
-        "<strong>Listener</strong> <em>(Listener)</em>: Combinación de puerto + protocolo donde acepta tráfico.",
-        "<strong>Grupo backend</strong> <em>(Backend Server Group)</em>: Conjunto de instancias que reciben tráfico.",
-        "<strong>Health check</strong> <em>(Health Check)</em>: Chequeo periódico HTTP/TCP; retira backends unhealthy.",
-        "<strong>Persistencia</strong> <em>(Session Persistence)</em>: Sticky sessions por cookie o hash de IP.",
-        "<strong>Terminación SSL</strong> <em>(SSL Termination)</em>: Certificado en SLB; backends reciben HTTP puro."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>CLB (Classic Load Balancer)</strong>: el producto original, opera en capa 4 (TCP/UDP) o capa 7 (HTTP/HTTPS) básico. Sigue soportado pero Alibaba Cloud recomienda ALB o NLB para cargas nuevas por sus capacidades más modernas.",
+        "<strong>ALB (Application Load Balancer)</strong>: balanceador de capa 7 avanzado — enrutamiento por dominio, ruta (path), cabecera HTTP o cookie, redirecciones nativas, y WAF integrado. Pensado para microservicios y APIs donde la lógica de enrutamiento importa tanto como la distribución de carga.",
+        "<strong>NLB (Network Load Balancer)</strong>: balanceador de capa 4 de ultra alto rendimiento, capaz de sostener millones de conexiones concurrentes con latencia mínima y una IP estática por zona — pensado para IoT, gaming o protocolos TCP/UDP puros donde no hace falta inspeccionar HTTP.",
+        "<strong>Regla de selección por protocolo</strong>: si el tráfico es HTTP/HTTPS y necesita enrutamiento inteligente por contenido → ALB. Si es TCP/UDP puro (bases de datos, MQTT, gRPC binario) a escala masiva → NLB. Si es una carga heredada ya migrada sobre CLB → evaluar migración, no necesariamente urgente."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona «reglas de enrutamiento por dominio o path» o «WAF integrado» → ALB. Si menciona «millones de conexiones concurrentes» o «IoT/MQTT» → NLB. Si no da pistas de capa 7, sospecha de un escenario legado con CLB."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Listeners y grupos de servidores backend",
+      "title_en": "Listeners and Backend Server Groups",
+      "intro": "La configuración operativa de cualquier balanceador gira en torno a dos objetos: el listener que recibe el tráfico y el grupo de servidores que lo procesa.",
       "points": [
-        "<strong>HA</strong>: Backends en 2+ zonas — SLB balancea entre ellas",
-        "<strong>HA</strong>: Habilitar HTTPS con TLS 1.2+ y ciphers seguros",
-        "<strong>Seguridad</strong>: Habilitar HTTPS con TLS 1.2+ y ciphers seguros",
-        "<strong>Buenas prácticas</strong>: Preferir ALB o NLB nuevos sobre CLB clásico",
-        "<strong>Buenas prácticas</strong>: Health checks reales (endpoint /health que valide DB) — no solo TCP",
-        "<strong>Buenas prácticas</strong>: Access logs a SLS para debugging y auditoría"
+        "<strong>Listener</strong>: combinación de puerto y protocolo (p.ej. TCP:80, HTTPS:443) por la que el balanceador acepta conexiones entrantes; un mismo balanceador admite múltiples listeners simultáneos.",
+        "<strong>Backend Server Group</strong>: conjunto de instancias ECS (o contenedores, o IP privadas) que reciben el tráfico de un listener; se recomienda distribuirlas en al menos dos zonas de disponibilidad.",
+        "<strong>Reglas de enrutamiento L7 (solo ALB)</strong>: un mismo listener HTTPS puede enviar <code>/api/*</code> a un grupo de servidores de backend y <code>/static/*</code> a otro (o a un origen de CDN), evaluando reglas en orden de prioridad.",
+        "<strong>Algoritmo de balanceo</strong>: round robin (rotación simple), weighted round robin (según peso asignado a cada backend) o consistent hashing (misma IP de origen siempre al mismo backend, útil sin cookies).",
+        "<strong>Puerto de backend distinto al del listener</strong>: el balanceador puede recibir en el puerto 443 y reenviar al backend por el puerto 8080, desacoplando la exposición pública del puerto real de la aplicación."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "El listener decide CÓMO entra el tráfico (puerto, protocolo, reglas); el grupo backend decide A DÓNDE va. Cambiar el algoritmo de balanceo no afecta el listener, y añadir una regla de ruteo no afecta qué backends existen en el grupo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Health checks: la diferencia entre un backend vivo y uno útil",
+      "title_en": "Health Checks: Alive vs Actually Useful",
+      "intro": "Un health check mal diseñado es peor que no tenerlo — puede dar por saludable un backend que en realidad no puede atender solicitudes, o marcar como caído uno que solo estaba lento en un endpoint pesado.",
       "points": [
-        "<strong>Antipattern</strong>: Health check apuntando a / cuando la home hace queries pesadas → false unhealthy",
-        "<strong>Antipattern</strong>: Backends en una sola zona — SLB en multi-zona pero backends no",
-        "<strong>Antipattern</strong>: SSL termination sin re-cifrar hacia backends sensibles (PCI)",
-        "<strong>Antipattern</strong>: Sticky sessions con TTL infinito → distribución desigual",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Health check TCP</strong>: solo verifica que el puerto acepte conexión — confirma que el proceso está vivo, pero no que la aplicación funcione correctamente (p.ej. sin conexión a su base de datos).",
+        "<strong>Health check HTTP</strong>: solicita una URL específica y valida el código de respuesta (200 OK esperado); permite crear un endpoint dedicado como <code>/health</code> que sí verifique dependencias críticas.",
+        "<strong>Antipatrón de endpoint pesado</strong>: apuntar el health check a la página de inicio si esta ejecuta consultas costosas a base de datos puede generar falsos negativos bajo carga alta, retirando backends sanos justo cuando más se necesitan.",
+        "<strong>Intervalo, umbral y timeout</strong>: se configuran cada cuántos segundos se chequea, cuántos fallos consecutivos declaran un backend no saludable, y cuánto se espera antes de considerar el chequeo fallido — ajustar estos valores evita retiros prematuros por una sola latencia puntual.",
+        "<strong>Reintegración automática</strong>: cuando un backend vuelve a responder correctamente durante el número de chequeos configurado, el balanceador lo reincorpora automáticamente al grupo activo sin intervención manual."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario describe backends marcados como «unhealthy» durante picos de tráfico normal, sospecha de un health check apuntando a un endpoint costoso — la solución no es aumentar servidores sino usar un endpoint de salud liviano y bien diseñado."
+      }
+    },
+    {
+      "title_es": "5 · Persistencia de sesión y terminación SSL",
+      "title_en": "Session Persistence and SSL Termination",
+      "intro": "Dos configuraciones cambian por completo el comportamiento del balanceador frente a aplicaciones con estado y frente al cifrado del tráfico, y ambas tienen matices que el examen suele explotar.",
+      "points": [
+        "<strong>Sticky sessions (persistencia de sesión)</strong>: fuerza a que todas las solicitudes de un mismo cliente lleguen siempre al mismo backend, mediante una cookie insertada por el balanceador o generada por la propia aplicación.",
+        "<strong>Por qué es necesaria en apps con estado</strong>: si la sesión del usuario (carrito, login) vive solo en la memoria de un servidor específico y no en una caché compartida, romper la afinidad envía al usuario a un servidor que no lo reconoce.",
+        "<strong>Riesgo de TTL infinito</strong>: una persistencia sin expiración razonable concentra progresivamente más usuarios en los mismos backends con sesiones largas, degradando el balanceo real de carga con el tiempo.",
+        "<strong>Terminación SSL en el balanceador</strong>: el certificado se instala en el balanceador, que descifra el tráfico HTTPS y lo reenvía a los backends en HTTP plano — reduce la carga de CPU de cifrado en cada instancia backend.",
+        "<strong>Re-cifrado hacia el backend</strong>: para cargas con compliance estricto (datos de tarjetas, salud), se puede volver a cifrar el tramo balanceador-backend en vez de dejarlo en HTTP plano dentro de la VPC."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La solución moderna preferida a las sticky sessions es una caché de sesión compartida (Redis) accesible desde cualquier backend — así cualquier servidor puede atender a cualquier usuario y el balanceo real no se ve comprometido."
+      }
+    },
+    {
+      "title_es": "6 · Despliegues avanzados: canary, blue-green y pesos",
+      "title_en": "Advanced Deployments: Canary, Blue-Green and Weights",
+      "intro": "Más allá de repartir tráfico de forma pareja, el balanceador es la herramienta que permite controlar exactamente qué porcentaje de usuarios ve una versión nueva de la aplicación antes de un despliegue completo.",
+      "points": [
+        "<strong>Weighted backend (peso de backend)</strong>: cada servidor recibe un peso relativo; en vez de repartir el tráfico en partes iguales, se puede enviar el 95% a la versión estable y el 5% a la nueva (canary release).",
+        "<strong>Canary release</strong>: exponer una nueva versión a un porcentaje pequeño de tráfico real, observar métricas de error/latencia, y aumentar gradualmente el peso si todo va bien — reduce el radio de impacto de un bug en producción.",
+        "<strong>Blue-green deployment</strong>: dos grupos backend completos (versión actual «blue» y versión nueva «green»); el corte se hace moviendo el 100% del tráfico de un grupo a otro casi instantáneamente, con posibilidad de revertir igual de rápido.",
+        "<strong>Diferencia clave entre ambos</strong>: canary expone tráfico real gradualmente a la nueva versión mientras ambas coexisten; blue-green mantiene ambas versiones completas pero corta el tráfico de una vez, priorizando velocidad de rollback sobre exposición gradual."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario dice «exponer gradualmente a un pequeño porcentaje de usuarios y monitorear antes de aumentar» → canary con pesos. Si dice «cambiar toda la producción de una vez con posibilidad de revertir en segundos» → blue-green."
+      }
+    },
+    {
+      "title_es": "7 · Alta disponibilidad multi-zona y monitoreo",
+      "title_en": "Multi-Zone High Availability and Monitoring",
+      "intro": "Un balanceador desplegado en varias zonas no compensa backends concentrados en una sola — la alta disponibilidad exige que ambas capas estén distribuidas.",
+      "points": [
+        "<strong>Balanceador multi-zona</strong>: la instancia de CLB/ALB/NLB se despliega automáticamente con nodos en al menos dos zonas de la región, de forma transparente para el usuario.",
+        "<strong>Backends también deben estar multi-zona</strong>: si todos los servidores del grupo backend viven en una sola zona, la caída de esa zona tumba el servicio aunque el balanceador siga funcionando en la otra.",
+        "<strong>CloudMonitor</strong>: expone métricas de tráfico, latencia, códigos de respuesta HTTP y número de backends saludables/no saludables, con alarmas configurables (p.ej. si más del 30% de los backends están unhealthy).",
+        "<strong>Access logs</strong>: cada solicitud puede registrarse con detalle (IP cliente, backend que la atendió, latencia, código de respuesta) y enviarse a Simple Log Service (SLS) para debugging y auditoría fina."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La disponibilidad de un servicio balanceado es tan fuerte como su eslabón menos redundante — un balanceador multi-zona con backends en una sola zona sigue siendo un diseño con punto único de falla."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de preguntas difíciles del examen sobre balanceo de carga están inspiradas en errores reales de configuración observados en producción.",
+      "points": [
+        "<strong>Antipatrón</strong>: apuntar el health check a un endpoint pesado (home page con queries de base de datos) que genera falsos negativos bajo carga alta.",
+        "<strong>Antipatrón</strong>: desplegar backends en una sola zona pese a que el balanceador ya opera multi-zona.",
+        "<strong>Antipatrón</strong>: terminar SSL en el balanceador sin re-cifrar hacia backends que procesan datos sensibles bajo requisitos de compliance (PCI-DSS, HIPAA).",
+        "<strong>Antipatrón</strong>: configurar sticky sessions con un TTL prácticamente infinito, degradando el balanceo real con el tiempo.",
+        "<strong>Antipatrón</strong>: seguir usando CLB para una API nueva que necesita enrutamiento por path/dominio, cuando ALB resuelve ese caso de forma nativa.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, prioriza la que distribuye backends en múltiples zonas y usa un health check que refleje la salud real de la aplicación, no solo la del puerto de red."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el escenario identificando la capa del tráfico (L4 puro → NLB/CLB; L7 con enrutamiento → ALB), el patrón de estado (con sesión → sticky o caché compartida; sin estado → round robin simple) y el objetivo del despliegue (gradual → canary; corte total → blue-green)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Front de aplicaciones web con HA multi-zona"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "API gateway simple con enrutado por path/host (ALB)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Balanceo de MQTT/gRPC/TCP para IoT (NLB)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Blue-green y canary con weighted routing"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Terminación TLS centralizada — backends usan HTTP"
-    }
+    { "title": "Escenario 1", "text": "Aplicación web de e-commerce con HA multi-zona detrás de un ALB con terminación SSL" },
+    { "title": "Escenario 2", "text": "API gateway con enrutamiento por dominio y path hacia distintos microservicios (ALB)" },
+    { "title": "Escenario 3", "text": "Plataforma IoT con millones de conexiones MQTT/TCP concurrentes (NLB)" },
+    { "title": "Escenario 4", "text": "Despliegue canary de una nueva versión con el 5% del tráfico real antes del rollout completo" },
+    { "title": "Escenario 5", "text": "Aplicación con sesiones en memoria que requiere sticky sessions mientras se migra a caché compartida" },
+    { "title": "Escenario 6", "text": "Backend con requisitos PCI-DSS que exige re-cifrado del tramo balanceador-servidor" }
   ],
   "mistakes": [
-    "Health check apuntando a / cuando la home hace queries pesadas → false unhealthy",
-    "Backends en una sola zona — SLB en multi-zona pero backends no",
-    "SSL termination sin re-cifrar hacia backends sensibles (PCI)",
-    "Sticky sessions con TTL infinito → distribución desigual"
+    "Health check apuntando a un endpoint pesado (home con queries a BD) → falsos negativos bajo carga",
+    "Backends concentrados en una sola zona pese a un balanceador multi-zona",
+    "Terminar SSL sin re-cifrar hacia backends con datos sensibles bajo compliance",
+    "Sticky sessions con TTL casi infinito → distribución de carga cada vez más desigual",
+    "Usar CLB para cargas nuevas que necesitan enrutamiento L7 por dominio/path (caso de uso de ALB)",
+    "No distinguir NLB (L4, volumen masivo) de ALB (L7, lógica de enrutamiento) al diseñar la arquitectura"
   ],
   "cli": [
-    {
-      "cmd": "aliyun slb CreateLoadBalancer",
-      "desc": "Crear SLB"
-    },
-    {
-      "cmd": "aliyun alb CreateLoadBalancer",
-      "desc": "Crear ALB"
-    },
-    {
-      "cmd": "aliyun slb AddBackendServers",
-      "desc": "Añadir backends"
-    },
-    {
-      "cmd": "aliyun slb SetLoadBalancerHTTPSListenerAttribute",
-      "desc": "Configurar HTTPS"
-    }
+    { "cmd": "aliyun slb CreateLoadBalancer --LoadBalancerName mi-clb --AddressType internet", "desc": "Crear un balanceador CLB con IP pública" },
+    { "cmd": "aliyun alb CreateLoadBalancer --LoadBalancerName mi-alb --VpcId vpc-xxxxx --AddressType Internet", "desc": "Crear un balanceador ALB en una VPC" },
+    { "cmd": "aliyun slb AddBackendServers --LoadBalancerId lb-xxxxx --BackendServers '[{\"ServerId\":\"i-xxxxx\",\"Weight\":\"100\"}]'", "desc": "Añadir un backend con peso 100 al grupo" },
+    { "cmd": "aliyun slb SetLoadBalancerHTTPSListenerAttribute --LoadBalancerId lb-xxxxx --ListenerPort 443 --ServerCertificateId cert-xxxxx", "desc": "Configurar un listener HTTPS con certificado SSL" },
+    { "cmd": "aliyun slb SetBackendServers --LoadBalancerId lb-xxxxx --BackendServers '[{\"ServerId\":\"i-xxxxx\",\"Weight\":\"5\"}]'", "desc": "Ajustar el peso de un backend para un canary release" },
+    { "cmd": "aliyun slb DescribeHealthStatus --LoadBalancerId lb-xxxxx", "desc": "Consultar el estado de salud de los backends" }
   ],
   "glossary": [
-    {
-      "en": "CLB",
-      "es": "Classic Load Balancer",
-      "def": "Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas."
-    },
-    {
-      "en": "ALB",
-      "es": "Application Load Balancer",
-      "def": "L7 con reglas de host, path, header, cookie, redirects, WAF."
-    },
-    {
-      "en": "NLB",
-      "es": "Network Load Balancer",
-      "def": "L4 ultra-alto rendimiento (millones QPS), static IP por zona."
-    },
-    {
-      "en": "Listener",
-      "es": "Listener",
-      "def": "Combinación de puerto + protocolo donde acepta tráfico."
-    },
-    {
-      "en": "Backend Server Group",
-      "es": "Grupo backend",
-      "def": "Conjunto de instancias que reciben tráfico."
-    },
-    {
-      "en": "Health Check",
-      "es": "Health check",
-      "def": "Chequeo periódico HTTP/TCP; retira backends unhealthy."
-    },
-    {
-      "en": "Session Persistence",
-      "es": "Persistencia",
-      "def": "Sticky sessions por cookie o hash de IP."
-    },
-    {
-      "en": "SSL Termination",
-      "es": "Terminación SSL",
-      "def": "Certificado en SLB; backends reciben HTTP puro."
-    },
-    {
-      "en": "Mutual TLS (mTLS)",
-      "es": "mTLS",
-      "def": "Cliente presenta certificado además del servidor."
-    },
-    {
-      "en": "Redirect Rule",
-      "es": "Regla de redirect",
-      "def": "301/302 HTTP → HTTPS o entre dominios."
-    },
-    {
-      "en": "Weighted Backend",
-      "es": "Backend ponderado",
-      "def": "Distribución no uniforme: útil para canary."
-    },
-    {
-      "en": "Access Log",
-      "es": "Log de acceso",
-      "def": "Cada request se puede volcar a SLS/OSS."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "CLB (Classic Load Balancer)", "es": "CLB", "def": "Balanceador clásico L4/L7 básico; producto original de Alibaba Cloud, aún soportado." },
+    { "en": "ALB (Application Load Balancer)", "es": "ALB", "def": "Balanceador L7 avanzado con enrutamiento por dominio/path/header/cookie y WAF integrado." },
+    { "en": "NLB (Network Load Balancer)", "es": "NLB", "def": "Balanceador L4 de ultra alto rendimiento para millones de conexiones concurrentes." },
+    { "en": "Listener", "es": "Listener", "def": "Combinación de puerto y protocolo por la que el balanceador acepta tráfico entrante." },
+    { "en": "Backend Server Group", "es": "Grupo de servidores backend", "def": "Conjunto de instancias que reciben el tráfico distribuido por el balanceador." },
+    { "en": "Health Check", "es": "Chequeo de salud", "def": "Verificación periódica TCP/HTTP que retira backends no saludables del grupo activo." },
+    { "en": "Session Persistence (Sticky Session)", "es": "Persistencia de sesión", "def": "Mecanismo que fuerza a que las solicitudes de un cliente lleguen siempre al mismo backend." },
+    { "en": "SSL Termination", "es": "Terminación SSL", "def": "Descifrado del tráfico HTTPS en el balanceador; los backends reciben HTTP plano por defecto." },
+    { "en": "Round Robin", "es": "Rotación simple", "def": "Algoritmo de balanceo que distribuye solicitudes en orden secuencial entre los backends." },
+    { "en": "Weighted Round Robin", "es": "Rotación ponderada", "def": "Distribución proporcional al peso asignado a cada backend, usada en canary releases." },
+    { "en": "Consistent Hashing", "es": "Hash consistente", "def": "Algoritmo que envía siempre el mismo cliente (por IP de origen) al mismo backend, sin cookies." },
+    { "en": "Canary Release", "es": "Lanzamiento canario", "def": "Exposición gradual de una nueva versión a un pequeño porcentaje de tráfico real." },
+    { "en": "Blue-Green Deployment", "es": "Despliegue azul-verde", "def": "Corte de tráfico completo entre dos grupos backend (versión actual y nueva) casi instantáneo." },
+    { "en": "Layer 4 (L4)", "es": "Capa 4", "def": "Capa de transporte (TCP/UDP); el balanceo no inspecciona el contenido HTTP." },
+    { "en": "Layer 7 (L7)", "es": "Capa 7", "def": "Capa de aplicación (HTTP/HTTPS); permite enrutamiento por dominio, path, header o cookie." },
+    { "en": "WAF (Web Application Firewall)", "es": "WAF", "def": "Firewall de aplicación web integrable en ALB para filtrar tráfico malicioso HTTP." },
+    { "en": "Cross-Zone Load Balancing", "es": "Balanceo multi-zona", "def": "Distribución de tráfico entre backends de distintas zonas de disponibilidad." },
+    { "en": "Access Log", "es": "Log de acceso", "def": "Registro detallado por solicitud (IP, backend, latencia, código) enviable a SLS." },
+    { "en": "CloudMonitor", "es": "CloudMonitor", "def": "Servicio nativo de métricas y alarmas usado sobre el balanceador para observar tráfico y salud." },
+    { "en": "Elastic IP (EIP)", "es": "IP elástica", "def": "Dirección pública que puede asociarse a un balanceador orientado a internet." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Server Load Balancer (SLB / ALB / NLB)?",
-      "options": [
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido para millones de conexiones concurrentes)."
-    },
-    {
-      "q": "¿Qué es <strong>CLB</strong> (Classic Load Balancer) en Server Load Balancer (SLB / ALB / NLB)?",
-      "options": [
-        "Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas.",
-        "L7 con reglas de host, path, header, cookie, redirects, WAF.",
-        "L4 ultra-alto rendimiento (millones QPS), static IP por zona.",
-        "Combinación de puerto + protocolo donde acepta tráfico."
-      ],
-      "answer": 0,
-      "explain": "CLB (Classic Load Balancer): Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas."
-    },
-    {
-      "q": "¿Qué es <strong>ALB</strong> (Application Load Balancer) en Server Load Balancer (SLB / ALB / NLB)?",
-      "options": [
-        "L7 con reglas de host, path, header, cookie, redirects, WAF.",
-        "Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas.",
-        "L4 ultra-alto rendimiento (millones QPS), static IP por zona.",
-        "Combinación de puerto + protocolo donde acepta tráfico."
-      ],
-      "answer": 0,
-      "explain": "ALB (Application Load Balancer): L7 con reglas de host, path, header, cookie, redirects, WAF."
-    },
-    {
-      "q": "¿Qué es <strong>NLB</strong> (Network Load Balancer) en Server Load Balancer (SLB / ALB / NLB)?",
-      "options": [
-        "L4 ultra-alto rendimiento (millones QPS), static IP por zona.",
-        "Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas.",
-        "L7 con reglas de host, path, header, cookie, redirects, WAF.",
-        "Combinación de puerto + protocolo donde acepta tráfico."
-      ],
-      "answer": 0,
-      "explain": "NLB (Network Load Balancer): L4 ultra-alto rendimiento (millones QPS), static IP por zona."
-    },
-    {
-      "q": "¿Qué es <strong>Listener</strong> (Listener) en Server Load Balancer (SLB / ALB / NLB)?",
-      "options": [
-        "Combinación de puerto + protocolo donde acepta tráfico.",
-        "Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas.",
-        "L7 con reglas de host, path, header, cookie, redirects, WAF.",
-        "L4 ultra-alto rendimiento (millones QPS), static IP por zona."
-      ],
-      "answer": 0,
-      "explain": "Listener (Listener): Combinación de puerto + protocolo donde acepta tráfico."
-    },
-    {
-      "q": "¿Qué es <strong>Backend Server Group</strong> (Grupo backend) en Server Load Balancer (SLB / ALB / NLB)?",
-      "options": [
-        "Conjunto de instancias que reciben tráfico.",
-        "Producto legacy, L4/L7 básico. Migrar a ALB/NLB para features nuevas.",
-        "L7 con reglas de host, path, header, cookie, redirects, WAF.",
-        "L4 ultra-alto rendimiento (millones QPS), static IP por zona."
-      ],
-      "answer": 0,
-      "explain": "Backend Server Group (Grupo backend): Conjunto de instancias que reciben tráfico."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Server Load Balancer (SLB / ALB / NLB), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Server Load Balancer (SLB / ALB / NLB) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Server Load Balancer (SLB / ALB / NLB), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Server Load Balancer (SLB / ALB / NLB) es la elección típica:",
-      "options": [
-        "Front de aplicaciones web con HA multi-zona",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Front de aplicaciones web con HA multi-zona."
-    }
+    { "q": "¿Cuál es la función principal de un Server Load Balancer?", "options": ["Cifrar todo el tráfico de una aplicación", "Distribuir el tráfico entrante entre múltiples servidores backend para evitar saturación y puntos únicos de falla", "Almacenar copias de contenido estático cerca del usuario", "Reemplazar la necesidad de una base de datos"], "answer": 1, "explain": "El balanceador reparte la carga entre varios servidores, permitiendo escalado horizontal y eliminando el punto único de falla de un servidor individual." },
+    { "q": "Una API necesita enrutar <code>/usuarios</code> hacia un microservicio y <code>/pedidos</code> hacia otro, además de WAF integrado. ¿Qué producto de balanceo es el adecuado?", "options": ["NLB", "ALB", "CLB exclusivamente", "Ninguno, se necesita un CDN"], "answer": 1, "explain": "ALB es el balanceador de capa 7 con reglas de enrutamiento por path/dominio y WAF integrado, ideal para arquitecturas de microservicios." },
+    { "q": "Una plataforma IoT necesita sostener millones de conexiones TCP/MQTT concurrentes con la mínima latencia posible. ¿Qué balanceador es más apropiado?", "options": ["ALB", "NLB", "CLB en modo HTTP", "CDN"], "answer": 1, "explain": "NLB está diseñado para capa 4 de ultra alto rendimiento, sosteniendo millones de conexiones concurrentes sin inspeccionar contenido HTTP." },
+    { "q": "El health check de un balanceador apunta a la página de inicio, que ejecuta consultas pesadas a la base de datos. Bajo carga alta, varios backends sanos son marcados como 'unhealthy'. ¿Cuál es la causa más probable?", "options": ["Un ataque DDoS en curso", "El endpoint de health check es demasiado costoso y genera falsos negativos bajo carga", "El balanceador está mal configurado en una sola zona", "El certificado SSL expiró"], "answer": 1, "explain": "Un health check debe apuntar a un endpoint liviano; usar una página que ejecuta queries pesadas genera falsos negativos precisamente cuando más tráfico hay." },
+    { "q": "¿Qué diferencia principal existe entre un health check TCP y uno HTTP?", "options": ["Son exactamente lo mismo", "TCP solo confirma que el puerto acepta conexión; HTTP valida además el código de respuesta de una URL específica, permitiendo verificar dependencias reales", "HTTP no puede usarse en balanceadores de capa 7", "TCP es más lento que HTTP siempre"], "answer": 1, "explain": "El health check HTTP permite validar un endpoint de salud que revise dependencias críticas (BD, cachés), mientras que TCP solo confirma que el proceso escucha en el puerto." },
+    { "q": "¿Por qué son necesarias las sticky sessions en una aplicación cuyo estado de sesión vive únicamente en la memoria de cada servidor?", "options": ["Para cifrar el tráfico entre cliente y backend", "Para asegurar que las solicitudes de un mismo cliente siempre lleguen al servidor que tiene su sesión en memoria", "Para aumentar el número de backends automáticamente", "Para reducir la latencia de DNS"], "answer": 1, "explain": "Sin afinidad de sesión, romper la persistencia enviaría al usuario a un servidor que no reconoce su sesión almacenada localmente." },
+    { "q": "¿Cuál es la solución arquitectónica moderna preferida frente a depender indefinidamente de sticky sessions?", "options": ["Aumentar el TTL de la sesión al máximo posible", "Usar una caché de sesión compartida (p.ej. Redis) accesible desde cualquier backend", "Deshabilitar el balanceador por completo", "Usar solo un backend en producción"], "answer": 1, "explain": "Una caché compartida permite que cualquier backend atienda a cualquier usuario sin depender de afinidad, preservando un balanceo de carga real." },
+    { "q": "¿Qué ocurre cuando se termina el SSL en el balanceador de carga sin habilitar re-cifrado hacia los backends?", "options": ["El tráfico nunca se descifra en ningún punto", "El balanceador descifra el HTTPS y reenvía el tráfico a los backends en HTTP plano dentro de la red interna", "Los backends rechazan automáticamente la conexión", "Se duplica el certificado SSL en cada backend automáticamente"], "answer": 1, "explain": "Por defecto, la terminación SSL en el balanceador descifra el tráfico y lo reenvía como HTTP plano a los backends, salvo que se configure re-cifrado explícito." },
+    { "q": "Un equipo quiere exponer una nueva versión de su aplicación al 5% del tráfico real, monitorear errores, y aumentar gradualmente si todo va bien. ¿Qué técnica describe mejor este proceso?", "options": ["Blue-green deployment", "Canary release usando pesos de backend", "Sticky sessions", "Terminación SSL"], "answer": 1, "explain": "El canary release usa pesos para exponer gradualmente una nueva versión a un porcentaje controlado de tráfico real antes de un rollout completo." },
+    { "q": "¿Qué distingue a un blue-green deployment de un canary release?", "options": ["Son términos intercambiables sin diferencia real", "Blue-green corta el 100% del tráfico entre dos versiones completas casi instantáneamente; canary expone tráfico real gradualmente mientras ambas versiones coexisten", "Canary solo aplica a balanceadores NLB", "Blue-green requiere deshabilitar el health check"], "answer": 1, "explain": "Blue-green prioriza velocidad de corte y rollback total; canary prioriza exposición gradual y observación antes de escalar el tráfico a la nueva versión." },
+    { "q": "Un balanceador está desplegado en dos zonas, pero todos los backends del grupo viven en una sola zona. ¿Qué ocurre si esa zona falla?", "options": ["No pasa nada porque el balanceador sigue activo en la otra zona", "El servicio se interrumpe: el balanceador no tiene backends saludables a los que enviar tráfico en la zona restante", "El balanceador crea automáticamente nuevos backends en la otra zona", "Los health checks se deshabilitan automáticamente"], "answer": 1, "explain": "La alta disponibilidad exige que tanto el balanceador como los backends estén distribuidos en múltiples zonas; concentrar los backends en una sola anula el beneficio del balanceador multi-zona." },
+    { "q": "¿Qué mecanismo permite que un balanceador envíe siempre las solicitudes de la misma IP de origen al mismo backend, sin usar cookies?", "options": ["Round robin", "Consistent hashing", "SSL termination", "WAF"], "answer": 1, "explain": "El hash consistente calcula el backend de destino a partir de la IP de origen (u otro criterio), logrando afinidad sin necesidad de cookies." },
+    { "q": "Una carga de trabajo procesa datos de tarjetas de crédito bajo requisitos PCI-DSS y exige cifrado de extremo a extremo. ¿Qué configuración del balanceador es la adecuada?", "options": ["Terminar SSL en el balanceador y dejar el tramo hacia backend en HTTP plano", "Terminar SSL en el balanceador y re-cifrar el tramo hacia los backends", "Deshabilitar HTTPS por completo para reducir latencia", "Usar solo balanceo por capa 4 sin listeners HTTPS"], "answer": 1, "explain": "El re-cifrado hacia el backend mantiene el tráfico cifrado en todo el trayecto, cumpliendo con requisitos de compliance estrictos como PCI-DSS." },
+    { "q": "¿Cuál es la recomendación de Alibaba Cloud respecto al uso de CLB para nuevas cargas de trabajo que requieren enrutamiento HTTP avanzado?", "options": ["CLB es siempre la mejor opción para todo tipo de carga", "Se recomienda usar ALB o NLB según el caso, ya que ofrecen capacidades más modernas que CLB", "CLB ha sido descontinuado y ya no funciona", "CLB solo funciona con instancias Windows"], "answer": 1, "explain": "CLB sigue soportado pero Alibaba Cloud recomienda ALB (L7 avanzado) o NLB (L4 masivo) para cargas nuevas por sus capacidades más modernas." }
   ],
-  "exam_focus": "Preguntas: (a) CLB vs ALB vs NLB, (b) L4 vs L7, (c) session persistence y sus caveats, (d) health check design, (e) SSL termination y re-encryption.",
+  "exam_focus": "El examen suele evaluar: (a) elegir entre CLB, ALB y NLB según capa de protocolo y volumen del escenario, (b) diseño correcto de health checks que reflejen la salud real de la aplicación, (c) sticky sessions y sus riesgos frente a caché de sesión compartida, (d) terminación SSL con o sin re-cifrado hacia el backend, (e) canary release vs. blue-green deployment usando pesos de backend.",
   "official_intro": "Increased traffic, often results in a delayed response from web servers or even a halt in service. Load balancing lies in \"sharing.\" When massive traffic is detected, the traffic is distributed to multiple servers to improve the external service capability of the website and avoid the impact of a single point failure. In this online course, we teach the basics of load balancing, principles and scenarios, and master cloud platform load balancing features and usage.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_slb",

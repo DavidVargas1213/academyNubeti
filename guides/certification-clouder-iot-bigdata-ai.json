@@ -2,442 +2,209 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-iot-bigdata-ai",
   "title_en": "Internet of Things(IoT), Big Data and AI in Alibaba Cloud",
-  "title_es": "Internet of Things(IoT), Big Datos y AI in Alibaba Cloud",
+  "title_es": "Internet de las Cosas (IoT), Big Data e IA en Alibaba Cloud",
+  "title_es_html": "Internet de las Cosas (IoT), <em>Big Data</em> e IA en Alibaba Cloud",
   "duration_es": "42 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-iot-bigdata-ai",
-  "lead": "Guía completa en español para el curso «Internet of Things(IoT), Big Data and AI in Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Internet of Things (IoT), Big Data and AI in Alibaba Cloud» de Alibaba Cloud Academy. Recorre el pipeline completo que convierte telemetría cruda de dispositivos en decisiones de negocio: conectividad de dispositivos con IoT Platform, ingesta y almacenamiento a escala, procesamiento batch y en streaming, y entrenamiento/despliegue de modelos con PAI.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> cómo se conectan dispositivos a IoT Platform y qué garantiza su identidad individual (ProductKey/DeviceName/DeviceSecret).",
+    "<strong>Diferenciar</strong> el rol de DataHub (streaming), MaxCompute (batch) y Realtime Compute/Flink (streaming analítico) en el pipeline de datos.",
+    "<strong>Aplicar</strong> el patrón de referencia dispositivo → ingesta → almacenamiento → cómputo → IA → visualización.",
+    "<strong>Distinguir</strong> los componentes de PAI (Platform for AI) para entrenar y desplegar modelos de machine learning.",
+    "<strong>Diseñar</strong> reglas de enrutamiento (Rules Engine) que distribuyan mensajes de dispositivos según su contenido.",
+    "<strong>Aplicar</strong> buenas prácticas de seguridad e identidad en un pipeline IoT de extremo a extremo."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Dispositivos (sensores, gateways, bicicletas, vehículos) se conectan a IoT Platform vía MQTT/CoAP, autenticándose con su Triple de identidad (ProductKey/DeviceName/DeviceSecret). Cada mensaje pasa por el Rules Engine, que lo enruta según reglas tipo SQL hacia DataHub, hacia una función de Function Compute, o hacia una tabla de base de datos. DataHub alimenta en paralelo a Realtime Compute (Flink gestionado) para agregaciones en tiempo real y a MaxCompute para retención histórica particionada. Los datos combinados con feature engineering entrenan modelos en PAI, que se despliegan como endpoint de inferencia en EAS. Los resultados, tanto agregados en vivo como reportes batch, se visualizan en Quick BI (analítica tabular) o DataV (paneles geoespaciales en tiempo real).",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué convergen IoT, Big Data e IA",
+      "title_en": "Why IoT, Big Data and AI Converge",
+      "intro": "Conectar un dispositivo a internet no genera valor por sí solo. El valor aparece cuando ese flujo continuo de datos se almacena, se analiza y finalmente alimenta un modelo capaz de predecir o recomendar algo útil para el negocio.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "El valor de IoT no está en el dispositivo conectado, sino en el flujo de datos continuo que produce y en lo que se hace con él después.",
+        "Big Data aporta la capacidad de almacenar y procesar un volumen que crece linealmente con cada dispositivo nuevo, algo que una base de datos relacional tradicional no soporta bien a esa escala.",
+        "IA convierte historia acumulada en predicción: mantenimiento predictivo, detección de anomalías, recomendación de rutas o de inventario.",
+        "Ejemplo canónico: una flota de bicicletas compartidas con GPS reportando cada pocos segundos solo sirve para ver un mapa en vivo si no existe un pipeline de Big Data + IA detrás; con él, esos mismos datos permiten predecir en qué estaciones faltará inventario mañana."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es IoT?» sino «¿qué justifica combinar IoT + Big Data + IA?». La respuesta correcta siempre conecta <em>dato bruto → almacenamiento a escala → análisis → predicción accionable</em>."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · IoT Platform: conectividad de dispositivos",
+      "title_en": "IoT Platform: Device Connectivity",
+      "intro": "Antes de analizar cualquier dato, hay que resolver cómo millones de dispositivos heterogéneos se conectan de forma segura y eficiente a la nube.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Triple de identidad</strong> (ProductKey/DeviceName/DeviceSecret): autentica cada dispositivo individualmente, evitando compartir una sola credencial entre miles de sensores del mismo producto.",
+        "<strong>MQTT</strong> es el protocolo principal por su bajo consumo de ancho de banda y energía; <strong>CoAP</strong> se usa en dispositivos todavía más restringidos.",
+        "<strong>Device Shadow</strong>: documento JSON que guarda el último estado reportado y el estado deseado del dispositivo, permitiendo enviar comandos aunque el dispositivo esté momentáneamente desconectado.",
+        "<strong>Link IoT Edge</strong> ejecuta lógica de preprocesamiento en el propio gateway, reduciendo el volumen de datos crudos que viaja hasta la nube.",
+        "<strong>Rules Engine</strong>: enruta mensajes según su topic o contenido hacia DataHub, Function Compute, MNS o una tabla de base de datos, sin escribir código de integración a medida."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "El Device Shadow no es un histórico de mensajes: guarda solo el <em>último</em> estado reportado y el deseado. Confundirlo con almacenamiento histórico es un distractor frecuente."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Ingesta y almacenamiento a escala",
+      "title_en": "Large-scale Ingestion and Storage",
+      "intro": "Una vez que el dato sale del dispositivo, necesita un destino capaz de absorber picos de miles de mensajes por segundo sin perder eventos ni disparar el costo.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>DataHub</strong> es el servicio de streaming de Alibaba Cloud (equivalente gestionado a Kafka): particiona el flujo de eventos y lo retiene por horas o días para múltiples consumidores simultáneos.",
+        "<strong>OSS</strong> almacena datos no estructurados o semi-estructurados (imágenes, video, logs crudos) a bajo costo, con reglas de Lifecycle para moverlos a clases más frías con el tiempo.",
+        "<strong>MaxCompute</strong> es el data warehouse serverless para la retención histórica particionada, consultado con SQL a escala petabyte.",
+        "El mismo flujo de DataHub típicamente alimenta en paralelo a Realtime Compute (para el presente) y a MaxCompute (para el histórico) — streaming y batch no son mutuamente excluyentes."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Si el escenario exige alertar en menos de un segundo ante un umbral, la respuesta es <em>streaming</em> (DataHub + Realtime Compute), nunca un job batch programado en MaxCompute."
+      }
+    },
+    {
+      "title_es": "4 · Procesamiento: batch frente a streaming",
+      "title_en": "Processing: Batch vs Streaming",
+      "intro": "No todo análisis necesita la misma latencia. Elegir el motor de cómputo correcto según la urgencia de la respuesta es uno de los ejes centrales del examen.",
+      "points": [
+        "<strong>MaxCompute SQL</strong> procesa grandes volúmenes con latencia de minutos — ideal para reportes diarios/horarios y para entrenar modelos sobre la historia completa.",
+        "<strong>Realtime Compute</strong>, basado en Apache Flink gestionado, procesa eventos con latencia de milisegundos a segundos usando ventanas de tiempo (tumbling, sliding, session).",
+        "<strong>DataWorks</strong> orquesta y programa los pipelines batch: dependencias entre tareas, reintentos automáticos y alertas de incumplimiento de SLA.",
+        "Filtrar siempre por partición (p.ej. por fecha) en MaxCompute es obligatorio — sin ese filtro se escanea la tabla completa y el costo se dispara."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "MaxCompute responde «¿qué pasó?» (análisis histórico); Realtime Compute responde «¿qué está pasando ahora mismo?» (streaming)."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Inteligencia Artificial con PAI",
+      "title_en": "Artificial Intelligence with PAI",
+      "intro": "Con los datos ya almacenados y accesibles, el siguiente paso es convertir esa historia en un modelo capaz de predecir en vez de solo describir.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>PAI</strong> (Platform for Artificial Intelligence) cubre el ciclo completo: preparación de datos, entrenamiento con frameworks gestionados (TensorFlow, PyTorch) y despliegue del modelo resultante.",
+        "<strong>EAS</strong> (Elastic Algorithm Service) despliega un modelo entrenado como endpoint de inferencia escalable, sin que el equipo administre servidores manualmente.",
+        "Existen modelos preentrenados (visión, NLP) para casos comunes, evitando entrenar desde cero cuando el problema ya está resuelto de forma genérica.",
+        "El feature engineering suele apoyarse en tablas ya preparadas en MaxCompute, evitando reprocesar los datos crudos en cada ciclo de entrenamiento."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario describe «predecir demanda futura por zona», la respuesta apunta a entrenar un modelo en PAI sobre datos históricos de MaxCompute — no a una regla fija programada a mano."
+      }
+    },
+    {
+      "title_es": "6 · Visualización y consumo de resultados",
+      "title_en": "Visualization and Consumption",
+      "intro": "Un pipeline completo termina cuando el resultado llega a quien toma la decisión: un analista de negocio, un operador en un centro de control o directamente una aplicación.",
+      "points": [
+        "<strong>Quick BI</strong> conecta directamente a MaxCompute o Hologres para dashboards de autoservicio orientados a analistas de negocio.",
+        "<strong>DataV</strong> está pensado para visualizaciones geoespaciales y paneles de operación en tiempo real, como el mapa en vivo de una flota IoT.",
+        "El resultado de un modelo desplegado en EAS puede alimentar directamente una API consumida por una app móvil, sin pasar nunca por un dashboard.",
+        "Elegir entre Quick BI y DataV depende de la audiencia: analista de negocio revisando tendencias frente a operador vigilando un mapa en tiempo real."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "Quick BI = análisis de negocio tabular; DataV = paneles visuales en tiempo real, frecuentemente con mapas geográficos."
+      }
+    },
+    {
+      "title_es": "7 · Seguridad y gobierno de datos IoT",
+      "title_en": "IoT Security and Data Governance",
+      "intro": "Un pipeline de IoT expone una superficie de ataque distinta a la de una aplicación web tradicional: miles de dispositivos físicos dispersos, cada uno un punto de entrada potencial.",
+      "points": [
+        "Cada dispositivo debe tener credenciales únicas (DeviceSecret individual) — nunca una clave compartida entre todos los dispositivos de un mismo producto.",
+        "RAM controla qué servicios internos pueden leer o escribir en DataHub, OSS o MaxCompute, aplicando mínimo privilegio también entre componentes del pipeline, no solo entre personas.",
+        "El cifrado en tránsito (TLS sobre MQTT) protege los datos entre el dispositivo e IoT Platform; el cifrado en reposo protege lo ya almacenado en OSS/MaxCompute.",
+        "La retención de datos crudos debe definirse explícitamente (Lifecycle en OSS, particiones antiguas eliminadas en MaxCompute) para no acumular costo de forma indefinida."
+      ],
+      "keypoint": {
+        "label": "Antipatrón frecuente",
+        "text": "Reutilizar el mismo ProductKey/DeviceSecret en todos los dispositivos de una flota compromete la flota entera si un solo dispositivo se filtra o se clona."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Las preguntas más difíciles del examen suelen construirse sobre decisiones de diseño reales que salieron mal en pipelines de IoT y datos.",
+      "points": [
+        "<strong>Antipatrón</strong>: enviar datos crudos directo a MaxCompute sin pasar por streaming, perdiendo la capacidad de alertar en tiempo real.",
+        "<strong>Antipatrón</strong>: no particionar tablas en MaxCompute, generando escaneos completos y sobrecosto.",
+        "<strong>Antipatrón</strong>: compartir credenciales de dispositivo entre toda una flota en vez de asignar una identidad única por unidad.",
+        "<strong>Antipatrón</strong>: entrenar un modelo una sola vez y no reentrenarlo, ignorando el data drift a medida que el comportamiento real cambia.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, la que separa identidad por dispositivo y usa streaming para lo urgente suele ser la correcta."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Identifica primero si el enunciado pide una respuesta inmediata (streaming) o un análisis histórico (batch), y luego si requiere solo describir el pasado o predecir el futuro (IA)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Flota de bicicletas compartidas con miles de sensores GPS reportando ubicación cada pocos segundos" },
+    { "title": "Escenario 2", "text": "Mantenimiento predictivo industrial basado en vibración y temperatura de maquinaria" },
+    { "title": "Escenario 3", "text": "Ciudad inteligente con cámaras y sensores ambientales alimentando un panel operativo en tiempo real" },
+    { "title": "Escenario 4", "text": "Vehículos conectados con telemetría de conducción para scoring de seguros" },
+    { "title": "Escenario 5", "text": "Agricultura de precisión con sensores de humedad de suelo y riego predictivo" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Enviar telemetría cruda directo a un data warehouse batch sin capa de streaming intermedia",
+    "No particionar tablas históricas — escaneos completos costosos en cada consulta",
+    "Compartir DeviceSecret entre todos los dispositivos de una flota en vez de credenciales individuales",
+    "Entrenar un modelo una sola vez sin plan de reentrenamiento ante data drift",
+    "Confundir Device Shadow con almacenamiento histórico de mensajes",
+    "No definir política de retención de datos crudos, acumulando costo indefinidamente"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "aliyun iot CreateProduct --Name flota-bicis --NodeType 0", "desc": "Crear un producto IoT (plantilla de dispositivos)" },
+    { "cmd": "aliyun iot QueryDeviceDetail --ProductKey xxx --DeviceName bici-001", "desc": "Consultar el estado de un dispositivo" },
+    { "cmd": "aliyun iot SetDeviceProperty --ProductKey xxx --DeviceName bici-001 --Items '{\"battery\":80}'", "desc": "Actualizar una propiedad reportada en el Device Shadow" },
+    { "cmd": "aliyun iot Publish --ProductKey xxx --TopicFullName /xxx/bici-001/user/update --MessageContent <base64>", "desc": "Publicar un mensaje MQTT hacia un dispositivo" },
+    { "cmd": "odpscmd -e \"select * from sensor_events where pt='20260812' limit 10;\"", "desc": "Consultar datos históricos particionados en MaxCompute" },
+    { "cmd": "aliyun pai-eas describe-service --name modelo-demanda", "desc": "Ver el estado de un endpoint de inferencia desplegado en EAS" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "IoT Platform", "es": "IoT Platform", "def": "Servicio gestionado de conectividad de dispositivos: autenticación, mensajería MQTT/CoAP y enrutamiento de datos." },
+    { "en": "ProductKey / DeviceName / DeviceSecret", "es": "Triple de identidad", "def": "Conjunto de credenciales que identifica y autentica de forma única a cada dispositivo conectado." },
+    { "en": "Device Shadow", "es": "Sombra de dispositivo", "def": "Documento JSON con el último estado reportado y el estado deseado del dispositivo." },
+    { "en": "MQTT", "es": "MQTT", "def": "Protocolo de mensajería ligero, el más usado para telemetría de dispositivos con recursos limitados." },
+    { "en": "Rules Engine", "es": "Motor de reglas", "def": "Componente que enruta mensajes de dispositivos hacia distintos destinos según reglas tipo SQL sobre su contenido." },
+    { "en": "Link IoT Edge", "es": "Link IoT Edge", "def": "Runtime que ejecuta lógica de preprocesamiento en el gateway, cerca del dispositivo." },
+    { "en": "DataHub", "es": "DataHub", "def": "Servicio de streaming gestionado (equivalente a Kafka) para ingesta y distribución de eventos en tiempo real." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Data warehouse serverless a escala petabyte para análisis batch sobre datos particionados." },
+    { "en": "Realtime Compute (Flink)", "es": "Realtime Compute", "def": "Motor de streaming gestionado basado en Apache Flink para procesamiento con latencia de segundos." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Plataforma de orquestación de pipelines de datos: dependencias, reintentos y alertas de SLA." },
+    { "en": "PAI (Platform for AI)", "es": "PAI", "def": "Plataforma de Alibaba Cloud para preparar datos, entrenar y desplegar modelos de machine learning." },
+    { "en": "EAS (Elastic Algorithm Service)", "es": "EAS", "def": "Servicio que despliega un modelo entrenado como endpoint de inferencia elástico." },
+    { "en": "Feature Engineering", "es": "Ingeniería de características", "def": "Preparación y transformación de datos crudos en variables útiles para entrenar un modelo." },
+    { "en": "Data Drift", "es": "Deriva de datos", "def": "Cambio en la distribución de los datos reales que degrada el rendimiento de un modelo ya entrenado con el tiempo." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de business intelligence de autoservicio conectada a MaxCompute/Hologres." },
+    { "en": "DataV", "es": "DataV", "def": "Herramienta de visualización geoespacial y paneles operativos en tiempo real." },
+    { "en": "OTA Update", "es": "Actualización OTA", "def": "Actualización de firmware de un dispositivo enviada de forma remota a través de IoT Platform." },
+    { "en": "Edge Computing", "es": "Cómputo en el borde", "def": "Procesamiento realizado cerca del dispositivo (gateway) en vez de enviar todo el dato crudo a la nube." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿Cuál es la función principal del Device Shadow en IoT Platform?", "options": ["Almacenar el historial completo de mensajes del dispositivo", "Guardar el último estado reportado y el estado deseado del dispositivo", "Cifrar la comunicación MQTT", "Entrenar modelos de IA sobre los datos del dispositivo"], "answer": 1, "explain": "El Device Shadow es un documento JSON con el último estado conocido y el deseado, no un histórico de mensajes." },
+    { "q": "¿Qué identifica de forma única a un dispositivo dentro de IoT Platform?", "options": ["Solo la dirección IP", "El Triple ProductKey/DeviceName/DeviceSecret", "El nombre del producto únicamente", "El proveedor del hardware"], "answer": 1, "explain": "Cada dispositivo se autentica con su propia combinación de ProductKey, DeviceName y DeviceSecret." },
+    { "q": "Un sistema necesita alertar en menos de 1 segundo cuando un sensor supera un umbral crítico. ¿Qué componente es el adecuado?", "options": ["Un job batch diario en MaxCompute", "DataHub + Realtime Compute (streaming)", "Un reporte semanal en Quick BI", "OSS con Lifecycle a Cold Archive"], "answer": 1, "explain": "Solo el procesamiento en streaming (DataHub + Realtime Compute) puede reaccionar con latencia de segundos." },
+    { "q": "¿Qué hace el Rules Engine de IoT Platform?", "options": ["Entrena modelos de machine learning", "Enruta mensajes de dispositivos hacia distintos destinos según su contenido, sin código a medida", "Cifra las credenciales de los dispositivos", "Genera dashboards automáticamente"], "answer": 1, "explain": "El Rules Engine aplica reglas tipo SQL sobre el contenido del mensaje para decidir su destino (DataHub, Function Compute, una tabla, etc.)." },
+    { "q": "¿Qué diferencia principal existe entre MaxCompute y Realtime Compute?", "options": ["Son el mismo servicio con nombres distintos", "MaxCompute procesa en batch con latencia de minutos; Realtime Compute procesa streaming con latencia de segundos", "Realtime Compute solo sirve para almacenar imágenes", "MaxCompute no admite SQL"], "answer": 1, "explain": "MaxCompute responde '¿qué pasó?' con latencia de minutos; Realtime Compute responde '¿qué pasa ahora?' con latencia de segundos." },
+    { "q": "¿Qué servicio despliega un modelo ya entrenado como un endpoint de inferencia escalable?", "options": ["DataHub", "EAS (Elastic Algorithm Service)", "Rules Engine", "DataV"], "answer": 1, "explain": "EAS expone un modelo entrenado en PAI como un servicio de inferencia elástico, sin gestionar servidores manualmente." },
+    { "q": "¿Por qué es un antipatrón compartir el mismo DeviceSecret entre todos los dispositivos de una flota?", "options": ["Porque aumenta la latencia de conexión", "Porque si un dispositivo se compromete, toda la flota queda expuesta", "Porque MQTT no lo permite técnicamente", "Porque encarece la facturación de IoT Platform"], "answer": 1, "explain": "Una credencial compartida convierte la filtración de un solo dispositivo en un riesgo para toda la flota." },
+    { "q": "Un equipo de negocio necesita un dashboard de autoservicio sobre ventas históricas almacenadas en MaxCompute. ¿Qué herramienta usarían?", "options": ["DataV", "Quick BI", "Link IoT Edge", "EAS"], "answer": 1, "explain": "Quick BI está orientado a analítica de negocio tabular conectada directamente a MaxCompute/Hologres." },
+    { "q": "¿Qué herramienta es más adecuada para un panel operativo en tiempo real con un mapa en vivo de una flota de vehículos?", "options": ["Quick BI", "DataV", "MaxCompute SQL", "OSS"], "answer": 1, "explain": "DataV está diseñado para visualizaciones geoespaciales y paneles operativos en tiempo real." },
+    { "q": "¿Qué es Link IoT Edge y para qué se usa?", "options": ["Un dashboard de visualización", "Un runtime que preprocesa datos en el gateway antes de enviarlos a la nube", "Un algoritmo de machine learning", "Un tipo de instancia ECS"], "answer": 1, "explain": "Link IoT Edge ejecuta lógica cerca del dispositivo, reduciendo el volumen de datos crudos enviados a la nube." },
+    { "q": "Una tabla de eventos en MaxCompute no está particionada y las consultas escanean todo el histórico cada vez. ¿Cuál es la consecuencia principal?", "options": ["Ninguna, MaxCompute optimiza automáticamente sin partición", "Costos elevados y consultas más lentas por escaneo completo", "Los datos se corrompen", "Las consultas fallan directamente"], "answer": 1, "explain": "Sin partición, cada consulta lee la tabla completa, lo que dispara tiempo de ejecución y costo." },
+    { "q": "¿Qué es el 'data drift' en el contexto de modelos de IA entrenados en PAI?", "options": ["Un error de red durante el entrenamiento", "El cambio en la distribución de los datos reales que degrada el rendimiento de un modelo ya entrenado", "La migración de un modelo entre regiones", "Un tipo de cifrado de datos"], "answer": 1, "explain": "El data drift ocurre cuando el comportamiento real cambia respecto a los datos con los que se entrenó el modelo, exigiendo reentrenamiento periódico." },
+    { "q": "¿Qué protocolo de mensajería es el más común para dispositivos IoT con recursos limitados de energía y ancho de banda?", "options": ["HTTP/2", "MQTT", "FTP", "SMTP"], "answer": 1, "explain": "MQTT es liviano y de bajo consumo, por lo que domina en escenarios IoT de recursos limitados." },
+    { "q": "En el pipeline dispositivo → ingesta → almacenamiento → cómputo → IA → visualización, ¿qué papel juega DataHub?", "options": ["Entrenar modelos de IA", "Recibir y distribuir el flujo de eventos en tiempo real hacia múltiples consumidores", "Visualizar dashboards", "Autenticar dispositivos"], "answer": 1, "explain": "DataHub es la capa de streaming que ingiere el flujo de eventos y lo distribuye a consumidores como Realtime Compute y MaxCompute." },
+    { "q": "Un caso de uso pide predecir en qué estaciones faltará inventario de bicicletas mañana, basándose en el histórico de uso. ¿Qué componente resuelve esto?", "options": ["Rules Engine únicamente", "Un modelo entrenado en PAI sobre datos históricos de MaxCompute", "Device Shadow", "OSS sin procesamiento adicional"], "answer": 1, "explain": "Predecir a partir de historia acumulada es exactamente el caso de uso de un modelo de machine learning entrenado en PAI." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) cuándo usar streaming vs batch según la latencia exigida por el escenario, (b) el rol de cada componente del pipeline dispositivo→IA, (c) buenas prácticas de identidad por dispositivo, (d) diferencia entre Quick BI y DataV, (e) por qué particionar tablas en MaxCompute.",
   "official_intro": "IoT, Big Data and AI are three of the most popular terms of recent times. In this course, we will not only introduce how these technologies are linked in Alibaba Cloud, but also how they have paved the way for the technological progress we have come to expect to help us to win the second half of the internet era.",
   "recommended_for": "Cloud computing engineer, big data engineer, IoT engineer, technology enthusiast",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-iot-bigdata-ai",

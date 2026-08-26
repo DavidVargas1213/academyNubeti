@@ -2,433 +2,178 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-machinelearning",
   "title_en": "Machine Learning: Heart Disease Prediction",
-  "title_es": "Machine Learning: Heart Disease Prediction",
+  "title_es": "Machine Learning: Predicción de Enfermedad Cardíaca",
+  "title_es_html": "Machine Learning: Predicción de <em>Enfermedad Cardíaca</em>",
   "duration_es": "33 minutos",
   "level_es": "Principiante",
   "category_es": "Inteligencia Artificial",
   "subcategory_es": "Artificial Intelligence",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_machinelearning",
-  "lead": "Guía completa en español para el curso «Machine Learning: Heart Disease Prediction» de Alibaba Cloud Academy. Cubre en profundidad Platform for AI (PAI). PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Machine Learning: Heart Disease Prediction» de Alibaba Cloud Academy. A diferencia de los cursos de la serie de fundamentos (que profundizan en un solo algoritmo), este es un caso de estudio aplicado de punta a punta: partir de indicadores clínicos de un examen médico, decidir qué algoritmo de clasificación probar, y sobre todo elegir las métricas correctas cuando el costo de un falso negativo es un diagnóstico perdido.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Platform for AI (PAI)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: PAI-DSW, PAI-DLC, PAI-EAS, PAI-Designer, QuickStart.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Platform for AI (PAI) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Enmarcar</strong> la predicción de enfermedad cardíaca como un problema de clasificación binaria sobre datos clínicos tabulares.",
+    "<strong>Explorar y limpiar</strong> un dataset de indicadores de examen médico, detectando valores faltantes, outliers clínicamente implausibles y variables categóricas codificadas como números.",
+    "<strong>Construir features</strong> a partir de variables clínicas sin introducir fuga de datos (data leakage) desde información posterior al diagnóstico.",
+    "<strong>Comparar</strong> varios algoritmos de clasificación (regresión logística, árbol de decisión, random forest, SVM) sobre el mismo dataset y justificar cuál conviene según el objetivo del negocio.",
+    "<strong>Priorizar</strong> recall sobre accuracy cuando el falso negativo tiene un costo clínico alto, y ajustar el umbral de decisión en consecuencia.",
+    "<strong>Explicar</strong> por qué la interpretabilidad importa especialmente en salud y cómo comunicar el resultado de un modelo a un profesional no técnico.",
+    "<strong>Construir</strong> el pipeline completo en PAI y entender las limitaciones éticas de un modelo de apoyo diagnóstico."
   ],
-  "architecture": "Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
+  "architecture": "Flujo del caso de estudio: datos de examen médico (edad, sexo, tipo de dolor de pecho, presión en reposo, colesterol, glucemia en ayunas, ECG en reposo, frecuencia cardíaca máxima, angina inducida por ejercicio, depresión del ST, etc.) en OSS/MaxCompute → limpieza y análisis exploratorio en PAI-DSW → codificación de variables categóricas clínicas y verificación de fuga de datos → división train/test estratificada → entrenamiento y comparación de varios algoritmos (regresión logística como baseline, árbol de decisión, random forest, SVM) con el componente correspondiente de PAI-Designer o scikit-learn → selección del modelo según recall/AUC, no solo accuracy → ajuste del umbral de decisión según el costo clínico de un falso negativo → revisión de interpretabilidad (coeficientes o feature importance) antes de considerar cualquier despliegue como herramienta de apoyo, nunca de reemplazo, al criterio médico.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Platform for AI (PAI)",
-      "title_en": "Introduction to Platform for AI (PAI)",
-      "intro": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Un caso de estudio, no un algoritmo",
+      "title_en": "A Case Study, Not a Single Algorithm",
+      "intro": "Este curso es distinto a los de la serie de fundamentos: no profundiza en la matemática de un único algoritmo, sino que recorre el proceso completo de un proyecto real de ML aplicado a salud, donde la decisión más importante rara vez es «qué algoritmo» sino «qué pregunta exacta estoy respondiendo y con qué costo de error».",
       "points": [
-        "<strong>Problema que resuelve</strong>: PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Platform for AI (PAI) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de negocio</strong>: a partir de indicadores de un examen médico (edad, presión arterial, colesterol, resultados de ECG, etc.), predecir si un paciente tiene alta probabilidad de enfermedad cardíaca — una clasificación binaria (enfermo/no enfermo).",
+        "<strong>Por qué importa el contexto clínico</strong>: la enfermedad cardíaca es, según cifras citadas por el propio curso, responsable de aproximadamente un tercio de las muertes a nivel global — un modelo de apoyo a la detección temprana tiene impacto real, pero también un costo de error real.",
+        "<strong>Diferencia con los cursos de un solo algoritmo</strong>: aquí el objetivo no es dominar la regresión logística o los árboles en aislamiento, sino aprender a comparar varios modelos sobre el mismo problema y elegir con criterio, que es lo que realmente hace un practicante de ML en un proyecto real.",
+        "<strong>El dato no es el problema, el objetivo mal definido sí</strong>: antes de tocar el dataset hay que decidir explícitamente qué error es más grave — un falso positivo (asustar a un paciente sano) o un falso negativo (dejar pasar un caso enfermo) — porque esa decisión determina todo lo que sigue."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Platform for AI (PAI) es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "En un caso de estudio aplicado, la pregunta de examen no es «¿qué algoritmo es mejor en abstracto?» sino «dado este problema clínico y este costo de error, ¿qué algoritmo y qué umbral tienen más sentido?»." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Platform for AI (PAI) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Exploración y calidad de los datos clínicos",
+      "title_en": "Exploring Clinical Data Quality",
+      "intro": "Los datasets de salud tienen particularidades que no aparecen en datasets genéricos: variables categóricas codificadas como enteros, rangos clínicamente imposibles que delatan errores de captura, y una tasa base de la clase positiva que no siempre es 50/50.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Variables típicas del dataset</strong>: edad, sexo, tipo de dolor de pecho (categórico con 4 niveles), presión arterial en reposo, colesterol sérico, glucemia en ayunas (binaria), resultados de electrocardiograma en reposo, frecuencia cardíaca máxima alcanzada, angina inducida por ejercicio, depresión del segmento ST, pendiente del ST, número de vasos principales coloreados por fluoroscopia y un indicador de talasemia.",
+        "<strong>Variables categóricas disfrazadas de numéricas</strong>: campos como «tipo de dolor de pecho» o «resultado de ECG» suelen venir codificados como 0/1/2/3 — tratarlos como si fueran una escala numérica continua (y no como categorías) es un error de interpretación frecuente que distorsiona el modelo.",
+        "<strong>Valores faltantes y outliers clínicos</strong>: un colesterol de 0 o una presión arterial de 0 no son valores bajos, son datos faltantes mal codificados — hay que distinguir entre «faltante» y «valor real extremo» antes de imputar o eliminar filas.",
+        "<strong>Balance de clases</strong>: a diferencia de fraude o spam, en un dataset clínico bien curado la proporción de casos positivos y negativos suele estar más balanceada, pero nunca se debe asumir esto sin verificarlo explícitamente con un conteo simple.",
+        "<strong>Matriz de correlación</strong>: antes de modelar, revisar qué variables clínicas se correlacionan entre sí (p.ej. edad y presión arterial) ayuda a anticipar problemas de multicolinealidad en modelos lineales como la regresión logística."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Platform for AI (PAI) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe un valor de colesterol o presión igual a 0, la respuesta correcta casi siempre es identificarlo como dato faltante mal codificado, no como una medición válida." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Ingeniería de features sin fuga de datos",
+      "title_en": "Feature Engineering Without Leakage",
+      "intro": "Construir buenas features clínicas es tan importante como elegir el algoritmo — y es también donde se introduce, casi siempre sin querer, el error más grave de un pipeline de ML: la fuga de datos (data leakage).",
       "points": [
-        "<strong>Data Science Workshop</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado con GPUs opcionales.",
-        "<strong>Deep Learning Containers</strong> <em>(PAI-DLC)</em>: Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "<strong>Elastic Algorithm Service</strong> <em>(PAI-EAS)</em>: Serving online con auto-scaling y A/B.",
-        "<strong>PAI Designer</strong> <em>(PAI-Designer)</em>: Pipelines ML drag&drop.",
-        "<strong>QuickStart</strong> <em>(QuickStart)</em>: Modelos preentrenados y fine-tuning con un click.",
-        "<strong>Model Gallery</strong> <em>(Model Gallery)</em>: Catálogo de modelos (Qwen, Llama, SD, etc).",
-        "<strong>AutoML</strong> <em>(AutoML)</em>: Búsqueda automática de arquitectura e hiperparámetros.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Framework de compute distribuido soportado."
+        "<strong>Codificación de variables categóricas</strong>: variables como tipo de dolor de pecho o pendiente del ST se codifican con one-hot encoding antes de entrenar modelos lineales o SVM; los modelos basados en árboles pueden manejar codificaciones ordinales simples con menor impacto.",
+        "<strong>Qué es fuga de datos (data leakage) aquí</strong>: usar una variable que en la práctica no estaría disponible en el momento de la predicción (por ejemplo, un resultado de laboratorio que solo se obtiene después de confirmado el diagnóstico) infla artificialmente el desempeño del modelo en evaluación, pero lo hace inútil en producción.",
+        "<strong>Ajustar el encoder solo sobre el training set</strong>: el <code>OneHotEncoder</code> o el <code>StandardScaler</code> deben ajustarse (<code>fit</code>) únicamente sobre los datos de entrenamiento y luego aplicarse (<code>transform</code>) sobre el test set — ajustar sobre todo el dataset antes de dividir es una forma sutil de fuga de datos.",
+        "<strong>Interacciones clínicamente relevantes</strong>: features derivadas como «edad × colesterol» o categorizar la presión arterial en rangos de riesgo (normal/elevada/hipertensión) pueden capturar relaciones no lineales que un modelo lineal simple no vería con las variables originales.",
+        "<strong>Selección de features</strong>: no todas las variables del examen médico aportan señal — la importancia de features de un árbol o random forest preliminar ayuda a priorizar cuáles vale la pena mantener frente a cuáles solo añaden ruido."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Ajustar el escalado o la codificación sobre el dataset completo antes de dividir en train/test es fuga de datos — aunque no use directamente la variable objetivo, el test set 'contamina' estadísticamente el entrenamiento." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Comparar algoritmos, no enamorarse de uno",
+      "title_en": "Comparing Algorithms, Not Committing to One",
+      "intro": "Un proyecto real casi nunca fija el algoritmo de antemano — se entrena un baseline simple, se compara contra alternativas más complejas, y se elige según el resultado medido, no según preferencia personal.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Baseline: regresión logística</strong>: rápida de entrenar, altamente interpretable (coeficientes con significado clínico directo vía odds ratio) — el punto de partida obligatorio antes de justificar algo más complejo.",
+        "<strong>Árbol de decisión</strong>: útil cuando se necesita explicar la predicción como una secuencia de reglas legibles por un médico («si la angina inducida por ejercicio es sí Y la depresión del ST > 2 → alto riesgo»), a costa de ser inestable con pequeñas variaciones en los datos.",
+        "<strong>Random Forest</strong>: suele mejorar la accuracy y estabilidad frente a un árbol único, a costa de perder la explicabilidad directa de reglas — se compensa parcialmente con feature importance.",
+        "<strong>SVM</strong>: puede funcionar bien con pocas muestras y fronteras de decisión no triviales usando un kernel no lineal, pero requiere escalar las features y es más costoso de interpretar directamente.",
+        "<strong>Criterio de comparación</strong>: no basta con mirar accuracy — se compara recall de la clase positiva, AUC-ROC y estabilidad entre folds de validación cruzada antes de declarar un ganador.",
+        "<strong>La elección depende del objetivo, no solo del número</strong>: si el hospital necesita justificar cada predicción ante un comité médico, un modelo ligeramente menos preciso pero interpretable puede ser la elección correcta frente a uno más preciso pero opaco."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "En un caso de estudio real, 'el mejor modelo' no es el de mayor accuracy en una tabla — es el que mejor balancea desempeño, interpretabilidad y el costo real de cada tipo de error para el caso de uso concreto." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Métricas cuando un falso negativo es grave",
+      "title_en": "Metrics When a False Negative Is Serious",
+      "intro": "En un contexto de diagnóstico, accuracy puede esconder el error más caro: dejar pasar a un paciente enfermo sin detectarlo. Este módulo cubre cómo elegir métricas y umbral con ese costo en mente.",
       "points": [
-        "<strong>HA</strong>: EAS con autoscaling por QPS + provisioned min replicas",
-        "<strong>Costo</strong>: DLC con spot GPU para reducir costo de training",
-        "<strong>Buenas prácticas</strong>: Datos en OSS + versioning para reproducibilidad",
-        "<strong>Buenas prácticas</strong>: Model versioning y A/B antes de rollout completo",
-        "<strong>Buenas prácticas</strong>: Feature Store para evitar training-serving skew"
+        "<strong>Por qué accuracy no basta aquí</strong>: si el dataset tiene, digamos, 55% de casos negativos, un modelo que ignora la clase positiva podría lograr accuracy razonable sin ser clínicamente útil — el objetivo real es no dejar pasar casos enfermos.",
+        "<strong>Recall (sensibilidad) como métrica prioritaria</strong>: mide qué proporción de los pacientes realmente enfermos el modelo logra detectar — en un contexto de screening, maximizar recall (dentro de límites razonables de precisión) suele ser la prioridad.",
+        "<strong>Costo asimétrico de los errores</strong>: un falso negativo (no detectar la enfermedad) tiene consecuencias mucho más graves que un falso positivo (una prueba de confirmación adicional innecesaria) — esta asimetría debe reflejarse explícitamente en el umbral de decisión.",
+        "<strong>Ajustar el umbral por debajo de 0.5</strong>: bajar el umbral de decisión aumenta el recall a costa de más falsos positivos — una decisión de negocio/clínica, no una decisión puramente estadística.",
+        "<strong>AUC-ROC para comparar modelos</strong>: al comparar los distintos algoritmos entrenados en la lección anterior, el AUC-ROC resume el desempeño en todos los umbrales posibles, siendo más robusto que fijarse en un único punto de corte."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Ante un escenario de diagnóstico donde 'no detectar un caso positivo' es la peor consecuencia posible, el examen espera que prioricess recall sobre accuracy y que consideres bajar el umbral de decisión." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Interpretabilidad para una audiencia clínica",
+      "title_en": "Interpretability for a Clinical Audience",
+      "intro": "Un modelo que un ingeniero de datos entiende perfectamente puede ser una caja negra inútil para el médico que debe tomar la decisión final — comunicar el resultado con claridad es parte del trabajo, no un extra.",
       "points": [
-        "<strong>Antipattern</strong>: Training en GPUs on-demand — 3-5x más caro que spot",
-        "<strong>Antipattern</strong>: EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-        "<strong>Antipattern</strong>: Modelos sin versionar — imposible rollback",
-        "<strong>Antipattern</strong>: Sin monitoreo de drift — modelo se degrada silente",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Coeficientes de regresión logística en odds ratio</strong>: expresar el efecto de cada variable clínica como 'los odds de enfermedad cardíaca se multiplican por X por cada unidad de aumento en Y' es mucho más útil para un médico que un coeficiente crudo en escala logit.",
+        "<strong>Feature importance de árboles/random forest</strong>: mostrar qué variables clínicas más contribuyen a las predicciones del modelo ayuda a validar que el modelo está usando señales médicamente sensatas (y no artefactos del dataset).",
+        "<strong>Explicaciones por predicción individual</strong>: además de la importancia global, poder explicar por qué el modelo predijo alto riesgo para un paciente concreto (qué variables pesaron más en ese caso) es clave para que un médico confíe en la herramienta.",
+        "<strong>Riesgo de un modelo caja negra en salud</strong>: un modelo muy preciso pero inexplicable puede ser rechazado por el personal clínico, o peor, aceptado sin escrutinio suficiente — ambos escenarios son problemáticos.",
+        "<strong>Validación con expertos del dominio</strong>: antes de cualquier despliegue, un profesional de salud debería revisar si las variables que el modelo considera más importantes tienen sentido clínico."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "La interpretabilidad no es un 'nice to have' en salud — es lo que permite que un profesional clínico audite, confíe o rechace con criterio la recomendación de un modelo." }
+    },
+    {
+      "title_es": "7 · Construcción en PAI y despliegue responsable",
+      "title_en": "Building on PAI and Responsible Deployment",
+      "intro": "El curso cierra conectando todo el caso de estudio con la implementación práctica en el ecosistema de Alibaba Cloud, y con las consideraciones éticas de desplegar un modelo de apoyo diagnóstico.",
+      "points": [
+        "<strong>PAI-Designer/Studio</strong>: permite construir visualmente el pipeline completo — limpieza, encoding, split, entrenamiento y comparación de varios algoritmos — sin escribir todo el código desde cero, ideal para iterar rápido en la fase de exploración.",
+        "<strong>PAI-DSW + scikit-learn</strong>: para mayor control fino sobre el preprocesamiento y la comparación de modelos, un notebook con <code>LogisticRegression</code>, <code>DecisionTreeClassifier</code>, <code>RandomForestClassifier</code> y <code>SVC</code> entrenados y evaluados bajo el mismo protocolo de validación.",
+        "<strong>Validación antes de cualquier despliegue</strong>: validación cruzada estratificada, revisión de métricas por subgrupo (edad, sexo) para detectar sesgos, y revisión de interpretabilidad son pasos obligatorios antes de considerar el modelo listo.",
+        "<strong>El modelo apoya, no reemplaza, el criterio médico</strong>: un modelo de este tipo debe diseñarse como herramienta de apoyo a la decisión (decision support), nunca como sustituto del diagnóstico de un profesional de salud — el examen espera que reconozcas esta distinción.",
+        "<strong>Monitoreo post-despliegue</strong>: el desempeño del modelo debe revisarse periódicamente contra nuevos datos, porque la distribución de pacientes o las prácticas clínicas pueden cambiar (data drift) y degradar silenciosamente la utilidad del modelo."
+      ],
+      "keypoint": { "label": "Estrategia final", "text": "Ante una pregunta sobre desplegar un modelo clínico, la respuesta correcta casi siempre combina validación rigurosa + interpretabilidad + posicionarlo como apoyo a la decisión humana, nunca como reemplazo automático del diagnóstico." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Fine-tuning de Qwen y LLMs open-source"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Recomendación en tiempo real (CTR prediction)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Visión computacional (defectos, OCR, detección)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "NLP: clasificación, sentimiento, extracción"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "AutoML para equipos sin data scientists dedicados"
-    }
+    { "title": "Escenario 1", "text": "Screening temprano de enfermedad cardíaca a partir de indicadores de examen médico de rutina" },
+    { "title": "Escenario 2", "text": "Predicción de riesgo de diabetes tipo 2 con variables clínicas y de estilo de vida" },
+    { "title": "Escenario 3", "text": "Triaje de imágenes o resultados de laboratorio para priorizar revisión médica urgente" },
+    { "title": "Escenario 4", "text": "Predicción de reingreso hospitalario a 30 días para planificación de recursos" },
+    { "title": "Escenario 5", "text": "Comparación de algoritmos para elegir entre precisión máxima e interpretabilidad ante un comité clínico" },
+    { "title": "Escenario 6", "text": "Scoring de riesgo para aseguradoras de salud, con requisitos de auditoría y explicabilidad" }
   ],
   "mistakes": [
-    "Training en GPUs on-demand — 3-5x más caro que spot",
-    "EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-    "Modelos sin versionar — imposible rollback",
-    "Sin monitoreo de drift — modelo se degrada silente"
+    "Optimizar solo accuracy e ignorar el recall de la clase positiva en un problema donde el falso negativo es clínicamente grave",
+    "Tratar variables categóricas clínicas codificadas como números (0/1/2/3) como si fueran una escala numérica continua",
+    "Ajustar el encoder o el escalador sobre el dataset completo antes de dividir en train/test (fuga de datos)",
+    "Comprometerse con un único algoritmo sin comparar al menos un baseline interpretable frente a alternativas más complejas",
+    "Desplegar un modelo sin ningún mecanismo de interpretabilidad en un contexto donde un profesional de salud debe auditar la decisión",
+    "Tratar la salida del modelo como diagnóstico definitivo en vez de una herramienta de apoyo a la decisión médica"
   ],
   "cli": [
-    {
-      "cmd": "aliyun pai CreateJob",
-      "desc": "Lanzar training DLC"
-    },
-    {
-      "cmd": "aliyun eas CreateService",
-      "desc": "Desplegar modelo"
-    }
+    { "cmd": "from sklearn.model_selection import train_test_split\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)", "desc": "Dividir el dataset preservando la proporción de clases (split estratificado)" },
+    { "cmd": "from sklearn.linear_model import LogisticRegression\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.svm import SVC\nmodels = {'logreg': LogisticRegression(max_iter=1000), 'tree': DecisionTreeClassifier(max_depth=5), 'rf': RandomForestClassifier(n_estimators=200), 'svm': SVC(probability=True)}", "desc": "Definir varios algoritmos para comparar bajo el mismo protocolo" },
+    { "cmd": "from sklearn.model_selection import cross_val_score\nfor name, model in models.items():\n    scores = cross_val_score(model, X_train, y_train, cv=5, scoring='recall')\n    print(name, scores.mean())", "desc": "Comparar los modelos por recall promedio con validación cruzada de 5 folds" },
+    { "cmd": "from sklearn.metrics import classification_report, roc_auc_score\nprobs = best_model.predict_proba(X_test)[:, 1]\nprint(classification_report(y_test, probs >= 0.35))\nprint(roc_auc_score(y_test, probs))", "desc": "Evaluar con un umbral ajustado (0.35 en vez de 0.5) y calcular AUC-ROC" },
+    { "cmd": "import pandas as pd\npd.Series(rf.feature_importances_, index=X_train.columns).sort_values(ascending=False)", "desc": "Inspeccionar qué variables clínicas más influyen en las predicciones del Random Forest" },
+    { "cmd": "import joblib\njoblib.dump(best_model, 'heart_disease_model.pkl')", "desc": "Serializar el modelo final para su despliegue como servicio de apoyo diagnóstico" }
   ],
   "glossary": [
-    {
-      "en": "PAI-DSW",
-      "es": "Data Science Workshop",
-      "def": "JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "en": "PAI-DLC",
-      "es": "Deep Learning Containers",
-      "def": "Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "en": "PAI-EAS",
-      "es": "Elastic Algorithm Service",
-      "def": "Serving online con auto-scaling y A/B."
-    },
-    {
-      "en": "PAI-Designer",
-      "es": "PAI Designer",
-      "def": "Pipelines ML drag&drop."
-    },
-    {
-      "en": "QuickStart",
-      "es": "QuickStart",
-      "def": "Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "en": "Model Gallery",
-      "es": "Model Gallery",
-      "def": "Catálogo de modelos (Qwen, Llama, SD, etc)."
-    },
-    {
-      "en": "AutoML",
-      "es": "AutoML",
-      "def": "Búsqueda automática de arquitectura e hiperparámetros."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Framework de compute distribuido soportado."
-    },
-    {
-      "en": "Blade",
-      "es": "Blade",
-      "def": "Compilador de optimización de inferencia."
-    },
-    {
-      "en": "Feature Store",
-      "es": "Feature Store",
-      "def": "Almacén centralizado de features online/offline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Clinical Feature", "es": "Variable clínica", "def": "Indicador de examen médico usado como feature del modelo (presión arterial, colesterol, ECG, etc.)." },
+    { "en": "Missing Value (miscoded)", "es": "Valor faltante mal codificado", "def": "Dato faltante representado como un valor numérico válido en apariencia (p.ej. colesterol = 0)." },
+    { "en": "Categorical Encoding", "es": "Codificación categórica", "def": "Transformación de variables categóricas clínicas (tipo de dolor, ECG) a formato numérico apto para el modelo." },
+    { "en": "Data Leakage", "es": "Fuga de datos", "def": "Uso indebido de información no disponible en el momento real de la predicción, que infla el desempeño evaluado." },
+    { "en": "Baseline Model", "es": "Modelo baseline", "def": "Modelo simple e interpretable (regresión logística) usado como punto de referencia antes de probar alternativas más complejas." },
+    { "en": "Model Comparison", "es": "Comparación de modelos", "def": "Proceso de entrenar y evaluar varios algoritmos bajo el mismo protocolo para elegir el más adecuado." },
+    { "en": "Class Balance", "es": "Balance de clases", "def": "Proporción entre casos positivos y negativos en el dataset; debe verificarse, no asumirse." },
+    { "en": "Confusion Matrix", "es": "Matriz de confusión", "def": "Tabla que cruza predicciones y valores reales en TP, FP, TN, FN." },
+    { "en": "Recall / Sensitivity", "es": "Recall / sensibilidad", "def": "Proporción de casos positivos reales que el modelo detecta; prioritaria cuando el falso negativo es grave." },
+    { "en": "Asymmetric Error Cost", "es": "Costo asimétrico del error", "def": "Situación donde un tipo de error (falso negativo) es mucho más grave que el otro (falso positivo)." },
+    { "en": "Decision Threshold", "es": "Umbral de decisión", "def": "Valor de probabilidad a partir del cual se asigna la clase positiva; ajustable según el costo del error." },
+    { "en": "AUC-ROC", "es": "AUC-ROC", "def": "Área bajo la curva ROC; resume el desempeño del clasificador en todos los umbrales posibles." },
+    { "en": "Feature Importance", "es": "Importancia de features", "def": "Medida de cuánto contribuye cada variable a las predicciones de un modelo basado en árboles." },
+    { "en": "Model Interpretability", "es": "Interpretabilidad del modelo", "def": "Capacidad de explicar por qué el modelo llegó a una predicción específica, crítica en contextos de salud." },
+    { "en": "Odds Ratio", "es": "Razón de momios", "def": "Forma de interpretar coeficientes de regresión logística como factor multiplicativo sobre los odds del evento." },
+    { "en": "Decision Support Tool", "es": "Herramienta de apoyo a la decisión", "def": "Sistema diseñado para asistir, no reemplazar, el juicio de un profesional humano." },
+    { "en": "Data Drift", "es": "Deriva de datos", "def": "Cambio en la distribución de los datos en producción respecto al training set, que degrada el modelo con el tiempo." },
+    { "en": "Stratified Split", "es": "División estratificada", "def": "División train/test que preserva la proporción original de clases en cada subconjunto." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Platform for AI (PAI)?",
-      "options": [
-        "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y f",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart)."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (Data Science Workshop) en Platform for AI (PAI)?",
-      "options": [
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (Data Science Workshop): JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DLC</strong> (Deep Learning Containers) en Platform for AI (PAI)?",
-      "options": [
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DLC (Deep Learning Containers): Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-EAS</strong> (Elastic Algorithm Service) en Platform for AI (PAI)?",
-      "options": [
-        "Serving online con auto-scaling y A/B.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-EAS (Elastic Algorithm Service): Serving online con auto-scaling y A/B."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-Designer</strong> (PAI Designer) en Platform for AI (PAI)?",
-      "options": [
-        "Pipelines ML drag&drop.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "PAI-Designer (PAI Designer): Pipelines ML drag&drop."
-    },
-    {
-      "q": "¿Qué es <strong>QuickStart</strong> (QuickStart) en Platform for AI (PAI)?",
-      "options": [
-        "Modelos preentrenados y fine-tuning con un click.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "QuickStart (QuickStart): Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Platform for AI (PAI), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Platform for AI (PAI) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Platform for AI (PAI), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Platform for AI (PAI) es la elección típica:",
-      "options": [
-        "Fine-tuning de Qwen y LLMs open-source",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Fine-tuning de Qwen y LLMs open-source."
-    }
+    { "q": "¿Cuál es la diferencia principal entre este curso y los de la serie de fundamentos de un solo algoritmo?", "options": ["No hay diferencia, cubren lo mismo", "Este curso recorre un caso de estudio aplicado completo, comparando varios algoritmos, en vez de profundizar en la teoría de uno solo", "Este curso no usa PAI", "Este curso solo cubre regresión lineal"], "answer": 1, "explain": "El enfoque aquí es el proceso end-to-end de un proyecto real: definir el problema, preparar datos, comparar algoritmos y elegir según el costo de error, no la matemática profunda de un único modelo." },
+    { "q": "Un dataset clínico registra un valor de presión arterial en reposo igual a 0 para varios pacientes. ¿Cómo debe interpretarse?", "options": ["Como una medición válida de presión muy baja", "Como un dato faltante mal codificado que requiere tratamiento antes de modelar", "Como un error que invalida todo el dataset", "Como la clase negativa automáticamente"], "answer": 1, "explain": "Un valor fisiológicamente imposible como presión arterial = 0 casi siempre indica un dato faltante representado incorrectamente, no una medición real." },
+    { "q": "¿Por qué tratar 'tipo de dolor de pecho' (codificado 0-3) como una variable numérica continua es un error?", "options": ["Porque no es un error, es la forma correcta", "Porque es una variable categórica; tratarla como escala continua asume un orden/magnitud que no existe entre las categorías", "Porque scikit-learn no admite enteros", "Porque siempre debe eliminarse del dataset"], "answer": 1, "explain": "Codificar una categoría como número no le da significado ordinal real; debe tratarse con one-hot encoding u otra codificación categórica apropiada." },
+    { "q": "¿Qué es la fuga de datos (data leakage) en el contexto de este caso de estudio?", "options": ["Un error de red al subir el dataset a OSS", "Usar información no disponible en el momento real de la predicción, o ajustar transformaciones sobre todo el dataset antes de dividir en train/test", "Perder algunas filas del dataset por accidente", "Un tipo de overfitting exclusivo de redes neuronales"], "answer": 1, "explain": "La fuga de datos infla artificialmente el desempeño evaluado porque el modelo tuvo acceso indebido a información del test set o del futuro." },
+    { "q": "Al comparar regresión logística, árbol de decisión, random forest y SVM sobre el mismo problema, ¿qué determina la elección final del modelo según el curso?", "options": ["Siempre el que tenga mayor accuracy en el training set", "El balance entre desempeño (recall/AUC), interpretabilidad y el costo real de cada tipo de error para el caso de uso", "El que tarde menos en entrenar sin importar el resultado", "El primero que se entrena, por simplicidad"], "answer": 1, "explain": "No existe 'el mejor modelo' en abstracto; la elección depende del contexto clínico, del costo del error y de si se necesita explicar la predicción." },
+    { "q": "En un problema de detección de enfermedad cardíaca, ¿por qué accuracy sola puede ser una métrica insuficiente?", "options": ["Porque accuracy nunca se puede calcular en clasificación binaria", "Porque puede ocultar que el modelo falla en detectar casos positivos reales (falsos negativos), que son el error más costoso aquí", "Porque accuracy solo aplica a regresión", "Porque accuracy siempre es igual a 1.0 en datasets médicos"], "answer": 1, "explain": "Un modelo puede lograr accuracy razonable sin detectar bien la clase positiva; en salud, dejar pasar un caso enfermo es el error más grave." },
+    { "q": "¿Qué ajuste sobre el umbral de decisión tiene sentido cuando un falso negativo (no detectar la enfermedad) es mucho más grave que un falso positivo?", "options": ["Subir el umbral por encima de 0.5", "Bajar el umbral por debajo de 0.5 para aumentar el recall, aceptando más falsos positivos", "El umbral no puede modificarse una vez entrenado el modelo", "Eliminar la métrica de recall del análisis"], "answer": 1, "explain": "Bajar el umbral captura más casos positivos reales a costa de más falsas alarmas, un trade-off razonable cuando el falso negativo es más costoso." },
+    { "q": "¿Por qué la interpretabilidad es especialmente importante en un modelo de predicción de enfermedad cardíaca?", "options": ["No lo es, solo importa la accuracy", "Porque un profesional de salud necesita poder auditar y confiar en la recomendación antes de actuar sobre ella", "Porque los modelos interpretables siempre son más precisos", "Porque PAI no admite modelos no interpretables"], "answer": 1, "explain": "Un modelo caja negra puede ser rechazado o mal utilizado por personal clínico que no puede validar si sus razones tienen sentido médico." },
+    { "q": "¿Qué representa el odds ratio derivado de un coeficiente de regresión logística en este contexto clínico?", "options": ["El cambio absoluto en la probabilidad de enfermedad", "El factor multiplicativo sobre los odds de enfermedad cardíaca por cada unidad de aumento en esa variable clínica", "El error cuadrático medio del modelo", "El número de pacientes en el dataset"], "answer": 1, "explain": "El odds ratio (e^β) traduce el coeficiente a un lenguaje más interpretable para un médico: cuánto se multiplican los odds del evento." },
+    { "q": "¿Cuál es la forma correcta de dividir el dataset para evitar sesgar la proporción de clases entre train y test?", "options": ["División aleatoria simple sin ningún control", "División estratificada, que preserva la proporción de clases en ambos subconjuntos", "Usar todo el dataset tanto para entrenar como para evaluar", "Ordenar por edad y dividir por la mitad"], "answer": 1, "explain": "El split estratificado asegura que train y test mantengan proporciones de clase similares al dataset original, evitando evaluaciones sesgadas." },
+    { "q": "¿Cuál es la postura correcta, según el curso, sobre el rol de un modelo de predicción de enfermedad cardíaca en un entorno clínico real?", "options": ["Debe reemplazar completamente el diagnóstico del médico para ahorrar tiempo", "Debe funcionar como herramienta de apoyo a la decisión, nunca como sustituto del criterio médico", "No debe usarse nunca en un entorno real", "Solo debe usarse si logra 100% de accuracy"], "answer": 1, "explain": "El curso enfatiza que el modelo apoya al profesional de salud; la decisión final y la responsabilidad clínica siguen siendo humanas." },
+    { "q": "¿Qué riesgo aparece si el desempeño del modelo no se revisa periódicamente después del despliegue?", "options": ["Ninguno, un modelo entrenado nunca cambia de comportamiento", "Data drift: la distribución de pacientes o prácticas clínicas puede cambiar y degradar silenciosamente el modelo", "El modelo se vuelve automáticamente más preciso con el tiempo", "El costo de cómputo se reduce automáticamente"], "answer": 1, "explain": "Sin monitoreo continuo, un cambio en la población de pacientes o en los protocolos clínicos puede volver obsoletas las relaciones que el modelo aprendió." },
+    { "q": "¿Qué herramienta de Alibaba Cloud permite construir visualmente el pipeline completo de este caso de estudio sin escribir todo el código desde cero?", "options": ["ActionTrail", "PAI-Designer / PAI Studio", "OSS únicamente", "CloudMonitor"], "answer": 1, "explain": "PAI-Designer (o PAI Studio) ofrece un canvas visual de componentes para limpieza, entrenamiento y evaluación, útil para iterar rápido en la fase exploratoria." }
   ],
-  "exam_focus": "Preguntas: (a) módulos PAI y cuándo usar cada uno, (b) training distribuido y spot GPUs, (c) EAS scaling, (d) Model Gallery + QuickStart para GenAI, (e) MLOps con PAI.",
+  "exam_focus": "El examen suele evaluar: (a) reconocer valores clínicos imposibles como datos faltantes mal codificados, (b) evitar fuga de datos al preprocesar antes de dividir train/test, (c) comparar algoritmos con criterio (no solo accuracy), (d) priorizar recall/umbral cuando el falso negativo es grave, (e) el rol del modelo como apoyo, no reemplazo, del criterio médico.",
   "official_intro": "Heart disease causes 33% of deaths in the world. Data mining has become extremely important for heart disease prediction and treatment. It uses the relevant health exam indicators and analyzes their influences on heart disease. This session introduces how to use Alibaba Cloud Machine Learning Platform For AI to create a heart disease prediction model based on the data collected from heart disease patients.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_machinelearning",

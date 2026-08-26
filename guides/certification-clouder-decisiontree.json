@@ -2,433 +2,178 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-decisiontree",
   "title_en": "Machine Learning Algorithm Primer Series 4 - Decision Tree and Random Forest",
-  "title_es": "Machine Learning Algorithm Primer Series 4 - Decision Tree y Random Forest",
+  "title_es": "Series de Fundamentos de Machine Learning 4 - Árbol de Decisión y Random Forest",
+  "title_es_html": "Árbol de <em>Decisión</em> y Random Forest",
   "duration_es": "47 minutos",
   "level_es": "Principiante",
   "category_es": "Inteligencia Artificial",
   "subcategory_es": "Artificial Intelligence",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_decisiontree",
-  "lead": "Guía completa en español para el curso «Machine Learning Algorithm Primer Series 4 - Decision Tree and Random Forest» de Alibaba Cloud Academy. Cubre en profundidad Platform for AI (PAI). PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Machine Learning Algorithm Primer Series 4 - Decision Tree and Random Forest» de Alibaba Cloud Academy. Cubre cómo un árbol de decisión particiona el espacio de datos usando medidas de impureza (Gini, entropía), por qué crecer un árbol sin límites lleva a sobreajuste, y cómo Random Forest combina cientos de árboles mediante bagging y selección aleatoria de features para obtener un modelo mucho más estable. Incluye implementación práctica en PAI.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Platform for AI (PAI)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: PAI-DSW, PAI-DLC, PAI-EAS, PAI-Designer, QuickStart.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Platform for AI (PAI) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> cómo un árbol de decisión particiona el espacio de features mediante preguntas binarias secuenciales.",
+    "<strong>Calcular e interpretar</strong> medidas de impureza — Gini, entropía — y la ganancia de información de un split.",
+    "<strong>Distinguir</strong> los criterios de construcción de ID3, C4.5 y CART, y cuándo cada uno maneja mejor variables continuas o con valores faltantes.",
+    "<strong>Diagnosticar</strong> sobreajuste en un árbol profundo y aplicar poda (pre-pruning y post-pruning por costo-complejidad).",
+    "<strong>Explicar</strong> cómo Random Forest combina bootstrap aggregating (bagging) con selección aleatoria de features para reducir varianza sin aumentar sesgo.",
+    "<strong>Interpretar</strong> el error Out-of-Bag (OOB) y la importancia de features (feature importance) de un Random Forest.",
+    "<strong>Implementar</strong> y comparar un árbol único frente a un Random Forest en PAI Designer/DSW y en scikit-learn."
   ],
-  "architecture": "Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
+  "architecture": "Flujo típico en PAI: datos etiquetados en MaxCompute/OSS → limpieza y codificación de variables categóricas (One-Hot o Label Encoding) en PAI-Designer o un notebook PAI-DSW → división train/test (holdout o validación cruzada k-fold) → entrenamiento con el componente <em>Decision Tree</em> o <em>Random Forest</em> de PAI-Designer (o <code>scikit-learn</code> en DSW), ajustando profundidad máxima y criterio de partición → evaluación con matriz de confusión, AUC y curva de feature importance → si el árbol único sobreajusta, se aplica poda o se migra a Random Forest para promediar el voto de muchos árboles decorrelacionados → el modelo final se registra y se despliega vía PAI-EAS para inferencia batch u online.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Platform for AI (PAI)",
-      "title_en": "Introduction to Platform for AI (PAI)",
-      "intro": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema que resuelve un árbol de decisión",
+      "title_en": "Why Decision Trees",
+      "intro": "Un árbol de decisión es un modelo que aprende una secuencia de preguntas binarias sobre las features para llegar a una predicción — su mayor atractivo frente a otros modelos es que el razonamiento se puede leer e interpretar como una serie de reglas «si-entonces».",
       "points": [
-        "<strong>Problema que resuelve</strong>: PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Platform for AI (PAI) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Estructura</strong>: un nodo raíz que contiene todos los datos, nodos internos que aplican una condición sobre una feature (p.ej. <code>edad &lt; 40</code>) y hojas que emiten la predicción final (una clase o un valor numérico).",
+        "<strong>Clasificación vs. regresión</strong>: <em>Classification Tree</em> predice una categoría (la hoja emite la clase mayoritaria de sus muestras); <em>Regression Tree</em> predice un número continuo (la hoja emite el promedio de sus muestras).",
+        "<strong>Interpretabilidad</strong>: a diferencia de una red neuronal o un SVM con kernel, cada predicción de un árbol se puede trazar como un camino explícito de condiciones — clave quardo el negocio o un regulador exige explicar la decisión.",
+        "<strong>Costo computacional</strong>: entrenar un árbol es relativamente barato (no requiere gradientes ni iteraciones de optimización costosas), lo que lo hace un buen baseline rápido antes de probar modelos más complejos.",
+        "<strong>Limitación central</strong>: un árbol solo, dejado crecer libremente, tiende a memorizar el ruido del set de entrenamiento — este problema motiva tanto la poda como los métodos de ensamble (Random Forest) que se ven más adelante en el curso."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Platform for AI (PAI) es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Un árbol de decisión no busca la partición óptima global — en cada nodo elige <em>greedily</em> el split que más reduce la impureza en ese punto, sin garantía de que la secuencia completa sea el árbol globalmente óptimo." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Platform for AI (PAI) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Medidas de impureza y ganancia de información",
+      "title_en": "Impurity Measures and Information Gain",
+      "intro": "Para decidir qué feature y qué punto de corte usar en cada nodo, el algoritmo necesita una forma numérica de medir qué tan «mezcladas» están las clases en un conjunto de datos — a eso se le llama impureza.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Gini Impurity</strong>: mide la probabilidad de clasificar incorrectamente una muestra elegida al azar si se etiquetara según la distribución de clases del nodo. Vale 0 cuando el nodo es puro (una sola clase) y es máxima cuando las clases están perfectamente mezcladas.",
+        "<strong>Entropía</strong>: medida de incertidumbre tomada de la teoría de la información; también vale 0 en un nodo puro. A diferencia de Gini, usa logaritmos, por lo que es algo más costosa de calcular pero penaliza la mezcla de forma ligeramente distinta.",
+        "<strong>Ganancia de información (Information Gain)</strong>: la reducción de impureza que se obtiene al dividir un nodo — se calcula como la impureza del nodo padre menos el promedio ponderado de la impureza de los nodos hijos. El algoritmo elige, en cada paso, el split que maximiza esta ganancia.",
+        "<strong>Gain Ratio</strong>: una corrección sobre la ganancia de información que penaliza a las features con muchos valores distintos (p.ej. un ID de cliente), que de otro modo producirían ganancias artificialmente altas por generar muchas ramas pequeñas y puras.",
+        "<strong>Gini vs. entropía en la práctica</strong>: en la mayoría de los casos producen árboles muy similares; CART (el algoritmo detrás de scikit-learn y de PAI-Designer) usa Gini por defecto porque es computacionalmente más barato al no requerir logaritmos."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Platform for AI (PAI) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Memoriza", "text": "Impureza baja = nodo casi puro = buena partición. El algoritmo siempre elige, entre todas las features y puntos de corte posibles, el que produce la <em>mayor</em> ganancia de información en ese nodo." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Construcción del árbol: ID3, C4.5 y CART",
+      "title_en": "Tree-Building Algorithms",
+      "intro": "El examen distingue tres algoritmos históricos de construcción de árboles — cada uno resolvió una limitación del anterior, y entender esa evolución ayuda a recordar sus diferencias.",
       "points": [
-        "<strong>Data Science Workshop</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado con GPUs opcionales.",
-        "<strong>Deep Learning Containers</strong> <em>(PAI-DLC)</em>: Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "<strong>Elastic Algorithm Service</strong> <em>(PAI-EAS)</em>: Serving online con auto-scaling y A/B.",
-        "<strong>PAI Designer</strong> <em>(PAI-Designer)</em>: Pipelines ML drag&drop.",
-        "<strong>QuickStart</strong> <em>(QuickStart)</em>: Modelos preentrenados y fine-tuning con un click.",
-        "<strong>Model Gallery</strong> <em>(Model Gallery)</em>: Catálogo de modelos (Qwen, Llama, SD, etc).",
-        "<strong>AutoML</strong> <em>(AutoML)</em>: Búsqueda automática de arquitectura e hiperparámetros.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Framework de compute distribuido soportado."
+        "<strong>ID3</strong>: el más antiguo; usa ganancia de información pura, solo admite features categóricas y no tiene mecanismo nativo para manejar valores faltantes ni variables continuas.",
+        "<strong>C4.5</strong>: sucesor de ID3; introduce Gain Ratio para corregir el sesgo hacia features de alta cardinalidad, soporta variables continuas (buscando el mejor punto de corte) y puede manejar valores faltantes durante el entrenamiento.",
+        "<strong>CART (Classification and Regression Trees)</strong>: el algoritmo detrás de scikit-learn y de los componentes de árbol de PAI. Siempre construye splits binarios (incluso con features categóricas de múltiples valores), usa Gini para clasificación y varianza/MSE para regresión, y es el único de los tres pensado desde el inicio para regresión.",
+        "<strong>Variables continuas</strong>: para una feature numérica, el algoritmo ordena los valores y evalúa umbrales candidatos entre valores consecutivos, eligiendo el punto de corte que maximiza la ganancia — a diferencia de una feature categórica, donde se evalúan subconjuntos de categorías.",
+        "<strong>Por qué importa para el examen</strong>: si el enunciado menciona «splits siempre binarios» o «soporta regresión de forma nativa», la respuesta es CART; si menciona «Gain Ratio» o «maneja missing values», es C4.5."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "CART es el estándar de facto en herramientas modernas de ML (scikit-learn, PAI, XGBoost usa una variante) precisamente porque unifica clasificación y regresión bajo el mismo mecanismo de splits binarios." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Sobreajuste y poda",
+      "title_en": "Overfitting and Pruning",
+      "intro": "Un árbol al que se le permite crecer sin restricciones eventualmente crea una hoja para cada muestra de entrenamiento — logra 100% de accuracy en train, pero generaliza mal en datos nuevos.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Señal de overfitting</strong>: accuracy de entrenamiento cercana al 100% mientras la accuracy de validación/test es notablemente más baja — el árbol memorizó ruido en vez de patrones generalizables.",
+        "<strong>Pre-pruning (poda temprana)</strong>: detener el crecimiento del árbol antes de que sobreajuste, limitando hiperparámetros como <code>max_depth</code> (profundidad máxima), <code>min_samples_split</code> (mínimo de muestras para dividir un nodo) o <code>min_samples_leaf</code> (mínimo de muestras por hoja).",
+        "<strong>Post-pruning (poda por costo-complejidad)</strong>: dejar crecer el árbol completo y luego eliminar las ramas que menos aportan a la accuracy de validación, guiado por un parámetro de complejidad <code>ccp_alpha</code> — valores más altos podan más agresivamente.",
+        "<strong>Selección del hiperparámetro óptimo</strong>: se usa validación cruzada (k-fold) para probar distintos valores de profundidad o de <code>ccp_alpha</code> y elegir el que minimiza el error en los folds de validación, no en el propio training set.",
+        "<strong>Trade-off sesgo-varianza</strong>: un árbol muy poco profundo tiene alto sesgo (underfitting, no captura patrones reales); un árbol muy profundo tiene alta varianza (overfitting, sensible al ruido). La poda busca el punto intermedio."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe un árbol con accuracy perfecta en entrenamiento pero mala en producción, la respuesta casi siempre es aplicar poda (pre o post) o limitar <code>max_depth</code> — nunca «agregar más datos de la misma distribución» como única solución." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Random Forest: bagging + aleatoriedad de features",
+      "title_en": "Random Forest: Bagging and Feature Randomness",
+      "intro": "Random Forest no es un árbol más sofisticado — es un ensamble de cientos de árboles simples, cada uno entrenado con una vista distinta de los datos, cuyo voto colectivo es mucho más estable que el de un árbol individual.",
       "points": [
-        "<strong>HA</strong>: EAS con autoscaling por QPS + provisioned min replicas",
-        "<strong>Costo</strong>: DLC con spot GPU para reducir costo de training",
-        "<strong>Buenas prácticas</strong>: Datos en OSS + versioning para reproducibilidad",
-        "<strong>Buenas prácticas</strong>: Model versioning y A/B antes de rollout completo",
-        "<strong>Buenas prácticas</strong>: Feature Store para evitar training-serving skew"
+        "<strong>Bootstrap sampling</strong>: cada árbol del bosque se entrena con una muestra aleatoria <em>con reemplazo</em> del mismo tamaño que el dataset original — algunas filas aparecen varias veces, otras no aparecen (en promedio, cada muestra bootstrap contiene ~63.2% de las filas originales).",
+        "<strong>Bagging (Bootstrap Aggregating)</strong>: el nombre del proceso de entrenar múltiples modelos sobre distintas muestras bootstrap y combinar sus predicciones — reduce la varianza porque los errores individuales de cada árbol tienden a cancelarse al promediar.",
+        "<strong>Selección aleatoria de features</strong>: además del bootstrap de filas, en cada split Random Forest solo considera un subconjunto aleatorio de features (típicamente <code>√p</code> features para clasificación, donde p es el total de features) en vez de todas — esto decorrelaciona los árboles entre sí.",
+        "<strong>Por qué decorrelacionar importa</strong>: si todos los árboles vieran todas las features, tenderían a elegir siempre el mismo split dominante en la raíz y terminarían siendo muy parecidos entre sí — promediar árboles correlacionados reduce mucho menos la varianza que promediar árboles diversos.",
+        "<strong>Predicción final</strong>: en clasificación, cada árbol vota una clase y gana la mayoría (o se promedian las probabilidades); en regresión, se promedia la salida numérica de todos los árboles."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Random Forest reduce <em>varianza</em> sin aumentar significativamente el <em>sesgo</em> — es la razón matemática por la que casi siempre generaliza mejor que un árbol de decisión individual con la misma profundidad." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Out-of-Bag error y feature importance",
+      "title_en": "OOB Error and Feature Importance",
+      "intro": "El bootstrap deja, para cada árbol, un conjunto de muestras que nunca vio durante su entrenamiento — Random Forest aprovecha eso para estimar el error de generalización sin necesitar un conjunto de validación separado.",
       "points": [
-        "<strong>Antipattern</strong>: Training en GPUs on-demand — 3-5x más caro que spot",
-        "<strong>Antipattern</strong>: EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-        "<strong>Antipattern</strong>: Modelos sin versionar — imposible rollback",
-        "<strong>Antipattern</strong>: Sin monitoreo de drift — modelo se degrada silente",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Out-of-Bag (OOB) sample</strong>: el ~36.8% de las filas que, por el muestreo con reemplazo, no fueron seleccionadas para entrenar un árbol específico — actúan como un conjunto de validación gratuito para ese árbol.",
+        "<strong>OOB error</strong>: para cada muestra del dataset, se promedian las predicciones únicamente de los árboles que NO la usaron en su entrenamiento — el error resultante es una estimación honesta del error de generalización, similar a la de una validación cruzada, sin costo computacional extra.",
+        "<strong>Feature importance (basada en impureza)</strong>: para cada feature, se suma cuánto reduce la impureza (Gini o entropía) en promedio, ponderado por la cantidad de muestras, cada vez que se usa como criterio de split en todo el bosque.",
+        "<strong>Sesgo de la importancia por Gini</strong>: las features numéricas o categóricas de alta cardinalidad tienden a mostrar importancia inflada simplemente porque ofrecen más puntos de corte posibles — no implica que sean más relevantes causalmente.",
+        "<strong>Permutation importance</strong>: alternativa más robusta — se mide cuánto empeora la accuracy del modelo al mezclar aleatoriamente los valores de una feature en el set de validación; una caída grande indica que la feature es realmente importante para la predicción."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Interpretar una feature importance alta como evidencia de causalidad es un error clásico — la importancia solo mide poder predictivo dentro del modelo entrenado, no una relación causa-efecto en el mundo real." }
+    },
+    {
+      "title_es": "7 · Implementación en PAI y buenas prácticas",
+      "title_en": "Implementation on PAI and Best Practices",
+      "intro": "El curso cierra conectando la teoría con la operación real: cómo entrenar, comparar y decidir entre un árbol y un bosque dentro del ecosistema de Alibaba Cloud.",
+      "points": [
+        "<strong>PAI-Designer</strong>: ofrece componentes visuales «Decision Tree» y «Random Forest» donde se configuran parámetros como profundidad máxima, número de árboles (<code>n_estimators</code>) y muestras mínimas por hoja sin escribir código, ideales para pipelines reproducibles en producción.",
+        "<strong>PAI-DSW</strong>: notebook gestionado donde se prototipa con <code>scikit-learn</code> antes de llevar el pipeline a producción — permite iterar rápido sobre hiperparámetros y visualizar el árbol resultante.",
+        "<strong>Codificación de variables</strong>: los árboles de CART manejan bien variables numéricas directamente, pero las variables categóricas normalmente se codifican (One-Hot o Label Encoding) antes de entrenar, según la implementación usada.",
+        "<strong>Cuándo preferir un árbol único</strong>: cuando la interpretabilidad es un requisito de negocio o regulatorio (p.ej. explicar a un cliente por qué se le negó un crédito) — un Random Forest, aunque más preciso, es mucho más difícil de explicar como una secuencia de reglas.",
+        "<strong>Cuándo preferir Random Forest</strong>: cuando el objetivo es maximizar accuracy/AUC y la interpretabilidad exacta es secundaria — es casi siempre la opción por defecto razonable frente a un árbol único en un pipeline de producción."
+      ],
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario exige explicar cada decisión individual con reglas legibles por un humano no técnico, la respuesta es Decision Tree; si exige maximizar precisión predictiva y tolera menor interpretabilidad, la respuesta es Random Forest." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Fine-tuning de Qwen y LLMs open-source"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Recomendación en tiempo real (CTR prediction)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Visión computacional (defectos, OCR, detección)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "NLP: clasificación, sentimiento, extracción"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "AutoML para equipos sin data scientists dedicados"
-    }
+    { "title": "Escenario 1", "text": "Scoring crediticio donde el regulador exige explicar cada rechazo con reglas legibles — árbol de decisión único, poco profundo" },
+    { "title": "Escenario 2", "text": "Detección de fraude en transacciones con cientos de features heterogéneas — Random Forest, priorizando accuracy sobre interpretabilidad" },
+    { "title": "Escenario 3", "text": "Predicción de abandono (churn) combinando variables demográficas y de uso del servicio" },
+    { "title": "Escenario 4", "text": "Triaje médico asistido donde cada predicción debe poder explicarse a un profesional de salud" },
+    { "title": "Escenario 5", "text": "Identificación de sensores relevantes en una línea de manufactura mediante feature importance de un Random Forest" },
+    { "title": "Escenario 6", "text": "Baseline rápido de clasificación antes de invertir en un modelo más costoso (redes neuronales, boosting)" }
   ],
   "mistakes": [
-    "Training en GPUs on-demand — 3-5x más caro que spot",
-    "EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-    "Modelos sin versionar — imposible rollback",
-    "Sin monitoreo de drift — modelo se degrada silente"
+    "Dejar crecer el árbol sin max_depth ni min_samples_leaf → memoriza el ruido del training set (overfitting severo)",
+    "Usar ganancia de información pura (ID3) con features de alta cardinalidad sin Gain Ratio → splits artificiales que no generalizan",
+    "Evaluar el modelo solo con accuracy en un dataset desbalanceado, ignorando recall/precision de la clase minoritaria",
+    "Interpretar la feature importance de Gini como prueba de causalidad en vez de solo poder predictivo",
+    "No fijar random_state al entrenar Random Forest → resultados no reproducibles entre corridas",
+    "Usar un árbol único en producción cuando la estabilidad predictiva importa más que la interpretabilidad exacta — Random Forest sería más robusto"
   ],
   "cli": [
-    {
-      "cmd": "aliyun pai CreateJob",
-      "desc": "Lanzar training DLC"
-    },
-    {
-      "cmd": "aliyun eas CreateService",
-      "desc": "Desplegar modelo"
-    }
+    { "cmd": "from sklearn.tree import DecisionTreeClassifier\nclf = DecisionTreeClassifier(criterion='gini', max_depth=6, min_samples_leaf=20, random_state=42)\nclf.fit(X_train, y_train)", "desc": "Entrenar un árbol de decisión con poda temprana (pre-pruning) vía max_depth y min_samples_leaf" },
+    { "cmd": "from sklearn.model_selection import cross_val_score\nscores = cross_val_score(clf, X_train, y_train, cv=5, scoring='roc_auc')", "desc": "Validar el árbol con 5-fold cross-validation para elegir hiperparámetros sin sobreajustar" },
+    { "cmd": "path = clf.cost_complexity_pruning_path(X_train, y_train)\nccp_alphas = path.ccp_alphas", "desc": "Calcular la ruta de poda por costo-complejidad (post-pruning)" },
+    { "cmd": "from sklearn.ensemble import RandomForestClassifier\nrf = RandomForestClassifier(n_estimators=300, max_features='sqrt', oob_score=True, random_state=42)\nrf.fit(X_train, y_train)", "desc": "Entrenar un Random Forest de 300 árboles con selección aleatoria de features y estimación OOB" },
+    { "cmd": "print(rf.oob_score_)", "desc": "Consultar el score Out-of-Bag como estimación de generalización sin usar un test set separado" },
+    { "cmd": "import pandas as pd\npd.Series(rf.feature_importances_, index=X_train.columns).sort_values(ascending=False).head(10)", "desc": "Listar las 10 features más importantes según reducción media de impureza" }
   ],
   "glossary": [
-    {
-      "en": "PAI-DSW",
-      "es": "Data Science Workshop",
-      "def": "JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "en": "PAI-DLC",
-      "es": "Deep Learning Containers",
-      "def": "Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "en": "PAI-EAS",
-      "es": "Elastic Algorithm Service",
-      "def": "Serving online con auto-scaling y A/B."
-    },
-    {
-      "en": "PAI-Designer",
-      "es": "PAI Designer",
-      "def": "Pipelines ML drag&drop."
-    },
-    {
-      "en": "QuickStart",
-      "es": "QuickStart",
-      "def": "Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "en": "Model Gallery",
-      "es": "Model Gallery",
-      "def": "Catálogo de modelos (Qwen, Llama, SD, etc)."
-    },
-    {
-      "en": "AutoML",
-      "es": "AutoML",
-      "def": "Búsqueda automática de arquitectura e hiperparámetros."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Framework de compute distribuido soportado."
-    },
-    {
-      "en": "Blade",
-      "es": "Blade",
-      "def": "Compilador de optimización de inferencia."
-    },
-    {
-      "en": "Feature Store",
-      "es": "Feature Store",
-      "def": "Almacén centralizado de features online/offline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Decision Tree", "es": "Árbol de decisión", "def": "Modelo que predice mediante una secuencia de preguntas binarias sobre las features, representable como reglas si-entonces." },
+    { "en": "Root / Internal Node / Leaf", "es": "Raíz / Nodo interno / Hoja", "def": "Partes del árbol: la raíz contiene todos los datos, los nodos internos aplican condiciones, las hojas emiten la predicción." },
+    { "en": "Gini Impurity", "es": "Impureza de Gini", "def": "Probabilidad de clasificar mal una muestra al azar según la distribución de clases del nodo; 0 en un nodo puro." },
+    { "en": "Entropy", "es": "Entropía", "def": "Medida de incertidumbre de la teoría de la información, usada como alternativa a Gini para medir impureza." },
+    { "en": "Information Gain", "es": "Ganancia de información", "def": "Reducción de impureza obtenida al dividir un nodo; el algoritmo elige el split que la maximiza." },
+    { "en": "Gain Ratio", "es": "Razón de ganancia", "def": "Corrección de la ganancia de información que penaliza features de alta cardinalidad (usada en C4.5)." },
+    { "en": "CART", "es": "CART", "def": "Classification and Regression Trees; algoritmo de splits binarios usado por scikit-learn y PAI, soporta clasificación y regresión." },
+    { "en": "ID3 / C4.5", "es": "ID3 / C4.5", "def": "Algoritmos predecesores de CART; ID3 solo categóricas sin missing values, C4.5 añade variables continuas y Gain Ratio." },
+    { "en": "Overfitting", "es": "Sobreajuste", "def": "El modelo memoriza el ruido del training set; alta accuracy en train, baja en test." },
+    { "en": "Pre-pruning", "es": "Poda temprana", "def": "Limitar el crecimiento del árbol durante el entrenamiento (max_depth, min_samples_leaf, min_samples_split)." },
+    { "en": "Cost-Complexity Pruning", "es": "Poda por costo-complejidad", "def": "Post-pruning que elimina ramas de bajo aporte tras entrenar el árbol completo, guiado por el parámetro ccp_alpha." },
+    { "en": "Bagging", "es": "Bootstrap Aggregating", "def": "Entrenar múltiples modelos sobre distintas muestras bootstrap y combinar sus predicciones para reducir varianza." },
+    { "en": "Bootstrap Sample", "es": "Muestra bootstrap", "def": "Muestra aleatoria con reemplazo del mismo tamaño que el dataset original, usada para entrenar cada árbol del bosque." },
+    { "en": "Random Forest", "es": "Random Forest", "def": "Ensamble de árboles entrenados con bagging + selección aleatoria de features en cada split." },
+    { "en": "Out-of-Bag (OOB) Error", "es": "Error Out-of-Bag", "def": "Estimación del error de generalización usando, para cada muestra, solo los árboles que no la vieron en entrenamiento." },
+    { "en": "Feature Importance", "es": "Importancia de features", "def": "Medida de cuánto contribuye cada feature a reducir la impureza en el conjunto de árboles." },
+    { "en": "Permutation Importance", "es": "Importancia por permutación", "def": "Mide la caída de accuracy al mezclar aleatoriamente los valores de una feature; alternativa robusta a la importancia por Gini." },
+    { "en": "max_depth / min_samples_leaf", "es": "Profundidad máxima / muestras mínimas por hoja", "def": "Hiperparámetros de pre-pruning que limitan la complejidad del árbol." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Platform for AI (PAI)?",
-      "options": [
-        "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y f",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart)."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (Data Science Workshop) en Platform for AI (PAI)?",
-      "options": [
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (Data Science Workshop): JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DLC</strong> (Deep Learning Containers) en Platform for AI (PAI)?",
-      "options": [
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DLC (Deep Learning Containers): Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-EAS</strong> (Elastic Algorithm Service) en Platform for AI (PAI)?",
-      "options": [
-        "Serving online con auto-scaling y A/B.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-EAS (Elastic Algorithm Service): Serving online con auto-scaling y A/B."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-Designer</strong> (PAI Designer) en Platform for AI (PAI)?",
-      "options": [
-        "Pipelines ML drag&drop.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "PAI-Designer (PAI Designer): Pipelines ML drag&drop."
-    },
-    {
-      "q": "¿Qué es <strong>QuickStart</strong> (QuickStart) en Platform for AI (PAI)?",
-      "options": [
-        "Modelos preentrenados y fine-tuning con un click.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "QuickStart (QuickStart): Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Platform for AI (PAI), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Platform for AI (PAI) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Platform for AI (PAI), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Platform for AI (PAI) es la elección típica:",
-      "options": [
-        "Fine-tuning de Qwen y LLMs open-source",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Fine-tuning de Qwen y LLMs open-source."
-    }
+    { "q": "¿Qué mide la Impureza de Gini en un nodo de un árbol de decisión?", "options": ["El tiempo de entrenamiento del árbol", "La probabilidad de clasificar mal una muestra elegida al azar según la distribución de clases del nodo", "El número de features disponibles", "La profundidad máxima permitida"], "answer": 1, "explain": "Gini vale 0 en un nodo puro (una sola clase) y aumenta cuanto más mezcladas están las clases en ese nodo." },
+    { "q": "¿Qué criterio usa el algoritmo en cada nodo para decidir qué feature y qué punto de corte usar?", "options": ["El que produce el árbol más profundo", "El que maximiza la ganancia de información (mayor reducción de impureza)", "El que usa la menor cantidad de memoria", "Un sorteo aleatorio entre las features disponibles"], "answer": 1, "explain": "El algoritmo elige, de forma greedy en cada nodo, el split que más reduce la impureza respecto al nodo padre." },
+    { "q": "¿Qué corrige el Gain Ratio (usado en C4.5) respecto a la ganancia de información pura (ID3)?", "options": ["Nada, son idénticos", "El sesgo hacia features de alta cardinalidad que generan muchas ramas pequeñas y puras", "El tiempo de cómputo del algoritmo", "La necesidad de codificar variables categóricas"], "answer": 1, "explain": "Gain Ratio penaliza a las features con muchos valores distintos, que de otro modo mostrarían ganancias artificialmente altas." },
+    { "q": "¿Cuál es la diferencia principal de CART frente a ID3 y C4.5?", "options": ["CART no admite variables categóricas", "CART siempre genera splits binarios y soporta regresión de forma nativa", "CART no puede usarse en scikit-learn", "CART no calcula impureza"], "answer": 1, "explain": "CART es el algoritmo detrás de scikit-learn y PAI; construye árboles binarios y unifica clasificación y regresión." },
+    { "q": "Un árbol tiene 99% de accuracy en entrenamiento y 61% en test. ¿Qué está ocurriendo y qué técnica lo mitiga?", "options": ["Underfitting; se soluciona con más profundidad", "Overfitting; se soluciona con poda (pre o post) o limitando max_depth", "El dataset es demasiado grande; hay que reducirlo", "El modelo necesita más features irrelevantes"], "answer": 1, "explain": "La gran brecha entre accuracy de train y test es la firma clásica de overfitting; la poda reduce la complejidad del árbol." },
+    { "q": "¿Qué es el bootstrap sampling en el contexto de Random Forest?", "options": ["Dividir el dataset en train/test una sola vez", "Muestreo aleatorio con reemplazo del mismo tamaño que el dataset original, usado para entrenar cada árbol", "Eliminar features irrelevantes antes de entrenar", "Normalizar las variables numéricas"], "answer": 1, "explain": "Cada árbol del bosque se entrena con una muestra bootstrap distinta, generada con reemplazo del dataset original." },
+    { "q": "Además del bootstrap de filas, ¿qué otra fuente de aleatoriedad usa Random Forest en cada split?", "options": ["Ninguna, todos los árboles ven todas las features", "Un subconjunto aleatorio de features considerado en cada nodo", "Un orden aleatorio de las clases", "Una tasa de aprendizaje aleatoria"], "answer": 1, "explain": "En cada split solo se evalúa un subconjunto aleatorio de features, lo cual decorrelaciona los árboles entre sí." },
+    { "q": "¿Por qué decorrelacionar los árboles del bosque mejora el desempeño de Random Forest?", "options": ["Porque reduce el tiempo de entrenamiento", "Porque promediar modelos poco correlacionados reduce la varianza mucho más que promediar modelos muy parecidos", "Porque elimina la necesidad de un test set", "Porque aumenta artificialmente el accuracy en entrenamiento"], "answer": 1, "explain": "Si todos los árboles fueran muy similares entre sí, promediarlos apenas reduciría la varianza; la decorrelación es la clave del efecto." },
+    { "q": "¿Qué es el error Out-of-Bag (OOB) en Random Forest?", "options": ["El error medido en un conjunto de test completamente separado", "Una estimación de generalización usando, para cada muestra, solo los árboles que no la vieron durante su entrenamiento", "El error de los árboles que fallaron al entrenar", "La diferencia entre Gini y entropía"], "answer": 1, "explain": "Como cada árbol se entrena con una muestra bootstrap, quedan ~36.8% de filas fuera (out-of-bag) que sirven de validación gratuita." },
+    { "q": "¿Qué limitación tiene la feature importance calculada por reducción de impureza (Gini)?", "options": ["No se puede calcular en Random Forest", "Tiende a inflar la importancia de features numéricas o de alta cardinalidad sin implicar causalidad", "Solo funciona en árboles de regresión", "Requiere un test set separado para calcularse"], "answer": 1, "explain": "Las features con más puntos de corte posibles tienden a mostrar importancia más alta por razones estructurales, no necesariamente causales." },
+    { "q": "¿Qué mide la permutation importance, a diferencia de la importancia basada en Gini?", "options": ["El tiempo de inferencia del modelo", "Cuánto empeora la accuracy del modelo al mezclar aleatoriamente los valores de una feature en validación", "El número de nodos que usan esa feature", "La correlación lineal entre features"], "answer": 1, "explain": "Permutation importance mide el impacto real en el desempeño del modelo, siendo más robusta frente a sesgos estructurales." },
+    { "q": "Un banco necesita explicar a cada cliente, en lenguaje simple, por qué se le negó un crédito. ¿Qué modelo es más apropiado?", "options": ["Random Forest de 500 árboles", "Un árbol de decisión único, poco profundo", "Una red neuronal profunda", "Un ensamble de boosting con 1000 iteraciones"], "answer": 1, "explain": "Un árbol único, poco profundo, se puede leer directamente como una secuencia de reglas — la interpretabilidad exacta es el requisito dominante." },
+    { "q": "¿Qué hiperparámetro de Random Forest controla cuántas features se consideran en cada split?", "options": ["n_estimators", "max_features", "criterion", "random_state"], "answer": 1, "explain": "max_features determina el tamaño del subconjunto aleatorio de features evaluado en cada nodo (comúnmente √p para clasificación)." }
   ],
-  "exam_focus": "Preguntas: (a) módulos PAI y cuándo usar cada uno, (b) training distribuido y spot GPUs, (c) EAS scaling, (d) Model Gallery + QuickStart para GenAI, (e) MLOps con PAI.",
+  "exam_focus": "El examen suele evaluar: (a) cálculo e interpretación de Gini/entropía y ganancia de información, (b) diferencias entre ID3, C4.5 y CART, (c) diagnóstico de overfitting y técnicas de poda, (d) el mecanismo de bagging + selección aleatoria de features en Random Forest, (e) interpretación correcta de OOB error y feature importance.",
   "official_intro": "This course is the 4th class of the Alibaba Cloud Machine Learning Algorithm QuickStart series, It mainly introduces the Decision Tree main algorithms and pruning principle,as well as applies feature engineering,implements Random Forest Model with PAI to explain the model comparison and selection, prepar for the knowledge associate with subsequent machine learning courses.",
   "recommended_for": "Machine Learning beginners, cloud computing beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_decisiontree",

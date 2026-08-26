@@ -2,414 +2,179 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-pythondecisiontree",
   "title_en": "Implement Decision Tree with Python",
-  "title_es": "Implement Decision Tree con Python",
+  "title_es": "Implementar un Árbol de Decisión con Python",
+  "title_es_html": "Implementar un Árbol de Decisión con <em>Python</em>",
   "duration_es": "42 minutos",
   "level_es": "Principiante",
   "category_es": "Inteligencia Artificial",
   "subcategory_es": "Artificial Intelligence",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_pythondecisiontree",
-  "lead": "Guía completa en español para el curso «Implement Decision Tree with Python» de Alibaba Cloud Academy. Cubre en profundidad Python en Alibaba Cloud (Data & Cloud). Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Implement Decision Tree with Python» de Alibaba Cloud Academy. A diferencia del curso teórico de la serie de fundamentos, este es un curso de implementación: código real con pandas y scikit-learn para preparar datos, entrenar un <code>DecisionTreeClassifier</code>, visualizar el árbol como reglas legibles, ajustar hiperparámetros programáticamente y serializar el modelo — con los errores de código más comunes que cometen quienes recién empiezan.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Python en Alibaba Cloud (Data & Cloud)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: aliyunsdk, PyODPS, PySpark, PAI-DSW, Poetry/pip.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Python en Alibaba Cloud (Data & Cloud) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Preparar</strong> un dataset con pandas para que sea apto para <code>scikit-learn</code>: codificación de variables categóricas y manejo de valores faltantes.",
+    "<strong>Entrenar</strong> un <code>DecisionTreeClassifier</code> eligiendo entre criterio <code>entropy</code> (ligado a la familia ID3/C4.5/C5.0) y <code>gini</code> (CART), y explicar la diferencia práctica.",
+    "<strong>Visualizar y exportar</strong> el árbol entrenado como diagrama y como reglas de texto legibles con <code>plot_tree</code>, <code>export_text</code> y <code>export_graphviz</code>.",
+    "<strong>Ajustar hiperparámetros</strong> de forma programática con <code>GridSearchCV</code>/<code>RandomizedSearchCV</code> en vez de prueba y error manual.",
+    "<strong>Evaluar</strong> el modelo con <code>classification_report</code>, matriz de confusión y curva ROC, e interpretar los resultados.",
+    "<strong>Serializar y recargar</strong> el modelo entrenado con <code>joblib</code>/<code>pickle</code> para integrarlo en un pipeline o servicio.",
+    "<strong>Reconocer</strong> los errores de implementación más comunes en Python al construir árboles de decisión."
   ],
-  "architecture": "Notebook PAI-DSW → pandas/polars local → escalado con PyODPS/pyspark → modelos con scikit-learn/PyTorch → deploy en EAS. Automatización: aliyunsdk + boto3-like para infra.",
+  "architecture": "Flujo de implementación: CSV/dataset en pandas → limpieza y codificación de variables categóricas (<code>LabelEncoder</code>, <code>OneHotEncoder</code> o <code>pd.get_dummies</code>) → <code>train_test_split</code> → instanciar y entrenar <code>DecisionTreeClassifier</code> con el criterio e hiperparámetros elegidos → búsqueda de hiperparámetros con <code>GridSearchCV</code> sobre validación cruzada → visualizar el árbol resultante (<code>plot_tree</code>/<code>graphviz</code>) y extraer reglas con <code>export_text</code> → evaluar con <code>classification_report</code>/<code>confusion_matrix</code>/AUC sobre el test set → serializar el modelo final con <code>joblib.dump</code> para reutilizarlo en un notebook PAI-DSW o un servicio de inferencia.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Python en Alibaba Cloud (Data & Cloud)",
-      "title_en": "Introduction to Python en Alibaba Cloud (Data & Cloud)",
-      "intro": "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué implementar el árbol en código, no solo en un canvas visual",
+      "title_en": "Why Code, Not Just a Visual Canvas",
+      "intro": "Herramientas como PAI-Designer permiten entrenar un árbol arrastrando componentes, pero implementarlo directamente en Python da control fino sobre cada paso y es indispensable para integrarlo en pipelines automatizados, tests y despliegues reproducibles.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Python es el lenguaje canónico para data engineering, ML y automatización cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Python en Alibaba Cloud (Data & Cloud) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Control granular</strong>: en código se controla exactamente qué transformación se aplica a cada columna, en qué orden y con qué parámetros — algo que un componente visual abstrae y a veces oculta.",
+        "<strong>Reproducibilidad</strong>: un script o notebook versionado en Git permite re-ejecutar exactamente el mismo pipeline; un flujo armado a mano en una consola visual es más difícil de versionar y auditar.",
+        "<strong>Integración en pipelines</strong>: un modelo entrenado en código se integra naturalmente en un <code>sklearn.pipeline.Pipeline</code>, en un job de PAI-DSW o en un microservicio, sin depender de exportar/importar configuraciones entre herramientas.",
+        "<strong>Entender qué hace la herramienta visual por debajo</strong>: cuando se sabe qué hace <code>DecisionTreeClassifier</code> internamente, es mucho más fácil interpretar y depurar lo que produce el componente equivalente de PAI-Designer.",
+        "<strong>Costo</strong>: la contrapartida es que en código hay más superficie para cometer errores de implementación (encoding incorrecto, fuga de datos, parámetros por defecto mal entendidos) que este curso cubre explícitamente."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Python en Alibaba Cloud (Data & Cloud) es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Implementar en código no es 'más difícil' que usar un canvas visual — es un nivel de abstracción distinto, necesario cuando el modelo debe integrarse en un pipeline automatizado y reproducible." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Python en Alibaba Cloud (Data & Cloud) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Preparar los datos con pandas antes de scikit-learn",
+      "title_en": "Preparing Data with pandas Before scikit-learn",
+      "intro": "scikit-learn espera arrays numéricos — cualquier columna de texto o categoría debe transformarse antes de llamar a <code>fit</code>, o el entrenamiento fallará o producirá resultados sin sentido.",
       "points": [
-        "<strong>Patrón canónico</strong>: Notebook PAI-DSW → pandas/polars local → escalado con PyODPS/pyspark → modelos con scikit-learn/PyTorch → deploy en EAS. Automatización: aliyunsdk + boto3-like para infra.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Carga y primer vistazo</strong>: <code>pd.read_csv()</code> seguido de <code>df.info()</code> y <code>df.describe()</code> para identificar tipos de columna, valores nulos y rangos — el primer paso de cualquier script antes de tocar scikit-learn.",
+        "<strong>Codificación de variables categóricas</strong>: <code>LabelEncoder</code> asigna un entero a cada categoría (apto para árboles, que no asumen orden numérico real entre splits binarios); <code>pd.get_dummies</code> u <code>OneHotEncoder</code> crean columnas binarias, más seguras para evitar que el modelo asuma un orden inexistente.",
+        "<strong>Manejo de valores faltantes</strong>: <code>df.isnull().sum()</code> para detectar nulos, y luego decidir entre <code>dropna()</code>, imputación con la mediana/moda, o dejar que el propio árbol maneje ciertos patrones de ausencia según la versión de scikit-learn usada.",
+        "<strong>Separar features y target</strong>: <code>X = df.drop(columns=['target'])</code> y <code>y = df['target']</code> — un error tipográfico aquí (dejar el target dentro de X) es una fuga de datos que produce accuracy perfecta y sospechosa.",
+        "<strong>train_test_split</strong>: dividir con <code>random_state</code> fijo para reproducibilidad, y con <code>stratify=y</code> cuando las clases están desbalanceadas, preservando su proporción en ambos subconjuntos."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Python en Alibaba Cloud (Data & Cloud) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el código muestra un <code>DecisionTreeClassifier.fit()</code> lanzando un error de tipo con una columna de texto, la causa casi siempre es una variable categórica sin codificar." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Entrenar el árbol: DecisionTreeClassifier y el criterio de split",
+      "title_en": "Training the Tree: DecisionTreeClassifier and the Split Criterion",
+      "intro": "El corazón del curso es la API de <code>DecisionTreeClassifier</code> y, en particular, la elección entre los dos criterios de impureza disponibles — una decisión que conecta directamente con la familia histórica de algoritmos ID3/C4.5/C5.0 mencionada en la descripción oficial del curso.",
       "points": [
-        "<strong>aliyunsdk</strong> <em>(aliyunsdk)</em>: SDK oficial Python.",
-        "<strong>PyODPS</strong> <em>(PyODPS)</em>: Cliente Python para MaxCompute.",
-        "<strong>PySpark</strong> <em>(PySpark)</em>: Spark API en Python.",
-        "<strong>PAI-DSW</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado.",
-        "<strong>Gestión deps</strong> <em>(Poetry/pip)</em>: Poetry/pip para paquetes.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Compute distribuido tipo Spark en Python.",
-        "<strong>Wheels</strong> <em>(Wheels)</em>: Formato de distribución binario."
+        "<strong>criterion='entropy'</strong>: usa la entropía de la teoría de la información como medida de impureza — el mismo principio detrás de ID3 y C4.5, que históricamente usaban ganancia de información basada en entropía para decidir cada split.",
+        "<strong>criterion='gini'</strong> (por defecto en scikit-learn): usa la impureza de Gini, computacionalmente más barata al no requerir logaritmos — el criterio que usa CART, el algoritmo detrás de <code>DecisionTreeClassifier</code>.",
+        "<strong>En la práctica producen árboles muy similares</strong>: aunque la fórmula es distinta, ambos criterios suelen elegir splits parecidos; el examen espera que sepas identificar cuál es cuál en el código, no que memorices una diferencia dramática en resultados.",
+        "<strong>Hiperparámetros clave del constructor</strong>: <code>max_depth</code> (profundidad máxima), <code>min_samples_split</code> (mínimo de muestras para dividir un nodo), <code>min_samples_leaf</code> (mínimo por hoja) y <code>random_state</code> (reproducibilidad del desempate en splits).",
+        "<strong>Entrenamiento</strong>: <code>clf = DecisionTreeClassifier(criterion='entropy', max_depth=5, random_state=42); clf.fit(X_train, y_train)</code> — una sola llamada, sin necesidad de iteraciones ni tasa de aprendizaje, a diferencia de modelos entrenados por descenso de gradiente."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Memoriza", "text": "criterion='entropy' conecta con la familia ID3/C4.5/C5.0 mencionada en la descripción oficial del curso; criterion='gini' es el valor por defecto de scikit-learn y corresponde a CART." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Visualizar y exportar el árbol como reglas legibles",
+      "title_en": "Visualizing and Exporting the Tree as Readable Rules",
+      "intro": "Una de las mayores ventajas de un árbol de decisión es que se puede inspeccionar directamente en código — sin depender de una herramienta externa — como diagrama o como texto.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>plot_tree</strong>: <code>from sklearn.tree import plot_tree; plot_tree(clf, feature_names=X.columns, class_names=['0','1'], filled=True)</code> dibuja el árbol completo con matplotlib, mostrando el criterio de split, la impureza y el conteo de muestras en cada nodo.",
+        "<strong>export_text</strong>: genera una representación puramente textual del árbol (sin necesidad de matplotlib ni graphviz), ideal para logs o para pegar en un reporte cuando no se necesita el gráfico.",
+        "<strong>export_graphviz</strong>: produce un archivo <code>.dot</code> que, renderizado con Graphviz, genera un diagrama vectorial de alta calidad — más flexible visualmente que <code>plot_tree</code>, pero requiere una dependencia adicional instalada en el sistema.",
+        "<strong>Árboles muy profundos son ilegibles</strong>: visualizar un árbol con <code>max_depth</code> alto (o sin límite) produce un diagrama enorme e inútil para inspección humana — para fines de interpretación, se suele limitar la profundidad al visualizar aunque el modelo de producción use otra configuración.",
+        "<strong>De reglas a lógica de negocio</strong>: las reglas extraídas con <code>export_text</code> se pueden traducir directamente a condicionales legibles por un equipo no técnico, o incluso a un motor de reglas fuera de Python."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "A diferencia de un random forest o una red neuronal, un árbol de decisión entrenado en código se puede volcar completo a texto — esa trazabilidad total es su ventaja distintiva frente a modelos más complejos." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Ajuste de hiperparámetros con GridSearchCV",
+      "title_en": "Hyperparameter Tuning with GridSearchCV",
+      "intro": "Probar valores de <code>max_depth</code> a mano, uno por uno, no escala — <code>GridSearchCV</code> automatiza la búsqueda combinando validación cruzada con una malla de combinaciones de hiperparámetros.",
       "points": [
-        "<strong>Seguridad</strong>: aliyunsdk con RAM roles, no AccessKey embebida",
-        "<strong>Buenas prácticas</strong>: Virtual envs por proyecto (poetry/venv)",
-        "<strong>Buenas prácticas</strong>: Types con mypy en proyectos grandes",
-        "<strong>Buenas prácticas</strong>: PyODPS para MaxCompute a escala"
+        "<strong>Definir la malla de búsqueda</strong>: un diccionario como <code>{'max_depth': [3,5,7,10,None], 'min_samples_leaf': [1,5,10,20], 'criterion': ['gini','entropy']}</code> especifica qué combinaciones probar.",
+        "<strong>cv (folds de validación cruzada)</strong>: cada combinación se evalúa con k-fold cross-validation (comúnmente <code>cv=5</code>) sobre el training set, nunca sobre el test set, para no filtrar información de evaluación al proceso de selección.",
+        "<strong>scoring</strong>: la métrica que <code>GridSearchCV</code> optimiza (<code>'accuracy'</code>, <code>'f1'</code>, <code>'roc_auc'</code>, etc.) debe elegirse según el problema — optimizar accuracy por defecto en un dataset desbalanceado suele ser un error.",
+        "<strong>best_params_ y best_estimator_</strong>: tras <code>fit</code>, <code>GridSearchCV</code> expone la mejor combinación encontrada y el modelo ya reentrenado con ella sobre todo el training set.",
+        "<strong>RandomizedSearchCV como alternativa</strong>: cuando la malla es muy grande, muestrear un número fijo de combinaciones aleatorias es más eficiente que probarlas todas exhaustivamente, con una pérdida de precisión en la búsqueda generalmente aceptable."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario describe 'probar sistemáticamente muchas combinaciones de max_depth y min_samples_leaf con validación cruzada', la herramienta esperada es GridSearchCV (o RandomizedSearchCV), no un bucle manual con un solo test set." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Evaluación programática y serialización del modelo",
+      "title_en": "Programmatic Evaluation and Model Serialization",
+      "intro": "Entrenar el árbol es solo la mitad del trabajo — hay que medir su desempeño de forma rigurosa en código y dejarlo listo para reutilizarse sin tener que reentrenar cada vez.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey hardcoded",
-        "<strong>Antipattern</strong>: Sin virtual env — dependency hell",
-        "<strong>Antipattern</strong>: Python for-loops donde debería ser vectorizado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>classification_report</strong>: en una sola llamada entrega precisión, recall, F1-score y soporte por clase — el punto de partida estándar para evaluar cualquier clasificador en scikit-learn.",
+        "<strong>confusion_matrix</strong>: la matriz de confusión en código permite inspeccionar exactamente qué clases se confunden entre sí, información que un solo número de accuracy no revela.",
+        "<strong>Curva ROC con matplotlib</strong>: graficar <code>roc_curve</code> junto con <code>roc_auc_score</code> ayuda a comunicar visualmente el trade-off entre sensibilidad y especificidad del árbol entrenado.",
+        "<strong>joblib.dump / joblib.load</strong>: <code>joblib</code> es la forma recomendada de serializar modelos de scikit-learn (más eficiente que <code>pickle</code> puro para arrays de NumPy grandes) — el modelo se guarda en disco y se recarga sin reentrenar.",
+        "<strong>Consistencia de features en inferencia</strong>: al recargar el modelo para predecir sobre datos nuevos, las columnas de entrada deben tener exactamente el mismo orden y codificación que en entrenamiento — un desajuste aquí produce predicciones silenciosamente incorrectas, sin lanzar ningún error."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Guardar el modelo con joblib pero no guardar (ni versionar) el encoder/scaler usado en entrenamiento es un error clásico: en inferencia, los datos nuevos deben pasar por exactamente la misma transformación." }
+    },
+    {
+      "title_es": "7 · Errores comunes de implementación en Python",
+      "title_en": "Common Python Implementation Mistakes",
+      "intro": "La mayoría de los problemas al implementar un árbol en código no son conceptuales sino de implementación — bugs sutiles que producen un modelo que 'funciona' pero está mal.",
+      "points": [
+        "<strong>Encoding no persistido</strong>: ajustar un <code>LabelEncoder</code> nuevo cada vez que se codifica, en vez de guardar y reutilizar el mismo encoder ajustado en entrenamiento, produce un mapeo de categorías inconsistente entre entrenamiento e inferencia.",
+        "<strong>Ajustar el encoder/scaler sobre todo el dataset</strong>: llamar <code>fit_transform</code> antes de <code>train_test_split</code> filtra información del test set al pipeline de preprocesamiento — debe ser <code>fit</code> solo sobre train, <code>transform</code> sobre test.",
+        "<strong>Olvidar random_state</strong>: sin fijar <code>random_state</code> en <code>train_test_split</code> y en <code>DecisionTreeClassifier</code>, los resultados varían entre ejecuciones, dificultando comparar cambios de forma controlada.",
+        "<strong>max_depth sin límite en producción</strong>: dejar el árbol crecer libremente (<code>max_depth=None</code>) suele producir overfitting severo — el código 'funciona' y entrena sin errores, pero el modelo generaliza mal.",
+        "<strong>Orden de columnas inconsistente en inferencia</strong>: si el pipeline de entrenamiento produjo columnas en un orden (por ejemplo, tras <code>pd.get_dummies</code>) y los datos nuevos generan columnas en otro orden, el modelo predice sobre datos mal alineados sin lanzar ningún error visible.",
+        "<strong>Ignorar class_weight en desbalance</strong>: con clases muy desbalanceadas, no usar <code>class_weight='balanced'</code> hace que el árbol tienda a favorecer la clase mayoritaria en cada split."
+      ],
+      "keypoint": { "label": "Estrategia final", "text": "Ante código que produce un accuracy sospechosamente alto o un modelo que falla silenciosamente en producción, revisa primero fuga de datos en el preprocesamiento y consistencia de columnas entre entrenamiento e inferencia — ahí están los bugs más comunes." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data engineering con pandas → PyODPS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ML end-to-end con PAI"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Automatización de infra con SDK"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Web scraping y APIs"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Análisis exploratorio en notebooks"
-    }
+    { "title": "Escenario 1", "text": "Exponer un árbol entrenado en Python como endpoint de un microservicio Flask/FastAPI" },
+    { "title": "Escenario 2", "text": "Automatizar el reentrenamiento periódico del modelo dentro de un notebook PAI-DSW" },
+    { "title": "Escenario 3", "text": "Exportar las reglas del árbol para integrarlas en un motor de reglas de negocio fuera de Python" },
+    { "title": "Escenario 4", "text": "Comparar programáticamente criterion='entropy' vs 'gini' sobre el mismo dataset antes de decidir" },
+    { "title": "Escenario 5", "text": "Depurar un pipeline donde el modelo predice mal solo en producción, no en desarrollo" },
+    { "title": "Escenario 6", "text": "Construir un pipeline con sklearn.pipeline.Pipeline que encapsule encoding + árbol en un solo objeto serializable" }
   ],
   "mistakes": [
-    "AccessKey hardcoded",
-    "Sin virtual env — dependency hell",
-    "Python for-loops donde debería ser vectorizado"
+    "Intentar entrenar DecisionTreeClassifier sobre columnas de texto sin codificar primero",
+    "Ajustar el LabelEncoder/OneHotEncoder sobre el dataset completo antes de dividir en train/test (fuga de datos)",
+    "No fijar random_state, dificultando comparar resultados entre ejecuciones",
+    "Dejar max_depth sin límite en el modelo de producción, causando overfitting severo",
+    "Que el orden de columnas de los datos de inferencia no coincida con el orden usado en entrenamiento",
+    "No usar class_weight='balanced' en un dataset con clases fuertemente desbalanceadas"
   ],
   "cli": [
-    {
-      "cmd": "pip install aliyunsdk-core",
-      "desc": "Instalar SDK"
-    },
-    {
-      "cmd": "python -m venv .venv",
-      "desc": "Virtual env"
-    }
+    { "cmd": "import pandas as pd\ndf = pd.read_csv('dataset.csv')\ndf = pd.get_dummies(df, columns=['categoria_1','categoria_2'], drop_first=True)", "desc": "Cargar el dataset y codificar variables categóricas con one-hot encoding" },
+    { "cmd": "from sklearn.model_selection import train_test_split\nX = df.drop(columns=['target'])\ny = df['target']\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=42)", "desc": "Separar features/target y dividir en train/test de forma estratificada" },
+    { "cmd": "from sklearn.tree import DecisionTreeClassifier\nclf = DecisionTreeClassifier(criterion='entropy', max_depth=5, min_samples_leaf=10, random_state=42)\nclf.fit(X_train, y_train)", "desc": "Entrenar el árbol con criterio de entropía y poda temprana" },
+    { "cmd": "from sklearn.tree import export_text\nprint(export_text(clf, feature_names=list(X_train.columns)))", "desc": "Exportar el árbol entrenado como reglas de texto legibles" },
+    { "cmd": "from sklearn.model_selection import GridSearchCV\nparams = {'max_depth':[3,5,7,None], 'criterion':['gini','entropy']}\ngrid = GridSearchCV(DecisionTreeClassifier(random_state=42), params, cv=5, scoring='f1')\ngrid.fit(X_train, y_train)\nprint(grid.best_params_)", "desc": "Buscar la mejor combinación de hiperparámetros con validación cruzada" },
+    { "cmd": "import joblib\njoblib.dump(grid.best_estimator_, 'tree_model.joblib')\nloaded = joblib.load('tree_model.joblib')", "desc": "Serializar el modelo entrenado y recargarlo sin reentrenar" }
   ],
   "glossary": [
-    {
-      "en": "aliyunsdk",
-      "es": "aliyunsdk",
-      "def": "SDK oficial Python."
-    },
-    {
-      "en": "PyODPS",
-      "es": "PyODPS",
-      "def": "Cliente Python para MaxCompute."
-    },
-    {
-      "en": "PySpark",
-      "es": "PySpark",
-      "def": "Spark API en Python."
-    },
-    {
-      "en": "PAI-DSW",
-      "es": "PAI-DSW",
-      "def": "JupyterLab gestionado."
-    },
-    {
-      "en": "Poetry/pip",
-      "es": "Gestión deps",
-      "def": "Poetry/pip para paquetes."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Compute distribuido tipo Spark en Python."
-    },
-    {
-      "en": "Wheels",
-      "es": "Wheels",
-      "def": "Formato de distribución binario."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DecisionTreeClassifier", "es": "DecisionTreeClassifier", "def": "Clase de scikit-learn que implementa un árbol de decisión de clasificación (CART)." },
+    { "en": "criterion", "es": "Criterio de impureza", "def": "Parámetro que elige la medida de impureza usada en cada split: 'gini' o 'entropy'." },
+    { "en": "LabelEncoder", "es": "LabelEncoder", "def": "Transforma cada categoría de una variable en un entero distinto." },
+    { "en": "OneHotEncoder / get_dummies", "es": "Codificación one-hot", "def": "Transforma una variable categórica en columnas binarias, una por categoría." },
+    { "en": "train_test_split", "es": "train_test_split", "def": "Función que divide el dataset en conjuntos de entrenamiento y prueba." },
+    { "en": "plot_tree", "es": "plot_tree", "def": "Función de scikit-learn que dibuja el árbol entrenado con matplotlib." },
+    { "en": "export_text", "es": "export_text", "def": "Función que exporta el árbol entrenado como reglas de texto legibles." },
+    { "en": "export_graphviz", "es": "export_graphviz", "def": "Función que exporta el árbol a formato .dot para renderizar con Graphviz." },
+    { "en": "GridSearchCV", "es": "GridSearchCV", "def": "Búsqueda exhaustiva de hiperparámetros combinada con validación cruzada." },
+    { "en": "RandomizedSearchCV", "es": "RandomizedSearchCV", "def": "Búsqueda de hiperparámetros por muestreo aleatorio de la malla, más eficiente en mallas grandes." },
+    { "en": "cross_val_score", "es": "cross_val_score", "def": "Función que evalúa un modelo con validación cruzada, devolviendo un score por fold." },
+    { "en": "classification_report", "es": "classification_report", "def": "Reporte que resume precisión, recall, F1 y soporte por clase." },
+    { "en": "joblib", "es": "joblib", "def": "Librería recomendada para serializar modelos de scikit-learn, eficiente con arrays de NumPy." },
+    { "en": "random_state", "es": "random_state", "def": "Semilla que fija la aleatoriedad para hacer reproducibles los resultados." },
+    { "en": "Data Leakage (preprocessing)", "es": "Fuga de datos en preprocesamiento", "def": "Ajustar transformaciones (encoder/scaler) sobre datos que incluyen el test set." },
+    { "en": "Feature Order Consistency", "es": "Consistencia del orden de features", "def": "Requisito de que las columnas de entrada en inferencia coincidan en orden y codificación con las de entrenamiento." },
+    { "en": "class_weight", "es": "class_weight", "def": "Parámetro que pondera los errores por clase durante el entrenamiento, útil ante desbalance." },
+    { "en": "Pipeline (sklearn)", "es": "Pipeline", "def": "Objeto de scikit-learn que encadena pasos de preprocesamiento y modelo como una sola unidad serializable." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRa",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados."
-    },
-    {
-      "q": "¿Qué es <strong>aliyunsdk</strong> (aliyunsdk) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "aliyunsdk (aliyunsdk): SDK oficial Python."
-    },
-    {
-      "q": "¿Qué es <strong>PyODPS</strong> (PyODPS) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Cliente Python para MaxCompute.",
-        "SDK oficial Python.",
-        "Spark API en Python.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "PyODPS (PyODPS): Cliente Python para MaxCompute."
-    },
-    {
-      "q": "¿Qué es <strong>PySpark</strong> (PySpark) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Spark API en Python.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "PySpark (PySpark): Spark API en Python."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (PAI-DSW) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "JupyterLab gestionado.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (PAI-DSW): JupyterLab gestionado."
-    },
-    {
-      "q": "¿Qué es <strong>Poetry/pip</strong> (Gestión deps) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Poetry/pip para paquetes.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python."
-      ],
-      "answer": 0,
-      "explain": "Poetry/pip (Gestión deps): Poetry/pip para paquetes."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Python en Alibaba Cloud (Data & Cloud), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Python en Alibaba Cloud (Data & Cloud) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Python en Alibaba Cloud (Data & Cloud), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Python en Alibaba Cloud (Data & Cloud) es la elección típica:",
-      "options": [
-        "Data engineering con pandas → PyODPS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data engineering con pandas → PyODPS."
-    }
+    { "q": "¿Por qué implementar un árbol de decisión en código Python, en vez de usar únicamente un componente visual de PAI-Designer?", "options": ["Porque los componentes visuales no existen en Alibaba Cloud", "Porque el código da control granular, reproducibilidad y permite integrar el modelo en pipelines automatizados", "Porque el código siempre produce mayor accuracy", "Porque scikit-learn no tiene equivalente visual"], "answer": 1, "explain": "La implementación en código permite versionar, automatizar y controlar cada paso con precisión, algo esencial para pipelines de producción." },
+    { "q": "Al llamar clf.fit(X_train, y_train) con una columna de texto sin codificar, ¿qué ocurre generalmente?", "options": ["El modelo la ignora automáticamente sin error", "Se produce un error, porque scikit-learn espera datos numéricos", "El modelo la convierte a número automáticamente sin configuración", "No afecta en absoluto al entrenamiento"], "answer": 1, "explain": "scikit-learn no maneja texto crudo; las variables categóricas deben codificarse (LabelEncoder, OneHotEncoder o get_dummies) antes de entrenar." },
+    { "q": "¿Qué criterio de impureza en DecisionTreeClassifier conecta históricamente con la familia de algoritmos ID3 y C4.5?", "options": ["criterion='gini'", "criterion='entropy'", "criterion='mse'", "No existe tal conexión"], "answer": 1, "explain": "ID3 y C4.5 usaban ganancia de información basada en entropía; criterion='entropy' en scikit-learn replica ese principio." },
+    { "q": "¿Cuál es el criterio de impureza por defecto en DecisionTreeClassifier de scikit-learn?", "options": ["entropy", "gini", "mse", "log_loss siempre"], "answer": 1, "explain": "El valor por defecto es 'gini', consistente con el algoritmo CART detrás de la implementación de scikit-learn." },
+    { "q": "¿Qué función permite obtener las reglas del árbol entrenado como texto plano, sin necesidad de graficar nada?", "options": ["plot_tree", "export_text", "GridSearchCV", "train_test_split"], "answer": 1, "explain": "export_text genera una representación puramente textual del árbol, útil para logs o reportes sin dependencias gráficas." },
+    { "q": "¿Qué hace GridSearchCV que un bucle manual probando valores de max_depth uno por uno no garantiza por sí solo?", "options": ["Entrena el modelo más rápido siempre", "Combina sistemáticamente la malla de hiperparámetros con validación cruzada, evitando sobreajustar la elección al test set", "Elimina la necesidad de dividir en train/test", "Convierte automáticamente variables categóricas"], "answer": 1, "explain": "GridSearchCV evalúa cada combinación con k-fold cross-validation sobre el training set, un proceso más riguroso que ajustar a ojo contra un único test set." },
+    { "q": "¿Cuál es el error de implementación si se llama fit_transform() de un OneHotEncoder sobre el dataset completo antes de hacer train_test_split?", "options": ["No hay ningún problema, es la forma recomendada", "Se introduce fuga de datos porque el encoder 've' información del test set durante el ajuste", "El modelo tarda más tiempo en entrenar", "Los nombres de columnas se pierden automáticamente"], "answer": 1, "explain": "El encoder debe ajustarse (fit) solo sobre el training set; ajustarlo sobre todo el dataset filtra información del test set al pipeline." },
+    { "q": "¿Por qué es recomendable fijar random_state al usar train_test_split y DecisionTreeClassifier?", "options": ["Es obligatorio por sintaxis, sin fijarlo el código no compila", "Para que los resultados sean reproducibles entre distintas ejecuciones del script", "Porque mejora automáticamente el accuracy", "Porque reduce el tiempo de entrenamiento"], "answer": 1, "explain": "Sin una semilla fija, la división de datos y el desempate de splits pueden variar entre corridas, dificultando comparar cambios de forma controlada." },
+    { "q": "¿Qué consecuencia tiene dejar max_depth=None en un árbol de producción entrenado en Python?", "options": ["El árbol se vuelve más interpretable automáticamente", "El árbol tiende a crecer hasta memorizar el training set, produciendo overfitting severo", "El código lanza un error de sintaxis", "No tiene ningún efecto práctico"], "answer": 1, "explain": "Sin límite de profundidad, el árbol puede crear una hoja casi por cada muestra de entrenamiento, generalizando mal en datos nuevos." },
+    { "q": "¿Qué problema específico causa que el orden de columnas de los datos de inferencia no coincida con el del entrenamiento?", "options": ["scikit-learn lo detecta automáticamente y lo corrige", "El modelo puede predecir de forma silenciosamente incorrecta, sin lanzar ningún error visible", "El programa se detiene inmediatamente con un traceback claro", "No tiene ningún efecto porque el modelo usa nombres de columna, no posiciones"], "answer": 1, "explain": "Muchos modelos de scikit-learn operan sobre arrays posicionales; un desajuste de orden de columnas produce predicciones erróneas sin ningún aviso explícito." },
+    { "q": "¿Qué ventaja ofrece joblib sobre pickle puro para serializar un modelo de scikit-learn?", "options": ["joblib es más eficiente para objetos con arrays grandes de NumPy, comunes en modelos entrenados", "joblib no puede serializar modelos de árboles", "pickle es siempre más rápido en cualquier caso", "No hay ninguna diferencia práctica entre ambos"], "answer": 0, "explain": "joblib está optimizado para serializar objetos con grandes arrays de NumPy, típicos en los parámetros internos de modelos entrenados." },
+    { "q": "En un dataset con clases fuertemente desbalanceadas, ¿qué parámetro de DecisionTreeClassifier ayuda a que el modelo no ignore la clase minoritaria en cada split?", "options": ["random_state", "class_weight='balanced'", "criterion='mse'", "max_features=None"], "answer": 1, "explain": "class_weight='balanced' pondera los errores sobre la clase minoritaria durante el cálculo de impureza en cada split, evitando que el árbol la ignore." },
+    { "q": "¿Qué función de scikit-learn permite encadenar el preprocesamiento (encoding) y el árbol de decisión como un solo objeto serializable?", "options": ["GridSearchCV", "sklearn.pipeline.Pipeline", "export_graphviz", "cross_val_score"], "answer": 1, "explain": "Pipeline encapsula pasos de preprocesamiento y modelo en un único objeto, reduciendo el riesgo de inconsistencias entre entrenamiento e inferencia." }
   ],
-  "exam_focus": "aliyunsdk, PyODPS, PySpark, PAI-DSW, gestión de dependencias.",
+  "exam_focus": "El examen suele evaluar: (a) preparación correcta de datos con pandas antes de scikit-learn, (b) diferencia entre criterion='entropy' (ligado a ID3/C4.5) y 'gini' (CART), (c) herramientas de visualización/exportación del árbol (plot_tree, export_text, export_graphviz), (d) búsqueda de hiperparámetros con GridSearchCV, (e) errores de implementación: fuga de datos en preprocesamiento, inconsistencia de columnas en inferencia, max_depth sin límite.",
   "official_intro": "Decision Tree is a very common classification method. It is based on the probability of occurrence of various situations. By constructing a decision tree to obtain the probability that the expected value of the net present value is greater than or equal to zero, in order to evaluate project risk and its feasibility. In machine learning, Decision Tree is a predictive model that represents a mapping between object properties and object values. Entropy=The degree of clutter in the system, using the algorithm ID3, C4.5 and C5.0 spanning tree algorithms using entropy. This course introduces the basic concepts of Decision Tree, algorithms and how to build decision tree from Python's Scikit-learn library.",
   "recommended_for": "This training is for people who have Python Programming experience and want to learn machine learning skills",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_pythondecisiontree",

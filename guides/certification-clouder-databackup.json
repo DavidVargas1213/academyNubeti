@@ -2,485 +2,210 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-databackup",
   "title_en": "The Backup and Recovery of Common Cloud Databases",
-  "title_es": "The Respaldo y Recuperación of Common Cloud Bases de Datos",
+  "title_es": "Respaldo y Recuperación de Bases de Datos en la Nube",
+  "title_es_html": "Respaldo y Recuperación de <em>Bases de Datos en la Nube</em>",
   "duration_es": "70 minutos",
   "level_es": "Intermedio",
   "category_es": "Seguridad",
   "subcategory_es": "Data Security",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_databackup",
-  "lead": "Guía completa en español para el curso «The Backup and Recovery of Common Cloud Databases» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre el respaldo y la recuperación de bases de datos en la nube, con foco en Alibaba Cloud RDS. Cubre desde por qué una base de datos no se respalda como un disco genérico hasta cómo diseñar una estrategia real que combine snapshots automáticos, binlog para recuperación a un punto en el tiempo y replicación cross-region para desastres, con el vocabulario exacto que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué el backup de una base de datos exige consistencia transaccional y no puede tratarse como una simple copia de bloques de disco.",
+    "<strong>Distinguir</strong> backup físico y backup lógico, y elegir el método correcto según velocidad de restauración, tamaño y portabilidad requeridos por el escenario.",
+    "<strong>Diferenciar</strong> backup completo, incremental y diferencial, y calcular su impacto en tiempo de restauración y espacio de almacenamiento.",
+    "<strong>Aplicar</strong> el concepto de point-in-time recovery (PITR) combinando un backup completo con el log de transacciones (binlog/redo log) para reconstruir un estado exacto.",
+    "<strong>Diseñar</strong> una estrategia de recuperación ante desastres basada en RTO y RPO, incluyendo backup cross-region y cross-account.",
+    "<strong>Configurar</strong> retención, ventana de backup y cifrado de snapshots automáticos de RDS siguiendo buenas prácticas de seguridad.",
+    "<strong>Responder</strong> con confianza preguntas de certificación que piden elegir la estrategia de backup correcta a partir de un RTO/RPO dado en el enunciado."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Estrategia de backup y recovery en capas para RDS: (1) snapshot automático diario dentro de la ventana de backup configurada, con retención mínima acorde al RPO del negocio, como base de un backup físico completo; (2) binlog (MySQL/PostgreSQL WAL equivalente) retenido de forma continua entre snapshots, que permite un point-in-time recovery a cualquier segundo dentro del período de retención, no solo a la hora del snapshot; (3) réplica de esos backups hacia una región secundaria (cross-region) y opcionalmente hacia una cuenta distinta (cross-account), de forma que una falla de región completa no destruya también el backup; (4) cifrado con KMS tanto en reposo (backup set almacenado) como en tránsito (transferencia cross-region); (5) restore drills periódicos que restauran un backup real a una instancia temporal y validan que la aplicación arranca con datos consistentes, cerrando el ciclo entre \"tener un backup\" y \"saber que funciona\"; (6) en paralelo, RDS Multi-AZ ofrece failover automático ante falla de hardware o zona, complementando —no reemplazando— esta cadena de backup ante corrupción lógica, borrado accidental o ransomware.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué una base de datos no se respalda como un disco",
+      "title_en": "Why a Database Backup Is Not a Disk Backup",
+      "intro": "Copiar los bloques de un disco mientras un motor de base de datos escribe en él puede producir un archivo perfectamente copiable pero internamente inconsistente: filas a medio escribir, índices desalineados con la tabla, transacciones que empezaron pero nunca confirmaron. Un backup de base de datos útil exige garantizar consistencia transaccional en el instante exacto de la copia.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Consistencia transaccional</strong>: un backup válido debe reflejar únicamente transacciones que ya hicieron commit; una copia que incluya transacciones a medias es, en la práctica, un backup corrupto aunque el archivo se copie sin errores de I/O.",
+        "<strong>Log de escritura (write-ahead log)</strong>: motores como MySQL (binlog/redo log de InnoDB) o PostgreSQL (WAL) registran cada cambio antes de aplicarlo a los archivos de datos; ese log es lo que permite reconstruir el estado exacto de la base más allá del último snapshot.",
+        "<strong>Quiesce o punto de consistencia</strong>: los snapshots de RDS coordinan con el motor de base de datos un punto de consistencia (flush + lock breve o snapshot a nivel de volumen coordinado) para que la copia represente un instante coherente, no un conjunto de bloques capturados en momentos distintos.",
+        "<strong>Diferencia con backup de un disco genérico</strong>: copiar un archivo de texto o una imagen a mitad de escritura simplemente produce un archivo truncado, detectable; copiar una base de datos a mitad de una transacción puede producir un archivo que abre sin error pero con datos lógicamente incorrectos, mucho más peligroso.",
+        "<strong>Por qué importa para el examen</strong>: cuando el enunciado menciona \"datos inconsistentes tras restaurar\" o \"tabla corrupta pese a que el backup se completó sin errores\", la causa casi siempre es falta de coordinación transaccional en el momento del backup, no un fallo de almacenamiento."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Un backup de base de datos es útil solo si es transaccionalmente consistente. RDS resuelve esto automáticamente en sus snapshots gestionados; un backup manual mal ejecutado (por ejemplo copiar archivos de datos sin coordinar con el motor) puede no serlo."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Backup físico vs. backup lógico",
+      "title_en": "Physical Backup vs. Logical Backup",
+      "intro": "Existen dos familias de backup con trade-offs opuestos: el backup físico copia las estructuras internas del motor tal cual están en disco; el backup lógico exporta los datos como sentencias SQL o un formato portable independiente del motor. Elegir mal entre ambos es un error común tanto en producción real como en el examen.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Backup físico (binario)</strong>: captura los archivos de datos, índices y estructuras internas del motor (por ejemplo un snapshot de volumen o un backup binario de InnoDB); restaura muy rápido porque no hay que reconstruir índices ni reejecutar sentencias, pero el resultado es específico de la versión y el motor de origen.",
+        "<strong>Backup lógico (mysqldump y equivalentes)</strong>: exporta los datos como una secuencia de sentencias SQL (CREATE TABLE, INSERT) o un formato de exportación; es portable entre versiones de motor e incluso entre proveedores, y permite restaurar tablas individuales, pero restaurar una base grande es lento porque implica reejecutar SQL y reconstruir índices desde cero.",
+        "<strong>Trade-off de velocidad de restauración</strong>: para una base de varios cientos de GB, un restore físico puede tomar minutos mientras que un restore lógico equivalente puede tomar horas, porque el lógico reconstruye datos e índices en vez de copiar estructuras ya formadas.",
+        "<strong>Trade-off de tamaño</strong>: un dump lógico comprimido suele ocupar menos espacio en reposo que un backup físico completo, aunque la diferencia depende de la compresión y el motor.",
+        "<strong>Trade-off de portabilidad</strong>: el backup lógico es la opción correcta para migrar entre motores distintos (por ejemplo de RDS MySQL a PolarDB) o para extraer solo un subconjunto de tablas; el backup físico asume que se restaura en un motor y versión compatible.",
+        "<strong>Snapshot automático de RDS</strong>: por defecto es un backup físico (basado en snapshot de volumen), pensado para recuperación rápida de la instancia completa, no para exportar tablas sueltas."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pide restaurar rápido una instancia completa, la respuesta es backup físico/snapshot. Si pide portabilidad entre motores o exportar solo algunas tablas, la respuesta es backup lógico (mysqldump)."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Backup completo, incremental, diferencial y point-in-time recovery",
+      "title_en": "Full, Incremental, Differential Backup and Point-in-Time Recovery",
+      "intro": "Ningún proveedor serio hace solo backups completos a diario: el volumen y el tiempo de ventana no lo permiten a escala. Combinar backups completos con incrementales o diferenciales, más el log de transacciones, es lo que permite tanto eficiencia de almacenamiento como recuperación a cualquier segundo exacto.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Backup completo (full)</strong>: copia íntegra de todos los datos en un momento dado; es la base de cualquier cadena de recuperación y el punto de partida obligatorio antes de aplicar incrementales.",
+        "<strong>Backup incremental</strong>: captura solo los cambios desde el último backup (completo o incremental anterior); es el más pequeño y rápido de generar, pero restaurar exige aplicar la cadena completa en orden —si falta un eslabón, la cadena se rompe.",
+        "<strong>Backup diferencial</strong>: captura los cambios desde el último backup completo (no desde el último diferencial); crece con el tiempo pero simplifica la restauración porque solo se necesitan el último full y el último diferencial, sin cadenas largas.",
+        "<strong>Point-in-time recovery (PITR)</strong>: se restaura primero el backup completo (o completo + incremental/diferencial) más cercano y anterior al momento deseado, y luego se reproduce el binlog/redo log desde ese punto hasta el segundo exacto solicitado, deshaciendo así la necesidad de tener un backup completo para cada instante posible.",
+        "<strong>Ejemplo de reconstrucción exacta</strong>: si un DROP TABLE accidental ocurrió a las 14:32:07 y el último snapshot completo fue a las 02:00, PITR restaura ese snapshot y reproduce el binlog hasta las 14:32:06, un segundo antes del comando destructivo, recuperando todo el resto de la actividad del día sin perder el borrado accidental.",
+        "<strong>Costo de retención del log</strong>: PITR solo es posible dentro de la ventana en que el binlog/redo log se conserva; si la retención del log es más corta que la del backup completo, existen instantes \"inalcanzables\" entre backups."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "PITR no es un tipo de backup adicional: es la combinación de un backup base (full, o full+incremental/diferencial) con la reproducción del log de transacciones. El examen suele probar si entiendes que sin el log retenido, no hay PITR posible."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Snapshot automático de RDS: retención, ventana e impacto en I/O",
+      "title_en": "RDS Automated Snapshots: Retention, Backup Window and I/O Impact",
+      "intro": "Alibaba Cloud RDS automatiza el backup físico diario mediante snapshots, pero tres parámetros de configuración —cuándo se ejecuta, cuánto se conserva y qué le cuesta a la instancia en producción— determinan si esa automatización realmente protege el negocio o solo da una falsa sensación de seguridad.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Ventana de backup (backup window)</strong>: franja horaria configurable en la que RDS ejecuta el snapshot automático; debe programarse en horas de menor tráfico, porque coincide con el momento de mayor impacto potencial en el rendimiento de la instancia.",
+        "<strong>Retención (retention period)</strong>: número de días que RDS conserva los snapshots automáticos antes de purgarlos; una retención corta reduce costo de almacenamiento pero también reduce la ventana de PITR disponible —debe fijarse en función del RPO real del negocio, no de un valor por defecto.",
+        "<strong>Impacto en I/O durante el snapshot</strong>: aunque los snapshots basados en volumen suelen ser casi instantáneos a nivel lógico (copy-on-write), la instancia puede experimentar latencia adicional durante el punto de consistencia inicial y durante snapshots incrementales posteriores mientras se registran los bloques modificados.",
+        "<strong>Snapshot incremental bajo el capó</strong>: aunque para el usuario cada snapshot de RDS \"parece\" completo y restaurable de forma independiente, internamente suele almacenarse de forma incremental respecto al anterior para ahorrar espacio, sin que eso afecte la velocidad de restauración percibida.",
+        "<strong>Backup manual bajo demanda</strong>: además del automático, RDS permite disparar un backup manual antes de una operación riesgosa (migración de esquema, actualización mayor de versión), útil como punto de restauración adicional fuera del calendario automático.",
+        "<strong>Relación con el RPO</strong>: si la ventana de backup automático es una vez al día y no hay binlog retenido, el RPO efectivo es de hasta 24 horas; agregar retención de binlog reduce el RPO a minutos o segundos, según la frecuencia de log."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado pide minimizar el impacto en producción, la respuesta casi siempre involucra ajustar la ventana de backup a horas de bajo tráfico, no desactivar el backup automático."
+      }
+    },
+    {
+      "title_es": "5 · Recuperación ante desastres: backup cross-region, RTO y RPO",
+      "title_en": "Disaster Recovery: Cross-Region Backup, RTO and RPO",
+      "intro": "Un backup guardado en la misma región que la base de datos original protege contra borrado accidental o corrupción, pero no contra la pérdida de la región completa. El examen evalúa si sabes traducir un requisito de negocio en RTO/RPO concretos y elegir la arquitectura de backup que los cumple.",
+      "points": [
+        "<strong>RTO (Recovery Time Objective)</strong>: tiempo máximo tolerable para que el servicio vuelva a estar operativo tras un incidente; un RTO bajo exige tener ya preparada infraestructura de destino (por ejemplo una réplica o backup listo para restaurar en segundos/minutos), no solo el dato guardado en algún lugar.",
+        "<strong>RPO (Recovery Point Objective)</strong>: cantidad máxima tolerable de datos que se pueden perder, medida en tiempo; un RPO de 5 minutos exige backups o replicación con esa frecuencia, no basta con un snapshot diario.",
+        "<strong>Backup cross-region</strong>: copiar el backup (snapshot o binlog) hacia una región distinta a la de la instancia original; es el único mecanismo que protege realmente contra la pérdida de una región completa —un backup que nunca sale de la región de origen falla exactamente cuando más se necesita.",
+        "<strong>Backup cross-account</strong>: replicar el backup hacia una cuenta distinta de Alibaba Cloud, útil como defensa adicional ante compromiso de credenciales o borrado malicioso dentro de la cuenta original, incluyendo escenarios de ransomware que buscan cifrar o borrar también los backups accesibles.",
+        "<strong>Cómo el examen usa RTO/RPO</strong>: un enunciado que pide \"la aplicación no puede perder más de 1 minuto de datos\" apunta a RPO bajo (binlog retenido + replicación frecuente); uno que pide \"el servicio debe recuperarse en menos de 5 minutos\" apunta a RTO bajo (instancia standby lista, no solo un backup frío por restaurar desde cero).",
+        "<strong>Relación costo-objetivo</strong>: RTO y RPO más exigentes cuestan más —replicación cross-region continua y una instancia de espera lista son más caras que un snapshot diario local— por lo que la estrategia correcta siempre depende de la criticidad real del dato, no de aplicar el máximo nivel de protección a todo por defecto."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "RPO responde a \"¿cuántos datos puedo perder?\" y determina la frecuencia de backup/replicación necesaria. RTO responde a \"¿cuánto tiempo puedo estar caído?\" y determina qué tan lista debe estar la infraestructura de recuperación."
+      }
+    },
+    {
+      "title_es": "6 · Cifrado de backups y pruebas de restauración",
+      "title_en": "Backup Encryption and Restore Drills",
+      "intro": "Un backup sin cifrar es una copia completa de los datos sensibles de producción esperando ser robada; un backup nunca restaurado es una promesa sin verificar. Estos dos aspectos —seguridad del dato en reposo/tránsito y confiabilidad demostrada— completan una estrategia de backup que resiste tanto una auditoría de seguridad como un incidente real.",
+      "points": [
+        "<strong>Cifrado en reposo</strong>: los backup sets (snapshots y binlogs archivados) deben cifrarse con claves gestionadas en KMS, de forma que el acceso al almacenamiento subyacente sin la clave correspondiente no exponga los datos.",
+        "<strong>Cifrado en tránsito</strong>: la transferencia del backup hacia otra región (cross-region) o durante la restauración debe viajar cifrada extremo a extremo, evitando exposición del dato mientras se mueve entre data centers.",
+        "<strong>Restore drill (prueba de restauración)</strong>: proceso periódico y documentado de restaurar un backup real a una instancia temporal y validar que los datos son íntegros y que la aplicación funciona correctamente contra ellos; sin este paso, un backup es solo una suposición.",
+        "<strong>Por qué un backup no probado no es confiable</strong>: fallos silenciosos —una tarea de backup que corre pero captura una base ya corrupta, un binlog con un hueco de retención, permisos insuficientes al momento de restaurar— solo se detectan intentando restaurar de verdad, no revisando que el job de backup \"terminó sin error\".",
+        "<strong>Frecuencia y alcance de los drills</strong>: deben ejecutarse con una cadencia acorde a la criticidad del sistema (mensual o trimestral para sistemas críticos) y cubrir tanto el backup completo automático como, al menos ocasionalmente, un escenario de PITR real usando el binlog.",
+        "<strong>Control de acceso al backup</strong>: los permisos para leer o eliminar backups deben ser distintos y más restrictivos que los permisos operativos normales sobre la instancia, para que un atacante o error que comprometa el acceso operativo no pueda también destruir la red de seguridad del backup."
+      ],
+      "keypoint": {
+        "label": "Regla de oro",
+        "text": "Un backup que nunca se restauró exitosamente en un simulacro debe tratarse como no verificado, sin importar cuántos días lleve ejecutándose sin errores reportados."
+      }
+    },
+    {
+      "title_es": "7 · DTS, alta disponibilidad Multi-AZ y backup: servicios complementarios, no sustitutos",
+      "title_en": "DTS, Multi-AZ High Availability and Backup: Complementary, Not Substitutes",
+      "intro": "Es común confundir tres mecanismos que suenan parecido pero resuelven problemas distintos: DTS mueve o sincroniza datos entre instancias, Multi-AZ mantiene el servicio arriba ante una falla de hardware, y el backup protege contra la pérdida o corrupción del propio dato. El examen prueba explícitamente que sepas separarlos.",
+      "points": [
+        "<strong>DTS (Data Transmission Service)</strong>: servicio de migración y sincronización de datos entre instancias, regiones o incluso proveedores distintos, en modo full o incremental casi en tiempo real; resuelve migraciones y replicación activa, no reemplaza tener puntos de restauración históricos.",
+        "<strong>DTS no es backup</strong>: si un DROP TABLE se ejecuta en el origen mientras DTS está sincronizando, ese borrado se replica también al destino casi de inmediato —DTS propaga fielmente tanto los cambios buenos como los errores, mientras que un backup permite volver a un instante anterior al error.",
+        "<strong>RDS Multi-AZ</strong>: mantiene una réplica síncrona en otra zona de disponibilidad con failover automático ante falla de hardware, del host físico o de la zona completa, minimizando el downtime sin intervención manual.",
+        "<strong>Por qué Multi-AZ no sustituye al backup</strong>: la réplica de Multi-AZ se mantiene sincronizada en tiempo real, así que un borrado accidental, una corrupción lógica o un ransomware que cifra los datos se replican igual de rápido a la réplica —Multi-AZ protege contra falla de infraestructura, no contra errores en los datos mismos.",
+        "<strong>Cuándo usar cada uno</strong>: Multi-AZ para continuidad operativa ante falla física; backup con retención y PITR para recuperación ante error humano, bug de aplicación o ataque; DTS para mover o sincronizar datos entre entornos como parte de una migración o arquitectura de lectura distribuida.",
+        "<strong>Arquitectura combinada recomendada</strong>: una instancia crítica típica usa Multi-AZ para alta disponibilidad, snapshot automático con retención adecuada al RPO para backup físico, binlog retenido para PITR, y backup cross-region para recuperación ante desastres regional —los cuatro simultáneamente, no como alternativas entre sí."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Si el enunciado describe un borrado accidental, corrupción de datos o ransomware, la respuesta correcta pasa por backup/PITR. Si describe una falla de hardware o de zona con el servicio caído, la respuesta correcta pasa por Multi-AZ. Si describe mover datos entre instancias o regiones, la respuesta correcta pasa por DTS."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Un desarrollador ejecuta un DELETE sin WHERE sobre una tabla de producción a las 10:15 — se requiere point-in-time recovery restaurando el último backup completo y reproduciendo el binlog hasta las 10:14:59" },
+    { "title": "Escenario 2", "text": "Un bug de aplicación corrompe silenciosamente registros durante tres días antes de detectarse — PITR permite reconstruir el estado justo antes de que el bug empezara a escribir datos incorrectos, siempre que el binlog cubra ese rango" },
+    { "title": "Escenario 3", "text": "La región completa donde vive la instancia RDS sufre una falla mayor — solo un backup cross-region previamente configurado permite recuperar el servicio en otra región; el snapshot local no está disponible" },
+    { "title": "Escenario 4", "text": "Durante un simulacro de continuidad de negocio, el equipo intenta restaurar el backup de hace seis meses y descubre que nunca funcionó por un binlog corrupto — evidencia de por qué los restore drills periódicos son obligatorios, no opcionales" },
+    { "title": "Escenario 5", "text": "Una empresa necesita migrar su base de datos a otra región con el mínimo downtime posible mientras la aplicación sigue escribiendo — es un caso de DTS (replicación en tiempo real), no de backup/restore" },
+    { "title": "Escenario 6", "text": "Un ataque de ransomware cifra la instancia de producción y los snapshots más recientes accesibles con las mismas credenciales — solo un backup cross-account con permisos separados permite recuperar datos limpios anteriores al ataque" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Considerar que un snapshot automático guardado en la misma región es suficiente plan de recuperación ante desastres, cuando no protege contra la pérdida de la región completa",
+    "No ejecutar nunca un restore drill real, confiando en que el backup funciona solo porque el job reporta éxito",
+    "Confundir RDS Multi-AZ con una estrategia de backup, cuando Multi-AZ replica también los errores y borrados en tiempo real",
+    "Fijar la retención de backup y binlog según el valor por defecto del servicio en vez de calcularla a partir del RPO real del negocio",
+    "Dejar los backups con los mismos permisos de acceso que la operación normal de la instancia, exponiéndolos al mismo compromiso de credenciales que la producción",
+    "Usar DTS como sustituto de un backup formal para proteger contra borrado accidental, cuando DTS replica fielmente también las operaciones destructivas"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "aliyun rds DescribeBackups --DBInstanceId rm-xxxxxxxx", "desc": "Listar los backup sets disponibles de una instancia RDS, incluyendo tipo y fecha" },
+    { "cmd": "aliyun rds CreateBackup --DBInstanceId rm-xxxxxxxx --BackupMethod Physical", "desc": "Disparar un backup manual bajo demanda antes de una operación riesgosa" },
+    { "cmd": "aliyun rds DescribeBinlogFiles --DBInstanceId rm-xxxxxxxx", "desc": "Consultar los archivos de binlog retenidos disponibles para point-in-time recovery" },
+    { "cmd": "aliyun rds RestoreDBInstance --SourceDBInstanceId rm-xxxxxxxx --RestoreTime 2026-08-14T10:14:59Z --RestoreType BackupTime", "desc": "Restaurar una nueva instancia a un punto exacto en el tiempo usando backup + binlog" },
+    { "cmd": "aliyun rds ModifyBackupPolicy --DBInstanceId rm-xxxxxxxx --PreferredBackupTime 03:00Z-04:00Z --BackupRetentionPeriod 30", "desc": "Configurar la ventana de backup y el período de retención de una instancia" },
+    { "cmd": "aliyun rds DescribeCrossBackupMetaList --DBInstanceId rm-xxxxxxxx", "desc": "Consultar los backups replicados hacia una región distinta para recuperación ante desastres" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "RTO", "es": "Objetivo de tiempo de recuperación", "def": "Tiempo máximo tolerable para que el servicio vuelva a estar operativo tras un incidente." },
+    { "en": "RPO", "es": "Objetivo de punto de recuperación", "def": "Cantidad máxima tolerable de datos perdidos, medida en tiempo desde el último punto recuperable." },
+    { "en": "PITR", "es": "Recuperación a un punto en el tiempo", "def": "Restaurar la base de datos a un instante exacto combinando un backup base con la reproducción del binlog/redo log." },
+    { "en": "Full Backup", "es": "Backup completo", "def": "Copia íntegra de todos los datos en un momento dado; base de cualquier cadena de recuperación." },
+    { "en": "Incremental Backup", "es": "Backup incremental", "def": "Copia solo los cambios desde el último backup (completo o incremental); requiere aplicar toda la cadena para restaurar." },
+    { "en": "Differential Backup", "es": "Backup diferencial", "def": "Copia los cambios desde el último backup completo; solo requiere el último full y el último diferencial para restaurar." },
+    { "en": "Physical Backup", "es": "Backup físico", "def": "Copia de las estructuras binarias internas del motor (snapshot de volumen); restaura rápido pero es específico de versión y motor." },
+    { "en": "Logical Backup", "es": "Backup lógico", "def": "Exportación de datos como sentencias SQL u otro formato portable (mysqldump); portable entre motores pero de restauración más lenta." },
+    { "en": "Binlog", "es": "Log binario", "def": "Registro secuencial de cambios de escritura en MySQL, usado para replicación y point-in-time recovery." },
+    { "en": "Redo Log", "es": "Log de rehacer", "def": "Log de InnoDB que registra cambios antes de aplicarlos a disco, garantizando durabilidad transaccional." },
+    { "en": "Snapshot", "es": "Instantánea", "def": "Copia física de un volumen en un instante de consistencia coordinado con el motor de base de datos." },
+    { "en": "Backup Window", "es": "Ventana de backup", "def": "Franja horaria configurable en la que se ejecuta el snapshot automático, idealmente en horas de bajo tráfico." },
+    { "en": "Retention Period", "es": "Período de retención", "def": "Número de días que se conservan los backups automáticos antes de purgarse." },
+    { "en": "Cross-Region Backup", "es": "Backup entre regiones", "def": "Copia del backup replicada hacia una región distinta, necesaria para recuperación ante la pérdida de una región completa." },
+    { "en": "Cross-Account Backup", "es": "Backup entre cuentas", "def": "Copia del backup replicada hacia una cuenta distinta, protegiendo contra compromiso de credenciales o borrado malicioso." },
+    { "en": "DTS", "es": "Servicio de transmisión de datos", "def": "Servicio de migración y sincronización de datos entre instancias, regiones o proveedores, en modo full o incremental." },
+    { "en": "Multi-AZ", "es": "Multi zona de disponibilidad", "def": "Réplica síncrona de RDS en otra zona con failover automático ante falla de hardware o de zona." },
+    { "en": "Restore Drill", "es": "Simulacro de restauración", "def": "Prueba periódica de restaurar un backup real y validar la integridad de los datos y la aplicación." },
+    { "en": "Encryption at Rest", "es": "Cifrado en reposo", "def": "Cifrado del backup set almacenado, típicamente con claves gestionadas en KMS." },
+    { "en": "Encryption in Transit", "es": "Cifrado en tránsito", "def": "Cifrado del backup mientras se transfiere entre regiones o durante una restauración." },
+    { "en": "Backup Set", "es": "Conjunto de backup", "def": "Unidad completa de backup (datos más metadatos) generada en un momento dado, identificable y restaurable." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Por qué no basta con copiar los bloques de disco de una base de datos activa como si fuera un backup de disco genérico?", "options": ["Porque los discos de RDS no se pueden copiar directamente", "Porque puede capturar transacciones a medio confirmar, produciendo un backup transaccionalmente inconsistente aunque el archivo se copie sin errores", "Porque los discos de base de datos son siempre más lentos", "Porque el formato de disco de RDS es propietario y no se puede leer"], "answer": 1, "explain": "Sin coordinar un punto de consistencia con el motor, la copia puede incluir escrituras a medias, lo que la vuelve inútil aunque el proceso de copia no reporte errores." },
+    { "q": "¿Cuál es la principal ventaja de un backup físico frente a uno lógico?", "options": ["Es portable entre distintos motores de base de datos", "Restaura mucho más rápido porque no requiere reconstruir índices ni reejecutar SQL", "Siempre ocupa menos espacio en disco", "Permite exportar tablas individuales fácilmente"], "answer": 1, "explain": "El backup físico copia estructuras ya formadas del motor, por lo que restaurar es básicamente copiar de vuelta, mucho más rápido que reejecutar sentencias SQL." },
+    { "q": "Un equipo necesita migrar solo tres tablas específicas de una base RDS MySQL hacia otro motor de base de datos distinto. ¿Qué tipo de backup es más adecuado?", "options": ["Backup físico completo de la instancia", "Backup lógico (tipo mysqldump)", "Snapshot automático diario", "Backup incremental"], "answer": 1, "explain": "El backup lógico exporta datos en un formato portable (SQL) y permite seleccionar tablas específicas, a diferencia del backup físico que opera sobre la instancia completa." },
+    { "q": "¿Qué diferencia a un backup incremental de uno diferencial?", "options": ["No hay ninguna diferencia real, son sinónimos", "El incremental copia cambios desde el último backup (completo o incremental); el diferencial copia cambios desde el último backup completo", "El diferencial siempre es más rápido de generar que el incremental", "El incremental no requiere un backup completo previo"], "answer": 1, "explain": "El incremental encadena cambios sucesivos y crece la cadena de restauración; el diferencial siempre se mide contra el último full, simplificando la restauración a solo dos piezas." },
+    { "q": "Un DROP TABLE accidental ocurre a las 14:32:07. El último backup completo fue a las 02:00. ¿Cómo se recupera el estado justo antes del borrado sin perder el resto de la actividad del día?", "options": ["Restaurando únicamente el backup de las 02:00", "Restaurando el backup de las 02:00 y reproduciendo el binlog hasta las 14:32:06", "Esperando al siguiente backup automático", "No es posible recuperar ese estado exacto"], "answer": 1, "explain": "Esto es exactamente point-in-time recovery: backup base más reproducción del log de transacciones hasta un segundo antes del evento destructivo." },
+    { "q": "¿Qué condición es indispensable para que un point-in-time recovery sea posible en cualquier instante deseado?", "options": ["Que existan snapshots cada minuto", "Que el binlog/redo log esté retenido de forma continua durante todo el período que se quiere poder recuperar", "Que la instancia use backup lógico exclusivamente", "Que Multi-AZ esté habilitado"], "answer": 1, "explain": "Sin el log de transacciones retenido, solo se puede volver a los instantes exactos en que existe un backup completo, no a cualquier segundo intermedio." },
+    { "q": "¿Por qué debe programarse la ventana de backup automático de RDS en horas de bajo tráfico?", "options": ["Porque el snapshot solo puede coordinar un punto de consistencia consumiendo recursos en ese momento, y hacerlo en horas pico añade latencia adicional al tráfico real", "Porque RDS no permite backups durante el día", "Porque el backup automático borra datos temporalmente durante su ejecución", "Porque la ventana de backup determina el precio del servicio"], "answer": 0, "explain": "Aunque los snapshots modernos son eficientes, el punto de consistencia inicial y el registro de bloques modificados pueden añadir latencia, por lo que conviene evitar horas de tráfico alto." },
+    { "q": "Una aplicación no puede perder más de 2 minutos de datos ante cualquier incidente. ¿Qué métrica describe este requisito y qué implica para el diseño de backup?", "options": ["RTO de 2 minutos; requiere una instancia standby lista", "RPO de 2 minutos; requiere backups o replicación con esa frecuencia, no basta un snapshot diario", "SLA de 2 minutos; es una garantía contractual del proveedor", "MTTR de 2 minutos; mide tiempo de reparación de hardware"], "answer": 1, "explain": "RPO mide la cantidad máxima de datos que se puede perder en tiempo; cumplir 2 minutos exige binlog retenido y replicación frecuente, no solo un snapshot diario." },
+    { "q": "¿Por qué un backup guardado únicamente en la misma región que la instancia original no protege contra todos los escenarios de desastre?", "options": ["Porque los backups locales siempre son más lentos de restaurar", "Porque una falla de la región completa destruiría tanto la instancia original como su backup local, dejando sin nada que restaurar", "Porque los backups locales no pueden cifrarse", "Porque RDS no permite backups locales"], "answer": 1, "explain": "Solo un backup replicado hacia otra región (cross-region) sobrevive a la pérdida de la región de origen; un backup local comparte el mismo punto único de falla." },
+    { "q": "¿Por qué un backup cross-account es una defensa adicional relevante ante un ataque de ransomware?", "options": ["Porque cross-account cifra automáticamente los datos", "Porque si las credenciales de la cuenta original se ven comprometidas, un backup en una cuenta separada con permisos distintos puede seguir intacto", "Porque las cuentas distintas tienen mejor rendimiento de red", "Porque elimina la necesidad de cifrado en reposo"], "answer": 1, "explain": "Si el atacante compromete la cuenta original, puede intentar cifrar o borrar también los backups accesibles con esas mismas credenciales; una cuenta separada reduce ese riesgo." },
+    { "q": "Un equipo descubre en un simulacro que el backup de hace seis meses nunca pudo restaurarse por un binlog corrupto. ¿Qué práctica habría detectado este problema antes de un incidente real?", "options": ["Aumentar la frecuencia de snapshots automáticos", "Ejecutar restore drills periódicos que validen la restauración real, no solo que el job de backup reporte éxito", "Habilitar Multi-AZ", "Cifrar los backups con KMS"], "answer": 1, "explain": "Solo intentar restaurar de verdad revela fallos silenciosos como un binlog corrupto; que el job de backup termine sin error no garantiza que el backup sea usable." },
+    { "q": "¿Por qué DTS no puede considerarse un sustituto de un backup formal para protegerse de un borrado accidental?", "options": ["Porque DTS es más lento que un backup tradicional", "Porque DTS replica los cambios casi en tiempo real, incluyendo operaciones destructivas como un DROP TABLE, propagándolas también al destino", "Porque DTS no soporta bases de datos relacionales", "Porque DTS solo funciona dentro de la misma región"], "answer": 1, "explain": "DTS sincroniza fielmente el origen y el destino; un borrado accidental se replica igual de rápido que cualquier otro cambio, a diferencia de un backup que permite volver a un punto anterior." },
+    { "q": "¿Por qué RDS Multi-AZ no reemplaza a una estrategia de backup con retención y PITR?", "options": ["Porque Multi-AZ es más caro que el backup", "Porque la réplica de Multi-AZ se mantiene sincronizada en tiempo real, por lo que también replica corrupciones, borrados accidentales o cifrado por ransomware", "Porque Multi-AZ solo protege bases de datos NoSQL", "Porque Multi-AZ desactiva automáticamente los snapshots"], "answer": 1, "explain": "Multi-AZ protege contra falla de hardware o de zona en tiempo real, pero un error en los datos mismos se propaga igual de rápido a la réplica síncrona." },
+    { "q": "Una empresa necesita migrar su base de datos RDS a otra región con el mínimo downtime posible mientras la aplicación sigue escribiendo activamente. ¿Qué servicio de Alibaba Cloud es el más adecuado?", "options": ["Snapshot automático de RDS", "DTS (Data Transmission Service) en modo de sincronización incremental", "Backup lógico manual con mysqldump", "Multi-AZ"], "answer": 1, "explain": "DTS está diseñado para migración y sincronización de datos casi en tiempo real, minimizando el downtime, a diferencia de un ciclo de backup y restore tradicional." },
+    { "q": "¿Qué combinación describe mejor una estrategia de backup y recovery robusta para una instancia RDS crítica?", "options": ["Solo Multi-AZ, porque ya garantiza alta disponibilidad", "Solo backup lógico diario, por ser el más portable", "Multi-AZ para continuidad operativa, snapshot con retención adecuada al RPO, binlog retenido para PITR, y backup cross-region para desastres regionales, todos simultáneamente", "Solo DTS replicando hacia otra cuenta"], "answer": 2, "explain": "Cada mecanismo resuelve un riesgo distinto (falla de hardware, pérdida de datos reciente, corrupción histórica, pérdida de región); una estrategia robusta los combina, no elige uno solo." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen evalúa si sabes traducir un requisito de negocio (\"no perder más de X minutos de datos\", \"recuperar el servicio en menos de Y minutos\", \"sobrevivir a la pérdida de una región\") en la combinación correcta de RPO/RTO, tipo de backup (físico/lógico, completo/incremental/diferencial), retención de binlog para PITR, y alcance de la replicación (cross-region/cross-account). También distingue con precisión DTS, Multi-AZ y backup como mecanismos complementarios que resuelven problemas distintos, y valora explícitamente si el diseño incluye restore drills como prueba de que el backup realmente funciona.",
   "official_intro": "The security of the cloud databases are critical, they are directly affecting the security and stable operation of the cloud based applications. Only by understanding the principles, methods, and operation methods of backup and recovery of commonly used cloud databases, the cloud database administrators can better protect them. Through this course, you can not only understand the backup and recovery principles, types and methods of databases on the cloud, but also understand the backup and recovery methods related to Alibaba Cloud RDS.",
   "recommended_for": "Cloud Database Security Administrator, Cloud Database Operation and Maintenance Personnel",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_databackup",

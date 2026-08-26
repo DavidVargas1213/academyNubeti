@@ -2,485 +2,194 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-kubernetes",
   "title_en": "Using Kubernetes to Manage Containers and Cluster Resources",
-  "title_es": "Usar Kubernetes to Gestionar Contenedores y Cluster Resources",
+  "title_es": "Usar Kubernetes para Gestionar Contenedores y Recursos de Clúster",
+  "title_es_html": "Usar <em>Kubernetes</em> para Gestionar Contenedores y Recursos de Clúster",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Container",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_kubernetes",
-  "lead": "Guía completa en español para el curso «Using Kubernetes to Manage Containers and Cluster Resources» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Using Kubernetes to Manage Containers and Cluster Resources» de Alibaba Cloud Academy, centrado en Container Service for Kubernetes (ACK): Kubernetes gestionado por Alibaba Cloud. Cubre por qué existe Kubernetes, su arquitectura, los objetos que hay que dominar para el examen, y cómo ACK se integra con el resto del ecosistema de Alibaba Cloud.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> el problema que resuelve la contenerización y por qué se necesita un orquestador como Kubernetes.",
+    "<strong>Describir</strong> la arquitectura de un clúster: control plane, nodos worker y sus componentes.",
+    "<strong>Distinguir</strong> los objetos fundamentales de Kubernetes: Pod, Deployment, Service, Ingress, Namespace.",
+    "<strong>Explicar</strong> qué aporta ACK sobre Kubernetes vanilla: integración con SLB, VPC, CSI y el control plane gestionado.",
+    "<strong>Aplicar</strong> principios básicos de escalado y auto-recuperación de aplicaciones en un clúster.",
+    "<strong>Responder</strong> preguntas de certificación sobre conceptos y arquitectura de Kubernetes en Alibaba Cloud."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Un clúster ACK típico tiene un control plane totalmente gestionado por Alibaba Cloud (no visible ni facturado como nodo) y uno o más node pools de instancias ECS actuando como workers. Las aplicaciones se empaquetan en contenedores dentro de Pods, gestionados por un Deployment que mantiene el número deseado de réplicas. Un Service expone esos Pods con una IP estable interna; un Ingress (respaldado por un Server Load Balancer) expone el tráfico HTTP/HTTPS hacia internet. El almacenamiento persistente se monta vía CSI drivers hacia discos en la nube, NAS u OSS. CloudMonitor y ARMS dan observabilidad; RAM controla quién puede administrar el clúster.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué existe la contenerización",
+      "title_en": "Why Containerization",
+      "intro": "Antes de Kubernetes está el problema que los contenedores resuelven: empaquetar una aplicación junto con sus dependencias exactas para que se ejecute igual en cualquier entorno.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema</strong>: «en mi máquina funciona» — diferencias de versiones de librerías, SO o configuración entre desarrollo y producción causan fallos impredecibles.",
+        "<strong>La solución de los contenedores</strong>: empaquetar código + runtime + librerías + configuración en una imagen inmutable que se ejecuta igual en cualquier host con un motor de contenedores (Docker/containerd).",
+        "<strong>Contenedor vs. máquina virtual</strong>: un contenedor comparte el kernel del host (más liviano, arranque en segundos), mientras que una VM virtualiza hardware completo (más pesada, arranque en minutos).",
+        "<strong>El problema que aparece después</strong>: tener un contenedor está bien, pero en producción hay decenas o cientos de ellos — hay que decidir en qué host corre cada uno, reiniciarlos si fallan, escalarlos y actualizarlos sin downtime. Eso es exactamente lo que resuelve un orquestador."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Kubernetes no reemplaza a Docker/containerd — los orquesta. El contenedor es la unidad de empaquetado; Kubernetes es la capa que decide dónde y cómo se ejecutan a gran escala." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Arquitectura de un clúster Kubernetes",
+      "title_en": "Kubernetes Cluster Architecture",
+      "intro": "Un clúster de Kubernetes se divide en dos planos: el control plane (el «cerebro») y los nodos worker (donde realmente corren las aplicaciones).",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>API Server</strong>: la puerta de entrada única al clúster — todo comando de <code>kubectl</code> y toda comunicación interna pasa por aquí.",
+        "<strong>etcd</strong>: base de datos clave-valor distribuida que guarda el estado completo del clúster (qué existe, en qué estado). Si etcd se pierde, se pierde la memoria del clúster.",
+        "<strong>Scheduler</strong>: decide en qué nodo se coloca cada Pod nuevo, basándose en recursos disponibles, afinidad y restricciones.",
+        "<strong>Controller Manager</strong>: ejecuta bucles de control que comparan el estado deseado contra el estado real y corrigen diferencias (p.ej. recrear un Pod que murió).",
+        "<strong>kubelet</strong>: agente que corre en cada nodo worker y se asegura de que los contenedores asignados a ese nodo estén realmente ejecutándose.",
+        "<strong>kube-proxy</strong>: gestiona las reglas de red en cada nodo para que el tráfico llegue al Pod correcto a través de un Service.",
+        "<strong>En ACK</strong>: Alibaba Cloud gestiona completamente el control plane (API Server, etcd, Scheduler, Controller Manager) — el cliente solo administra y paga por los nodos worker (ECS) del node pool."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Diferencia clave con Kubernetes autogestionado", "text": "En ACK el control plane no es un nodo que tú administres ni pagues directamente — Alibaba Cloud lo opera con SLA propio, lo cual es una de las razones principales para elegir un servicio gestionado sobre montar Kubernetes desde cero." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Pod, el objeto más pequeño",
+      "title_en": "Pods",
+      "intro": "El Pod es la unidad mínima que Kubernetes programa y ejecuta — todo lo demás (Deployment, Service...) existe para gestionar Pods a mayor escala.",
       "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
+        "<strong>Definición</strong>: un Pod agrupa uno o más contenedores que comparten red (misma IP) y almacenamiento — normalmente un contenedor principal, aunque a veces se añade un contenedor «sidecar» de apoyo (logging, proxy).",
+        "<strong>Efímero por diseño</strong>: un Pod no se «repara», se reemplaza. Si un Pod falla o el nodo donde vive muere, Kubernetes crea un Pod nuevo (con una IP nueva) en vez de intentar recuperar el original.",
+        "<strong>Nunca se crean Pods sueltos en producción</strong>: un Pod creado directamente no se recupera solo si muere. Por eso casi siempre se gestionan a través de un Deployment (o StatefulSet/DaemonSet), que sí los recrea automáticamente.",
+        "<strong>Requests y Limits</strong>: cada contenedor del Pod debería declarar cuánta CPU/memoria necesita como mínimo (request, usado por el Scheduler) y como máximo (limit, para evitar que un Pod consuma todos los recursos del nodo)."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta «¿cuál es la unidad mínima desplegable en Kubernetes?», la respuesta siempre es Pod — nunca contenedor ni nodo." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Deployment, Service e Ingress",
+      "title_en": "Deployments, Services and Ingress",
+      "intro": "Estos tres objetos son el trío que convierte «un Pod que corre» en «una aplicación disponible de forma confiable desde internet».",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Deployment</strong>: declara cuántas réplicas de un Pod deben existir y gestiona actualizaciones progresivas (rolling update) sin downtime — si una réplica muere, el Deployment crea otra automáticamente.",
+        "<strong>Service</strong>: da una IP virtual estable a un grupo de Pods (que cambian de IP constantemente). Tipos principales: <code>ClusterIP</code> (solo accesible dentro del clúster), <code>NodePort</code> (expone un puerto fijo en cada nodo), <code>LoadBalancer</code> (aprovisiona automáticamente un SLB de Alibaba Cloud).",
+        "<strong>Ingress</strong>: enrutamiento HTTP/HTTPS de capa 7 basado en dominio o ruta (p.ej. <code>/api</code> va al backend A, <code>/</code> va al frontend B) — permite exponer múltiples servicios detrás de un único punto de entrada, a diferencia de un Service tipo LoadBalancer que expone uno solo.",
+        "<strong>Relación entre los tres</strong>: el Deployment mantiene los Pods vivos → el Service les da una IP estable interna → el Ingress enruta el tráfico externo hacia el Service correcto."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Memoriza", "text": "Service opera en capa 4 (IP/puerto); Ingress opera en capa 7 (host/path HTTP). Si el examen menciona enrutar por dominio o ruta URL, la respuesta es Ingress, no Service." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Namespace, ConfigMap y Secret",
+      "title_en": "Namespaces, ConfigMaps and Secrets",
+      "intro": "A medida que un clúster crece, hace falta aislar equipos/entornos y separar la configuración del código de la aplicación.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Namespace</strong>: partición lógica del clúster — permite separar, por ejemplo, <code>dev</code>, <code>staging</code> y <code>prod</code>, o distintos equipos, dentro del mismo clúster físico. Es la base sobre la que se aplican cuotas de recursos y permisos RBAC.",
+        "<strong>ConfigMap</strong>: almacena configuración no sensible (variables de entorno, archivos de configuración) desacoplada de la imagen del contenedor, para no tener que reconstruir la imagen cada vez que cambia un parámetro.",
+        "<strong>Secret</strong>: igual que ConfigMap pero para datos sensibles (contraseñas, tokens, claves API) — codificado en base64 y, en un clúster bien configurado, cifrado en reposo en etcd.",
+        "<strong>Buena práctica</strong>: nunca hornear contraseñas dentro de la imagen del contenedor ni en un ConfigMap en texto plano — siempre usar Secret, e idealmente integrarlo con un gestor de secretos como KMS."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Guardar una contraseña de base de datos en un ConfigMap en vez de un Secret es un error clásico que el examen presenta como distractor." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "6 · Escalado y auto-recuperación",
+      "title_en": "Scaling and Self-Healing",
+      "intro": "Una de las promesas centrales de Kubernetes es que la aplicación se mantiene sana y con la capacidad correcta sin intervención manual constante.",
+      "points": [
+        "<strong>Auto-recuperación (self-healing)</strong>: si un contenedor falla su <em>liveness probe</em> (chequeo de salud), Kubernetes lo reinicia automáticamente; si un Pod entero muere, el Deployment lo reemplaza.",
+        "<strong>Readiness probe vs. Liveness probe</strong>: el liveness probe determina si hay que reiniciar el contenedor; el readiness probe determina si el Pod está listo para recibir tráfico (si falla, el Service deja de enrutarle tráfico sin reiniciarlo).",
+        "<strong>Horizontal Pod Autoscaler (HPA)</strong>: aumenta o reduce el número de réplicas de un Deployment automáticamente según CPU, memoria o métricas personalizadas.",
+        "<strong>Cluster Autoscaler</strong>: cuando no hay espacio en los nodos existentes para programar más Pods, añade nodos nuevos al node pool automáticamente (y los retira cuando sobra capacidad).",
+        "<strong>Rolling Update</strong>: al actualizar la imagen de un Deployment, Kubernetes reemplaza las réplicas gradualmente, manteniendo siempre un mínimo de Pods disponibles — evitando downtime durante el despliegue."
+      ],
+      "keypoint": { "label": "Concepto clave", "text": "HPA escala <em>réplicas</em> (horizontal); Cluster Autoscaler escala <em>nodos</em> (infraestructura). Ambos suelen usarse juntos: HPA reacciona primero, y si no hay capacidad en los nodos actuales, Cluster Autoscaler añade más." }
+    },
+    {
+      "title_es": "7 · ACK frente a Kubernetes autogestionado",
+      "title_en": "ACK vs Self-Managed Kubernetes",
+      "intro": "El examen espera que sepas justificar por qué una empresa elegiría Container Service for Kubernetes (ACK) en vez de instalar y operar Kubernetes por su cuenta sobre instancias ECS.",
+      "points": [
+        "<strong>Control plane gestionado</strong>: Alibaba Cloud opera el API Server, etcd, Scheduler y Controller Manager con SLA propio — el equipo no necesita parchear ni escalar esos componentes.",
+        "<strong>Integración nativa</strong>: Service tipo LoadBalancer aprovisiona automáticamente un SLB real; los volúmenes persistentes usan CSI drivers hacia discos en la nube, NAS u OSS; RAM controla el acceso al clúster sin gestionar certificados manualmente.",
+        "<strong>ACK Managed</strong>: la opción recomendada por defecto — Alibaba Cloud aloja y opera el control plane; existe en nivel <em>Basic</em> (más económico) y <em>Pro</em> (mayor SLA garantizado con compensación y funciones de seguridad avanzadas, recomendado para producción).",
+        "<strong>ACK Dedicated</strong>: el cliente crea y administra su propio control plane sobre instancias ECS — da control total, pero ya no admite la creación de clústeres nuevos; existe solo como opción heredada.",
+        "<strong>De ACK Serverless a Container Compute Service (ACS)</strong>: el modelo «sin node pools que gestionar, pago por Pod en ejecución» existió como ACK Serverless; desde febrero de 2025 Alibaba Cloud dejó de permitir crear clústeres ACK Serverless nuevos y lo reemplazó por Container Compute Service (ACS), su evolución serverless más económica y elástica — el concepto que evalúa el examen (minimizar la gestión de nodos) sigue siendo el mismo.",
+        "<strong>Cuándo NO usar Kubernetes</strong>: para una aplicación simple sin necesidad de múltiples servicios ni escalado complejo, un contenedor único en ECS o Function Compute puede ser más simple y económico que operar un clúster completo."
+      ],
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario menciona «minimizar la carga operativa de administrar servidores/nodos», la respuesta apunta al modelo serverless de contenedores (históricamente ACK Serverless, hoy Container Compute Service)." }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de preguntas difíciles sobre Kubernetes en el examen giran en torno a antipatrones observados en clústeres reales.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: crear Pods sueltos en vez de usar un Deployment — no se recuperan automáticamente si fallan.",
+        "<strong>Antipatrón</strong>: no definir requests/limits — el Scheduler no puede balancear correctamente y un solo Pod puede agotar los recursos del nodo.",
+        "<strong>Antipatrón</strong>: exponer todo con Service tipo LoadBalancer en vez de Ingress cuando hay múltiples servicios HTTP — genera un SLB (con costo) por cada servicio innecesariamente.",
+        "<strong>Antipatrón</strong>: guardar credenciales en ConfigMap o directamente en la imagen del contenedor en vez de usar Secret.",
+        "<strong>Antipatrón</strong>: un clúster de un solo node pool en una sola zona — una falla de zona tumba toda la capacidad de cómputo.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, descarta la que sacrifique disponibilidad (una sola zona, sin réplicas) o seguridad (secretos en texto plano, RBAC amplio)."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Lee cada pregunta identificando qué objeto de Kubernetes se describe por su comportamiento (efímero y sin auto-recuperación → Pod suelto; mantiene réplicas → Deployment; IP estable interna → Service; enrutamiento HTTP por dominio/ruta → Ingress)." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Microservicios HTTP expuestos bajo un mismo dominio con rutas distintas — Ingress" },
+    { "title": "Escenario 2", "text": "Aplicación con picos de tráfico impredecibles — Deployment + HPA + Cluster Autoscaler" },
+    { "title": "Escenario 3", "text": "Base de datos o cola con identidad de red estable — StatefulSet" },
+    { "title": "Escenario 4", "text": "Agente de logging o monitoreo que debe correr en cada nodo — DaemonSet" },
+    { "title": "Escenario 5", "text": "Separar entornos dev/staging/prod en el mismo clúster — Namespaces + cuotas" },
+    { "title": "Escenario 6", "text": "Minimizar la administración de servidores del clúster — modelo serverless de contenedores (ACK Serverless / Container Compute Service)" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Crear Pods sueltos en vez de gestionarlos con un Deployment",
+    "No definir resource requests/limits en los contenedores",
+    "Guardar contraseñas o tokens en ConfigMap en vez de Secret",
+    "Exponer cada microservicio con su propio Service LoadBalancer en vez de consolidar con un Ingress",
+    "Desplegar el clúster con node pools en una sola zona",
+    "No definir liveness/readiness probes — Kubernetes no puede detectar Pods realmente sanos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "kubectl get pods -A", "desc": "Listar Pods de todos los namespaces" },
+    { "cmd": "kubectl apply -f deployment.yaml", "desc": "Crear o actualizar recursos desde un manifiesto" },
+    { "cmd": "kubectl scale deployment api --replicas=5", "desc": "Escalar manualmente un Deployment" },
+    { "cmd": "kubectl rollout status deployment/api", "desc": "Ver el progreso de un rolling update" },
+    { "cmd": "kubectl rollout undo deployment/api", "desc": "Revertir un despliegue al estado anterior" },
+    { "cmd": "kubectl logs -f pod-name", "desc": "Ver logs de un Pod en tiempo real" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Pod", "es": "Pod", "def": "Unidad mínima desplegable: uno o más contenedores compartiendo red y almacenamiento." },
+    { "en": "Deployment", "es": "Deployment", "def": "Mantiene un número deseado de réplicas de un Pod y gestiona actualizaciones sin downtime." },
+    { "en": "Service", "es": "Service", "def": "IP virtual estable (capa 4) para un grupo de Pods. Tipos: ClusterIP, NodePort, LoadBalancer." },
+    { "en": "Ingress", "es": "Ingress", "def": "Enrutamiento HTTP/HTTPS (capa 7) por dominio o ruta hacia distintos Services." },
+    { "en": "Namespace", "es": "Namespace", "def": "Partición lógica del clúster; base de cuotas de recursos y permisos RBAC." },
+    { "en": "ConfigMap", "es": "ConfigMap", "def": "Configuración no sensible desacoplada de la imagen del contenedor." },
+    { "en": "Secret", "es": "Secret", "def": "Datos sensibles (contraseñas, tokens) codificados en base64, idealmente cifrados en reposo." },
+    { "en": "API Server", "es": "API Server", "def": "Punto de entrada único al clúster; toda operación pasa por aquí." },
+    { "en": "etcd", "es": "etcd", "def": "Base de datos clave-valor distribuida que guarda el estado completo del clúster." },
+    { "en": "Scheduler", "es": "Scheduler", "def": "Decide en qué nodo se coloca cada Pod nuevo según recursos y restricciones." },
+    { "en": "kubelet", "es": "kubelet", "def": "Agente en cada nodo que asegura que los contenedores asignados estén corriendo." },
+    { "en": "Liveness Probe", "es": "Sonda de actividad", "def": "Chequeo que determina si un contenedor debe reiniciarse." },
+    { "en": "Readiness Probe", "es": "Sonda de disponibilidad", "def": "Chequeo que determina si un Pod puede recibir tráfico del Service." },
+    { "en": "HPA (Horizontal Pod Autoscaler)", "es": "Autoescalador horizontal de Pods", "def": "Ajusta el número de réplicas de un Deployment según métricas de carga." },
+    { "en": "Cluster Autoscaler", "es": "Autoescalador de clúster", "def": "Añade o retira nodos del node pool según la capacidad necesaria para programar Pods." },
+    { "en": "StatefulSet", "es": "StatefulSet", "def": "Gestiona Pods con identidad de red estable y almacenamiento persistente, para apps con estado." },
+    { "en": "DaemonSet", "es": "DaemonSet", "def": "Garantiza que una copia de un Pod corra en cada nodo (o subconjunto de nodos)." },
+    { "en": "Node Pool", "es": "Node Pool", "def": "Grupo de nodos worker (instancias ECS) con la misma especificación dentro del clúster." },
+    { "en": "ACK Serverless / ACS", "es": "ACK Serverless / Container Compute Service", "def": "Modelo sin node pools que gestionar; cada Pod se factura como instancia elástica de contenedor. Desde feb. 2025 los clústeres nuevos usan Container Compute Service (ACS), la evolución de ACK Serverless." },
+    { "en": "Rolling Update", "es": "Actualización progresiva", "def": "Reemplaza réplicas de un Deployment gradualmente, sin downtime, al desplegar una nueva versión." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Cuál es la unidad mínima que Kubernetes programa y ejecuta?", "options": ["El contenedor", "El Pod", "El nodo", "El clúster"], "answer": 1, "explain": "El Pod agrupa uno o más contenedores que comparten red y almacenamiento; es la unidad mínima desplegable, no el contenedor por sí solo." },
+    { "q": "Un Pod creado directamente (sin Deployment) falla y muere. ¿Qué ocurre?", "options": ["Kubernetes lo recrea automáticamente igual que con un Deployment", "No se recupera solo — desaparece hasta que alguien lo vuelva a crear", "El clúster completo se detiene", "Se convierte automáticamente en un Deployment"], "answer": 1, "explain": "Un Pod suelto no tiene un controlador que lo supervise; solo un Deployment (u otro controlador) garantiza que se recree." },
+    { "q": "¿Qué componente del control plane guarda el estado completo del clúster?", "options": ["kubelet", "etcd", "kube-proxy", "Ingress Controller"], "answer": 1, "explain": "etcd es la base de datos clave-valor distribuida donde Kubernetes persiste todo el estado del clúster." },
+    { "q": "En ACK (Container Service for Kubernetes), ¿quién es responsable de operar el control plane (API Server, etcd, Scheduler)?", "options": ["El cliente, sobre instancias ECS propias", "Alibaba Cloud lo gestiona completamente", "Se reparte 50/50 entre cliente y Alibaba Cloud", "No existe control plane en ACK"], "answer": 1, "explain": "Una de las ventajas centrales de un servicio Kubernetes gestionado como ACK es que Alibaba Cloud opera el control plane con SLA propio." },
+    { "q": "Una aplicación necesita exponer varios microservicios HTTP bajo el mismo dominio, cada uno en una ruta distinta (/api, /web). ¿Qué objeto de Kubernetes es el más adecuado?", "options": ["Service tipo ClusterIP", "Ingress", "DaemonSet", "ConfigMap"], "answer": 1, "explain": "Ingress opera en capa 7 y permite enrutar por dominio/ruta hacia distintos Services desde un único punto de entrada." },
+    { "q": "¿Qué diferencia a un Liveness Probe de un Readiness Probe?", "options": ["Son exactamente lo mismo", "Liveness decide si reiniciar el contenedor; Readiness decide si el Pod recibe tráfico", "Readiness decide si reiniciar el contenedor; Liveness decide si recibe tráfico", "Ambos solo aplican a Services, no a Pods"], "answer": 1, "explain": "Un fallo de Liveness provoca un reinicio del contenedor; un fallo de Readiness solo retira temporalmente el Pod del enrutamiento del Service." },
+    { "q": "Un equipo guarda la contraseña de la base de datos directamente en un ConfigMap. ¿Por qué es un antipatrón?", "options": ["Los ConfigMap no admiten texto", "ConfigMap está pensado para configuración no sensible; los datos sensibles deben ir en un Secret", "Los ConfigMap se borran automáticamente cada 24 horas", "No es un antipatrón, es la práctica recomendada"], "answer": 1, "explain": "Secret existe específicamente para datos sensibles, con codificación y, en clústeres bien configurados, cifrado en reposo." },
+    { "q": "¿Qué hace el Horizontal Pod Autoscaler (HPA)?", "options": ["Añade nodos nuevos al clúster", "Ajusta el número de réplicas de un Deployment según métricas de carga", "Cifra el tráfico entre Pods", "Crea automáticamente un Ingress"], "answer": 1, "explain": "HPA escala el número de réplicas (Pods) de un Deployment; quien añade nodos es el Cluster Autoscaler." },
+    { "q": "Si no hay capacidad en los nodos actuales para programar más Pods aunque el HPA quiera crear más réplicas, ¿qué componente resuelve el problema?", "options": ["El Ingress Controller", "El Cluster Autoscaler, añadiendo nodos al node pool", "kube-proxy", "El Namespace"], "answer": 1, "explain": "El Cluster Autoscaler añade nodos nuevos cuando no hay recursos suficientes para programar los Pods pendientes." },
+    { "q": "¿Qué modelo de ACK elimina la necesidad de gestionar node pools, facturando por Pod en ejecución?", "options": ["ACK Managed Basic", "ACK Dedicated", "ACK Serverless / Container Compute Service (ACS)", "ACK Edge"], "answer": 2, "explain": "El modelo serverless corre cada Pod como una instancia elástica de contenedor, sin que el cliente administre nodos worker; desde 2025 los clústeres nuevos se crean como Container Compute Service (ACS), sucesor de ACK Serverless." },
+    { "q": "¿Qué objeto de Kubernetes se usa para separar lógicamente los entornos dev, staging y prod dentro del mismo clúster?", "options": ["Deployment", "Namespace", "Service", "Secret"], "answer": 1, "explain": "Los Namespaces particionan lógicamente el clúster y son la base para aplicar cuotas y permisos RBAC por entorno o equipo." },
+    { "q": "¿Qué controlador garantiza que exactamente un Pod (p.ej. un agente de logs) corra en cada nodo del clúster?", "options": ["Deployment", "StatefulSet", "DaemonSet", "HPA"], "answer": 2, "explain": "DaemonSet asegura que una copia del Pod se ejecute en cada nodo (o subconjunto de nodos), típico para agentes de infraestructura." },
+    { "q": "Durante un Rolling Update de un Deployment, ¿qué garantiza Kubernetes?", "options": ["Todos los Pods se reemplazan simultáneamente, causando downtime breve", "Las réplicas se reemplazan gradualmente, manteniendo un mínimo de Pods disponibles", "El Service deja de funcionar hasta que termina la actualización", "Los datos del clúster se borran y se reinicia desde cero"], "answer": 1, "explain": "El Rolling Update reemplaza réplicas de forma incremental para evitar downtime durante el despliegue de una nueva versión." },
+    { "q": "Un contenedor no declara resource requests ni limits. ¿Cuál es el riesgo principal?", "options": ["El contenedor no podrá conectarse a la red", "El Scheduler no puede balancear correctamente la carga y un Pod puede agotar los recursos del nodo", "El Pod se elimina automáticamente a los 5 minutos", "No hay ningún riesgo, es la configuración recomendada"], "answer": 1, "explain": "Sin requests/limits, el Scheduler no tiene información para colocar Pods de forma balanceada, y un Pod puede monopolizar CPU/memoria del nodo." },
+    { "q": "¿Qué diferencia principal existe entre un Service tipo ClusterIP y uno tipo LoadBalancer?", "options": ["No hay diferencia, son sinónimos", "ClusterIP solo es accesible dentro del clúster; LoadBalancer aprovisiona un balanceador externo accesible desde internet", "LoadBalancer solo funciona con bases de datos", "ClusterIP requiere siempre un Ingress adicional para funcionar"], "answer": 1, "explain": "ClusterIP expone el Service únicamente dentro del clúster; LoadBalancer provisiona automáticamente un SLB accesible externamente." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar Pod, Deployment, Service e Ingress por su comportamiento descrito en el enunciado, (b) qué gestiona Alibaba Cloud vs. el cliente en ACK, (c) HPA vs. Cluster Autoscaler, (d) ConfigMap vs. Secret, (e) StatefulSet vs. DaemonSet vs. Deployment según el caso de uso.",
   "official_intro": "This course aims to help IT companies who want to container their business applications, and cloud computing engineers or enthusiasts who want to learn container technology and Kubernetes. By learning this course, you can fully understand what Kubernetes is, why we need Kubernetes, the basic architecture of Kubernetes, some core concepts and terms of Kubernetes, and how to build a Kubernetes cluster on the Alibaba cloud platform, so as to provide reference for the evaluation, design and implementation of application containerization.",
   "recommended_for": "Cloud computing architects, Cloud Service Providers, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_kubernetes",

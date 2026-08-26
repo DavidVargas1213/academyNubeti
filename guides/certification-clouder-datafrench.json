@@ -2,442 +2,173 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datafrench",
   "title_en": "How to Migrate Data to Big Data Platform on the Cloud (French version)",
-  "title_es": "Cómo Migrar Datos to Big Datos Platform en Cloud (French version)",
+  "title_es": "Cómo Migrar Datos a la Plataforma de Big Data en la Nube (versión en francés)",
+  "title_es_html": "Cómo Migrar Datos a la <em>Plataforma de Big Data</em> en la Nube (versión en francés)",
   "duration_es": "48 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Development",
-  "language_es": "French",
+  "language_es": "Francés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datafrench",
-  "lead": "Guía completa en español para el curso «How to Migrate Data to Big Data Platform on the Cloud (French version)» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «How to Migrate Data to Big Data Platform on the Cloud (French version)» de Alibaba Cloud Academy — la versión en francés del mismo curso que «Alibaba Cloud Big Data - Data Integration Quickstart». El contenido pedagógico es idéntico al de <code>certification-clouder-dataintegration</code>: un tutorial guiado y acotado a migrar datos NO estructurados desde OSS y datos estructurados desde una base RDS MySQL hacia MaxCompute con el asistente visual de DataWorks. Esta guía en español sirve como referencia de estudio equivalente para quien toma la versión francófona del curso oficial.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué datos que ya viven en la nube (OSS, RDS) necesitan migrarse formalmente hacia MaxCompute antes de analizarlos a escala.",
+    "<strong>Distinguir</strong> el tratamiento de datos NO estructurados (archivos en OSS) frente a datos estructurados (tablas en RDS MySQL) al migrarlos.",
+    "<strong>Configurar</strong> una Data Source de tipo OSS y una de tipo MySQL dentro de un Workspace de DataWorks.",
+    "<strong>Construir</strong> una tarea de sincronización en modo asistente desde OSS hacia una tabla de MaxCompute.",
+    "<strong>Construir</strong> una tarea de sincronización en modo asistente desde RDS MySQL hacia una tabla de MaxCompute.",
+    "<strong>Verificar</strong> el resultado de una migración revisando el reporte de sincronización (registros leídos, escritos, descartados).",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre el flujo de migración de datos hacia MaxCompute paso a paso, independientemente del idioma en que se cursó el video original."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Dos orígenes distintos convergen en el mismo destino. Por un lado, archivos no estructurados o semi-estructurados (CSV, JSON, logs) suben a un bucket de OSS; una tarea de sincronización de DataWorks Data Integration los lee con un Reader de tipo OSS y los escribe, ya con un esquema de columnas definido, en una tabla de MaxCompute mediante un Writer de tipo ODPS. Por otro lado, tablas ya estructuradas de una base RDS MySQL se leen con un Reader de tipo MySQL y se escriben con el mismo tipo de Writer ODPS hacia otra tabla de MaxCompute, respetando el mapeo de columnas ya existente. Ambas tareas se configuran mediante el asistente visual de DataWorks, se ejecutan manualmente para validar el resultado, y finalmente se programan para repetirse automáticamente según la frecuencia de actualización que el negocio necesite.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué migrar datos que ya están en la nube",
+      "title_en": "Why Migrate Data That Is Already in the Cloud",
+      "intro": "Un error conceptual común al empezar: si los datos ya viven en OSS o en RDS —ambos servicios de Alibaba Cloud—, ¿por qué hace falta 'migrarlos' de nuevo? Este módulo aclara la diferencia entre almacenar un dato y tenerlo listo para analizarlo a escala.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>OSS almacena, no modela</strong>: un archivo CSV o JSON en OSS es solo bytes con una estructura implícita — no se puede lanzar una consulta SQL analítica directamente contra ese archivo sin antes definirle un esquema y cargarlo a un motor que entienda tablas.",
+        "<strong>RDS sirve a la aplicación, no al análisis masivo</strong>: aunque una tabla en RDS MySQL ya está estructurada, ejecutar análisis históricos pesados directamente ahí competiría por recursos con la aplicación transaccional en producción.",
+        "<strong>MaxCompute como destino común</strong>: migrar ambos tipos de origen hacia MaxCompute los unifica en un mismo motor analítico, particionado y optimizado para consultas SQL sobre grandes volúmenes, sin afectar ni el bucket OSS original ni la base RDS productiva.",
+        "<strong>No es una migración destructiva</strong>: el término 'migrar' en este contexto no borra el origen — OSS y RDS siguen existiendo como estaban; lo que ocurre es una copia sincronizada hacia una nueva tabla analítica en MaxCompute.",
+        "<strong>Versión francófona del curso Quickstart</strong>: esta es la edición en francés de la segunda clase de la serie Alibaba Cloud Big Data Quickstart — el contenido técnico y las buenas prácticas son idénticos a la versión en inglés, solo cambia el idioma del video original."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Migrar hacia MaxCompute no es mover el dato de un lugar a otro destructivamente — es sincronizar una copia hacia el motor donde SÍ se puede analizar a escala sin afectar el sistema origen."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Configurar las Data Sources: OSS y MySQL",
+      "title_en": "Configuring Data Sources: OSS and MySQL",
+      "intro": "Antes de poder sincronizar un solo registro, DataWorks necesita saber cómo conectarse a cada origen — este módulo cubre el registro de ambas Data Sources dentro del Workspace.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Data Source de tipo OSS</strong>: se registra indicando el Endpoint de la región, el nombre del bucket y las credenciales de acceso (AccessKey con permisos de solo lectura sobre ese bucket, siguiendo el principio de mínimo privilegio).",
+        "<strong>Data Source de tipo MySQL (RDS)</strong>: se registra con el host/endpoint de conexión de la instancia RDS, el puerto, el nombre de la base de datos y las credenciales — si la instancia RDS exige whitelisting de IP, hay que añadir la IP del grupo de recursos de integración antes de poder conectar.",
+        "<strong>Prueba de conexión</strong>: antes de construir cualquier tarea de sincronización, DataWorks permite probar la conexión a cada Data Source registrada — un paso que evita descubrir un problema de red o de credenciales a mitad de la configuración de la tarea.",
+        "<strong>Alcance del Workspace</strong>: una Data Source registrada queda disponible para cualquier tarea de sincronización dentro del mismo Workspace, evitando reconfigurar la conexión cada vez que se necesita usar el mismo origen.",
+        "<strong>Buenas prácticas de credenciales</strong>: usar un usuario de base de datos con permisos exclusivamente de lectura sobre las tablas necesarias, nunca las credenciales administrativas completas de la instancia RDS."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe que la prueba de conexión a una Data Source MySQL falla, la causa más probable —antes de sospechar de las credenciales— es que la IP del grupo de recursos de integración no está en la whitelist de la instancia RDS."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Migrar datos NO estructurados desde OSS",
+      "title_en": "Migrating Unstructured Data from OSS",
+      "intro": "El primer escenario práctico del curso: llevar archivos crudos de OSS hacia una tabla consultable por SQL en MaxCompute, definiendo explícitamente la estructura que el archivo no tenía de forma nativa.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>Elegir el Reader de tipo OSS</strong>: se selecciona la Data Source OSS ya registrada y se indica la ruta (prefijo) dentro del bucket donde viven los archivos a sincronizar.",
+        "<strong>Definir el formato del archivo</strong>: CSV, JSON u otros formatos de texto delimitado — el asistente necesita saber cómo interpretar cada línea del archivo (delimitador, si tiene encabezado) para poder mapearla a columnas.",
+        "<strong>Crear la tabla destino en MaxCompute (si no existe)</strong>: se define el esquema de columnas y tipos de dato que tendrá la tabla analítica, y opcionalmente su esquema de particionamiento (típicamente por fecha).",
+        "<strong>Mapeo de columnas</strong>: el asistente visual empareja cada campo detectado en el archivo origen con la columna correspondiente de la tabla destino — un mapeo incorrecto en este paso produce columnas con datos desalineados sin que la tarea necesariamente falle.",
+        "<strong>Ejecución y verificación</strong>: tras correr la tarea manualmente por primera vez, el reporte de sincronización muestra cuántos registros se leyeron de OSS y cuántos se escribieron exitosamente en MaxCompute, permitiendo detectar de inmediato archivos mal formados."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Migrar un archivo NO estructurado no es solo copiar bytes — es el momento en que se le impone un esquema explícito de columnas y tipos que ese archivo no tenía de forma nativa, la diferencia clave frente a migrar una tabla ya estructurada."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Migrar datos estructurados desde RDS MySQL",
+      "title_en": "Migrating Structured Data from RDS MySQL",
+      "intro": "El segundo escenario práctico: a diferencia de OSS, una tabla de RDS MySQL ya tiene un esquema definido — el reto aquí es preservarlo correctamente al llevarlo hacia MaxCompute.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Elegir el Reader de tipo MySQL</strong>: se selecciona la Data Source MySQL ya registrada y la tabla origen específica a sincronizar, pudiendo además aplicar un filtro WHERE si solo se necesita un subconjunto de filas.",
+        "<strong>Detección automática de columnas</strong>: a diferencia de OSS, el asistente puede leer el esquema real de la tabla MySQL (nombres de columna y tipos) y proponer automáticamente el mapeo hacia la tabla destino en MaxCompute.",
+        "<strong>Conversión de tipos de dato</strong>: los tipos de MySQL no son idénticos a los de MaxCompute SQL — el asistente traduce tipos equivalentes (por ejemplo, <code>VARCHAR</code> a <code>STRING</code>, <code>DATETIME</code> a <code>DATETIME</code> o <code>STRING</code> según el caso), y conviene revisar esa traducción antes de confirmar.",
+        "<strong>Primera carga completa vs. incremental</strong>: la primera sincronización suele traer la tabla completa; sincronizaciones posteriores pueden acotarse por un campo de fecha de actualización para traer solo los registros nuevos o modificados, evitando reprocesar todo cada vez.",
+        "<strong>Impacto sobre la base origen</strong>: aun siendo una lectura, una sincronización mal dimensionada (demasiada concurrencia) sobre una tabla grande de producción puede competir por recursos con la aplicación — la misma precaución de rendimiento aplica aquí que en cualquier sincronización batch."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado pregunta por qué migrar desde RDS MySQL es 'más simple' que desde OSS en el asistente, la respuesta es que MySQL ya tiene un esquema de columnas y tipos que el asistente puede leer automáticamente, mientras OSS requiere definirlo manualmente."
+      }
+    },
+    {
+      "title_es": "5 · Verificar el resultado y programar la sincronización",
+      "title_en": "Verifying the Result and Scheduling the Sync",
+      "intro": "Una tarea de sincronización que 'parece' haber corrido bien no basta — este módulo cubre cómo confirmar que la migración fue correcta y cómo convertirla de una ejecución puntual a un proceso recurrente.",
+      "points": [
+        "<strong>Reporte de sincronización</strong>: tras cada ejecución, DataWorks muestra registros leídos del origen, registros escritos en el destino, y registros descartados como datos sucios (dirty data) por incompatibilidad de tipo o formato.",
+        "<strong>Validar con una consulta de muestra</strong>: además del reporte numérico, ejecutar un SELECT simple sobre la tabla recién poblada en MaxCompute confirma visualmente que los datos llegaron con el mapeo de columnas correcto.",
+        "<strong>De ejecución manual a programada</strong>: una vez validado el resultado de la primera corrida manual, la tarea se asocia a un nodo dentro de un Workflow de DataWorks y se programa con una periodicidad (diaria, por hora) según qué tan frescos necesiten estar los datos en MaxCompute.",
+        "<strong>Migraciones puntuales vs. recurrentes</strong>: no toda migración necesita programarse — una carga histórica única (por ejemplo, migrar años de archivos ya cerrados) puede quedar como una tarea de ejecución manual sin necesidad de un Scheduler asociado.",
+        "<strong>Documentar el origen en Data Map</strong>: una vez la tabla de MaxCompute está poblada, registrar su procedencia y responsable en Data Map facilita que otros equipos entiendan de dónde viene ese dato sin tener que preguntar directamente."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El reporte de sincronización es la fuente de verdad para confirmar una migración exitosa — un job que 'terminó sin error' aún puede haber descartado silenciosamente registros como datos sucios si no se revisa ese reporte."
+      }
+    },
+    {
+      "title_es": "6 · Errores comunes de una primera migración",
+      "title_en": "Common Mistakes in a First Migration",
+      "intro": "El cierre del curso repasa los tropiezos más frecuentes de quien migra datos hacia MaxCompute por primera vez, la clase de detalle que el examen suele convertir en distractor, sin importar el idioma en que se haya cursado el video.",
+      "points": [
+        "<strong>Antipatrón</strong>: no definir el esquema de particionamiento de la tabla destino desde el inicio, obligando a rehacer la tabla completa cuando el volumen crece y las consultas empiezan a escanear todo sin filtro.",
+        "<strong>Antipatrón</strong>: asumir que el mapeo automático de columnas siempre es correcto sin revisarlo manualmente, especialmente en la conversión de tipos entre MySQL y MaxCompute SQL.",
+        "<strong>Antipatrón</strong>: no revisar el reporte de sincronización, dando por buena una migración que en realidad descartó una parte de los registros como datos sucios.",
+        "<strong>Antipatrón</strong>: sincronizar una tabla completa de RDS cada vez en vez de acotar por un campo de fecha de actualización, cuando el volumen ya no lo justifica.",
+        "<strong>Antipatrón</strong>: usar las credenciales administrativas completas de la base RDS para la Data Source, en vez de un usuario de solo lectura con alcance mínimo."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Esta guía en español cubre exactamente el mismo contenido técnico que su versión francófona oficial — para dominar el resto de capacidades del módulo (grupos de recursos, CDC en tiempo real, control de velocidad), el curso «Alibaba Cloud Big Data - Data Integration» profundiza en cada una."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Migrar archivos CSV de logs almacenados en OSS hacia una tabla particionada de MaxCompute" },
+    { "title": "Escenario 2", "text": "Migrar la tabla de clientes de una base RDS MySQL hacia MaxCompute para análisis histórico" },
+    { "title": "Escenario 3", "text": "Diagnosticar por qué el reporte de sincronización muestra registros descartados como datos sucios" },
+    { "title": "Escenario 4", "text": "Convertir una migración puntual validada manualmente en una tarea programada diaria" },
+    { "title": "Escenario 5", "text": "Configurar una Data Source MySQL cuando la instancia RDS exige whitelisting de IP" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "No definir el esquema de particionamiento de la tabla destino desde la primera migración",
+    "Confiar en el mapeo automático de columnas sin revisar manualmente la conversión de tipos MySQL → MaxCompute",
+    "No revisar el reporte de sincronización, ignorando registros descartados como datos sucios",
+    "Sincronizar la tabla completa de RDS en cada ejecución en vez de acotar por fecha de actualización",
+    "Usar credenciales administrativas completas de RDS para la Data Source en vez de un usuario de solo lectura"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "aliyun dataworks-public CreateConnection --Name oss_logs --Type oss", "desc": "Registrar una Data Source de tipo OSS" },
+    { "cmd": "aliyun dataworks-public CreateConnection --Name rds_clientes --Type mysql", "desc": "Registrar una Data Source de tipo MySQL (RDS)" },
+    { "cmd": "aliyun dataworks-public CreateDISyncTask --TaskContent @oss_to_maxcompute.json", "desc": "Crear la tarea de sincronización OSS → MaxCompute" },
+    { "cmd": "aliyun dataworks-public CreateDISyncTask --TaskContent @mysql_to_maxcompute.json", "desc": "Crear la tarea de sincronización RDS MySQL → MaxCompute" },
+    { "cmd": "aliyun dataworks-public GetDISyncInstance --InstanceId 12345", "desc": "Consultar el reporte de una ejecución: registros leídos, escritos y descartados" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Data Source", "es": "Fuente de datos", "def": "Conexión registrada en el Workspace hacia un sistema origen, como OSS o una instancia RDS." },
+    { "en": "Unstructured Data", "es": "Datos no estructurados", "def": "Datos sin esquema formal predefinido, como archivos CSV o JSON crudos en OSS." },
+    { "en": "Structured Data", "es": "Datos estructurados", "def": "Datos con esquema formal ya definido, como una tabla relacional en RDS MySQL." },
+    { "en": "Reader (OSS / MySQL)", "es": "Lector", "def": "Plugin que extrae registros del sistema origen dentro de una tarea de sincronización." },
+    { "en": "Writer (ODPS)", "es": "Escritor ODPS", "def": "Plugin que escribe los registros sincronizados en una tabla de MaxCompute." },
+    { "en": "Column Mapping", "es": "Mapeo de columnas", "def": "Correspondencia entre los campos del origen y las columnas de la tabla destino." },
+    { "en": "Type Conversion", "es": "Conversión de tipos", "def": "Traducción de tipos de dato entre el sistema origen (p.ej. MySQL) y MaxCompute SQL." },
+    { "en": "Dirty Data", "es": "Datos sucios", "def": "Registros descartados durante la sincronización por incompatibilidad de tipo o formato." },
+    { "en": "Sync Report", "es": "Reporte de sincronización", "def": "Resumen de una ejecución con registros leídos, escritos y descartados." },
+    { "en": "Whitelisting", "es": "Lista blanca de IP", "def": "Restricción de acceso de una base de datos que solo permite conexiones desde IPs autorizadas." },
+    { "en": "Incremental Sync", "es": "Sincronización incremental", "def": "Sincronización acotada a registros nuevos o modificados desde la última ejecución, usando un campo de fecha." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Data warehouse serverless destino de ambas migraciones cubiertas en este curso." },
+    { "en": "Data Map", "es": "Data Map", "def": "Catálogo donde se documenta el origen y responsable de una tabla recién migrada." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿Por qué es necesario 'migrar' datos que ya viven en OSS o RDS, servicios de la misma nube?", "options": ["Porque OSS y RDS no son confiables", "Porque ninguno de los dos está optimizado para análisis SQL masivo sin afectar su función original; MaxCompute sí lo está", "Porque OSS y RDS eliminan los datos automáticamente cada mes", "No es realmente necesario, es un paso opcional sin justificación"], "answer": 1, "explain": "OSS almacena bytes sin modelo de consulta; RDS sirve a la aplicación transaccional. MaxCompute es el motor pensado para el análisis masivo." },
+    { "q": "¿Qué diferencia principal existe al migrar datos NO estructurados de OSS frente a datos estructurados de RDS MySQL?", "options": ["No hay ninguna diferencia en el proceso", "Para OSS hay que definir manualmente el esquema de columnas; para MySQL, el asistente puede leer automáticamente el esquema existente", "OSS siempre es más rápido de migrar que MySQL", "MySQL no puede migrarse hacia MaxCompute"], "answer": 1, "explain": "Un archivo en OSS no tiene esquema formal; una tabla MySQL sí, por lo que el asistente puede detectarlo y proponerlo automáticamente." },
+    { "q": "La prueba de conexión a una Data Source de tipo MySQL falla repetidamente. ¿Cuál es la causa más probable a revisar primero?", "options": ["El formato del archivo CSV", "Que la IP del grupo de recursos de integración no esté en la whitelist de la instancia RDS", "Que MaxCompute esté fuera de servicio", "Que el Workspace esté en modo estándar"], "answer": 1, "explain": "Si RDS exige whitelisting de IP, la conexión falla hasta que se autorice la IP del grupo de recursos que ejecuta la sincronización." },
+    { "q": "¿Qué información provee el reporte de sincronización tras ejecutar una tarea de migración?", "options": ["Solo el tiempo total de ejecución", "Registros leídos del origen, escritos en el destino y descartados como datos sucios", "El costo exacto de la migración en la factura mensual", "El plan de ejecución SQL detallado"], "answer": 1, "explain": "El reporte permite confirmar si la migración fue completa o si algunos registros se descartaron por incompatibilidad de tipo o formato." },
+    { "q": "¿Por qué revisar manualmente el mapeo automático de columnas al migrar desde MySQL es una buena práctica, aunque el asistente lo proponga por defecto?", "options": ["Porque el asistente siempre falla", "Porque los tipos de dato de MySQL no son idénticos a los de MaxCompute SQL, y la traducción automática puede requerir ajuste", "Porque MySQL no tiene tipos de dato", "No es necesario revisarlo nunca"], "answer": 1, "explain": "Aunque el asistente propone una conversión razonable, confirmar la traducción de tipos evita sorpresas en columnas con formatos particulares." },
+    { "q": "¿Qué buena práctica de seguridad se recomienda al registrar una Data Source hacia RDS?", "options": ["Usar las credenciales administrativas completas de la instancia", "Usar un usuario de base de datos con permisos exclusivamente de lectura sobre las tablas necesarias", "Compartir la contraseña root de MySQL con todo el equipo", "No es necesario ningún usuario, la conexión es anónima"], "answer": 1, "explain": "El principio de mínimo privilegio aplica igual aquí: un usuario de solo lectura reduce el riesgo si las credenciales se filtran." },
+    { "q": "¿Qué distingue a una migración incremental de una migración de carga completa desde RDS?", "options": ["Son exactamente lo mismo", "La incremental se acota a registros nuevos o modificados usando un campo de fecha, evitando reprocesar toda la tabla en cada ejecución", "La incremental solo aplica a datos de OSS", "La carga completa es siempre más rápida"], "answer": 1, "explain": "Una vez la primera carga completa está hecha, acotar por fecha de actualización reduce el costo y tiempo de sincronizaciones posteriores." },
+    { "q": "¿Cuál es el antipatrón de no definir el esquema de particionamiento de la tabla destino desde la primera migración?", "options": ["No tiene ningún impacto real", "Obliga a rehacer la tabla completa cuando el volumen crece y las consultas empiezan a escanear todo sin filtro", "Mejora automáticamente el rendimiento de las consultas futuras", "Es la práctica recomendada por el curso"], "answer": 1, "explain": "Sin particionamiento desde el inicio, agregar esa estructura después implica migrar de nuevo los datos a una tabla rediseñada." },
+    { "q": "¿Qué ocurre si una tarea de sincronización 'termina sin error' pero no se revisa su reporte de sincronización?", "options": ["Es garantía absoluta de que todos los registros se migraron correctamente", "Puede haber descartado silenciosamente una parte de los registros como datos sucios sin que se note", "El reporte de sincronización no existe en DataWorks", "El nodo se marca automáticamente como fallido en ese caso"], "answer": 1, "explain": "Un job puede terminar 'exitosamente' en términos de ejecución aunque haya descartado registros individuales por incompatibilidad, visible solo en el reporte detallado." },
+    { "q": "¿Cuándo NO es necesario programar una tarea de sincronización con una periodicidad recurrente?", "options": ["Siempre debe programarse, sin excepciones", "Cuando se trata de una carga histórica única, como migrar años de archivos ya cerrados que no cambiarán", "Nunca es necesario programar tareas en DataWorks", "Solo las migraciones desde OSS pueden dejarse sin programar"], "answer": 1, "explain": "Una migración puntual de datos que ya no cambiarán puede quedar como ejecución manual única, sin necesidad de un Scheduler asociado." },
+    { "q": "¿En qué módulo de DataWorks se recomienda documentar el origen y responsable de una tabla recién migrada a MaxCompute?", "options": ["Data Security", "Data Map", "Data Quality (DQC)", "El Scheduler"], "answer": 1, "explain": "Data Map es el catálogo donde se registra la procedencia, documentación y owner de una tabla, facilitando su trazabilidad para otros equipos." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) por qué migrar hacia MaxCompute es necesario aunque el dato ya viva en la nube, (b) la diferencia práctica entre migrar datos no estructurados (OSS, esquema manual) y estructurados (MySQL, esquema detectado), (c) cómo verificar una migración exitosa vía el reporte de sincronización, (d) whitelisting de IP como causa común de fallo de conexión a RDS, (e) cuándo programar una sincronización recurrente frente a dejarla como ejecución puntual. El examen oficial de este curso se rinde en inglés independientemente del idioma del video.",
   "official_intro": "A French version of \"Data Integration on Cloud\" learning the basic concepts and architecture of MaxCompute and DataWorks, and how to do the data integration with multiple data sources and formats.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datafrench",

@@ -2,485 +2,166 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-containerized-applications",
   "title_en": "Performance Testing and Optimizing of Containerized Applications",
-  "title_es": "Performance Testing y Optimizing of Containerized Aplicaciones",
+  "title_es": "Pruebas de Rendimiento y Optimización de Aplicaciones Contenerizadas",
+  "title_es_html": "Pruebas de <em>Rendimiento y Optimización</em> de Aplicaciones Contenerizadas",
   "duration_es": "55 minutos",
   "level_es": "Intermedio",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-containerized-applications",
-  "lead": "Guía completa en español para el curso «Performance Testing and Optimizing of Containerized Applications» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Performance Testing and Optimizing of Containerized Applications» de Alibaba Cloud Academy: un curso centrado exclusivamente en cómo medir y mejorar el rendimiento de una aplicación que corre en contenedores, distinto de cómo desplegarla o diagnosticarla cuando falla. Cubre qué medir, cómo generar carga realista, dónde suelen estar los cuellos de botella en un entorno contenerizado y cómo traducir resultados de pruebas en cambios concretos de configuración.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Definir</strong> qué significa 'rendimiento' de forma medible: latencia, throughput, tasa de error y saturación de recursos.",
+    "<strong>Diseñar</strong> un plan de pruebas de carga realista antes de ejecutar cualquier herramienta de benchmarking.",
+    "<strong>Ejecutar</strong> pruebas de carga contra una aplicación contenerizada y recolectar métricas comparables entre corridas.",
+    "<strong>Identificar</strong> los cuellos de botella específicos de un entorno contenerizado: requests/limits mal calibrados, límites de CPU (throttling), garbage collection, conexiones de base de datos.",
+    "<strong>Aplicar</strong> cambios de optimización guiados por datos, no por intuición, y volver a medir para validar el impacto.",
+    "<strong>Decidir</strong> entre escalado horizontal y vertical según qué recurso es realmente el limitante.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre metodología de pruebas de rendimiento en contenedores."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Un generador de carga (JMeter, Locust o wrk, corriendo fuera del clúster o en un Pod dedicado) envía tráfico sintético contra el Service que expone la aplicación bajo prueba, desplegada en un clúster ACK con requests/limits definidos explícitamente. Durante la prueba, ARMS/Prometheus recolectan métricas de la aplicación (latencia por endpoint, tasa de error) mientras CloudMonitor y <code>kubectl top</code> exponen el consumo real de CPU/memoria de cada Pod frente a sus límites configurados. Los resultados de cada corrida se comparan contra una línea base (baseline) documentada previamente; un cambio de configuración (ajustar limits, número de réplicas, parámetros de JVM/runtime) se valida repitiendo exactamente la misma prueba, nunca cambiando dos variables a la vez.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué significa 'rendimiento' de forma medible",
+      "title_en": "Defining Performance in Measurable Terms",
+      "intro": "Antes de ejecutar cualquier herramienta de carga hay que acordar qué se va a medir — 'la app va lenta' no es un punto de partida útil para optimizar nada.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Latencia</strong>: tiempo que tarda una petición individual en completarse; se reporta como percentiles (p50, p95, p99), nunca solo como promedio, porque el promedio esconde los peores casos que más afectan la experiencia del usuario.",
+        "<strong>Throughput</strong>: número de peticiones que el sistema procesa por unidad de tiempo (requests/segundo) bajo una carga dada — latencia y throughput suelen tener una relación inversa cuando el sistema se acerca a su límite.",
+        "<strong>Tasa de error</strong>: porcentaje de peticiones que fallan (timeouts, 5xx) bajo carga; un sistema puede tener latencia aceptable pero empezar a fallar peticiones al acercarse a su capacidad máxima.",
+        "<strong>Saturación</strong>: qué tan cerca está un recurso (CPU, memoria, conexiones de red o de base de datos) de su límite — es la métrica que explica por qué la latencia o la tasa de error empeoran.",
+        "<strong>Línea base (baseline)</strong>: una medición documentada de estas cuatro métricas antes de cualquier cambio, indispensable para poder afirmar con datos que una optimización realmente mejoró algo."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El examen distingue con precisión latencia (percentiles) de throughput (peticiones/segundo) — son ejes distintos del rendimiento y una optimización puede mejorar uno mientras empeora el otro." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Diseñar un plan de pruebas de carga realista",
+      "title_en": "Designing a Realistic Load Test Plan",
+      "intro": "Una prueba de carga mal diseñada produce números que no significan nada — este módulo cubre cómo construir un escenario de prueba que refleje el uso real de la aplicación.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Perfil de carga realista</strong>: el patrón de peticiones (qué endpoints, en qué proporción, con qué payloads) debe aproximarse al tráfico real de producción, no a un único endpoint simple repetido sin variación.",
+        "<strong>Carga escalonada (ramp-up)</strong>: aumentar el número de usuarios/peticiones gradualmente en vez de golpear el sistema con la carga máxima de golpe, para poder identificar en qué punto exacto empieza a degradarse el rendimiento.",
+        "<strong>Prueba de estrés vs. prueba de carga</strong>: una prueba de carga valida el comportamiento bajo el tráfico esperado; una prueba de estrés busca deliberadamente el punto de quiebre, llevando la carga más allá de lo esperado para conocer el límite real del sistema.",
+        "<strong>Prueba de resistencia (soak test)</strong>: mantener una carga moderada durante un período prolongado para detectar problemas que solo aparecen con el tiempo, como fugas de memoria que una prueba corta no revela.",
+        "<strong>Aislar el entorno de prueba</strong>: ejecutar las pruebas contra un entorno equivalente a producción pero sin tráfico real mezclado, para que los resultados sean atribuibles exclusivamente a la carga generada."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado busca detectar una fuga de memoria que solo aparece tras horas de operación, la herramienta correcta es una prueba de resistencia (soak test), no una prueba de carga corta." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Herramientas y ejecución de pruebas de carga",
+      "title_en": "Load Testing Tools and Execution",
+      "intro": "Con el plan definido, este módulo cubre las herramientas típicas para generar carga contra una aplicación contenerizada y cómo asegurarse de que el generador de carga no sea, sin darse cuenta, el propio cuello de botella.",
       "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
+        "<strong>JMeter</strong>: herramienta madura con interfaz gráfica y soporte para escenarios complejos (múltiples protocolos, aserciones, correlación de datos entre peticiones); adecuada para pruebas detalladas de flujos de negocio.",
+        "<strong>Locust / wrk</strong>: herramientas ligeras orientadas a alto throughput con bajo overhead, útiles para pruebas simples de un endpoint específico o para generar carga muy alta con pocos recursos del lado del generador.",
+        "<strong>El generador de carga como posible cuello de botella</strong>: si el generador corre en una máquina o Pod con recursos insuficientes, los resultados reflejan el límite del generador, no el de la aplicación bajo prueba — hay que monitorear también sus propios recursos.",
+        "<strong>Pruebas dentro vs. fuera del clúster</strong>: generar carga desde un Pod dentro del mismo clúster elimina latencia de red externa como variable, útil para aislar el rendimiento puro de la aplicación frente al comportamiento end-to-end que verá un usuario real.",
+        "<strong>Repetibilidad</strong>: cada corrida debe usar exactamente el mismo perfil de carga que la anterior para que los resultados sean comparables — cambiar el escenario de prueba entre corridas invalida cualquier comparación."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Un resultado de prueba de carga solo es útil si es comparable con una corrida anterior bajo las mismas condiciones — cambiar el perfil de carga y el código optimizado al mismo tiempo hace imposible saber qué causó la mejora." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Cuellos de botella específicos de contenedores",
+      "title_en": "Container-Specific Bottlenecks",
+      "intro": "Un entorno contenerizado introduce límites de recursos que no existen (o son distintos) en un servidor tradicional — este módulo cubre los más comunes que aparecen en el examen.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>CPU throttling</strong>: si el <code>limit</code> de CPU de un contenedor es demasiado bajo para su carga real, el kernel lo limita (throttles) aunque el nodo tenga CPU libre — el síntoma es latencia alta con CPU del nodo aparentemente disponible, un caso clásico de mala calibración de límites, no de falta de capacidad.",
+        "<strong>Requests mal calibrados</strong>: un <code>request</code> de CPU/memoria muy por debajo del uso real hace que el Scheduler coloque demasiados Pods en el mismo nodo, generando contención de recursos entre ellos bajo carga real.",
+        "<strong>Garbage collection en runtimes gestionados (JVM, Node.js)</strong>: si el límite de memoria del contenedor es muy ajustado, el recolector de basura se ejecuta con más frecuencia (o el proceso es terminado por OOMKilled), añadiendo latencia intermitente difícil de atribuir a simple vista.",
+        "<strong>Conexiones de base de datos limitadas</strong>: un pool de conexiones mal dimensionado en la aplicación (no un límite de Kubernetes) puede convertirse en el cuello de botella real mientras CPU y memoria del Pod parecen normales.",
+        "<strong>Cold start en escalado horizontal</strong>: al escalar por HPA, los Pods nuevos tardan en estar realmente 'calientes' (JIT warm-up, pools de conexión inicializados) — durante ese margen la latencia agregada puede empeorar brevemente aunque haya más réplicas."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Latencia alta con CPU del nodo disponible casi siempre apunta a CPU throttling por un limit mal calibrado en el contenedor — es uno de los escenarios de diagnóstico más citados en el examen para este curso." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · De los datos a la optimización",
+      "title_en": "From Data to Optimization",
+      "intro": "Medir sin actuar no mejora nada — este módulo cubre cómo traducir los hallazgos de una prueba de carga en cambios concretos, y cómo validar que realmente funcionaron.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Un cambio a la vez</strong>: ajustar un solo parámetro (por ejemplo, subir el limit de CPU) y repetir exactamente la misma prueba antes de tocar otra variable — cambiar varias cosas a la vez impide saber cuál produjo el efecto.",
+        "<strong>Ajustar requests/limits con datos reales</strong>: el uso observado durante la prueba de carga (no una suposición inicial) debe guiar el valor correcto de requests y limits — sobredimensionar desperdicia capacidad del clúster, subdimensionar causa throttling u OOMKilled.",
+        "<strong>Escalado horizontal vs. vertical</strong>: si el cuello de botella es CPU/memoria por instancia con lógica que paraleliza bien entre réplicas, escalar horizontalmente (más Pods, HPA) ayuda; si el límite es de un recurso compartido por instancia (por ejemplo, una única conexión pesada), escalar verticalmente (más recursos por Pod) puede ser más efectivo.",
+        "<strong>Optimización de código antes que infraestructura</strong>: si el perfil de la prueba muestra que el tiempo se va en una consulta a base de datos ineficiente, añadir más réplicas o CPU no resuelve la causa raíz — solo la enmascara temporalmente a mayor costo.",
+        "<strong>Volver a medir tras cada cambio</strong>: la única forma de confirmar una mejora es repetir la prueba con el mismo perfil de carga y comparar contra la línea base — sin esa comparación, un cambio 'que debería ayudar' es solo una suposición."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El ciclo correcto es medir → hipotetizar la causa → cambiar una variable → volver a medir → comparar contra la línea base. Saltarse la remedición convierte la optimización en conjetura." }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de preguntas difíciles del examen sobre este tema reflejan errores metodológicos reales al probar y optimizar aplicaciones contenerizadas.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: reportar solo la latencia promedio, ocultando percentiles altos (p95/p99) que reflejan la experiencia de los usuarios más afectados.",
+        "<strong>Antipatrón</strong>: cambiar el código y la infraestructura al mismo tiempo entre dos corridas de prueba, sin poder atribuir la mejora a una causa concreta.",
+        "<strong>Antipatrón</strong>: no monitorear los recursos del propio generador de carga, atribuyendo a la aplicación un límite que en realidad viene del generador.",
+        "<strong>Antipatrón</strong>: aumentar réplicas (escalado horizontal) para resolver un cuello de botella causado por una consulta de base de datos ineficiente, en vez de optimizar la causa raíz.",
+        "<strong>Antipatrón</strong>: fijar limits de memoria sin margen sobre el uso observado, provocando OOMKilled recurrente bajo carga real.",
+        "<strong>Regla de oro</strong>: ante un escenario de examen, primero identifica qué métrica describe (latencia, throughput, error, saturación) y luego busca la causa contenerizada específica antes de asumir que 'hace falta más capacidad'."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "El examen premia el razonamiento basado en datos: identificar qué recurso está realmente saturado antes de proponer una solución, en vez de escalar a ciegas cualquier recurso disponible." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Latencia p99 alta con CPU del nodo disponible — sospecha de CPU throttling por un limit mal calibrado" },
+    { "title": "Escenario 2", "text": "Fuga de memoria detectada solo tras varias horas de carga sostenida — soak test" },
+    { "title": "Escenario 3", "text": "Determinar si escalar horizontalmente o verticalmente tras identificar el recurso saturado" },
+    { "title": "Escenario 4", "text": "Comparar dos corridas de prueba antes/después de subir el límite de memoria de un contenedor" },
+    { "title": "Escenario 5", "text": "Buscar el punto de quiebre real del sistema con una prueba de estrés más allá de la carga esperada" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Reportar solo latencia promedio en vez de percentiles (p95/p99)",
+    "Cambiar código e infraestructura simultáneamente entre corridas, impidiendo aislar la causa de una mejora",
+    "No monitorear los recursos del propio generador de carga durante la prueba",
+    "Escalar horizontalmente para compensar una consulta de base de datos ineficiente en vez de optimizarla",
+    "Fijar límites de memoria sin margen sobre el uso real observado, causando OOMKilled bajo carga",
+    "No repetir la medición tras un cambio, asumiendo que 'debería' haber mejorado sin confirmarlo con datos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "kubectl top pod -n produccion", "desc": "Ver uso real de CPU/memoria de cada Pod frente a sus limits" },
+    { "cmd": "kubectl describe pod <pod> | grep -A5 'Limits\\|Requests'", "desc": "Inspeccionar los requests/limits configurados de un Pod" },
+    { "cmd": "jmeter -n -t plan.jmx -l resultados.jtl", "desc": "Ejecutar un plan de pruebas de carga en modo no interactivo" },
+    { "cmd": "wrk -t4 -c100 -d60s http://miapp.svc/endpoint", "desc": "Generar carga ligera de alto throughput contra un endpoint" },
+    { "cmd": "kubectl get hpa", "desc": "Ver el estado del Horizontal Pod Autoscaler durante una prueba de carga" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Latency (p50/p95/p99)", "es": "Latencia por percentiles", "def": "Tiempo de respuesta reportado en percentiles, no solo promedio, para reflejar los peores casos." },
+    { "en": "Throughput", "es": "Rendimiento (throughput)", "def": "Número de peticiones procesadas por unidad de tiempo bajo una carga dada." },
+    { "en": "Error rate", "es": "Tasa de error", "def": "Porcentaje de peticiones que fallan (timeouts, 5xx) bajo una carga determinada." },
+    { "en": "Saturation", "es": "Saturación", "def": "Qué tan cerca está un recurso de su límite máximo de capacidad." },
+    { "en": "Baseline", "es": "Línea base", "def": "Medición documentada antes de un cambio, usada como referencia para comparar mejoras." },
+    { "en": "Load test", "es": "Prueba de carga", "def": "Validación del comportamiento del sistema bajo el tráfico esperado de producción." },
+    { "en": "Stress test", "es": "Prueba de estrés", "def": "Prueba que busca deliberadamente el punto de quiebre del sistema, más allá de la carga esperada." },
+    { "en": "Soak test", "es": "Prueba de resistencia", "def": "Carga moderada sostenida por un período largo, para detectar problemas que aparecen con el tiempo (fugas de memoria)." },
+    { "en": "Ramp-up", "es": "Carga escalonada", "def": "Aumentar la carga gradualmente para identificar el punto exacto de degradación." },
+    { "en": "CPU throttling", "es": "Limitación de CPU", "def": "El kernel limita el uso de CPU de un contenedor al alcanzar su limit, aunque el nodo tenga CPU libre." },
+    { "en": "Requests / Limits", "es": "Requests / Limits", "def": "Mínimo garantizado y máximo permitido de CPU/memoria de un contenedor en Kubernetes." },
+    { "en": "OOMKilled", "es": "Terminado por falta de memoria", "def": "El contenedor es terminado por el kernel al exceder su límite de memoria." },
+    { "en": "Garbage Collection (GC)", "es": "Recolección de basura", "def": "Proceso de liberar memoria en runtimes gestionados (JVM, Node.js); frecuente bajo memoria ajustada." },
+    { "en": "Connection pool", "es": "Pool de conexiones", "def": "Conjunto de conexiones reutilizables (p.ej. a base de datos) cuyo tamaño puede convertirse en cuello de botella." },
+    { "en": "Horizontal scaling", "es": "Escalado horizontal", "def": "Añadir más réplicas (Pods) de una aplicación para repartir la carga." },
+    { "en": "Vertical scaling", "es": "Escalado vertical", "def": "Aumentar los recursos (CPU/memoria) asignados a cada instancia individual." },
+    { "en": "JMeter", "es": "JMeter", "def": "Herramienta de pruebas de carga con interfaz gráfica y soporte para escenarios complejos." },
+    { "en": "Locust / wrk", "es": "Locust / wrk", "def": "Herramientas ligeras de generación de carga de alto throughput y bajo overhead." },
+    { "en": "Cold start (escalado)", "es": "Arranque en frío (escalado)", "def": "Retraso en que un Pod nuevo alcance rendimiento estable tras ser creado por autoescalado." },
+    { "en": "ARMS / Prometheus", "es": "ARMS / Prometheus", "def": "Herramientas de observabilidad que recolectan métricas de aplicación durante las pruebas de carga." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Por qué reportar solo la latencia promedio en una prueba de rendimiento es una práctica desaconsejada?", "options": ["El promedio siempre es más preciso que los percentiles", "El promedio oculta los peores casos (percentiles altos) que más afectan a los usuarios", "Los promedios no pueden calcularse en entornos contenerizados", "No hay ninguna diferencia práctica entre promedio y percentiles"], "answer": 1, "explain": "Los percentiles p95/p99 revelan la experiencia de los usuarios peor servidos, algo que el promedio esconde." },
+    { "q": "Un Pod muestra latencia alta pero el nodo tiene CPU disponible. ¿Cuál es la causa más probable en un entorno contenerizado?", "options": ["Falta de memoria RAM en el nodo", "CPU throttling por un limit de CPU mal calibrado en el contenedor", "Un problema de DNS en la red del clúster", "El generador de carga está apagado"], "answer": 1, "explain": "Si el limit de CPU del contenedor es bajo, el kernel lo limita aunque el nodo tenga capacidad disponible, produciendo latencia sin saturación aparente del nodo." },
+    { "q": "¿Qué tipo de prueba es la adecuada para detectar una fuga de memoria que solo aparece tras varias horas de operación continua?", "options": ["Prueba de estrés de 5 minutos", "Prueba de resistencia (soak test)", "Prueba de humo", "Prueba unitaria"], "answer": 1, "explain": "El soak test mantiene carga sostenida por un período prolongado, exponiendo problemas que solo emergen con el tiempo." },
+    { "q": "¿Por qué es un error metodológico cambiar código e infraestructura al mismo tiempo entre dos corridas de prueba?", "options": ["No es un error, acelera el proceso de optimización", "Impide determinar cuál de los dos cambios causó la mejora o el deterioro observado", "Kubernetes no permite cambiar ambas cosas a la vez", "Solo afecta a aplicaciones escritas en Java"], "answer": 1, "explain": "Cambiar más de una variable a la vez rompe la comparabilidad entre corridas y hace imposible atribuir el efecto observado a una causa concreta." },
+    { "q": "Un contenedor Java es terminado repetidamente (OOMKilled) bajo carga real. ¿Cuál es una causa típica en este contexto?", "options": ["El límite de memoria del contenedor es demasiado ajustado para el uso real incluyendo el recolector de basura", "El clúster no tiene ningún nodo disponible", "El Service no tiene selector configurado", "El generador de carga está mal instalado"], "answer": 0, "explain": "Un límite de memoria muy ajustado, combinado con el comportamiento del garbage collector, puede provocar terminaciones por falta de memoria bajo carga." },
+    { "q": "¿Cuándo es más apropiado el escalado horizontal frente al vertical según el curso?", "options": ["Siempre, el escalado horizontal es superior en todos los casos", "Cuando el cuello de botella es CPU/memoria por instancia y la carga paraleliza bien entre réplicas", "Nunca, el escalado vertical siempre es mejor", "Solo cuando la aplicación no usa contenedores"], "answer": 1, "explain": "El escalado horizontal reparte carga entre réplicas cuando el trabajo se paraleliza bien; para un recurso compartido no paralelizable, el vertical puede ser más efectivo." },
+    { "q": "Una prueba muestra que el tiempo de respuesta se concentra en una consulta de base de datos ineficiente. ¿Cuál es la respuesta correcta según el curso?", "options": ["Añadir más réplicas de la aplicación sin tocar la consulta", "Optimizar la consulta, ya que escalar infraestructura solo enmascararía la causa raíz", "Aumentar el limit de memoria del contenedor", "Ignorar el hallazgo, no es relevante para el rendimiento"], "answer": 1, "explain": "Escalar infraestructura ante una causa de código enmascara el problema temporalmente a mayor costo, sin resolver la causa raíz." },
+    { "q": "¿Por qué es importante monitorear los recursos del propio generador de carga durante una prueba?", "options": ["No es necesario, el generador nunca es el cuello de botella", "Si el generador está limitado en recursos, los resultados reflejan su propio límite y no el de la aplicación bajo prueba", "Solo aplica si se usa JMeter", "El generador de carga no consume recursos"], "answer": 1, "explain": "Un generador de carga insuficientemente dimensionado puede convertirse él mismo en el cuello de botella, invalidando los resultados." },
+    { "q": "¿Qué representa la métrica de 'saturación' en el contexto de pruebas de rendimiento?", "options": ["El número total de usuarios registrados en la aplicación", "Qué tan cerca está un recurso (CPU, memoria, conexiones) de su límite máximo", "El costo mensual de la infraestructura", "La cantidad de líneas de código de la aplicación"], "answer": 1, "explain": "La saturación explica por qué la latencia o la tasa de error empeoran, al mostrar la cercanía de un recurso a su capacidad límite." },
+    { "q": "¿Qué diferencia a una prueba de carga de una prueba de estrés?", "options": ["Son términos intercambiables sin diferencia real", "La prueba de carga valida el tráfico esperado; la prueba de estrés busca deliberadamente el punto de quiebre del sistema", "La prueba de estrés solo aplica a bases de datos", "La prueba de carga siempre usa menos tráfico que la de estrés en todos los casos, sin excepción"], "answer": 1, "explain": "La prueba de carga confirma comportamiento bajo condiciones normales; la de estrés lleva el sistema deliberadamente más allá de su capacidad esperada." },
+    { "q": "¿Cuál es el paso final indispensable después de aplicar un cambio de optimización, según la metodología del curso?", "options": ["Ninguno, si el cambio 'debería' ayudar no es necesario medir de nuevo", "Repetir la misma prueba de carga y comparar los resultados contra la línea base", "Eliminar la línea base anterior inmediatamente", "Aumentar automáticamente el número de réplicas"], "answer": 1, "explain": "Sin remedición y comparación contra la línea base, no hay forma de confirmar con datos que el cambio realmente mejoró el rendimiento." },
+    { "q": "¿Por qué generar carga desde un Pod dentro del mismo clúster puede ser útil para aislar el rendimiento de la aplicación?", "options": ["Porque elimina la latencia de red externa como variable en la medición", "Porque siempre produce resultados idénticos a un usuario real externo", "Porque reduce automáticamente el costo del clúster", "No aporta ninguna ventaja frente a generar carga desde fuera"], "answer": 0, "explain": "Al eliminar la latencia de red externa, se puede medir el rendimiento puro de la aplicación, separado del comportamiento end-to-end percibido por un usuario real." },
+    { "q": "Al escalar por HPA durante picos de carga, ¿por qué la latencia agregada puede empeorar brevemente justo después de crear nuevos Pods?", "options": ["Los Pods nuevos tardan en estar completamente 'calientes' (JIT warm-up, pools de conexión inicializados)", "Kubernetes apaga automáticamente los Pods antiguos de inmediato", "El HPA reduce la CPU disponible de los Pods existentes", "No existe ningún efecto de este tipo en la práctica"], "answer": 0, "explain": "El período de calentamiento de un Pod recién creado puede generar una degradación temporal antes de que la nueva capacidad realmente ayude." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen suele evaluar: (a) métricas de rendimiento (latencia por percentiles, throughput, error, saturación) y cómo interpretarlas, (b) tipos de prueba (carga, estrés, resistencia) según el objetivo, (c) cuellos de botella específicos de contenedores (CPU throttling, requests/limits, GC, OOMKilled), (d) metodología de un cambio a la vez con remedición, (e) escalado horizontal vs. vertical según el recurso saturado.",
   "official_intro": "This course is designed to help IT companies who want to containerize business applications, as well as cloud computing engineers and operations & maintenance engineers who want to understand and learn about performance testing and optimizing of containerized applications. By learning this course, you can fully understand what the performance testing and optimizing are, the main object of performance testing and optimizing, the common methods, basic procedures, and common tools of performance testing and optimizing for containerized applications, and how to realize performance testing based on Alibaba Cloud Container Service. It can provide a reference for the operation, maintenance and continuous improvement of containerized applications.",
   "recommended_for": "Cloud Computing Architects, Operations and Maintenance Engineers, Cloud Service Providers",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-containerized-applications",

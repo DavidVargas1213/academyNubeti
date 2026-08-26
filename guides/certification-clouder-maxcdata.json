@@ -2,442 +2,176 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-maxcdata",
   "title_en": "Alibaba Cloud MaxCompute - Data Transmission",
-  "title_es": "Alibaba Cloud MaxCompute - Datos Transmission",
+  "title_es": "Alibaba Cloud MaxCompute - Transmisión de Datos",
+  "title_es_html": "Alibaba Cloud MaxCompute - <em>Transmisión de Datos</em>",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_maxcdata",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud MaxCompute - Data Transmission» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud MaxCompute - Data Transmission» de Alibaba Cloud Academy. Este módulo se centra exclusivamente en Tunnel: el canal de alto rendimiento para mover datos masivos hacia adentro y hacia afuera de un Project de MaxCompute. No cubre SQL ni UDFs — cubre cómo entra y sale el dato, en modo batch y en modo streaming, desde la línea de comandos y desde el SDK.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué Tunnel existe como canal separado de SQL para mover datos masivos.",
+    "<strong>Usar</strong> el comando <code>tunnel upload</code>/<code>download</code> de odpscmd con sus parámetros más comunes.",
+    "<strong>Distinguir</strong> Tunnel batch de Stream Tunnel y elegir el correcto según el patrón de ingesta.",
+    "<strong>Describir</strong> el ciclo de vida de una sesión Tunnel (UploadSession/DownloadSession) y el concepto de bloque.",
+    "<strong>Anticipar</strong> los problemas más comunes al desarrollar contra el SDK de Tunnel.",
+    "<strong>Ubicar</strong> Tunnel frente a otras vías de ingesta como DataWorks Data Integration o un INSERT de SQL."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Tunnel es un servicio independiente del motor de cómputo de MaxCompute, con su propio endpoint por región. Un cliente (odpscmd, el SDK Java/Python, o un conector de Data Integration) abre una sesión de subida (UploadSession) contra el endpoint de Tunnel, indicando el Project, la tabla y, si aplica, la partición destino. Dentro de esa sesión, los datos se dividen en bloques (blocks) que se transmiten en paralelo; cada bloque confirmado se registra de forma independiente, y al finalizar la sesión se hace un commit que hace visibles todos los bloques a la vez. Para descarga, una DownloadSession expone un rango de filas que el cliente puede leer en paralelo por bloques. Stream Tunnel sustituye este modelo por sesión por un canal abierto de escritura registro a registro, pensado para ingesta casi en tiempo real con semántica exactly-once, a costa de mayor complejidad operativa que el Tunnel batch clásico.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es Tunnel y cuándo usarlo",
+      "title_en": "What is Tunnel and When to Use It",
+      "intro": "MaxCompute ofrece varias vías para mover datos, y confundirlas es un error común. Este primer módulo ubica a Tunnel frente a sus alternativas antes de entrar en su sintaxis.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Tunnel no es SQL</strong>: un <code>INSERT INTO</code> mueve datos que ya están dentro de MaxCompute, entre tablas; Tunnel mueve datos entre un sistema externo (un archivo local, otra base de datos) y una tabla de MaxCompute.",
+        "<strong>Por qué no basta con INSERT</strong>: cargar archivos locales de gigabytes fila por fila vía SQL sería lentísimo e ineficiente; Tunnel está diseñado específicamente para transferencia masiva en bloques paralelos.",
+        "<strong>Dos modos</strong>: Tunnel batch (subida/bajada de grandes volúmenes de una vez, con confirmación al final) y Stream Tunnel (ingesta continua registro a registro, para flujos casi en tiempo real).",
+        "<strong>Formatos soportados</strong>: Tunnel trabaja con el formato tabular columnar interno de MaxCompute; el cliente (CLI o SDK) se encarga de convertir CSV, TSV u otros formatos de origen antes de enviarlos.",
+        "<strong>Dirección del flujo</strong>: <code>upload</code> mueve datos hacia MaxCompute; <code>download</code> extrae datos de una tabla hacia un archivo local o un stream de lectura."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Si el enunciado describe mover un archivo grande hacia o desde MaxCompute, la respuesta es Tunnel; si describe mover datos entre dos tablas que ya viven dentro de MaxCompute, la respuesta es una sentencia SQL, no Tunnel."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · El comando tunnel en odpscmd",
+      "title_en": "The tunnel Command in odpscmd",
+      "intro": "La forma más directa de usar Tunnel es desde la línea de comandos de odpscmd, sin escribir una sola línea de código — suficiente para cargas puntuales o scripts sencillos.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Subida básica</strong>: <code>tunnel upload archivo.csv proyecto.tabla/pt=20260101;</code> carga un archivo local hacia una partición concreta de una tabla.",
+        "<strong>Parámetros comunes</strong>: <code>-fd</code> define el delimitador de campo, <code>-h</code> indica si la primera fila es encabezado, <code>-cs</code> fija la codificación de caracteres, <code>-threads</code> controla el paralelismo de la subida.",
+        "<strong>Descarga básica</strong>: <code>tunnel download proyecto.tabla/pt=20260101 salida.csv;</code> extrae una partición completa hacia un archivo local.",
+        "<strong>Reintentos</strong>: si la subida falla a mitad de camino por un corte de red, se puede reanudar sin volver a transmitir los bloques ya confirmados, siempre que no se haya hecho commit final de la sesión.",
+        "<strong>Compresión</strong>: Tunnel soporta compresión en tránsito para reducir el volumen transferido, especialmente relevante en cargas frecuentes de archivos grandes desde fuera de la región."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "El parámetro <code>-fd</code> (delimitador) y la bandera de encabezado son las causas más comunes de errores «datos desalineados» al usar tunnel upload por primera vez — revisar ambos antes de sospechar de la red."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Sesiones, bloques y el SDK de Tunnel",
+      "title_en": "Sessions, Blocks and the Tunnel SDK",
+      "intro": "Detrás del comando de odpscmd hay un modelo de sesión que el SDK de Tunnel (Java, Python vía PyODPS) expone directamente para integraciones programáticas.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>UploadSession</strong>: objeto que representa una subida en curso; se crea indicando Project, tabla y partición, y expone la escritura por bloques.",
+        "<strong>Block</strong>: unidad de transmisión dentro de una sesión; cada bloque se escribe y confirma de forma independiente, lo que permite paralelizar la subida entre varios hilos o procesos.",
+        "<strong>Commit</strong>: al terminar de escribir todos los bloques, se llama a <code>commit()</code> indicando qué bloques forman parte de la subida — solo entonces los datos se vuelven visibles en la tabla de forma atómica.",
+        "<strong>DownloadSession</strong>: análogo de lectura; expone el número total de filas disponibles y permite leer rangos concretos en paralelo desde distintos workers.",
+        "<strong>Reanudación</strong>: como cada bloque se confirma por separado, una sesión interrumpida antes del commit final puede reanudarse re-enviando solo los bloques que faltan, sin repetir todo el trabajo."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Los datos de una UploadSession no son visibles en la tabla hasta el commit final — subir bloques no equivale a insertar filas; el commit es el paso que las hace atómicamente visibles."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Stream Tunnel: ingesta casi en tiempo real",
+      "title_en": "Stream Tunnel: Near Real-Time Ingestion",
+      "intro": "Cuando el patrón de ingesta no es «un archivo grande de vez en cuando» sino «eventos que llegan de forma continua», el Tunnel batch clásico deja de encajar y entra en juego Stream Tunnel.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Modelo de escritura</strong>: en vez de abrir una sesión y hacer commit al final, Stream Tunnel mantiene un canal abierto donde cada registro se escribe y confirma individualmente, sin esperar a acumular un lote.",
+        "<strong>Semántica exactly-once</strong>: Stream Tunnel está diseñado para que un mismo registro no se duplique ni se pierda ante reintentos del cliente, algo que el Tunnel batch no garantiza de la misma forma si se reintenta una sesión completa.",
+        "<strong>Latencia vs. throughput</strong>: Stream Tunnel prioriza baja latencia por registro sobre el throughput agregado que ofrece el Tunnel batch al mover archivos enormes de una sola vez.",
+        "<strong>Caso de uso típico</strong>: ingesta de eventos de clickstream, logs de aplicación o lecturas de sensores IoT que deben quedar disponibles para consulta con un retraso mínimo.",
+        "<strong>Cuándo NO usarlo</strong>: para cargas históricas masivas o migraciones iniciales de datos, el Tunnel batch sigue siendo muchísimo más eficiente que abrir un canal de streaming registro a registro."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado menciona «tiempo real», «exactly-once» o «eventos continuos», la respuesta es Stream Tunnel; si menciona «carga masiva inicial» o «migración de un archivo histórico», la respuesta es Tunnel batch clásico."
+      }
+    },
+    {
+      "title_es": "5 · Problemas comunes en el desarrollo con el SDK de Tunnel",
+      "title_en": "Common Development Issues with the Tunnel SDK",
+      "intro": "Integrar Tunnel dentro de una aplicación propia (en vez de usar el comando de odpscmd) introduce una clase de errores distinta que el examen suele plantear como preguntas de diagnóstico.",
+      "points": [
+        "<strong>Endpoint equivocado</strong>: Tunnel tiene un endpoint distinto al endpoint principal de MaxCompute para la misma región; usar el endpoint de SQL para conectar el SDK de Tunnel es una causa frecuente de errores de conexión.",
+        "<strong>Timeouts de red</strong>: subidas de archivos muy grandes sobre redes inestables pueden agotar el timeout de un bloque; dividir la subida en más bloques más pequeños, en paralelo, mitiga el problema.",
+        "<strong>Conflicto de block id</strong>: reenviar un bloque con el mismo identificador que uno ya confirmado sin gestionarlo correctamente puede duplicar datos o generar errores de sesión — la lógica de reintento debe llevar cuenta de qué bloques ya se confirmaron.",
+        "<strong>Sesión expirada</strong>: una UploadSession abierta demasiado tiempo sin actividad puede expirar antes del commit; para archivos muy grandes conviene monitorear el progreso y no dejar la sesión inactiva.",
+        "<strong>Orden de partición</strong>: al subir hacia una tabla particionada, especificar mal el valor de partición (o no crearla previamente si la tabla no tiene partición dinámica) provoca errores de destino antes de que se transmita un solo byte."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La mayoría de errores de Tunnel en producción no son de red, sino de configuración: endpoint incorrecto, partición inexistente o gestión incorrecta de reintentos de bloques."
+      }
+    },
+    {
+      "title_es": "6 · Tunnel dentro del ecosistema de ingesta de MaxCompute",
+      "title_en": "Tunnel within the MaxCompute Ingestion Ecosystem",
+      "intro": "Tunnel rara vez se usa aislado en una arquitectura real — este módulo cierra el curso ubicándolo frente a las otras piezas con las que convive para mover datos hacia MaxCompute.",
+      "points": [
+        "<strong>Tunnel vs. DataWorks Data Integration</strong>: Data Integration ofrece conectores visuales preconstruidos (a RDS, Kafka, OSS, etc.) que internamente usan Tunnel u otros mecanismos — es la capa de alto nivel recomendada cuando se quiere orquestar y programar la ingesta sin escribir código.",
+        "<strong>Tunnel vs. SQL INSERT</strong>: INSERT mueve datos ya presentes dentro de MaxCompute entre tablas; Tunnel es el único camino eficiente para volúmenes grandes que entran o salen desde fuera de la plataforma.",
+        "<strong>Tunnel y PyODPS</strong>: el SDK de Python para MaxCompute expone operaciones de Tunnel de forma simplificada dentro de su API tipo DataFrame, útil para flujos de ciencia de datos que ya trabajan en Python.",
+        "<strong>Cuándo escribir contra el SDK directamente</strong>: cuando se necesita control fino sobre el paralelismo, el manejo de errores o la integración con un pipeline propio que los conectores estándar de DataWorks no cubren.",
+        "<strong>Seguridad</strong>: las credenciales usadas por Tunnel siguen el mismo modelo de permisos ACL/Policy del Project — un usuario sin permiso de escritura sobre la tabla no puede completar una UploadSession, aunque tenga acceso al endpoint de Tunnel."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un escenario de ingesta, identifica primero el origen y el volumen de los datos: si vienen de fuera de MaxCompute y son grandes, piensa en Tunnel (batch o Stream); si el flujo debe orquestarse visualmente y programarse, piensa en DataWorks Data Integration por encima de Tunnel."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Carga inicial de un histórico de 500 GB desde archivos CSV locales — Tunnel batch con múltiples hilos" },
+    { "title": "Escenario 2", "text": "Ingesta continua de eventos de clickstream de una app móvil — Stream Tunnel con exactly-once" },
+    { "title": "Escenario 3", "text": "Exportar una partición de resultados hacia un archivo para compartir con otro equipo — tunnel download" },
+    { "title": "Escenario 4", "text": "Pipeline orquestado y programado desde MySQL hacia MaxCompute cada noche — conector de DataWorks Data Integration sobre Tunnel" },
+    { "title": "Escenario 5", "text": "Aplicación propia en Python que necesita control fino del paralelismo de subida — SDK de Tunnel vía PyODPS" },
+    { "title": "Escenario 6", "text": "Subida interrumpida a mitad de archivo por corte de red — reanudar reenviando solo los bloques faltantes" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Usar SQL INSERT para cargar archivos externos grandes en vez de Tunnel, generando cargas lentísimas fila por fila",
+    "Confundir el endpoint de Tunnel con el endpoint principal de MaxCompute al configurar el SDK",
+    "Usar Tunnel batch para ingesta de eventos en tiempo real en vez de Stream Tunnel, acumulando latencia innecesaria",
+    "Usar Stream Tunnel para una migración histórica masiva, mucho más lenta que un Tunnel batch bien paralelizado",
+    "No gestionar correctamente los block id en reintentos, arriesgando duplicados o sesiones corruptas",
+    "Dejar una UploadSession abierta e inactiva por mucho tiempo hasta que expira antes del commit final"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "tunnel upload archivo.csv proyecto.tabla/pt=20260101 -fd ',' -h true -threads 4", "desc": "Subir un archivo CSV a una partición con paralelismo" },
+    { "cmd": "tunnel download proyecto.tabla/pt=20260101 salida.csv", "desc": "Descargar una partición a un archivo local" },
+    { "cmd": "tunnel resume <upload_id>", "desc": "Reanudar una sesión de subida interrumpida" },
+    { "cmd": "tunnel show history", "desc": "Listar el historial de sesiones Tunnel recientes" },
+    { "cmd": "odpscmd -e 'desc extended proyecto.tabla;'", "desc": "Verificar el esquema y particiones antes de una subida" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Tunnel", "es": "Tunnel", "def": "Servicio de MaxCompute para mover datos masivamente hacia adentro o hacia afuera de un Project." },
+    { "en": "Stream Tunnel", "es": "Stream Tunnel", "def": "Variante de Tunnel para ingesta continua registro a registro con semántica exactly-once." },
+    { "en": "UploadSession", "es": "UploadSession", "def": "Sesión de subida que agrupa bloques de datos y se confirma con un commit final." },
+    { "en": "DownloadSession", "es": "DownloadSession", "def": "Sesión de descarga que expone un rango de filas leíble en paralelo." },
+    { "en": "Block", "es": "Bloque", "def": "Unidad de transmisión dentro de una sesión Tunnel, confirmable de forma independiente." },
+    { "en": "Commit", "es": "Commit", "def": "Operación final que hace visibles de forma atómica todos los bloques de una sesión." },
+    { "en": "Endpoint", "es": "Endpoint", "def": "URL de acceso específica de Tunnel para cada región, distinta del endpoint principal de MaxCompute." },
+    { "en": "PyODPS", "es": "PyODPS", "def": "SDK de Python para MaxCompute que expone operaciones de Tunnel de forma simplificada." },
+    { "en": "DataWorks Data Integration", "es": "DataWorks Data Integration", "def": "Capa de conectores visuales de ingesta y orquestación construida sobre mecanismos como Tunnel." },
+    { "en": "Exactly-once", "es": "Exactly-once", "def": "Garantía de que un registro no se duplica ni se pierde ante reintentos, propia de Stream Tunnel." },
+    { "en": "odpscmd", "es": "odpscmd", "def": "Cliente de línea de comandos de MaxCompute que expone el comando tunnel upload/download." },
+    { "en": "Partition Key", "es": "Clave de partición", "def": "Valor que identifica la subdivisión física de la tabla destino de una subida Tunnel." },
+    { "en": "Throughput", "es": "Throughput", "def": "Volumen de datos transferido por unidad de tiempo, prioridad del Tunnel batch frente a Stream Tunnel." },
+    { "en": "Block ID", "es": "Block ID", "def": "Identificador de un bloque dentro de una sesión, usado para evitar duplicados en reintentos." },
+    { "en": "SDK de Tunnel", "es": "SDK de Tunnel", "def": "Biblioteca (Java, Python) que expone programáticamente sesiones y bloques de Tunnel." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿Cuál es la diferencia principal entre Tunnel y una sentencia SQL INSERT en MaxCompute?", "options": ["Son intercambiables en cualquier escenario", "Tunnel mueve datos entre un sistema externo y una tabla de MaxCompute; INSERT mueve datos ya presentes dentro de MaxCompute", "INSERT es más rápido que Tunnel para archivos externos grandes", "Tunnel solo funciona con tablas particionadas"], "answer": 1, "explain": "Tunnel está diseñado para transferencia masiva desde/hacia fuera de MaxCompute; INSERT opera entre tablas que ya viven dentro de la plataforma." },
+    { "q": "Una aplicación necesita ingerir eventos de clickstream con baja latencia y garantía de que ningún evento se duplique. ¿Qué mecanismo es el adecuado?", "options": ["Tunnel batch clásico", "Stream Tunnel", "SQL INSERT fila por fila", "Un snapshot diario"], "answer": 1, "explain": "Stream Tunnel está diseñado específicamente para ingesta continua con semántica exactly-once y baja latencia por registro." },
+    { "q": "¿Qué operación hace visibles de forma atómica los datos de una UploadSession en la tabla destino?", "options": ["La apertura de la sesión", "El envío del primer bloque", "El commit final de la sesión", "La descarga posterior de la tabla"], "answer": 2, "explain": "Los bloques enviados no son visibles hasta que se ejecuta el commit final, que los confirma todos a la vez de forma atómica." },
+    { "q": "¿Cuál es una causa común de errores de conexión al integrar el SDK de Tunnel en una aplicación propia?", "options": ["Usar el endpoint de Tunnel en vez del endpoint principal de MaxCompute", "Usar el endpoint principal de MaxCompute en vez del endpoint específico de Tunnel", "No tener instalado Java", "Usar una tabla sin particiones"], "answer": 1, "explain": "Tunnel tiene un endpoint propio distinto del endpoint principal de MaxCompute para la misma región; confundirlos es una causa frecuente de fallos de conexión." },
+    { "q": "Se necesita cargar un histórico de 500 GB desde archivos CSV locales como carga inicial única. ¿Qué mecanismo es más eficiente?", "options": ["Stream Tunnel registro a registro", "Tunnel batch con múltiples hilos en paralelo", "SQL INSERT con miles de sentencias individuales", "Copiar manualmente cada archivo por la consola web"], "answer": 1, "explain": "Para cargas masivas puntuales, el Tunnel batch con paralelismo es mucho más eficiente que un canal de streaming registro a registro." },
+    { "q": "¿Qué representa un 'block' dentro de una sesión Tunnel?", "options": ["Un tipo de partición de tabla", "Una unidad de transmisión dentro de la sesión, confirmable de forma independiente", "Un usuario autorizado a subir datos", "Un endpoint regional"], "answer": 1, "explain": "Los bloques son las unidades en las que se divide la transmisión dentro de una sesión, permitiendo paralelismo y reanudación." },
+    { "q": "¿Qué herramienta de Alibaba Cloud ofrece conectores visuales preconstruidos que internamente pueden apoyarse en Tunnel para orquestar ingesta programada?", "options": ["Quick BI", "DataWorks Data Integration", "CloudMonitor", "RAM"], "answer": 1, "explain": "DataWorks Data Integration provee conectores de alto nivel para orquestar flujos de ingesta sin escribir código directo contra el SDK de Tunnel." },
+    { "q": "¿Qué debe verificar el desarrollador antes de subir datos hacia una tabla particionada mediante Tunnel?", "options": ["Que la partición destino exista o que la tabla soporte partición dinámica", "Que el Project tenga Label Security activado", "Que la cuenta principal sea la que ejecuta la subida", "Que el archivo esté en formato Parquet"], "answer": 0, "explain": "Especificar una partición inexistente sin partición dinámica habilitada provoca errores de destino antes de transmitir datos." },
+    { "q": "¿Qué prioriza Stream Tunnel frente al Tunnel batch clásico?", "options": ["Máximo throughput agregado en archivos enormes", "Baja latencia por registro individual con garantía exactly-once", "Menor costo de almacenamiento", "Compatibilidad exclusiva con tablas no particionadas"], "answer": 1, "explain": "Stream Tunnel sacrifica throughput agregado a cambio de baja latencia por registro y garantías de entrega exacta." },
+    { "q": "Una subida grande se interrumpe por un corte de red antes del commit final. ¿Qué permite el modelo de bloques de Tunnel en este caso?", "options": ["Reiniciar la subida completa desde cero obligatoriamente", "Reanudar enviando solo los bloques que aún no se habían confirmado", "Perder automáticamente todos los datos ya subidos", "Cambiar el Project destino sin configuración adicional"], "answer": 1, "explain": "Como cada bloque se confirma de forma independiente, una sesión interrumpida puede reanudarse reenviando solo los bloques faltantes." },
+    { "q": "¿Cuál de las siguientes NO es una función de Tunnel dentro de MaxCompute?", "options": ["Subir archivos externos hacia una tabla", "Descargar una partición hacia un archivo local", "Optimizar el plan de ejecución de una consulta SQL", "Soportar ingesta en modo streaming"], "answer": 2, "explain": "La optimización del plan de ejecución de consultas SQL corresponde al motor de cómputo, no a Tunnel, que es exclusivamente un canal de datos." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) cuándo usar Tunnel frente a SQL INSERT o DataWorks Data Integration, (b) el modelo de sesión/bloque/commit del Tunnel batch, (c) la diferencia entre Tunnel batch y Stream Tunnel según latencia y garantías, (d) causas comunes de errores al integrar el SDK (endpoint, particiones, reintentos de bloques).",
   "official_intro": "This course simply explains the data channel service - Tunnel. We will introduce its characteristics and common parameters, grasps the method of uploading and downloading data by using the Tunnel command. We will also learn the development process and common problems in the development of Tunnel SDK. Students can refer to the application cases explained, combined with their own business needs, adopt appropriate data transmission scheme.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_maxcdata",

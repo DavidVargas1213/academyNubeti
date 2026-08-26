@@ -2,423 +2,182 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-elasticsearch",
   "title_en": "An Introduction of Elasticsearch",
-  "title_es": "An Introducción of Elasticsearch",
+  "title_es": "Introducción a Elasticsearch",
+  "title_es_html": "Introducción a <em>Elasticsearch</em>",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_elasticsearch",
-  "lead": "Guía completa en español para el curso «An Introduction of Elasticsearch» de Alibaba Cloud Academy. Cubre en profundidad Elasticsearch en Alibaba Cloud. Elasticsearch gestionado con licencia comercial, integrado con SLS para ingesta y Kibana. Ideal para búsqueda full-text, análisis de logs y observabilidad. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «An Introduction of Elasticsearch» de Alibaba Cloud Academy, centrado en Alibaba Cloud Elasticsearch: la versión gestionada de Elasticsearch con Kibana integrado. A diferencia de MaxCompute o Hologres (pensados para SQL analítico sobre tablas), Elasticsearch resuelve búsqueda de texto completo, análisis de logs y observabilidad mediante un índice invertido — un modelo mental completamente distinto que el examen evalúa con precisión.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Elasticsearch en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Index, Shard, Replica, Mapping, Analyzer.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Elasticsearch en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué es un índice invertido y por qué lo usa Elasticsearch en vez de un modelo de tablas relacionales.",
+    "<strong>Distinguir</strong> los conceptos fundamentales: Index, Document, Shard, Replica, Mapping y Analyzer.",
+    "<strong>Describir</strong> la arquitectura de un clúster: nodos master, data, coordinating e ingest.",
+    "<strong>Aplicar</strong> Index Lifecycle Management (ILM) para mover índices entre niveles hot, warm y cold.",
+    "<strong>Diseñar</strong> el número de shards y réplicas de un índice según el volumen de datos esperado.",
+    "<strong>Ubicar</strong> a Elasticsearch dentro del ecosistema de observabilidad de Alibaba Cloud (SLS, Kibana, Beats/Logstash).",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre shard sizing, ILM y seguridad del clúster."
   ],
-  "architecture": "Beats/Logstash → Elasticsearch cluster (master + data + coordinator nodes) → Kibana. Snapshots a OSS. Hot-warm-cold node tiers para retention. ILM policies mueven índices por edad.",
+  "architecture": "Los datos entran al clúster desde Beats/Logstash (logs y métricas), SLS (Simple Log Service) o directamente vía la API REST de indexación. Cada documento JSON se enruta a un índice, que internamente está dividido en shards primarios distribuidos entre los nodos data del clúster; cada shard primario tiene, opcionalmente, una o más réplicas en nodos distintos para tolerancia a fallos y para servir lecturas en paralelo. Un nodo coordinating (o cualquier nodo actuando en ese rol) recibe las queries del cliente, las reparte entre los shards relevantes y agrega los resultados. Kibana se conecta al clúster para visualización y exploración interactiva. Una política de Index Lifecycle Management (ILM) mueve automáticamente los índices más antiguos de nodos hot (SSD, alto rendimiento) a warm (HDD, menor costo) y finalmente a cold o los elimina, mientras que snapshots periódicos respaldan el clúster hacia OSS.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Elasticsearch en Alibaba Cloud",
-      "title_en": "Introduction to Elasticsearch en Alibaba Cloud",
-      "intro": "Elasticsearch gestionado con licencia comercial, integrado con SLS para ingesta y Kibana. Ideal para búsqueda full-text, análisis de logs y observabilidad. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué existe Elasticsearch: el índice invertido",
+      "title_en": "Why Elasticsearch: The Inverted Index",
+      "intro": "Antes de tocar la consola, el curso explica el problema que resuelve Elasticsearch y por qué una base de datos relacional tradicional no es la herramienta adecuada para búsqueda de texto libre a gran escala.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Elasticsearch gestionado con licencia comercial, integrado con SLS para ingesta y Kibana.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Elasticsearch en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de buscar texto en una base de datos relacional</strong>: un <code>LIKE '%palabra%'</code> sobre millones de filas obliga a escanear tabla completa — no existe forma eficiente de indexar coincidencias parciales de texto libre en un motor SQL tradicional.",
+        "<strong>Índice invertido</strong>: en vez de mapear documento → palabras, Elasticsearch mapea palabra → lista de documentos que la contienen (y en qué posición) — igual que el índice al final de un libro, que apunta de un término a las páginas donde aparece.",
+        "<strong>Motor subyacente</strong>: Elasticsearch se construye sobre Apache Lucene, la librería de indexación y búsqueda que implementa el índice invertido a bajo nivel; Elasticsearch añade distribución, alta disponibilidad y una API REST sobre esa base.",
+        "<strong>No es solo búsqueda de texto</strong>: el mismo motor sirve para agregaciones analíticas rápidas (contar, promediar, hacer histogramas) sobre grandes volúmenes de documentos, lo que lo hace igual de útil para dashboards de logs que para buscadores de productos.",
+        "<strong>Documento como unidad</strong>: cada registro es un documento JSON con campos tipados — no una fila de tabla relacional con columnas fijas; distintos documentos del mismo índice pueden tener campos ligeramente distintos."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Elasticsearch en Alibaba Cloud es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es Elasticsearch?» sino «¿por qué un índice invertido resuelve búsqueda de texto mejor que una tabla relacional?». La respuesta esperada es: permite localizar documentos por término sin escanear todo el corpus."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Elasticsearch en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Index, Document, Mapping y Analyzer",
+      "title_en": "Index, Document, Mapping and Analyzer",
+      "intro": "Antes de operar un clúster hay que dominar el vocabulario básico de Elasticsearch — el examen distingue con precisión estos términos, que no son intercambiables con los de una base relacional.",
       "points": [
-        "<strong>Patrón canónico</strong>: Beats/Logstash → Elasticsearch cluster (master + data + coordinator nodes) → Kibana. Snapshots a OSS. Hot-warm-cold node tiers para retention. ILM policies mueven índices por edad.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Elasticsearch en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Índice</strong> <em>(Index)</em>: Colección de documentos.",
-        "<strong>Shard</strong> <em>(Shard)</em>: Partición del índice.",
-        "<strong>Replica</strong> <em>(Replica)</em>: Copia de shard para HA + lectura.",
-        "<strong>Mapping</strong> <em>(Mapping)</em>: Schema del índice.",
-        "<strong>Analyzer</strong> <em>(Analyzer)</em>: Tokenización + normalización texto.",
-        "<strong>ILM</strong> <em>(ILM)</em>: Index Lifecycle Management: hot→warm→cold→delete.",
-        "<strong>Coordinator</strong> <em>(Coordinator Node)</em>: Rutea queries, no almacena datos.",
-        "<strong>Data tier</strong> <em>(Data Tier)</em>: hot (SSD), warm (HDD), cold (frozen, OSS-backed)."
+        "<strong>Index</strong>: colección lógica de documentos con una estructura similar, el equivalente aproximado a una tabla — pero, a diferencia de una tabla SQL, el esquema puede evolucionar dinámicamente si no se define un Mapping explícito.",
+        "<strong>Document</strong>: la unidad básica almacenada e indexada, un objeto JSON con un identificador único dentro del índice.",
+        "<strong>Mapping</strong>: el esquema del índice — define el tipo de dato de cada campo (text, keyword, date, integer, geo_point) y cómo se indexa. Un campo <code>text</code> se analiza y tokeniza para búsqueda libre; un campo <code>keyword</code> se indexa como valor exacto, útil para filtros y agregaciones.",
+        "<strong>Analyzer</strong>: el pipeline que transforma texto crudo en términos indexables — tokeniza (divide en palabras), normaliza (minúsculas), y opcionalmente elimina stopwords o aplica stemming. Elegir el analyzer correcto (por idioma, por caso de uso) afecta directamente la calidad de la búsqueda.",
+        "<strong>text vs. keyword</strong>: el error de mapeo más común del examen — un campo pensado para búsqueda libre (nombre de producto) debe mapearse como <code>text</code>; un campo pensado para filtrar o agregar exacto (código de país, estado de un pedido) debe mapearse como <code>keyword</code>."
       ],
       "keypoint": {
         "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+        "text": "text = se analiza y tokeniza, sirve para búsqueda libre pero NO para agregaciones exactas ni ordenar. keyword = valor exacto sin analizar, sirve para filtros, agregaciones y ordenamiento pero NO para búsqueda de subcadenas."
       }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "3 · Shards y Replicas: cómo escala Elasticsearch",
+      "title_en": "Shards and Replicas: How Elasticsearch Scales",
+      "intro": "Un índice no vive completo en un solo nodo — se fragmenta en shards que se distribuyen por el clúster, exactamente el mismo principio de particionamiento que permite a Elasticsearch manejar volúmenes que no caben en una sola máquina.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Shard primario</strong>: fragmento físico de un índice — el número de shards primarios se define al crear el índice y, en la mayoría de versiones, no puede cambiarse después sin reindexar.",
+        "<strong>Réplica</strong>: copia completa de un shard primario en otro nodo — sirve simultáneamente para tolerancia a fallos (si el nodo del primario cae, una réplica lo sustituye) y para repartir la carga de lectura entre primario y réplicas.",
+        "<strong>Tamaño recomendado de shard</strong>: como regla práctica, entre 10 GB y 50 GB por shard — shards demasiado pequeños generan overhead de gestión (miles de shards diminutos degradan el clúster); shards demasiado grandes ralentizan recuperación y rebalanceo ante fallo de nodo.",
+        "<strong>Sobre-fragmentación</strong>: crear un índice nuevo cada minuto o con miles de shards diminutos es un antipatrón clásico — el clúster gasta más recursos gestionando metadata de shards que sirviendo búsquedas reales.",
+        "<strong>Índices por tiempo</strong>: en casos de logs, es común crear un índice nuevo por día o por semana (según volumen) en vez de un índice único gigante — facilita aplicar ILM y borrar datos antiguos completos sin tocar los recientes."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe un clúster con miles de shards pequeños y rendimiento degradado, el antipatrón a señalar es sobre-fragmentación — la solución no es añadir más nodos, sino reducir el número de shards o consolidar índices."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Arquitectura del clúster: roles de nodo",
+      "title_en": "Cluster Architecture: Node Roles",
+      "intro": "No todos los nodos de un clúster Elasticsearch hacen lo mismo — separar roles es clave para estabilidad y rendimiento en clústeres de producción de tamaño medio o grande.",
       "points": [
-        "<strong>HA</strong>: Shard sizing 10-50 GB",
-        "<strong>Buenas prácticas</strong>: ILM obligatorio en logs",
-        "<strong>Buenas prácticas</strong>: Índices por día/mes según volumen",
-        "<strong>Buenas prácticas</strong>: Snapshots a OSS diarios",
-        "<strong>Buenas prácticas</strong>: Master node dedicado en clusters grandes"
+        "<strong>Master node</strong>: gestiona el estado del clúster (qué índices existen, dónde vive cada shard) — en clústeres grandes se recomienda un master dedicado (sin datos ni tráfico de búsqueda) para que decisiones críticas de cluster state no compitan por recursos con las queries.",
+        "<strong>Data node</strong>: almacena físicamente los shards y ejecuta las operaciones de indexación y búsqueda sobre ellos — es el rol que más CPU, memoria y disco consume.",
+        "<strong>Coordinating node</strong>: recibe la query del cliente, la distribuye a los shards relevantes (posiblemente en varios data nodes), y agrega los resultados parciales en la respuesta final — no almacena datos por sí mismo.",
+        "<strong>Ingest node</strong>: aplica transformaciones ligeras (pipelines de ingest) a los documentos antes de indexarlos, como parsear un campo de fecha o enriquecer con geo-IP, sin necesitar un procesamiento externo como Logstash.",
+        "<strong>Data tiers (hot-warm-cold)</strong>: en clústeres con retención larga, los data nodes se agrupan por tier — hot (SSD, para índices recién creados con alta tasa de escritura/consulta), warm (HDD, para índices ya estables consultados con menor frecuencia) y cold/frozen (almacenamiento económico respaldado por OSS, para históricos de consulta rara)."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "En un clúster pequeño, un mismo nodo puede combinar varios roles. En producción a escala, separar master dedicado de data nodes evita que un pico de indexación afecte la estabilidad del cluster state."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Index Lifecycle Management (ILM)",
+      "title_en": "Index Lifecycle Management",
+      "intro": "Los índices de logs y métricas tienen un patrón de acceso predecible: se escriben intensamente al crearse y se consultan cada vez menos con el paso del tiempo — ILM automatiza mover cada índice a la infraestructura adecuada según su edad.",
       "points": [
-        "<strong>Antipattern</strong>: Shards demasiado pequeños o gigantes",
-        "<strong>Antipattern</strong>: Sin ILM → índices explotando",
-        "<strong>Antipattern</strong>: Query * en clusters grandes",
-        "<strong>Antipattern</strong>: Sin snapshots externos",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Fase Hot</strong>: el índice recién creado recibe escrituras y consultas intensivas — vive en nodos con almacenamiento rápido (SSD).",
+        "<strong>Fase Warm</strong>: el índice ya no recibe escrituras nuevas pero sigue consultándose ocasionalmente — se mueve a nodos con almacenamiento más económico y, típicamente, se reduce su número de réplicas.",
+        "<strong>Fase Cold / Frozen</strong>: el índice se consulta muy rara vez — se mueve al tier más económico, a menudo respaldado por almacenamiento tipo OSS, priorizando costo sobre latencia de consulta.",
+        "<strong>Fase Delete</strong>: pasado el período de retención definido por política (regulatoria o de negocio), el índice completo se elimina automáticamente — mucho más eficiente que borrar documentos individuales de un índice gigante.",
+        "<strong>Por qué es obligatorio en producción</strong>: sin ILM, los índices de logs crecen indefinidamente ocupando cada vez más nodos hot costosos — es la causa número uno de clústeres Elasticsearch que se quedan sin espacio en disco."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe un clúster de logs que se queda sin espacio en disco progresivamente, la causa casi siempre es ausencia de política ILM — la solución es definir fases hot-warm-cold-delete, no simplemente añadir más disco."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad, snapshots y errores comunes",
+      "title_en": "Security, Snapshots and Common Mistakes",
+      "intro": "El cierre del curso cubre cómo proteger un clúster de producción y respaldar sus datos, junto con los antipatrones que más aparecen en preguntas de examen.",
+      "points": [
+        "<strong>Snapshots a OSS</strong>: Elasticsearch soporta snapshots incrementales de índices completos hacia un repositorio externo (OSS en Alibaba Cloud) — es el mecanismo de backup real; ILM gestiona el ciclo de vida operativo, pero no sustituye un snapshot ante pérdida catastrófica del clúster.",
+        "<strong>RAM y control de acceso</strong>: el acceso administrativo al clúster gestionado se controla vía políticas RAM de Alibaba Cloud, mientras que Elasticsearch por sí mismo puede añadir su propio control de acceso a nivel de índice y documento para usuarios de la aplicación.",
+        "<strong>Antipatrón: query <code>match_all</code> sin filtro en clústeres grandes</strong>: recuperar o agregar sobre todos los documentos de un índice masivo sin ningún filtro de tiempo o campo satura el clúster innecesariamente.",
+        "<strong>Antipatrón: master node compartiendo carga de datos</strong>: en clústeres grandes, no dedicar un master node exclusivo hace que picos de indexación puedan degradar la estabilidad de las decisiones de cluster state.",
+        "<strong>Antipatrón: no probar restauración de snapshots</strong>: tener snapshots configurados no garantiza que la restauración funcione — igual que con cualquier backup, hay que validarla periódicamente."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de diseño de clúster, revisa en orden: tamaño y número de shards, política ILM, separación de roles de nodo, y snapshots externos — en ese orden es donde más frecuentemente se esconde el antipatrón descrito en el enunciado."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Búsqueda de productos en e-commerce"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Log analytics (reemplazo ELK on-prem)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "APM y observabilidad"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Search personalization con relevance tuning"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Security analytics (SIEM ligero)"
-    }
+    { "title": "Escenario 1", "text": "Motor de búsqueda de productos en un catálogo de e-commerce con autocompletado" },
+    { "title": "Escenario 2", "text": "Centralización de logs de aplicación como reemplazo de un stack ELK on-premise" },
+    { "title": "Escenario 3", "text": "Observabilidad y APM: trazas, métricas y logs correlacionados en Kibana" },
+    { "title": "Escenario 4", "text": "Ajuste de relevancia (relevance tuning) para personalizar resultados de búsqueda" },
+    { "title": "Escenario 5", "text": "Analítica de seguridad ligera (SIEM) sobre eventos de acceso" },
+    { "title": "Escenario 6", "text": "Dashboard operacional de métricas de negocio con agregaciones en tiempo casi real" }
   ],
   "mistakes": [
-    "Shards demasiado pequeños o gigantes",
-    "Sin ILM → índices explotando",
-    "Query * en clusters grandes",
-    "Sin snapshots externos"
+    "Mapear un campo de búsqueda libre como keyword (o uno de filtro exacto como text), rompiendo búsqueda o agregación",
+    "Crear miles de shards diminutos, degradando el rendimiento del clúster por overhead de gestión",
+    "No configurar ILM, dejando que los índices de logs crezcan sin control hasta agotar disco",
+    "Ejecutar match_all sin filtro sobre índices masivos en un clúster de producción",
+    "No dedicar un master node exclusivo en clústeres grandes, mezclando su rol con el de data node",
+    "Confiar solo en ILM sin snapshots externos como plan de recuperación ante desastres"
   ],
   "cli": [
-    {
-      "cmd": "curl :9200/_cat/indices",
-      "desc": "Listar índices"
-    },
-    {
-      "cmd": "aliyun elasticsearch DescribeInstance",
-      "desc": "Info"
-    }
+    { "cmd": "curl -X GET \"localhost:9200/_cat/indices?v\"", "desc": "Listar índices del clúster con su tamaño y número de documentos" },
+    { "cmd": "curl -X PUT \"localhost:9200/logs-2026\" -H 'Content-Type: application/json' -d '{\"settings\":{\"number_of_shards\":3,\"number_of_replicas\":1}}'", "desc": "Crear un índice con número explícito de shards y réplicas" },
+    { "cmd": "curl -X GET \"localhost:9200/_cluster/health?pretty\"", "desc": "Ver el estado general del clúster (green/yellow/red)" },
+    { "cmd": "curl -X PUT \"localhost:9200/_ilm/policy/logs-policy\" -d @ilm-policy.json", "desc": "Aplicar una política de Index Lifecycle Management" },
+    { "cmd": "aliyun elasticsearch DescribeInstance --InstanceId es-xxxxx", "desc": "Consultar el estado de una instancia gestionada de Elasticsearch en Alibaba Cloud" }
   ],
   "glossary": [
-    {
-      "en": "Index",
-      "es": "Índice",
-      "def": "Colección de documentos."
-    },
-    {
-      "en": "Shard",
-      "es": "Shard",
-      "def": "Partición del índice."
-    },
-    {
-      "en": "Replica",
-      "es": "Replica",
-      "def": "Copia de shard para HA + lectura."
-    },
-    {
-      "en": "Mapping",
-      "es": "Mapping",
-      "def": "Schema del índice."
-    },
-    {
-      "en": "Analyzer",
-      "es": "Analyzer",
-      "def": "Tokenización + normalización texto."
-    },
-    {
-      "en": "ILM",
-      "es": "ILM",
-      "def": "Index Lifecycle Management: hot→warm→cold→delete."
-    },
-    {
-      "en": "Coordinator Node",
-      "es": "Coordinator",
-      "def": "Rutea queries, no almacena datos."
-    },
-    {
-      "en": "Data Tier",
-      "es": "Data tier",
-      "def": "hot (SSD), warm (HDD), cold (frozen, OSS-backed)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Inverted Index", "es": "Índice invertido", "def": "Estructura que mapea cada término a la lista de documentos donde aparece, base de la búsqueda de texto en Elasticsearch." },
+    { "en": "Index", "es": "Índice", "def": "Colección lógica de documentos con estructura similar; el equivalente aproximado a una tabla." },
+    { "en": "Document", "es": "Documento", "def": "Unidad básica de datos almacenada, un objeto JSON con un identificador único." },
+    { "en": "Mapping", "es": "Mapping", "def": "Esquema del índice: define el tipo de dato y forma de indexación de cada campo." },
+    { "en": "Analyzer", "es": "Analyzer", "def": "Pipeline que tokeniza y normaliza texto antes de indexarlo o de ejecutar una búsqueda." },
+    { "en": "text / keyword", "es": "text / keyword", "def": "Tipos de campo: text se analiza para búsqueda libre; keyword se indexa como valor exacto para filtros y agregaciones." },
+    { "en": "Shard", "es": "Shard", "def": "Fragmento físico de un índice, distribuido entre los data nodes del clúster." },
+    { "en": "Replica", "es": "Réplica", "def": "Copia de un shard primario en otro nodo, para tolerancia a fallos y reparto de lectura." },
+    { "en": "Master Node", "es": "Nodo maestro", "def": "Nodo que gestiona el estado del clúster: qué índices existen y dónde vive cada shard." },
+    { "en": "Data Node", "es": "Nodo de datos", "def": "Nodo que almacena shards físicamente y ejecuta indexación y búsqueda." },
+    { "en": "Coordinating Node", "es": "Nodo coordinador", "def": "Nodo que recibe la query del cliente, la distribuye a los shards relevantes y agrega resultados." },
+    { "en": "Ingest Node", "es": "Nodo de ingesta", "def": "Nodo que aplica transformaciones ligeras a documentos antes de indexarlos." },
+    { "en": "ILM (Index Lifecycle Management)", "es": "Gestión del ciclo de vida del índice", "def": "Política que mueve automáticamente índices entre fases hot, warm, cold y delete según su edad." },
+    { "en": "Data Tier", "es": "Nivel de datos", "def": "Agrupación de data nodes por rendimiento/costo: hot (SSD), warm (HDD), cold/frozen (respaldado por OSS)." },
+    { "en": "Snapshot", "es": "Instantánea", "def": "Copia incremental de índices hacia un repositorio externo como OSS, usada para backup real." },
+    { "en": "Kibana", "es": "Kibana", "def": "Interfaz de visualización y exploración interactiva integrada con Elasticsearch." },
+    { "en": "Beats / Logstash", "es": "Beats / Logstash", "def": "Agentes de recolección y procesamiento de logs y métricas que alimentan a Elasticsearch." },
+    { "en": "Cluster Health", "es": "Salud del clúster", "def": "Estado agregado del clúster (green/yellow/red) según la disponibilidad de shards primarios y réplicas." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Elasticsearch en Alibaba Cloud?",
-      "options": [
-        "Elasticsearch gestionado con licencia comercial, integrado con SLS para ingesta y Kibana. Ideal para búsqueda full-text, análisis de logs y observabilidad.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Elasticsearch gestionado con licencia comercial, integrado con SLS para ingesta y Kibana. Ideal para búsqueda full-text, análisis de logs y observabilidad."
-    },
-    {
-      "q": "¿Qué es <strong>Index</strong> (Índice) en Elasticsearch en Alibaba Cloud?",
-      "options": [
-        "Colección de documentos.",
-        "Partición del índice.",
-        "Copia de shard para HA + lectura.",
-        "Schema del índice."
-      ],
-      "answer": 0,
-      "explain": "Index (Índice): Colección de documentos."
-    },
-    {
-      "q": "¿Qué es <strong>Shard</strong> (Shard) en Elasticsearch en Alibaba Cloud?",
-      "options": [
-        "Partición del índice.",
-        "Colección de documentos.",
-        "Copia de shard para HA + lectura.",
-        "Schema del índice."
-      ],
-      "answer": 0,
-      "explain": "Shard (Shard): Partición del índice."
-    },
-    {
-      "q": "¿Qué es <strong>Replica</strong> (Replica) en Elasticsearch en Alibaba Cloud?",
-      "options": [
-        "Copia de shard para HA + lectura.",
-        "Colección de documentos.",
-        "Partición del índice.",
-        "Schema del índice."
-      ],
-      "answer": 0,
-      "explain": "Replica (Replica): Copia de shard para HA + lectura."
-    },
-    {
-      "q": "¿Qué es <strong>Mapping</strong> (Mapping) en Elasticsearch en Alibaba Cloud?",
-      "options": [
-        "Schema del índice.",
-        "Colección de documentos.",
-        "Partición del índice.",
-        "Copia de shard para HA + lectura."
-      ],
-      "answer": 0,
-      "explain": "Mapping (Mapping): Schema del índice."
-    },
-    {
-      "q": "¿Qué es <strong>Analyzer</strong> (Analyzer) en Elasticsearch en Alibaba Cloud?",
-      "options": [
-        "Tokenización + normalización texto.",
-        "Colección de documentos.",
-        "Partición del índice.",
-        "Copia de shard para HA + lectura."
-      ],
-      "answer": 0,
-      "explain": "Analyzer (Analyzer): Tokenización + normalización texto."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Elasticsearch en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Elasticsearch en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Elasticsearch en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Elasticsearch en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Búsqueda de productos en e-commerce",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Búsqueda de productos en e-commerce."
-    }
+    { "q": "¿Qué es un índice invertido y por qué lo usa Elasticsearch?", "options": ["Una tabla ordenada de forma descendente por fecha", "Una estructura que mapea cada término a la lista de documentos donde aparece, permitiendo búsqueda de texto eficiente", "Un tipo de réplica de shard", "Un mecanismo de cifrado de documentos"], "answer": 1, "explain": "El índice invertido permite localizar documentos que contienen un término sin escanear todo el corpus, al contrario que un LIKE sobre una base relacional." },
+    { "q": "Un campo llamado 'estado_pedido' se usará únicamente para filtrar y agregar valores exactos (no para búsqueda de texto libre). ¿Cómo debe mapearse?", "options": ["Como text", "Como keyword", "Como geo_point", "No necesita mapping"], "answer": 1, "explain": "keyword indexa el valor exacto sin analizarlo, ideal para filtros, agregaciones y ordenamiento — no para búsqueda de subcadenas." },
+    { "q": "¿Qué función cumple un Analyzer en Elasticsearch?", "options": ["Cifra los documentos antes de guardarlos", "Tokeniza y normaliza el texto antes de indexarlo o de ejecutar una búsqueda", "Decide en qué nodo se guarda cada shard", "Genera automáticamente snapshots"], "answer": 1, "explain": "El Analyzer transforma texto crudo en términos indexables: tokeniza, normaliza a minúsculas y puede eliminar stopwords o aplicar stemming." },
+    { "q": "¿Cuál es el tamaño recomendado como regla práctica para un shard en Elasticsearch?", "options": ["Entre 10 GB y 50 GB", "Menos de 1 MB", "Exactamente 1 TB", "El tamaño no importa"], "answer": 0, "explain": "Shards demasiado pequeños generan overhead de gestión; shards demasiado grandes ralentizan la recuperación ante fallo de nodo." },
+    { "q": "Un clúster tiene miles de shards diminutos y su rendimiento se ha degradado notablemente. ¿Cuál es la causa más probable?", "options": ["Falta de réplicas", "Sobre-fragmentación: demasiados shards pequeños generan overhead de gestión de metadata", "Un analyzer mal configurado", "Ausencia de snapshots"], "answer": 1, "explain": "Un número excesivo de shards pequeños consume recursos del clúster en gestión de metadata en vez de en servir búsquedas reales." },
+    { "q": "¿Qué rol de nodo recibe la query del cliente, la distribuye a los shards relevantes y agrega los resultados?", "options": ["Master node", "Data node", "Coordinating node", "Ingest node"], "answer": 2, "explain": "El coordinating node actúa como punto de entrada de las queries, repartiéndolas entre los data nodes y consolidando la respuesta final." },
+    { "q": "¿Por qué se recomienda un master node dedicado en clústeres grandes?", "options": ["Porque los master nodes no pueden ejecutar Kibana", "Para que las decisiones críticas de cluster state no compitan por recursos con la carga de indexación y búsqueda", "Porque reduce el costo de licenciamiento", "No hay ninguna razón real, es solo convención"], "answer": 1, "explain": "Separar el rol de master evita que un pico de indexación o consulta degrade la estabilidad de la gestión del estado del clúster." },
+    { "q": "¿Qué automatiza una política de Index Lifecycle Management (ILM)?", "options": ["El cifrado de los documentos en tránsito", "Mover índices entre fases hot, warm, cold y eliminarlos automáticamente según su edad", "La generación de mappings automáticos", "El balanceo de carga entre coordinating nodes"], "answer": 1, "explain": "ILM gestiona el ciclo de vida completo del índice según su antigüedad, moviendo datos a infraestructura más económica y eliminándolos al vencer la retención." },
+    { "q": "Un clúster de logs se está quedando sin espacio en disco de forma progresiva. ¿Cuál es la causa más probable?", "options": ["Demasiadas réplicas configuradas", "Ausencia de una política ILM que mueva o elimine índices antiguos", "Un analyzer mal configurado", "El coordinating node está sobrecargado"], "answer": 1, "explain": "Sin ILM, los índices de logs crecen indefinidamente sin ser movidos a tiers más económicos ni eliminados tras su período de retención." },
+    { "q": "¿Cuál es la diferencia entre una réplica de shard y un snapshot?", "options": ["Son exactamente lo mismo", "La réplica protege contra fallo de nodo dentro del clúster en vivo; el snapshot es un backup externo (p.ej. a OSS) ante pérdida catastrófica del clúster", "El snapshot solo aplica a Kibana", "La réplica es más lenta que el snapshot en todos los casos"], "answer": 1, "explain": "Las réplicas dan tolerancia a fallos operativa dentro del clúster; los snapshots son el mecanismo real de recuperación ante desastres, respaldados fuera del clúster." },
+    { "q": "¿Qué antipatrón describe ejecutar una query match_all sin ningún filtro sobre un índice masivo en producción?", "options": ["Es una práctica recomendada para monitoreo", "Satura innecesariamente el clúster al recuperar o agregar sobre todos los documentos sin acotar por tiempo o campo", "Mejora el rendimiento del coordinating node", "No tiene ningún impacto en clústeres grandes"], "answer": 1, "explain": "Sin un filtro que acote el conjunto de documentos, la query fuerza al clúster a procesar el índice completo, generando carga excesiva." },
+    { "q": "¿Sobre qué motor de bajo nivel está construido Elasticsearch?", "options": ["Apache Lucene", "Apache Hadoop", "PostgreSQL", "RocksDB"], "answer": 0, "explain": "Elasticsearch usa Apache Lucene como motor de indexación y búsqueda, añadiendo distribución, alta disponibilidad y una API REST sobre esa base." },
+    { "q": "¿Qué tier de datos (data tier) es el más adecuado para un índice de logs consultado con muy poca frecuencia pero que debe conservarse por cumplimiento?", "options": ["Hot", "Warm", "Cold / frozen, respaldado por almacenamiento económico como OSS", "No debería existir ese tier"], "answer": 2, "explain": "El tier cold/frozen prioriza costo sobre latencia de consulta, adecuado para históricos consultados rara vez pero que deben conservarse." }
   ],
-  "exam_focus": "Shard sizing, ILM, hot-warm-cold, coordinator nodes.",
+  "exam_focus": "El examen suele evaluar: (a) el modelo mental del índice invertido frente a una tabla relacional, (b) mapeo correcto text vs. keyword, (c) shard sizing y el riesgo de sobre-fragmentación, (d) roles de nodo (master/data/coordinating/ingest) y por qué separar el master en clústeres grandes, (e) diseño de políticas ILM hot-warm-cold-delete, (f) snapshots como mecanismo real de recuperación ante desastres frente a las réplicas.",
   "official_intro": "This course aims to help companies that want to use search services, as well as Big Data engineers and Big Data enthusiasts who want to understand and learn search technology. By learning this course, you can fully understand what search engine is, the features and functions of Elasticsearch, and how to use Alibaba Cloud Elasticsearch, so as to provide reference for practical application.",
   "recommended_for": "Cloud server users, Big Data enthusiasts, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_elasticsearch",

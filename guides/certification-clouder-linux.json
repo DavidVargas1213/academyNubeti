@@ -2,433 +2,201 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-linux",
   "title_en": "Getting Started with Linux Server Management",
-  "title_es": "Primeros Pasos con Linux Servidor Gestión",
+  "title_es": "Primeros Pasos en la Administración de Servidores Linux",
+  "title_es_html": "Primeros Pasos en la <em>Administración de Servidores Linux</em>",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Otros",
   "subcategory_es": "IT Fundamental",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_linux",
-  "lead": "Guía completa en español para el curso «Getting Started with Linux Server Management» de Alibaba Cloud Academy. Cubre en profundidad Linux Server Management. Fundamentos de administración Linux para ECS: usuarios/permisos, systemd, cron, networking, storage, logs, monitoring, hardening. Alibaba Cloud Linux (basado en RHEL/CentOS) es la distro optimizada + gratuita. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Getting Started with Linux Server Management» de Alibaba Cloud Academy. Cubre lo mínimo que un administrador junior debe dominar para operar un servidor Linux en producción sobre ECS: historia y distribuciones, la jerarquía de directorios, usuarios y permisos, gestión de volúmenes con LVM, systemd/cron, redes básicas y los comandos de monitoreo del día a día. El objetivo es que puedas administrar una instancia Alibaba Cloud Linux con criterio, no solo memorizar comandos sueltos.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Linux Server Management</em>.",
-    "<strong>Dominar</strong> los conceptos clave: systemd, journalctl, cron/systemd timer, sudoers, SSH Key.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Linux Server Management y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué distingue a las principales familias de distribuciones Linux y por qué Alibaba Cloud Linux es la opción por defecto en ECS.",
+    "<strong>Ubicar</strong> archivos de configuración, logs y binarios usando la jerarquía estándar de directorios (FHS).",
+    "<strong>Administrar</strong> usuarios, grupos y permisos, incluyendo el uso correcto de sudo/sudoers frente al login directo como root.",
+    "<strong>Redimensionar</strong> almacenamiento en caliente usando LVM: volúmenes físicos, grupos de volúmenes y volúmenes lógicos.",
+    "<strong>Gestionar</strong> servicios y tareas programadas con systemd, journalctl, cron y systemd timers.",
+    "<strong>Diagnosticar</strong> el estado de un servidor con las herramientas básicas de monitoreo de procesos, memoria, disco y red.",
+    "<strong>Aplicar</strong> un hardening de seguridad mínimo razonable antes de exponer un servidor a producción."
   ],
-  "architecture": "ECS con Alibaba Cloud Linux → hardening baseline → CloudMonitor agent + Logtail → users por SSH key + sudoers → cron/systemd timers → journalctl + rsyslog → backup con snapshots.",
+  "architecture": "Un servidor Linux en ECS no vive aislado: el Security Group de Alibaba Cloud actúa como firewall perimetral (capa de red, fuera del sistema operativo) antes de que cualquier paquete llegue al firewall local del host (firewalld/nftables). RAM controla quién puede administrar la instancia desde la consola o la API, pero dentro del propio sistema operativo la autoridad la define la combinación de usuarios Linux, el archivo sudoers y las llaves SSH autorizadas — son capas independientes que deben configurarse ambas, no una en lugar de la otra. Los discos se gestionan con LVM para poder ampliar una partición sin downtime cuando los datos crecen; systemd supervisa los servicios y los reinicia si fallan; cron y los systemd timers ejecutan tareas programadas (backups, rotación de logs, limpieza); y los logs se centralizan hacia Log Service (SLS) mediante el agente Logtail, para no depender de que el disco local nunca se llene ni de conectarse por SSH a revisar cada máquina una por una.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Linux Server Management",
-      "title_en": "Introduction to Linux Server Management",
-      "intro": "Fundamentos de administración Linux para ECS: usuarios/permisos, systemd, cron, networking, storage, logs, monitoring, hardening. Alibaba Cloud Linux (basado en RHEL/CentOS) es la distro optimizada + gratuita. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Linux, sus distribuciones y Alibaba Cloud Linux",
+      "title_en": "Linux History and Distributions",
+      "intro": "Antes de tocar un solo comando conviene entender qué es realmente Linux —un kernel, no un sistema operativo completo por sí solo— y por qué existen tantas distribuciones distintas construidas sobre ese mismo kernel.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Fundamentos de administración Linux para ECS: usuarios/permisos, systemd, cron, networking, storage, logs, monitoring, hardening.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Linux Server Management se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Kernel vs. distribución</strong>: Linux, estrictamente, es el kernel (gestión de procesos, memoria, dispositivos); una distribución añade encima gestor de paquetes, utilidades, y a veces entorno gráfico.",
+        "<strong>Dos grandes familias de gestión de paquetes</strong>: la familia Debian/Ubuntu (paquetes .deb, comando <code>apt</code>) y la familia RHEL/CentOS/Fedora (paquetes .rpm, comandos <code>yum</code>/<code>dnf</code>) — dominan casi todo el software de servidor en producción.",
+        "<strong>Alibaba Cloud Linux</strong>: distribución propia de Alibaba Cloud, compatible con el ecosistema RHEL/CentOS (mismo gestor de paquetes y convenciones), optimizada para el hardware y la red de ECS, sin costo de licencia adicional — la opción por defecto recomendada al crear una instancia si no hay una razón concreta para usar otra.",
+        "<strong>Ciclo de vida</strong>: cada distribución tiene un período de soporte con actualizaciones de seguridad; usar una versión fuera de soporte deja al servidor sin parches para vulnerabilidades conocidas.",
+        "<strong>Elegir distribución en la práctica</strong>: la decisión suele depender de la compatibilidad del software que se va a instalar (muchas herramientas empresariales certifican solo contra RHEL) más que de preferencia personal."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Linux Server Management es una pieza fundamental de Otros en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El examen no pregunta cuál distribución es «mejor» en abstracto — pregunta cuál encaja según compatibilidad de paquetes, soporte y costo. Alibaba Cloud Linux es la respuesta por defecto para ECS cuando no se menciona un requisito específico de otra distro." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Linux Server Management no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · La jerarquía de directorios (FHS)",
+      "title_en": "Filesystem Hierarchy Structure",
+      "intro": "Todo sistema Linux organiza sus archivos según una convención compartida —el Filesystem Hierarchy Standard (FHS)— que permite a cualquier administrador orientarse en cualquier servidor sin importar quién lo instaló.",
       "points": [
-        "<strong>Patrón canónico</strong>: ECS con Alibaba Cloud Linux → hardening baseline → CloudMonitor agent + Logtail → users por SSH key + sudoers → cron/systemd timers → journalctl + rsyslog → backup con snapshots.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>/etc</strong>: archivos de configuración del sistema y de los servicios instalados — casi todo lo que se «administra» vive aquí.",
+        "<strong>/var</strong>: datos que cambian con el tiempo — logs (<code>/var/log</code>), colas de correo, cachés de paquetes.",
+        "<strong>/home</strong>: directorios personales de los usuarios; <code>/root</code> es el directorio personal del superusuario, separado por convención.",
+        "<strong>/proc</strong> y <strong>/sys</strong>: sistemas de archivos virtuales que exponen el estado del kernel y los procesos en tiempo real — no son archivos en disco, se generan al leerlos.",
+        "<strong>/tmp</strong>: almacenamiento temporal que suele limpiarse en cada reinicio; nunca debe usarse para datos que necesiten persistir.",
+        "<strong>/bin, /sbin, /usr</strong>: binarios ejecutables del sistema y de administración; en distribuciones modernas <code>/bin</code> suele ser un enlace simbólico dentro de <code>/usr</code>.",
+        "<strong>Puntos de montaje adicionales</strong>: un disco de datos separado (p.ej. un disco de datos de ECS) se monta típicamente bajo <code>/data</code> o similar, y esa asociación se declara en <code>/etc/fstab</code> para que sobreviva a un reinicio."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Linux Server Management (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta dónde buscar la configuración de un servicio, la respuesta casi siempre empieza en <code>/etc</code>; si pregunta dónde buscar la causa de un fallo, la respuesta empieza en <code>/var/log</code> o en <code>journalctl</code>." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Usuarios, grupos y permisos",
+      "title_en": "User Management and File Permissions",
+      "intro": "El modelo de permisos de Linux es simple en su forma pero exige precisión: tres tipos de sujeto (propietario, grupo, otros) y tres tipos de permiso (lectura, escritura, ejecución) determinan casi todo el control de acceso a nivel de sistema operativo.",
       "points": [
-        "<strong>systemd</strong> <em>(systemd)</em>: Sistema de init y gestión de servicios.",
-        "<strong>journalctl</strong> <em>(journalctl)</em>: Logs estructurados de systemd.",
-        "<strong>cron/timer</strong> <em>(cron/systemd timer)</em>: Jobs programados.",
-        "<strong>sudoers</strong> <em>(sudoers)</em>: Escalamiento controlado de privilegios.",
-        "<strong>SSH key</strong> <em>(SSH Key)</em>: Autenticación sin contraseña.",
-        "<strong>firewall</strong> <em>(iptables/nftables)</em>: Firewall a nivel de host.",
-        "<strong>MAC</strong> <em>(SELinux/AppArmor)</em>: Mandatory Access Control.",
-        "<strong>Alibaba Cloud Linux</strong> <em>(Alibaba Cloud Linux)</em>: Distro optimizada gratuita."
+        "<strong>/etc/passwd, /etc/shadow, /etc/group</strong>: los tres archivos que definen usuarios, contraseñas cifradas y grupos del sistema; nunca deben editarse a mano sin las herramientas adecuadas (<code>useradd</code>, <code>usermod</code>, <code>passwd</code>).",
+        "<strong>Notación de permisos</strong>: cada archivo tiene permisos de lectura(4)/escritura(2)/ejecución(1) para propietario, grupo y otros, expresables en octal (<code>chmod 640 archivo</code>) o simbólico (<code>chmod u+x,g-w archivo</code>).",
+        "<strong>umask</strong>: máscara que resta permisos por defecto a los archivos y directorios recién creados — un umask mal configurado puede dejar archivos nuevos legibles por «otros» sin que nadie lo note.",
+        "<strong>sudo y sudoers</strong>: en vez de compartir la contraseña de root, cada administrador usa su propio usuario y ejecuta comandos puntuales con <code>sudo</code>; el archivo <code>/etc/sudoers</code> (editado siempre con <code>visudo</code> para validar la sintaxis) define quién puede ejecutar qué.",
+        "<strong>Autenticación por llave SSH</strong>: en vez de contraseña, el cliente demuestra posesión de una llave privada cuya pública está en <code>~/.ssh/authorized_keys</code> del servidor — más resistente a ataques de fuerza bruta y la práctica estándar en producción.",
+        "<strong>Deshabilitar login directo de root por SSH</strong>: la práctica recomendada es acceder con un usuario nombrado que use sudo, dejando trazabilidad de quién hizo qué — un login compartido como root pierde esa auditoría."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "sudo no reemplaza la separación de identidades: cada administrador conserva su propio usuario y su propia llave SSH, y sudoers registra qué puede hacer cada uno — esto es lo que hace posible auditar acciones individuales en <code>/var/log/secure</code> o similar." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Gestión de almacenamiento con LVM",
+      "title_en": "Logical Volume Management (LVM)",
+      "intro": "Particionar un disco de forma fija es frágil: si una partición se queda sin espacio, redimensionarla en caliente sin LVM es arriesgado o imposible. LVM añade una capa de abstracción que resuelve justamente ese problema.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Physical Volume (PV)</strong>: un disco completo o una partición que se incorpora al control de LVM mediante <code>pvcreate</code>.",
+        "<strong>Volume Group (VG)</strong>: agrupa uno o más PV en un único pool de almacenamiento del que se reparte espacio — permite combinar varios discos como si fueran uno solo.",
+        "<strong>Logical Volume (LV)</strong>: una partición virtual creada dentro del VG, la unidad que finalmente se formatea con un sistema de archivos (ext4, XFS) y se monta.",
+        "<strong>Redimensionar en caliente</strong>: si un LV se queda corto, <code>lvextend</code> amplía el volumen lógico usando espacio libre del VG, y luego <code>resize2fs</code> (ext4) o <code>xfs_growfs</code> (XFS) expande el sistema de archivos para aprovechar ese espacio nuevo — sin desmontar ni reiniciar.",
+        "<strong>Snapshots</strong>: LVM puede crear una instantánea de un volumen en un punto en el tiempo, útil para respaldos consistentes de una base de datos sin detener el servicio.",
+        "<strong>Costo de la flexibilidad</strong>: LVM añade una capa de indirección que complica ligeramente la recuperación ante un desastre de disco (se necesita reconstruir PV/VG/LV, no solo restaurar un archivo) — un trade-off deliberado a cambio de poder crecer sin downtime."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "El orden siempre es PV → VG → LV. Si el enunciado describe «ampliar una partición sin desmontarla mientras el servidor sigue en producción», la respuesta es LVM (<code>lvextend</code> + <code>resize2fs</code>/<code>xfs_growfs</code>), no reparticionar el disco desde cero." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Procesos, servicios y tareas programadas",
+      "title_en": "Processes, systemd and Scheduled Tasks",
+      "intro": "systemd es hoy el sistema de init de facto en la mayoría de distribuciones de servidor: además de arrancar el sistema, supervisa continuamente los servicios y decide cuándo reiniciarlos.",
       "points": [
-        "<strong>HA</strong>: SSH keys exclusivamente (deshabilitar password)",
-        "<strong>HA</strong>: Hardening baseline (CIS)",
-        "<strong>Seguridad</strong>: SSH keys exclusivamente (deshabilitar password)",
-        "<strong>Buenas prácticas</strong>: fail2ban o SG restrictivo",
-        "<strong>Buenas prácticas</strong>: Actualizaciones automáticas de security",
-        "<strong>Buenas prácticas</strong>: Logs a SLS con Logtail"
+        "<strong>Unit files</strong>: cada servicio gestionado por systemd se describe en un archivo unit (p.ej. <code>nginx.service</code>) que define cómo arrancarlo, detenerlo y si debe reiniciarse automáticamente ante un fallo.",
+        "<strong>systemctl</strong>: comando central para gestionar servicios — <code>start</code>/<code>stop</code>/<code>restart</code> para el estado actual, <code>enable</code>/<code>disable</code> para que arranquen (o no) junto con el sistema.",
+        "<strong>journalctl</strong>: consulta los logs binarios estructurados que systemd recopila de cada servicio, con filtros por unidad, prioridad y rango de tiempo — reemplaza en gran medida a revisar archivos de texto sueltos en <code>/var/log</code>.",
+        "<strong>cron</strong>: el planificador clásico basado en <code>crontab</code>, sigue siendo habitual para tareas simples con horario fijo (backups nocturnos, rotación de archivos).",
+        "<strong>systemd timers</strong>: alternativa moderna a cron, con la ventaja de integrarse con journalctl (logs centralizados de la ejecución) y de poder depender de otros units — preferible en sistemas ya administrados con systemd.",
+        "<strong>Reinicio automático (Restart=on-failure)</strong>: un unit bien configurado se reinicia solo tras un fallo, lo cual reduce incidentes nocturnos pero no reemplaza investigar la causa raíz del fallo repetido."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "systemd no reemplaza a cron por completo — conviven. systemd gestiona servicios de larga duración (daemons); cron/systemd timers gestionan tareas puntuales que corren y terminan según un horario." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Redes básicas y firewall local",
+      "title_en": "Basic Networking and Host Firewall",
+      "intro": "El Security Group de Alibaba Cloud filtra tráfico antes de que llegue a la instancia, pero un administrador Linux también necesita saber diagnosticar y restringir el tráfico dentro del propio sistema operativo.",
       "points": [
-        "<strong>Antipattern</strong>: Password auth habilitado",
-        "<strong>Antipattern</strong>: Root SSH permitido",
-        "<strong>Antipattern</strong>: Sin fail2ban ni SG restrictivo en 22",
-        "<strong>Antipattern</strong>: Sin backups",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Diagnóstico de interfaces</strong>: <code>ip addr</code> muestra las interfaces y direcciones IP asignadas; ha reemplazado en gran medida al histórico <code>ifconfig</code>.",
+        "<strong>Resolución de nombres</strong>: <code>/etc/hosts</code> resuelve nombres localmente sin depender de DNS; <code>/etc/resolv.conf</code> define qué servidores DNS consulta el sistema.",
+        "<strong>firewalld / nftables</strong>: firewall a nivel de host — complementa al Security Group, no lo sustituye; incluso con un Security Group bien configurado, tener también el firewall local reducido a lo estrictamente necesario es defensa en profundidad.",
+        "<strong>Puertos en escucha</strong>: <code>ss -tulnp</code> (sucesor de <code>netstat</code>) muestra qué proceso escucha en cada puerto — el primer comando para verificar si un servicio realmente está expuesto como se espera.",
+        "<strong>SSH como superficie crítica</strong>: por convención escucha en el puerto 22; cambiarlo a un puerto no estándar no sustituye una autenticación fuerte, pero sí reduce el ruido de escaneos automatizados masivos contra el puerto por defecto."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Cuando el enunciado describe tráfico bloqueado inesperadamente, revisa en orden: Security Group (capa de red de Alibaba Cloud) → firewall local (firewalld/nftables) → el propio servicio (¿está escuchando en la interfaz correcta?)." }
+    },
+    {
+      "title_es": "7 · Monitoreo, logs y comandos de operación diaria",
+      "title_en": "Monitoring, Logging and Daily Operations",
+      "intro": "La operación día a día de un servidor Linux gira en torno a un puñado de comandos que responden siempre las mismas preguntas: ¿qué está corriendo?, ¿qué está consumiendo recursos?, ¿qué pasó y cuándo?",
+      "points": [
+        "<strong>Procesos</strong>: <code>ps aux</code> lista procesos en un momento dado; <code>top</code>/<code>htop</code> los muestra en tiempo real ordenados por consumo de CPU o memoria.",
+        "<strong>Disco</strong>: <code>df -h</code> muestra el espacio libre por sistema de archivos montado; <code>du -sh</code> mide cuánto ocupa un directorio específico — el primer paso cuando un servicio falla por falta de espacio.",
+        "<strong>Memoria</strong>: <code>free -h</code> muestra memoria usada, libre y en caché; Linux usa agresivamente la memoria libre como caché de disco, así que «memoria libre baja» no siempre indica un problema real.",
+        "<strong>rsyslog</strong>: el daemon de logging tradicional que centraliza mensajes del sistema y de aplicaciones en <code>/var/log</code>, y puede reenviarlos a un servidor de logs remoto.",
+        "<strong>Agente de CloudMonitor y Logtail</strong>: en ECS, el agente de CloudMonitor reporta métricas de sistema (CPU, memoria, disco, red) a la consola de Alibaba Cloud, y Logtail recolecta logs de aplicación hacia Log Service (SLS) — evitan depender de conectarse por SSH a cada servidor para saber si está sano.",
+        "<strong>Cloud Assistant</strong>: permite ejecutar comandos remotos en instancias ECS sin abrir una sesión SSH interactiva — útil para automatizar tareas puntuales en muchas instancias a la vez."
+      ],
+      "keypoint": { "label": "Concepto clave", "text": "«Memoria disponible baja» en <code>free -h</code> casi nunca es una alarma real por sí sola — hay que mirar la columna <em>available</em>, que descuenta la caché reclamable, antes de concluir que el servidor está bajo presión de memoria." }
+    },
+    {
+      "title_es": "8 · Hardening de seguridad y estrategia de examen",
+      "title_en": "Security Hardening and Exam Strategy",
+      "intro": "El último módulo reúne las prácticas de endurecimiento mínimo que se esperan antes de considerar un servidor Linux listo para producción, y cómo suele evaluarlas el examen.",
+      "points": [
+        "<strong>Deshabilitar autenticación por contraseña en SSH</strong>: forzar exclusivamente autenticación por llave (<code>PasswordAuthentication no</code> en <code>sshd_config</code>) elimina el riesgo de fuerza bruta contra contraseñas débiles.",
+        "<strong>Deshabilitar login directo de root</strong>: <code>PermitRootLogin no</code>, obligando a entrar con un usuario nombrado y escalar con sudo cuando haga falta.",
+        "<strong>Actualizaciones de seguridad</strong>: aplicar parches del sistema operativo de forma regular; un servidor sin parchear es la causa más común de compromiso por vulnerabilidades ya conocidas y públicas.",
+        "<strong>SELinux</strong>: control de acceso obligatorio (MAC) que restringe qué puede hacer un proceso incluso si los permisos Unix tradicionales lo permitirían — añade una capa adicional, no sustituye a los permisos de archivo.",
+        "<strong>Superficie mínima</strong>: desinstalar o deshabilitar servicios que no se usan, y restringir el Security Group + firewall local a los puertos estrictamente necesarios.",
+        "<strong>Estrategia de examen</strong>: ante un escenario que describe un servidor recién creado, la opción correcta casi siempre combina llaves SSH + sudo (no root directo) + firewall restrictivo + actualizaciones al día — descarta cualquier opción que sacrifique una de esas cuatro por comodidad."
+      ],
+      "keypoint": { "label": "Estrategia final", "text": "Si dos opciones del examen parecen igualmente válidas, elige la que no requiere compartir una credencial (contraseña de root, llave compartida) entre varias personas — la trazabilidad individual es un criterio recurrente en las preguntas de seguridad." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Web/app servers"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Bases de datos self-managed"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Build agents"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Bastion hosts"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Batch workers"
-    }
+    { "title": "Escenario 1", "text": "Bastion host de acceso restringido, solo con autenticación por llave SSH y usuarios nombrados con sudo" },
+    { "title": "Escenario 2", "text": "Servidor de aplicación web con Nginx gestionado como unit de systemd, con reinicio automático ante fallo" },
+    { "title": "Escenario 3", "text": "Partición de datos que se queda sin espacio en producción, ampliada con LVM sin detener el servicio" },
+    { "title": "Escenario 4", "text": "Nodo de build/CI que ejecuta jobs pesados fuera de horario pico mediante cron o systemd timers" },
+    { "title": "Escenario 5", "text": "Servidor de base de datos self-managed con snapshots de LVM como respaldo consistente previo a una migración" },
+    { "title": "Escenario 6", "text": "Flota de instancias administradas de forma remota vía Cloud Assistant, con métricas centralizadas en CloudMonitor" }
   ],
   "mistakes": [
-    "Password auth habilitado",
-    "Root SSH permitido",
-    "Sin fail2ban ni SG restrictivo en 22",
-    "Sin backups"
+    "Permitir autenticación SSH por contraseña en vez de exigir exclusivamente llave pública",
+    "Permitir login SSH directo como root en vez de un usuario nombrado con sudo",
+    "Particionar el disco de forma fija sin LVM, sin margen para crecer sin downtime",
+    "No revisar journalctl ni los logs del servicio tras un reinicio automático, asumiendo que 'ya volvió a funcionar'",
+    "Dejar servicios innecesarios instalados y expuestos, ampliando la superficie de ataque sin necesidad",
+    "Confiar solo en el Security Group de Alibaba Cloud y no configurar ningún firewall local como capa adicional"
   ],
   "cli": [
-    {
-      "cmd": "systemctl status nginx",
-      "desc": "Estado servicio"
-    },
-    {
-      "cmd": "journalctl -u nginx -f",
-      "desc": "Logs live"
-    },
-    {
-      "cmd": "aliyun ecs InvokeCommand",
-      "desc": "Cloud Assistant"
-    }
+    { "cmd": "useradd -m -s /bin/bash deploy && passwd -l deploy", "desc": "Crear un usuario con directorio personal y bloquear su contraseña (acceso solo por llave SSH)" },
+    { "cmd": "chmod 640 config.yml && chown root:appgroup config.yml", "desc": "Restringir permisos y propietario de un archivo de configuración sensible" },
+    { "cmd": "systemctl enable --now nginx", "desc": "Habilitar un servicio para que arranque con el sistema e iniciarlo de inmediato" },
+    { "cmd": "journalctl -u nginx --since \"1 hour ago\"", "desc": "Revisar los logs de un servicio específico en la última hora" },
+    { "cmd": "lvextend -L +10G /dev/vg_data/lv_app && resize2fs /dev/vg_data/lv_app", "desc": "Ampliar un volumen lógico y su sistema de archivos ext4 en caliente" },
+    { "cmd": "ss -tulnp | grep :22", "desc": "Verificar qué proceso está escuchando en el puerto 22" }
   ],
   "glossary": [
-    {
-      "en": "systemd",
-      "es": "systemd",
-      "def": "Sistema de init y gestión de servicios."
-    },
-    {
-      "en": "journalctl",
-      "es": "journalctl",
-      "def": "Logs estructurados de systemd."
-    },
-    {
-      "en": "cron/systemd timer",
-      "es": "cron/timer",
-      "def": "Jobs programados."
-    },
-    {
-      "en": "sudoers",
-      "es": "sudoers",
-      "def": "Escalamiento controlado de privilegios."
-    },
-    {
-      "en": "SSH Key",
-      "es": "SSH key",
-      "def": "Autenticación sin contraseña."
-    },
-    {
-      "en": "iptables/nftables",
-      "es": "firewall",
-      "def": "Firewall a nivel de host."
-    },
-    {
-      "en": "SELinux/AppArmor",
-      "es": "MAC",
-      "def": "Mandatory Access Control."
-    },
-    {
-      "en": "Alibaba Cloud Linux",
-      "es": "Alibaba Cloud Linux",
-      "def": "Distro optimizada gratuita."
-    },
-    {
-      "en": "Cloud Assistant",
-      "es": "Cloud Assistant",
-      "def": "Ejecución remota de comandos sin SSH."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "FHS (Filesystem Hierarchy Standard)", "es": "Jerarquía estándar de directorios", "def": "Convención que define dónde vive cada tipo de archivo (/etc, /var, /home, /proc...)." },
+    { "en": "systemd", "es": "systemd", "def": "Sistema de init moderno que arranca y supervisa servicios (units), reiniciándolos ante fallos." },
+    { "en": "Unit file", "es": "Unit de systemd", "def": "Archivo que describe cómo systemd debe iniciar, detener y supervisar un servicio." },
+    { "en": "journalctl", "es": "journalctl", "def": "Herramienta para consultar los logs binarios estructurados recopilados por systemd." },
+    { "en": "cron", "es": "cron", "def": "Daemon clásico para ejecutar tareas en horarios fijos definidos en un crontab." },
+    { "en": "systemd timer", "es": "Temporizador de systemd", "def": "Alternativa moderna a cron, integrada con journalctl y con dependencias entre units." },
+    { "en": "sudo", "es": "sudo", "def": "Permite ejecutar comandos puntuales con privilegios elevados sin loguearse como root." },
+    { "en": "sudoers", "es": "sudoers", "def": "Archivo (editado con visudo) que define quién puede usar sudo y sobre qué comandos." },
+    { "en": "SSH key pair", "es": "Par de llaves SSH", "def": "Autenticación por criptografía asimétrica; más resistente a fuerza bruta que una contraseña." },
+    { "en": "LVM (Logical Volume Manager)", "es": "LVM", "def": "Capa de abstracción entre discos físicos y sistemas de archivos que permite redimensionar sin downtime." },
+    { "en": "Physical Volume (PV)", "es": "Volumen físico", "def": "Disco o partición incorporado al control de LVM." },
+    { "en": "Volume Group (VG)", "es": "Grupo de volúmenes", "def": "Pool de espacio agregado a partir de uno o más volúmenes físicos." },
+    { "en": "Logical Volume (LV)", "es": "Volumen lógico", "def": "Partición virtual dentro de un VG; se formatea y monta como un disco normal." },
+    { "en": "umask", "es": "umask", "def": "Máscara que determina los permisos por defecto de archivos y directorios nuevos." },
+    { "en": "SELinux", "es": "SELinux", "def": "Control de acceso obligatorio (MAC) que restringe procesos más allá de los permisos Unix tradicionales." },
+    { "en": "firewalld / nftables", "es": "Firewall local", "def": "Firewall a nivel de host, complementario al Security Group de Alibaba Cloud, no sustituto." },
+    { "en": "Alibaba Cloud Linux", "es": "Alibaba Cloud Linux", "def": "Distribución gratuita optimizada para ECS, compatible con el ecosistema RHEL/CentOS." },
+    { "en": "Cloud Assistant", "es": "Cloud Assistant", "def": "Servicio para ejecutar comandos remotos en instancias ECS sin necesidad de sesión SSH." },
+    { "en": "Logtail", "es": "Logtail", "def": "Agente que recolecta logs de aplicación y sistema hacia Log Service (SLS)." },
+    { "en": "ext4 / XFS", "es": "ext4 / XFS", "def": "Sistemas de archivos Linux más comunes en servidores; XFS suele preferirse para archivos grandes y alta concurrencia." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Linux Server Management?",
-      "options": [
-        "Fundamentos de administración Linux para ECS: usuarios/permisos, systemd, cron, networking, storage, logs, monitoring, hardening. Alibaba Cloud Linux (basado en RHEL/CentOS) es la distro optimizada + ",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Fundamentos de administración Linux para ECS: usuarios/permisos, systemd, cron, networking, storage, logs, monitoring, hardening. Alibaba Cloud Linux (basado en RHEL/CentOS) es la distro optimizada + gratuita."
-    },
-    {
-      "q": "¿Qué es <strong>systemd</strong> (systemd) en Linux Server Management?",
-      "options": [
-        "Sistema de init y gestión de servicios.",
-        "Logs estructurados de systemd.",
-        "Jobs programados.",
-        "Escalamiento controlado de privilegios."
-      ],
-      "answer": 0,
-      "explain": "systemd (systemd): Sistema de init y gestión de servicios."
-    },
-    {
-      "q": "¿Qué es <strong>journalctl</strong> (journalctl) en Linux Server Management?",
-      "options": [
-        "Logs estructurados de systemd.",
-        "Sistema de init y gestión de servicios.",
-        "Jobs programados.",
-        "Escalamiento controlado de privilegios."
-      ],
-      "answer": 0,
-      "explain": "journalctl (journalctl): Logs estructurados de systemd."
-    },
-    {
-      "q": "¿Qué es <strong>cron/systemd timer</strong> (cron/timer) en Linux Server Management?",
-      "options": [
-        "Jobs programados.",
-        "Sistema de init y gestión de servicios.",
-        "Logs estructurados de systemd.",
-        "Escalamiento controlado de privilegios."
-      ],
-      "answer": 0,
-      "explain": "cron/systemd timer (cron/timer): Jobs programados."
-    },
-    {
-      "q": "¿Qué es <strong>sudoers</strong> (sudoers) en Linux Server Management?",
-      "options": [
-        "Escalamiento controlado de privilegios.",
-        "Sistema de init y gestión de servicios.",
-        "Logs estructurados de systemd.",
-        "Jobs programados."
-      ],
-      "answer": 0,
-      "explain": "sudoers (sudoers): Escalamiento controlado de privilegios."
-    },
-    {
-      "q": "¿Qué es <strong>SSH Key</strong> (SSH key) en Linux Server Management?",
-      "options": [
-        "Autenticación sin contraseña.",
-        "Sistema de init y gestión de servicios.",
-        "Logs estructurados de systemd.",
-        "Jobs programados."
-      ],
-      "answer": 0,
-      "explain": "SSH Key (SSH key): Autenticación sin contraseña."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Linux Server Management, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Linux Server Management en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Linux Server Management, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Linux Server Management es la elección típica:",
-      "options": [
-        "Web/app servers",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Web/app servers."
-    }
+    { "q": "¿Qué es, estrictamente, 'Linux'?", "options": ["Una distribución completa con interfaz gráfica", "El kernel del sistema operativo; una distribución añade gestor de paquetes y utilidades encima", "Un gestor de paquetes específico", "Un servicio exclusivo de Alibaba Cloud"], "answer": 1, "explain": "Linux es el kernel; distribuciones como Alibaba Cloud Linux, CentOS o Ubuntu construyen un sistema operativo completo alrededor de ese kernel." },
+    { "q": "Un archivo de configuración de un servicio recién instalado, ¿dónde se busca primero según la jerarquía estándar de directorios (FHS)?", "options": ["/tmp", "/etc", "/proc", "/home"], "answer": 1, "explain": "/etc concentra los archivos de configuración del sistema y de los servicios instalados." },
+    { "q": "¿Por qué se recomienda deshabilitar el login SSH directo como root en un servidor de producción?", "options": ["Porque root no puede usar SSH técnicamente", "Porque perder ese acceso compartido reduce la trazabilidad de quién ejecutó cada acción; se prefiere un usuario nombrado con sudo", "Porque ralentiza las conexiones SSH", "Porque SELinux lo bloquea automáticamente"], "answer": 1, "explain": "Con un usuario nombrado + sudo queda registro de qué persona ejecutó cada comando, algo que se pierde con una sesión root compartida." },
+    { "q": "En LVM, ¿cuál es el orden correcto de las capas, de la más básica a la más abstracta?", "options": ["Logical Volume → Volume Group → Physical Volume", "Physical Volume → Volume Group → Logical Volume", "Volume Group → Physical Volume → Logical Volume", "No existe un orden fijo"], "answer": 1, "explain": "Un PV se agrupa en un VG, y dentro del VG se crean uno o más LV, que son los que finalmente se formatean y montan." },
+    { "q": "Un volumen lógico se queda sin espacio en un servidor que no puede detenerse. ¿Qué combinación de comandos resuelve el problema sin downtime?", "options": ["fdisk seguido de un reinicio", "lvextend seguido de resize2fs (o xfs_growfs)", "Formatear el disco de nuevo desde cero", "mkfs.ext4 directamente sobre el volumen en uso"], "answer": 1, "explain": "lvextend amplía el volumen lógico usando espacio libre del VG, y resize2fs/xfs_growfs expande el sistema de archivos para aprovecharlo, todo en caliente." },
+    { "q": "¿Cuál es la diferencia principal entre systemd y cron en la gestión de tareas?", "options": ["Son exactamente lo mismo", "systemd gestiona servicios de larga duración (daemons); cron/systemd timers gestionan tareas puntuales por horario", "cron reemplaza completamente a systemd en distribuciones modernas", "systemd solo funciona en Alibaba Cloud Linux"], "answer": 1, "explain": "systemd supervisa procesos que deben seguir corriendo; cron y los systemd timers disparan tareas que se ejecutan y terminan según un horario." },
+    { "q": "¿Qué herramienta permite consultar los logs estructurados que systemd recopila de un servicio específico?", "options": ["crontab -l", "journalctl -u <servicio>", "lvextend", "useradd"], "answer": 1, "explain": "journalctl consulta el log binario de systemd, filtrable por unidad, prioridad y rango de tiempo." },
+    { "q": "¿Qué controla el umask en un sistema Linux?", "options": ["El tamaño máximo de un archivo", "Los permisos por defecto de archivos y directorios recién creados", "El tiempo de expiración de una contraseña", "La cantidad de usuarios simultáneos"], "answer": 1, "explain": "umask resta permisos a los valores por defecto al crear un archivo o directorio nuevo." },
+    { "q": "Tráfico esperado no llega a un servicio corriendo en un ECS. ¿En qué orden conviene revisar la causa?", "options": ["Solo el firewall local, el Security Group nunca influye", "Security Group de Alibaba Cloud → firewall local (firewalld/nftables) → si el servicio escucha en la interfaz correcta", "Solo reiniciar el servidor sin diagnóstico", "Solo revisar journalctl, el resto no aplica"], "answer": 1, "explain": "El Security Group filtra antes de llegar al host; luego el firewall local; y finalmente hay que confirmar que el proceso realmente escucha en la interfaz/puerto esperado." },
+    { "q": "¿Qué distingue a SELinux de los permisos Unix tradicionales (chmod/chown)?", "options": ["SELinux es exactamente lo mismo que chmod", "SELinux es un control de acceso obligatorio (MAC) que restringe procesos incluso si los permisos Unix lo permitirían", "SELinux reemplaza por completo la necesidad de permisos de archivo", "SELinux solo aplica a usuarios root"], "answer": 1, "explain": "SELinux añade una capa de restricción adicional (MAC) sobre las políticas discrecionales tradicionales de Unix (DAC)." },
+    { "q": "¿Qué es Alibaba Cloud Linux?", "options": ["Un fork de Ubuntu con licencia de pago", "Una distribución gratuita compatible con el ecosistema RHEL/CentOS, optimizada para ECS", "Un servicio de contenedores", "Una herramienta de monitoreo"], "answer": 1, "explain": "Alibaba Cloud Linux es la distribución por defecto recomendada para ECS: gratuita, compatible con RPM/yum-dnf y optimizada para el hardware/red de Alibaba Cloud." },
+    { "q": "¿Qué permite hacer Cloud Assistant en una instancia ECS?", "options": ["Ejecutar comandos remotos sin necesidad de abrir una sesión SSH interactiva", "Redimensionar discos automáticamente", "Sustituir por completo a systemd", "Cifrar el tráfico HTTP del servidor"], "answer": 0, "explain": "Cloud Assistant permite correr comandos en una o varias instancias desde la consola/API sin depender de SSH interactivo." },
+    { "q": "En un servidor recién creado, ¿qué combinación de prácticas de hardening es la que casi siempre elige el examen ante escenarios ambiguos?", "options": ["Contraseña compartida de root + firewall abierto por simplicidad", "Llaves SSH + sudo con usuarios nombrados + firewall restrictivo + parches al día", "Deshabilitar todos los logs para ahorrar espacio", "Usar únicamente el Security Group y ningún firewall local"], "answer": 1, "explain": "Esa combinación reduce el riesgo de credenciales compartidas, minimiza superficie expuesta y mantiene trazabilidad — el patrón que el examen premia." },
+    { "q": "El comando 'free -h' muestra poca memoria 'libre' pero el sistema funciona con normalidad. ¿Cuál es la explicación más probable?", "options": ["El servidor está a punto de fallar por falta de memoria", "Linux usa memoria libre como caché de disco reclamable; hay que mirar la columna 'available', no 'free'", "free -h siempre reporta un error en Alibaba Cloud Linux", "Es necesario reiniciar el servidor de inmediato"], "answer": 1, "explain": "La memoria usada como caché de página se libera automáticamente si una aplicación la necesita; por eso 'available' es el dato relevante, no 'free'." }
   ],
-  "exam_focus": "systemd, SSH hardening, Cloud Assistant vs SSH, Alibaba Cloud Linux.",
+  "exam_focus": "El examen suele evaluar: (a) ubicar archivos y logs según la jerarquía FHS, (b) el flujo correcto de LVM (PV/VG/LV) para redimensionar almacenamiento sin downtime, (c) systemd/journalctl frente a cron para gestión de servicios y tareas, (d) buenas prácticas de acceso (llaves SSH, sudo, sin root directo), (e) cómo se complementan Security Group y firewall local.",
   "official_intro": "This course includes the following four parts of knowledges. The first part will have a brief introduction of the linux history and various distributions, also will show the filesystem structure of Linux system. The second part will give us introdution about a core part of Linux-user management, which is related to file privilege management. The third part is about the LVM tool usage, which is the most common used volume management tool on Linux platform. The last part will be a overall introdution about all kinds of commands which is very common used on Linux platform in daily operation and also monitoring. After finishing this course, trainees will have a junior ability to administrate Linux operation system.",
   "recommended_for": "Junior Linux System Administrator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_linux",

@@ -2,424 +2,179 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-hbase-tuning",
   "title_en": "HBase Performance Tuning",
-  "title_es": "HBase Performance Tuning",
+  "title_es": "Optimización de Rendimiento en HBase",
+  "title_es_html": "Optimización de Rendimiento en <em>HBase</em>",
   "duration_es": "39 minutos",
   "level_es": "Intermedio",
   "category_es": "Bases de Datos",
   "subcategory_es": "Base de Datos NoSQL",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-hbase-tuning",
-  "lead": "Guía completa en español para el curso «HBase Performance Tuning» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB for HBase / Lindorm. ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con latencia ms. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre optimización de rendimiento en HBase, dando por sentados los conceptos básicos del modelo de datos. Aquí el foco es distinto: por qué una tabla HBase mal diseñada se degrada bajo carga real, y qué palancas concretas —diseño de row key, splitting de regiones, tuning de compactación, caché y bloom filters— existen para evitarlo antes de que el problema llegue a producción.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB for HBase / Lindorm</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Region Server, Region, Column Family, Compaction, Bloom Filter.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB for HBase / Lindorm y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Diagnosticar</strong> un hotspot de escritura y aplicar la técnica de diseño de row key correcta para evitarlo.",
+    "<strong>Explicar</strong> el rol de las regiones y el pre-splitting al crear una tabla de alto volumen.",
+    "<strong>Diferenciar</strong> compactación menor (minor) de compactación mayor (major) y su impacto en el rendimiento de lectura.",
+    "<strong>Aplicar</strong> BlockCache y Bloom Filters para reducir I/O en operaciones de lectura.",
+    "<strong>Diseñar</strong> el esquema de column families pensando en el patrón de acceso, no solo en la organización lógica de los datos.",
+    "<strong>Diagnosticar</strong> series temporales y evitar los antipatrones específicos de ese patrón de carga.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre tuning de HBase."
   ],
-  "architecture": "Ingesta streaming (Kafka/DataHub) → Lindorm wide-column para write-heavy → índices secundarios para consultas → TSDB para métricas → search engine para full-text. Backup automático a OSS.",
+  "architecture": "Una tabla HBase de producción se divide en regiones, cada una servida por un Region Server distinto; el pre-splitting define los puntos de corte iniciales para distribuir la carga desde el primer momento, en vez de esperar a que HBase divida automáticamente una única región sobrecargada. Cada Region Server mantiene un MemStore en memoria por column family, que se vuelca a disco como un HFile inmutable al alcanzar cierto umbral; un proceso de compactación en segundo plano fusiona HFiles pequeños (minor compaction) y periódicamente reescribe todos los HFiles de una región eliminando tombstones y versiones obsoletas (major compaction). Las lecturas se aceleran con BlockCache (bloques de datos recientes en memoria) y con Bloom Filters, que permiten descartar sin leer disco los HFiles que no contienen un row key determinado.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ApsaraDB for HBase / Lindorm",
-      "title_en": "Introduction to ApsaraDB for HBase / Lindorm",
-      "intro": "ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con latencia ms. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Diseño de row key: la decisión más importante",
+      "title_en": "Row Key Design: The Most Important Decision",
+      "intro": "Antes de tocar cualquier parámetro de configuración, el mayor determinante del rendimiento de una tabla HBase es cómo se diseñó el row key — un mal diseño no se compensa después con más hardware.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ApsaraDB for HBase / Lindorm se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema del hotspot</strong>: si el row key crece de forma monótona (timestamp puro, ID autoincremental), todas las escrituras recientes caen en la misma región activa, sobrecargando un solo Region Server mientras el resto del clúster permanece ocioso.",
+        "<strong>Salting (prefijo aleatorio)</strong>: anteponer un prefijo aleatorio o calculado (p.ej. hash módulo N) al row key distribuye las escrituras entre múltiples regiones, a costa de complicar las lecturas por rango secuencial.",
+        "<strong>Hashing</strong>: usar un hash del identificador natural como row key (o como prefijo) distribuye la carga de forma determinística, permitiendo recalcular el row key exacto para un Get puntual sin necesidad de un Scan.",
+        "<strong>Row key invertido</strong>: para IDs que crecen de forma monótona pero donde se necesita mantener cierto orden útil, invertir los dígitos (p.ej. un timestamp invertido) redistribuye la carga sin perder la capacidad de acotar rangos razonables.",
+        "<strong>Diseño orientado a la consulta</strong>: el row key debe elegirse pensando en cómo se va a leer, no solo en cómo se va a escribir — combinar varios atributos en el row key (p.ej. <code>tenantId_fecha_id</code>) permite acotar Scans eficientes por tenant o por rango de fecha."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ApsaraDB for HBase / Lindorm es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen más frecuente en tuning de HBase es identificar el antipatrón de row key monotónico y elegir la técnica de mitigación correcta: salting, hashing o inversión, según si se necesita preservar orden."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ApsaraDB for HBase / Lindorm no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Regiones y pre-splitting",
+      "title_en": "Regions and Pre-Splitting",
+      "intro": "Una tabla nueva en HBase empieza como una sola región; sin planificación, toda la carga inicial converge en un único Region Server hasta que HBase decide dividirla automáticamente, generando un cuello de botella evitable.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta streaming (Kafka/DataHub) → Lindorm wide-column para write-heavy → índices secundarios para consultas → TSDB para métricas → search engine para full-text. Backup automático a OSS.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ApsaraDB for HBase / Lindorm (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Region Server</strong> <em>(Region Server)</em>: Nodo que sirve regiones (particiones).",
-        "<strong>Region</strong> <em>(Region)</em>: Rango de row keys asignado a un server.",
-        "<strong>Column Family</strong> <em>(Column Family)</em>: Grupo de columnas con storage/config común.",
-        "<strong>Compaction</strong> <em>(Compaction)</em>: Merge de HFiles para optimizar lecturas.",
-        "<strong>Bloom filter</strong> <em>(Bloom Filter)</em>: Reduce IO al buscar keys inexistentes.",
-        "<strong>TTL</strong> <em>(TTL)</em>: Expiración automática de celdas.",
-        "<strong>Lindorm TSDB</strong> <em>(Lindorm TSDB)</em>: Motor optimizado para métricas time-series.",
-        "<strong>Lindorm Search</strong> <em>(Lindorm Search)</em>: Índice invertido tipo Elasticsearch integrado."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Auto-splitting</strong>: por defecto, HBase divide una región automáticamente cuando su tamaño supera un umbral configurado — funciona, pero reactivamente, después de que el problema de concentración ya ocurrió.",
+        "<strong>Pre-splitting</strong>: definir de antemano los puntos de corte de las regiones al crear la tabla, distribuyendo la carga desde la primera escritura — la práctica recomendada cuando se conoce aproximadamente la distribución del row key y el volumen esperado.",
+        "<strong>Número de regiones por Region Server</strong>: demasiadas regiones pequeñas por servidor generan overhead de gestión; muy pocas regiones grandes concentran la carga — el balance correcto depende del tamaño del clúster y del volumen de datos.",
+        "<strong>Region Server como unidad de paralelismo</strong>: el número efectivo de Region Servers activos para una tabla determina el paralelismo real de lectura/escritura; una tabla con pocas regiones no puede aprovechar un clúster grande aunque tenga muchos nodos disponibles.",
+        "<strong>Rebalanceo</strong>: HBase puede mover regiones entre Region Servers para equilibrar la carga del clúster; forzar un rebalanceo manual es útil tras añadir nodos nuevos o después de un pico de crecimiento desigual."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el escenario describe 'una tabla nueva que recibirá alto volumen desde el día uno', la respuesta esperada es pre-splitting con puntos de corte calculados de antemano, no confiar en el auto-splitting reactivo."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Compactación: minor vs. major",
+      "title_en": "Compaction: Minor vs. Major",
+      "intro": "Cada escritura en HBase eventualmente se convierte en un archivo inmutable en disco; sin un proceso que los consolide, el número de archivos crecería indefinidamente y degradaría cada lectura.",
       "points": [
-        "<strong>HA</strong>: Diseño de row key evitando hotspots (salting/hashing)",
-        "<strong>Seguridad</strong>: Compactación programada fuera de horas pico",
-        "<strong>Costo</strong>: Diseño de row key evitando hotspots (salting/hashing)",
-        "<strong>Buenas prácticas</strong>: Column families pequeñas (≤3)",
-        "<strong>Buenas prácticas</strong>: TTL por CF para retention",
-        "<strong>Buenas prácticas</strong>: Lindorm en vez de HBase self-managed para PB"
+        "<strong>MemStore y flush</strong>: las escrituras se acumulan primero en memoria (MemStore, uno por column family y región); al alcanzar un umbral de tamaño, se vuelcan a disco como un nuevo HFile inmutable.",
+        "<strong>Minor compaction</strong>: fusiona un subconjunto de HFiles pequeños en uno más grande, ejecutándose de forma relativamente frecuente y con impacto moderado en el rendimiento durante su ejecución.",
+        "<strong>Major compaction</strong>: reescribe todos los HFiles de una región en uno solo, eliminando físicamente tombstones y versiones que exceden el máximo configurado — más costosa en I/O, por lo que se recomienda programarla fuera de horas pico.",
+        "<strong>Efecto de posponer la compactación</strong>: sin compactación suficiente, una lectura debe consultar cada vez más HFiles individuales para reconstruir el valor más reciente de una celda, degradando la latencia de lectura progresivamente.",
+        "<strong>Programación</strong>: en cargas con patrón de tráfico predecible, es común deshabilitar la major compaction automática y programarla explícitamente en una ventana de mantenimiento nocturna en vez de dejar que ocurra en el momento que HBase decida."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "Minor compaction = mantenimiento frecuente y liviano. Major compaction = limpieza profunda, costosa, mejor programada fuera de horas pico. Ambas existen para evitar que el número de HFiles degrade cada lectura."
+      }
+    },
+    {
+      "title_es": "4 · Acelerar lecturas: BlockCache y Bloom Filters",
+      "title_en": "Speeding Up Reads: BlockCache and Bloom Filters",
+      "intro": "Una vez resuelto el diseño de escritura, la siguiente palanca de rendimiento está del lado de la lectura: evitar tocar disco cuando sea posible, y evitar leer archivos que no contienen el dato buscado.",
+      "points": [
+        "<strong>BlockCache</strong>: caché en memoria de bloques de datos leídos recientemente de los HFiles; una lectura repetida sobre datos 'calientes' se resuelve desde memoria en vez de I/O de disco, siendo la primera palanca de tuning de lectura a revisar.",
+        "<strong>Bloom Filter</strong>: estructura probabilística asociada a cada HFile que permite responder con certeza 'este row key definitivamente NO está aquí', evitando leer del disco archivos irrelevantes durante un Get.",
+        "<strong>Cuándo Bloom Filter ayuda más</strong>: en tablas con muchos HFiles y lecturas puntuales (Get) frecuentes por row key — el beneficio es menor en cargas dominadas por Scans de rango amplio.",
+        "<strong>Short-circuit reads</strong>: cuando el Region Server y el bloque de datos en HDFS residen en el mismo nodo físico, se puede evitar el overhead de red leyendo directamente del disco local.",
+        "<strong>Balance memoria BlockCache vs. MemStore</strong>: ambos compiten por la memoria disponible del Region Server; una carga dominada por escritura necesita más memoria para MemStore, mientras que una carga dominada por lectura se beneficia de más memoria para BlockCache."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe lecturas repetidas de los mismos datos recientes → BlockCache. Si describe muchos Get puntuales fallando contra HFiles que no contienen el dato → Bloom Filter."
+      }
+    },
+    {
+      "title_es": "5 · Diseño de esquema para series temporales",
+      "title_en": "Schema Design for Time-Series Data",
+      "intro": "Las cargas de series temporales (IoT, métricas, logs) son uno de los casos de uso más comunes de HBase, y también uno de los que con más frecuencia cae en el antipatrón de row key monotónico visto en el módulo 1.",
+      "points": [
+        "<strong>El antipatrón clásico</strong>: usar el timestamp del evento directamente como row key concentra toda la escritura reciente en la última región activa — exactamente el hotspot que el diseño de row key busca evitar.",
+        "<strong>Patrón recomendado</strong>: combinar un identificador de entidad (dispositivo, sensor, usuario) como prefijo del row key con el timestamp como sufijo (p.ej. <code>dispositivoId_timestampInvertido</code>), distribuyendo la escritura entre regiones mientras se mantiene la capacidad de leer la serie temporal de una entidad específica en orden.",
+        "<strong>Column families reducidas</strong>: para series temporales de alta cardinalidad de columnas (múltiples métricas por evento), agrupar métricas relacionadas en la misma column family y mantener el número total de families bajo, ya que cada una genera su propio MemStore y sus propios HFiles.",
+        "<strong>TTL agresivo</strong>: las métricas recientes suelen perder valor operativo rápidamente; configurar TTL por column family permite que HBase limpie automáticamente datos antiguos sin un job de borrado manual.",
+        "<strong>Alternativa especializada</strong>: para cargas de series temporales muy grandes, un motor especializado como Lindorm TSDB (evolución de HBase en Alibaba Cloud) puede ofrecer mejor compresión y funciones nativas de agregación temporal que modelar todo a mano sobre HBase puro."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Series temporales es el caso de uso donde el antipatrón de row key monotónico aparece con más frecuencia en el examen — reconocer el patrón 'timestamp como row key' como la causa raíz del hotspot es la respuesta esperada."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Los distractores del examen sobre tuning de HBase suelen presentar un síntoma de rendimiento y esperar que identifiques la causa raíz correcta entre varias plausibles.",
       "points": [
-        "<strong>Antipattern</strong>: Row keys monotónicos → hotspots en un region server",
-        "<strong>Antipattern</strong>: Demasiadas column families",
-        "<strong>Antipattern</strong>: Sin compaction policy → degrada lecturas",
-        "<strong>Antipattern</strong>: Scan gigante en producción sin límite",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: row keys monotónicos (timestamp o ID autoincremental) sin salting, hashing ni inversión, generando hotspots de escritura.",
+        "<strong>Antipatrón</strong>: demasiadas column families en una tabla de alto volumen, multiplicando el número de MemStores y HFiles a gestionar.",
+        "<strong>Antipatrón</strong>: dejar la major compaction en su horario automático por defecto sobre una carga con horas pico bien definidas, en vez de programarla en una ventana de mantenimiento.",
+        "<strong>Antipatrón</strong>: ejecutar Scans sin acotar rango ni usar filtros sobre tablas de gran volumen, ignorando el beneficio de un row key bien diseñado.",
+        "<strong>Antipatrón</strong>: no aplicar pre-splitting en una tabla que se sabe de antemano recibirá alto volumen desde el lanzamiento.",
+        "<strong>Regla de oro</strong>: ante un síntoma de rendimiento descrito en el examen, sospecha primero del diseño de row key, luego de la estrategia de compactación, y solo después de parámetros de caché o hardware."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "El orden de diagnóstico que espera el examen es: (1) ¿el row key está bien diseñado? (2) ¿las regiones están bien distribuidas? (3) ¿la compactación está gestionada correctamente? (4) ¿el caché de lectura está bien dimensionado? — en ese orden de impacto."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Series temporales (IoT, monitoring, finanzas)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Perfiles de usuario con billones de rows"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Feature store para ML"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Data lake caliente con búsqueda"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Metadata de vídeo/imágenes a escala"
-    }
+    { "title": "Escenario 1", "text": "Tabla de eventos IoT con row key = timestamp puro sufriendo hotspot — rediseño con prefijo de dispositivo + timestamp invertido" },
+    { "title": "Escenario 2", "text": "Tabla nueva que espera alto volumen desde el lanzamiento — pre-splitting con puntos de corte calculados" },
+    { "title": "Escenario 3", "text": "Lecturas puntuales por row key cada vez más lentas tras meses de operación sin mantenimiento — programar major compaction" },
+    { "title": "Escenario 4", "text": "Dashboard que relee constantemente los mismos datos recientes — ajustar tamaño de BlockCache" },
+    { "title": "Escenario 5", "text": "Muchos Get fallando contra row keys inexistentes en HFiles grandes — habilitar Bloom Filter" },
+    { "title": "Escenario 6", "text": "Serie temporal de métricas con vigencia de 30 días — TTL por column family en vez de borrado manual" }
   ],
   "mistakes": [
-    "Row keys monotónicos → hotspots en un region server",
-    "Demasiadas column families",
-    "Sin compaction policy → degrada lecturas",
-    "Scan gigante en producción sin límite"
+    "Usar row keys monotónicos (timestamp/ID autoincremental) sin salting, hashing o inversión",
+    "Crear demasiadas column families, multiplicando MemStores y HFiles a gestionar",
+    "Dejar la major compaction en horario automático sobre cargas con horas pico definidas",
+    "Ejecutar Scans sin acotar rango ni aplicar filtros sobre tablas de gran volumen",
+    "No aplicar pre-splitting en tablas que se sabe recibirán alto volumen desde el lanzamiento",
+    "Ignorar Bloom Filters en tablas con muchos Get puntuales sobre datasets con numerosos HFiles"
   ],
   "cli": [
-    {
-      "cmd": "hbase shell → scan 'tabla'",
-      "desc": "Consultar tabla"
-    },
-    {
-      "cmd": "aliyun hbase DescribeInstances",
-      "desc": "Listar instancias"
-    }
+    { "cmd": "create 'eventos', {NAME => 'm', VERSIONS => 1, TTL => 2592000}, SPLITS => ['10','20','30','40']", "desc": "Crear tabla con pre-splitting y TTL de 30 días" },
+    { "cmd": "alter 'eventos', {NAME => 'm', BLOOMFILTER => 'ROW'}", "desc": "Habilitar Bloom Filter por row key en una column family" },
+    { "cmd": "major_compact 'eventos'", "desc": "Forzar una compactación mayor manual (fuera de horas pico)" },
+    { "cmd": "balancer", "desc": "Forzar un rebalanceo manual de regiones entre Region Servers" },
+    { "cmd": "status 'detailed'", "desc": "Ver el estado detallado del clúster: regiones, carga y Region Servers" }
   ],
   "glossary": [
-    {
-      "en": "Region Server",
-      "es": "Region Server",
-      "def": "Nodo que sirve regiones (particiones)."
-    },
-    {
-      "en": "Region",
-      "es": "Region",
-      "def": "Rango de row keys asignado a un server."
-    },
-    {
-      "en": "Column Family",
-      "es": "Column Family",
-      "def": "Grupo de columnas con storage/config común."
-    },
-    {
-      "en": "Compaction",
-      "es": "Compaction",
-      "def": "Merge de HFiles para optimizar lecturas."
-    },
-    {
-      "en": "Bloom Filter",
-      "es": "Bloom filter",
-      "def": "Reduce IO al buscar keys inexistentes."
-    },
-    {
-      "en": "TTL",
-      "es": "TTL",
-      "def": "Expiración automática de celdas."
-    },
-    {
-      "en": "Lindorm TSDB",
-      "es": "Lindorm TSDB",
-      "def": "Motor optimizado para métricas time-series."
-    },
-    {
-      "en": "Lindorm Search",
-      "es": "Lindorm Search",
-      "def": "Índice invertido tipo Elasticsearch integrado."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Hotspot", "es": "Punto caliente", "def": "Concentración de carga de lectura/escritura en un solo Region Server, típicamente por un row key mal diseñado." },
+    { "en": "Salting", "es": "Salting", "def": "Técnica de anteponer un prefijo aleatorio al row key para distribuir la escritura entre regiones." },
+    { "en": "Hashing (Row Key)", "es": "Hashing de row key", "def": "Uso de un hash del identificador natural como row key o prefijo, para distribución determinística de la carga." },
+    { "en": "Pre-Splitting", "es": "Pre-división", "def": "Definir de antemano los puntos de corte de las regiones al crear una tabla, en vez de esperar el auto-splitting reactivo." },
+    { "en": "Region", "es": "Región", "def": "Partición de una tabla servida por un Region Server específico; unidad de paralelismo de lectura/escritura." },
+    { "en": "MemStore", "es": "MemStore", "def": "Buffer en memoria por column family y región donde se acumulan las escrituras antes de volcarse a disco." },
+    { "en": "HFile", "es": "HFile", "def": "Archivo inmutable en disco generado al volcar (flush) el contenido de un MemStore." },
+    { "en": "Minor Compaction", "es": "Compactación menor", "def": "Fusión frecuente y liviana de un subconjunto de HFiles pequeños en uno más grande." },
+    { "en": "Major Compaction", "es": "Compactación mayor", "def": "Reescritura completa de todos los HFiles de una región, eliminando tombstones y versiones obsoletas." },
+    { "en": "BlockCache", "es": "Caché de bloques", "def": "Caché en memoria de bloques de datos leídos recientemente, para evitar I/O de disco en lecturas repetidas." },
+    { "en": "Bloom Filter", "es": "Filtro de Bloom", "def": "Estructura probabilística que descarta HFiles que definitivamente no contienen un row key buscado, sin leer disco." },
+    { "en": "Short-Circuit Read", "es": "Lectura de circuito corto", "def": "Lectura directa del disco local cuando el Region Server y el bloque de datos residen en el mismo nodo físico." },
+    { "en": "Rebalancer", "es": "Rebalanceador", "def": "Mecanismo que redistribuye regiones entre Region Servers para equilibrar la carga del clúster." },
+    { "en": "TTL (Time To Live)", "es": "TTL", "def": "Tiempo tras el cual una celda expira automáticamente, limpiada en la siguiente compactación." },
+    { "en": "Lindorm TSDB", "es": "Lindorm TSDB", "def": "Motor especializado en series temporales, evolución de HBase en Alibaba Cloud, alternativa a modelarlo a mano." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ApsaraDB for HBase / Lindorm?",
-      "options": [
-        "ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con laten",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ApsaraDB for HBase es la versión gestionada de HBase; Lindorm es la evolución multi-modelo (wide-column, series temporales, search, file) hasta 7× más rápida que HBase community. Almacena PB con latencia ms."
-    },
-    {
-      "q": "¿Qué es <strong>Region Server</strong> (Region Server) en ApsaraDB for HBase / Lindorm?",
-      "options": [
-        "Nodo que sirve regiones (particiones).",
-        "Rango de row keys asignado a un server.",
-        "Grupo de columnas con storage/config común.",
-        "Merge de HFiles para optimizar lecturas."
-      ],
-      "answer": 0,
-      "explain": "Region Server (Region Server): Nodo que sirve regiones (particiones)."
-    },
-    {
-      "q": "¿Qué es <strong>Region</strong> (Region) en ApsaraDB for HBase / Lindorm?",
-      "options": [
-        "Rango de row keys asignado a un server.",
-        "Nodo que sirve regiones (particiones).",
-        "Grupo de columnas con storage/config común.",
-        "Merge de HFiles para optimizar lecturas."
-      ],
-      "answer": 0,
-      "explain": "Region (Region): Rango de row keys asignado a un server."
-    },
-    {
-      "q": "¿Qué es <strong>Column Family</strong> (Column Family) en ApsaraDB for HBase / Lindorm?",
-      "options": [
-        "Grupo de columnas con storage/config común.",
-        "Nodo que sirve regiones (particiones).",
-        "Rango de row keys asignado a un server.",
-        "Merge de HFiles para optimizar lecturas."
-      ],
-      "answer": 0,
-      "explain": "Column Family (Column Family): Grupo de columnas con storage/config común."
-    },
-    {
-      "q": "¿Qué es <strong>Compaction</strong> (Compaction) en ApsaraDB for HBase / Lindorm?",
-      "options": [
-        "Merge de HFiles para optimizar lecturas.",
-        "Nodo que sirve regiones (particiones).",
-        "Rango de row keys asignado a un server.",
-        "Grupo de columnas con storage/config común."
-      ],
-      "answer": 0,
-      "explain": "Compaction (Compaction): Merge de HFiles para optimizar lecturas."
-    },
-    {
-      "q": "¿Qué es <strong>Bloom Filter</strong> (Bloom filter) en ApsaraDB for HBase / Lindorm?",
-      "options": [
-        "Reduce IO al buscar keys inexistentes.",
-        "Nodo que sirve regiones (particiones).",
-        "Rango de row keys asignado a un server.",
-        "Grupo de columnas con storage/config común."
-      ],
-      "answer": 0,
-      "explain": "Bloom Filter (Bloom filter): Reduce IO al buscar keys inexistentes."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ApsaraDB for HBase / Lindorm, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ApsaraDB for HBase / Lindorm en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB for HBase / Lindorm, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ApsaraDB for HBase / Lindorm es la elección típica:",
-      "options": [
-        "Series temporales (IoT, monitoring, finanzas)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Series temporales (IoT, monitoring, finanzas)."
-    }
+    { "q": "¿Cuál es la causa más común de un hotspot de escritura en una tabla HBase?", "options": ["Usar demasiadas column families", "Un row key monotónico (timestamp o ID autoincremental) sin ninguna técnica de distribución", "Tener demasiadas regiones pre-divididas", "Habilitar Bloom Filters"], "answer": 1, "explain": "Un row key que crece de forma secuencial concentra las escrituras recientes en una sola región activa, sobrecargando un Region Server." },
+    { "q": "¿Qué técnica de diseño de row key permite recalcular determinísticamente el row key exacto para un Get puntual, a diferencia del salting con prefijo aleatorio?", "options": ["Timestamp puro", "Hashing del identificador natural", "Aumentar el número de column families", "Deshabilitar la compactación"], "answer": 1, "explain": "El hashing distribuye la carga de forma determinística: se puede recalcular el mismo hash para localizar el row key exacto sin necesidad de un Scan." },
+    { "q": "¿Qué ventaja ofrece el pre-splitting frente a confiar en el auto-splitting por defecto de HBase?", "options": ["Ninguna, ambos son equivalentes", "Distribuye la carga desde la primera escritura, en vez de reaccionar después de que la concentración ya ocurrió", "Elimina la necesidad de diseñar un buen row key", "Aumenta automáticamente el número de column families"], "answer": 1, "explain": "El pre-splitting define los puntos de corte de antemano, evitando el cuello de botella inicial que genera el auto-splitting reactivo." },
+    { "q": "¿Qué diferencia a una compactación 'minor' de una 'major' en HBase?", "options": ["Son exactamente el mismo proceso con nombres distintos", "La minor fusiona un subconjunto de HFiles pequeños con impacto moderado; la major reescribe todos los HFiles de la región eliminando tombstones y versiones obsoletas", "La major es más frecuente y liviana que la minor", "Solo la minor elimina tombstones"], "answer": 1, "explain": "La minor compaction es un mantenimiento frecuente y liviano; la major es una limpieza profunda y costosa, mejor programada fuera de horas pico." },
+    { "q": "¿Por qué se recomienda programar la major compaction en una ventana de mantenimiento en vez de dejarla en su horario automático?", "options": ["Porque la major compaction no consume recursos", "Porque es una operación costosa en I/O que puede degradar el rendimiento si coincide con horas pico de tráfico", "Porque la major compaction elimina datos productivos", "Porque solo puede ejecutarse una vez al año"], "answer": 1, "explain": "Al ser costosa en I/O, ejecutarla fuera de las horas de mayor tráfico evita degradar el rendimiento percibido por los usuarios." },
+    { "q": "¿Qué estructura de datos permite a HBase descartar, sin leer disco, los HFiles que definitivamente no contienen un row key buscado?", "options": ["BlockCache", "Bloom Filter", "MemStore", "Region Server"], "answer": 1, "explain": "El Bloom Filter responde con certeza cuando un row key NO está en un HFile, evitando lecturas de disco innecesarias durante un Get." },
+    { "q": "¿En qué escenario aporta más beneficio el BlockCache?", "options": ["Escrituras masivas de datos nuevos que nunca se vuelven a leer", "Lecturas repetidas sobre datos 'calientes' recientes", "Operaciones de Delete masivas", "Creación de nuevas column families"], "answer": 1, "explain": "El BlockCache resuelve desde memoria las lecturas repetidas de bloques de datos recientes, evitando I/O de disco." },
+    { "q": "¿Cuál es el antipatrón clásico al modelar series temporales en HBase?", "options": ["Combinar un identificador de entidad con el timestamp en el row key", "Usar el timestamp del evento directamente como row key, sin ningún prefijo distribuidor", "Configurar TTL por column family", "Usar Bloom Filters en la tabla"], "answer": 1, "explain": "Usar el timestamp puro como row key concentra la escritura reciente en la última región activa, generando el mismo hotspot que en cualquier otro escenario de row key monotónico." },
+    { "q": "¿Qué mecanismo permite que datos de vigencia limitada (por ejemplo, métricas de 30 días) se eliminen automáticamente sin un job de borrado manual?", "options": ["Bloom Filter", "TTL (Time To Live) configurado por column family", "Pre-splitting", "BlockCache"], "answer": 1, "explain": "El TTL, configurado a nivel de column family, expira las celdas automáticamente y las limpia en la siguiente compactación." },
+    { "q": "¿Qué compiten entre sí por la memoria disponible de un Region Server, requiriendo balancear su asignación según el tipo de carga?", "options": ["BlockCache y MemStore", "Bloom Filter y TTL", "Pre-splitting y rebalanceo", "HFile y tombstone"], "answer": 0, "explain": "Una carga dominada por escritura necesita más memoria para MemStore; una carga dominada por lectura se beneficia de más memoria para BlockCache." },
+    { "q": "Según la estrategia de diagnóstico de este curso, ¿qué se debe revisar primero ante un síntoma de rendimiento reportado en una tabla HBase?", "options": ["Los parámetros de caché de lectura", "El diseño del row key", "El hardware del clúster", "El número de versiones configuradas"], "answer": 1, "explain": "El orden de diagnóstico recomendado empieza por el diseño del row key, antes de revisar distribución de regiones, compactación o caché." },
+    { "q": "¿Qué alternativa especializada se menciona para cargas de series temporales muy grandes en el ecosistema de Alibaba Cloud, en vez de modelarlas a mano sobre HBase puro?", "options": ["AnalyticDB for PostgreSQL", "Lindorm TSDB", "Data Lake Analytics", "Object Storage Service (OSS)"], "answer": 1, "explain": "Lindorm TSDB es la evolución de HBase especializada en series temporales, con mejor compresión y funciones nativas de agregación." }
   ],
-  "exam_focus": "Diseño row key, compaction, Lindorm vs HBase community, casos time-series.",
+  "exam_focus": "El examen evalúa: (a) diagnóstico y mitigación de hotspots de row key (salting, hashing, inversión), (b) pre-splitting vs. auto-splitting, (c) minor vs. major compaction y su programación, (d) BlockCache vs. Bloom Filter según el patrón de lectura, (e) el antipatrón de timestamp como row key en series temporales.",
   "official_intro": "This course introduced HBase schema design considerations. You will learn how to design row keys and column families, how to configure caching and memory to improve your performance and finally you will learn how to deal with time series and sequential data, region split and versions.",
   "recommended_for": "This training is for experienced DBAs or big data engineers or architect",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-hbase-tuning",

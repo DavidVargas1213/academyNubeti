@@ -2,423 +2,171 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-analycase",
   "title_en": "Alibaba Cloud Analysis Architecture and Case Studies",
-  "title_es": "Alibaba Cloud Analysis Architecture y Case Studies",
+  "title_es": "Arquitectura de Análisis de Datos de Alibaba Cloud y Casos de Estudio",
+  "title_es_html": "Arquitectura de <em>Análisis de Datos</em> de Alibaba Cloud",
   "duration_es": "60 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_analycase",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Analysis Architecture and Case Studies» de Alibaba Cloud Academy. Cubre en profundidad Arquitectura Alibaba Cloud. Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Alibaba Cloud Analysis Architecture and Case Studies», el curso que enseña a combinar los tres motores de datos a gran escala de Alibaba Cloud —MaxCompute, E-MapReduce (EMR) y Table Store— en una arquitectura de analítica coherente. No es un curso de un solo producto: es un curso de cómo encajan las piezas cuando el volumen de datos supera lo que una base relacional puede procesar de forma razonable.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Arquitectura Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Well-Architected, Multi-region, Multi-AZ, Elastic, Fault Tolerance.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Arquitectura Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una carga analítica (OLAP) necesita una arquitectura distinta de una carga transaccional (OLTP).",
+    "<strong>Diferenciar</strong> MaxCompute, E-MapReduce y Table Store por su patrón de acceso, latencia y modelo de costo.",
+    "<strong>Diseñar</strong> un pipeline de ingesta → almacenamiento → procesamiento → visualización usando estos tres servicios.",
+    "<strong>Elegir</strong> el motor correcto según si el requisito es SQL batch masivo, un ecosistema Hadoop/Spark existente, o ingesta NoSQL de alta concurrencia.",
+    "<strong>Reconocer</strong> patrones de caso de estudio reales: recomendación de e-commerce, dashboards casi en tiempo real, agregación IoT.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre arquitectura de análisis."
   ],
-  "architecture": "Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+  "architecture": "Los datos operacionales (RDS/PolarDB, logs de aplicación, eventos de sensores) se ingieren por dos rutas: escritura de alta concurrencia hacia Table Store (NoSQL wide-column) para lo que necesita servirse en milisegundos, y exportación periódica hacia MaxCompute para analítica batch masiva. DataWorks orquesta los pipelines ETL entre ambos y programa los jobs SQL/MapReduce de MaxCompute. Cuando el equipo ya opera un stack Hadoop/Spark/Flink, E-MapReduce sustituye o complementa a MaxCompute, leyendo y escribiendo directamente sobre OSS para separar cómputo de almacenamiento. Los resultados agregados se sirven a Quick BI o DataV para dashboards, y a Table Store de nuevo si la aplicación necesita consultarlos en producción.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Arquitectura Alibaba Cloud",
-      "title_en": "Introduction to Arquitectura Alibaba Cloud",
-      "intro": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué el análisis de datos necesita su propia arquitectura",
+      "title_en": "Why Analytics Needs a Different Architecture",
+      "intro": "Antes de nombrar productos, el curso parte de un problema: una base transaccional (RDS/PolarDB) está optimizada para muchas transacciones pequeñas con garantías ACID, no para escanear miles de millones de filas en una sola consulta. Ese desajuste es la razón de ser de toda arquitectura de análisis.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Arquitectura Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>OLTP vs OLAP</strong>: OLTP prioriza baja latencia por transacción individual; OLAP prioriza rendimiento agregado sobre grandes volúmenes, aceptando latencia de segundos o minutos por consulta.",
+        "Ejecutar consultas analíticas pesadas directamente sobre la base de producción compite por recursos con el tráfico transaccional real y puede degradar la experiencia del usuario final.",
+        "La solución estándar es separar: los datos se replican o exportan desde la capa operacional hacia una capa analítica dedicada, diseñada para escaneos masivos en paralelo.",
+        "Alibaba Cloud ofrece tres motores con roles distintos para esa capa analítica: <strong>MaxCompute</strong> (SQL batch gestionado a escala de petabytes), <strong>E-MapReduce</strong> (Hadoop/Spark/Flink gestionado) y <strong>Table Store</strong> (NoSQL de alta concurrencia para servir resultados o ingerir eventos)."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Arquitectura Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "La pregunta de examen no es «¿qué hace cada servicio?» sino «¿por qué no basta con la base transaccional?». La respuesta siempre gira en torno a aislar la carga analítica de la carga operacional." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Arquitectura Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · MaxCompute: el motor de análisis batch",
+      "title_en": "MaxCompute: The Batch Analytics Engine",
+      "intro": "MaxCompute (antes conocido como ODPS) es el data warehouse totalmente gestionado de Alibaba Cloud: se escribe SQL, se define el particionado de las tablas, y la plataforma se encarga de todo el cómputo distribuido detrás.",
       "points": [
-        "<strong>Patrón canónico</strong>: Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Sin servidores que administrar</strong>: no hay clúster que dimensionar ni parchear — se envían jobs SQL (o MapReduce/Spark/Graph) y MaxCompute reparte el trabajo entre miles de nodos internamente.",
+        "<strong>Project</strong> es la unidad de aislamiento, cuota y facturación; dentro de un proyecto viven las tablas, casi siempre particionadas por fecha o región para acotar el volumen escaneado por consulta.",
+        "<strong>Modelo de costo</strong>: se paga por separado almacenamiento (económico, por GB/mes) y cómputo (por job bajo demanda o por un plan de cuota de Compute Units reservado).",
+        "<strong>DataWorks</strong> es la capa de orquestación: define los pipelines ETL, programa ejecuciones periódicas y aplica reglas de calidad de datos antes de publicar una tabla.",
+        "MaxCompute no es apto para consultas puntuales de baja latencia tipo «dame el pedido número X» — cada job tiene overhead de arranque de segundos, pensado para lotes, no para servir una API."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Arquitectura Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «análisis histórico sobre petabytes de logs con SQL, sin gestionar infraestructura», la respuesta casi siempre es MaxCompute." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · E-MapReduce: Hadoop y Spark gestionados",
+      "title_en": "E-MapReduce: Managed Hadoop and Spark",
+      "intro": "EMR existe para equipos que ya tienen inversión en el ecosistema Hadoop/Spark/Hive/Flink y quieren mover esos jobs a la nube sin reescribirlos desde cero en un motor propietario.",
       "points": [
-        "<strong>Well-Architected</strong> <em>(Well-Architected)</em>: 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "<strong>Multi-región</strong> <em>(Multi-region)</em>: Despliegue en varias regiones para DR/latencia.",
-        "<strong>Multi-AZ</strong> <em>(Multi-AZ)</em>: Múltiples zonas dentro de región.",
-        "<strong>Elástico</strong> <em>(Elastic)</em>: Auto-scale según demanda.",
-        "<strong>Tolerancia a fallos</strong> <em>(Fault Tolerance)</em>: Diseño que sobrevive a fallos parciales.",
-        "<strong>Blast radius</strong> <em>(Blast Radius)</em>: Alcance de una falla.",
-        "<strong>Chaos engineering</strong> <em>(Chaos Engineering)</em>: Introducir fallos controlados para validar resiliencia.",
-        "<strong>Landing zone</strong> <em>(Landing Zone)</em>: Baseline de cuenta lista para cargas."
+        "EMR aprovisiona clústeres reales de Hadoop/Spark/Hive/Flink/Presto sobre instancias ECS, gestionando la creación, el escalado y el apagado del clúster.",
+        "<strong>Clústeres efímeros</strong> (creados para un job puntual y destruidos al terminar) reducen costo frente a <strong>clústeres de larga duración</strong> (para exploración interactiva o consumo continuo de streaming con Flink).",
+        "Separar cómputo de almacenamiento —usando OSS en vez de HDFS local como sistema de archivos del clúster— permite apagar el clúster completo sin perder datos y escalar cómputo independientemente del volumen almacenado.",
+        "EMR es la opción cuando el requisito menciona explícitamente Spark, Hive, Flink o migración de un clúster Hadoop on-premise; MaxCompute es la opción cuando el requisito es «SQL a escala sin gestionar nada»."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "EMR = «trae tu propio ecosistema Hadoop, Alibaba Cloud gestiona la infraestructura». MaxCompute = «olvídate de la infraestructura, incluso del clúster»." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Table Store: NoSQL de alta concurrencia",
+      "title_en": "Table Store: Wide-Column NoSQL for High Concurrency",
+      "intro": "Tablestore cubre el extremo opuesto del espectro de latencia: mientras MaxCompute y EMR procesan lotes en minutos, Tablestore sirve lecturas y escrituras individuales en milisegundos a gran escala.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "Es una base de datos NoSQL de tipo <strong>wide-column</strong> (comparable a Bigtable/HBase), con escalado automático por partición según el volumen de datos y el tráfico, sin re-shardeo manual.",
+        "Casos de uso típicos: eventos de sensores IoT, feeds de actividad de usuario, catálogos de productos, contadores en tiempo real — datos semiestructurados a los que se accede por clave primaria compuesta.",
+        "No reemplaza a MaxCompute para analítica agregada compleja (joins masivos, agregaciones sobre históricos completos); Tablestore atiende la carga operacional de alta concurrencia, y MaxCompute/EMR analizan exports periódicos de esos mismos datos.",
+        "Al integrarse con Tunnel Service, Tablestore puede alimentar streams de cambios hacia otros sistemas (analítica en near-real-time) sin necesidad de exports batch completos."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado menciona «millones de escrituras por segundo con lectura de baja latencia», la respuesta es Tablestore, no MaxCompute." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Arquitectura de referencia: uniendo las piezas",
+      "title_en": "Reference Architecture: Tying It Together",
+      "intro": "El examen suele presentar un diagrama incompleto y pedir identificar qué componente falta. Este módulo recorre el patrón canónico de principio a fin.",
       "points": [
-        "<strong>HA</strong>: Multi-AZ default, multi-región para tier-1",
-        "<strong>HA</strong>: Chaos engineering en pre-prod",
-        "<strong>Buenas prácticas</strong>: Elasticidad automática (HPA + Cluster Autoscaler + Auto Scaling ECS)",
-        "<strong>Buenas prácticas</strong>: Blast radius pequeño (celdas independientes)",
-        "<strong>Buenas prácticas</strong>: Landing zone estándar antes de cargar"
+        "<strong>Ingesta</strong>: eventos de alta frecuencia entran por Tablestore; datos de sistemas transaccionales (RDS/PolarDB) se exportan periódicamente hacia MaxCompute.",
+        "<strong>Orquestación</strong>: DataWorks programa los pipelines ETL, controla dependencias entre tareas y aplica validaciones de calidad antes de publicar una tabla nueva.",
+        "<strong>Procesamiento</strong>: MaxCompute ejecuta las transformaciones batch (SQL/PyODPS); si el equipo necesita streaming de baja latencia sobre datos en movimiento, EMR con Flink cubre ese hueco.",
+        "<strong>Servir resultados</strong>: los agregados finales se exponen a través de Quick BI o DataV para dashboards, o se vuelcan de regreso a Tablestore/RDS si una aplicación de producción necesita consultarlos.",
+        "<strong>Seguridad</strong>: RAM controla qué usuarios/roles pueden leer o escribir en cada Project de MaxCompute o tabla de Tablestore; nunca se comparten credenciales de cuenta raíz para automatizar pipelines."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Diagrama típico", "text": "Fuentes → (Tablestore | RDS) → DataWorks → MaxCompute/EMR → Quick BI/DataV, con RAM controlando el acceso en cada salto." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "6 · Casos de estudio clásicos",
+      "title_en": "Classic Case Studies",
+      "intro": "El curso ilustra la arquitectura con ejemplos del propio ecosistema Alibaba: recomendación de productos, monitoreo casi en tiempo real y analítica de eventos IoT comparten el mismo esqueleto arquitectónico.",
+      "points": [
+        "<strong>Motor de recomendación de e-commerce</strong>: el historial de clics/compras se agrega en MaxCompute para entrenar features de forma batch; el resultado (afinidades usuario-producto) se sirve desde Tablestore para responder en milisegundos al cargar una página.",
+        "<strong>Dashboard operacional casi en tiempo real</strong>: eventos de aplicación escriben a Tablestore; un job EMR/Flink agrega ventanas de 1-5 minutos y publica métricas a un panel en Quick BI/DataV.",
+        "<strong>Agregación de sensores IoT</strong>: miles de dispositivos escriben lecturas a Tablestore; MaxCompute procesa agregaciones diarias/mensuales para reporting histórico y detección de tendencias.",
+        "<strong>Pico estacional de tráfico (patrón Double 11)</strong>: la separación entre capa operacional (Tablestore, escalado automático) y capa analítica (MaxCompute, batch nocturno) es lo que permite que un pico de tráfico extremo no tumbe el análisis histórico ni viceversa."
+      ],
+      "keypoint": { "label": "Concepto clave", "text": "Todos los casos comparten el mismo patrón: ingesta rápida separada del análisis pesado, unidas por un pipeline ETL orquestado, nunca por consultas analíticas directas contra la base operacional." }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas más difíciles suelen presentar un escenario y pedir el componente correcto entre opciones muy similares en nombre pero distintas en propósito.",
       "points": [
-        "<strong>Antipattern</strong>: Single-AZ en producción tier-1",
-        "<strong>Antipattern</strong>: Sin auto-scale — capacity planning manual",
-        "<strong>Antipattern</strong>: Blast radius global (un servicio caído cae todo)",
-        "<strong>Antipattern</strong>: Sin ejercicios DR",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: ejecutar consultas analíticas pesadas directamente contra RDS/PolarDB de producción en vez de exportar a MaxCompute.",
+        "<strong>Antipatrón</strong>: usar Tablestore para reportes agregados complejos con múltiples joins — no es su punto fuerte, para eso está MaxCompute.",
+        "<strong>Antipatrón</strong>: levantar un clúster EMR de larga duración para un job batch que se ejecuta una vez al día — un clúster efímero o MaxCompute directo es más económico.",
+        "<strong>Antipatrón</strong>: mezclar datos crudos y agregados en la misma tabla de MaxCompute sin particionar por fecha, degradando el rendimiento de cada consulta.",
+        "<strong>Antipatrón</strong>: no versionar los pipelines de DataWorks, dificultando el rollback cuando una transformación introduce un error de datos.",
+        "<strong>Estrategia</strong>: identifica primero el patrón de acceso descrito (latencia de milisegundos vs. batch de minutos) — eso descarta la mitad de las opciones antes de leer los detalles del producto."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante dos servicios con nombres parecidos, pregunta: ¿esto sirve una consulta puntual en milisegundos o procesa un lote completo en minutos? La respuesta correcta casi siempre se deduce de ahí." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "E-commerce con picos estacionales (Double 11 pattern)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "SaaS multi-tenant global"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Fintech con requerimientos compliance"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "IoT + real-time analytics"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Media con content delivery global"
-    }
+    { "title": "Escenario 1", "text": "Recomendación de productos en e-commerce: features batch en MaxCompute, servidas desde Tablestore" },
+    { "title": "Escenario 2", "text": "Dashboard operacional casi en tiempo real con agregaciones de ventana en EMR/Flink" },
+    { "title": "Escenario 3", "text": "Agregación histórica de sensores IoT con reporting mensual en MaxCompute" },
+    { "title": "Escenario 4", "text": "Migración de un clúster Hadoop/Spark on-premise existente hacia EMR" },
+    { "title": "Escenario 5", "text": "Pico de tráfico estacional que exige separar capa operacional de capa analítica" }
   ],
   "mistakes": [
-    "Single-AZ en producción tier-1",
-    "Sin auto-scale — capacity planning manual",
-    "Blast radius global (un servicio caído cae todo)",
-    "Sin ejercicios DR"
+    "Ejecutar analítica pesada directamente sobre la base transaccional de producción",
+    "Usar Tablestore para reportes agregados con múltiples joins en vez de MaxCompute",
+    "Mantener un clúster EMR de larga duración para jobs batch esporádicos",
+    "No particionar las tablas de MaxCompute por fecha, degradando cada consulta",
+    "No versionar los pipelines de DataWorks",
+    "Compartir credenciales de cuenta raíz en vez de RAM roles para automatizar ETL"
   ],
   "cli": [
-    {
-      "cmd": "Consulta Well-Architected Review",
-      "desc": "Framework"
-    },
-    {
-      "cmd": "aliyun sae CreateApplication",
-      "desc": "App SAE"
-    }
+    { "cmd": "aliyun odps DescribeProject --ProjectName mi_proyecto", "desc": "Consultar un proyecto de MaxCompute" },
+    { "cmd": "aliyun emr CreateCluster --ClusterType HADOOP --InstanceType ecs.g6.xlarge", "desc": "Crear un clúster EMR" },
+    { "cmd": "aliyun ots CreateTable --TableName eventos --InstanceName mi-instancia", "desc": "Crear una tabla en Tablestore" },
+    { "cmd": "aliyun dataworks-public CreateDISubscriptionJob", "desc": "Crear un job de sincronización en DataWorks" },
+    { "cmd": "aliyun emr DeleteCluster --ClusterId c-xxxxx", "desc": "Liberar un clúster EMR efímero al terminar el job" }
   ],
   "glossary": [
-    {
-      "en": "Well-Architected",
-      "es": "Well-Architected",
-      "def": "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "en": "Multi-region",
-      "es": "Multi-región",
-      "def": "Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "en": "Multi-AZ",
-      "es": "Multi-AZ",
-      "def": "Múltiples zonas dentro de región."
-    },
-    {
-      "en": "Elastic",
-      "es": "Elástico",
-      "def": "Auto-scale según demanda."
-    },
-    {
-      "en": "Fault Tolerance",
-      "es": "Tolerancia a fallos",
-      "def": "Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "en": "Blast Radius",
-      "es": "Blast radius",
-      "def": "Alcance de una falla."
-    },
-    {
-      "en": "Chaos Engineering",
-      "es": "Chaos engineering",
-      "def": "Introducir fallos controlados para validar resiliencia."
-    },
-    {
-      "en": "Landing Zone",
-      "es": "Landing zone",
-      "def": "Baseline de cuenta lista para cargas."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Data warehouse gestionado de Alibaba Cloud para SQL batch a escala de petabytes, sin infraestructura que administrar." },
+    { "en": "E-MapReduce (EMR)", "es": "E-MapReduce", "def": "Servicio gestionado de clústeres Hadoop/Spark/Hive/Flink sobre ECS." },
+    { "en": "Table Store", "es": "Tablestore", "def": "Base de datos NoSQL wide-column de alta concurrencia y baja latencia con escalado automático." },
+    { "en": "OLTP", "es": "OLTP", "def": "Procesamiento de transacciones en línea: muchas operaciones pequeñas con garantías ACID." },
+    { "en": "OLAP", "es": "OLAP", "def": "Procesamiento analítico en línea: consultas agregadas sobre grandes volúmenes de datos." },
+    { "en": "Project", "es": "Proyecto", "def": "Unidad de aislamiento, cuota y facturación dentro de MaxCompute." },
+    { "en": "Partition", "es": "Partición", "def": "División de una tabla (típicamente por fecha) que acota el volumen escaneado por consulta." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Plataforma de orquestación ETL: programa pipelines, controla dependencias y calidad de datos." },
+    { "en": "Ephemeral cluster", "es": "Clúster efímero", "def": "Clúster EMR creado para un job puntual y destruido al terminar, para minimizar costo." },
+    { "en": "Compute-storage separation", "es": "Separación cómputo-almacenamiento", "def": "Usar OSS en vez de HDFS local como almacenamiento del clúster, permitiendo apagarlo sin perder datos." },
+    { "en": "Wide-column store", "es": "Almacén wide-column", "def": "Modelo NoSQL (tipo Bigtable/HBase) optimizado para escrituras/lecturas de alta concurrencia por clave." },
+    { "en": "Tunnel Service", "es": "Tunnel Service", "def": "Mecanismo de Tablestore para publicar streams de cambios hacia otros sistemas." },
+    { "en": "PyODPS", "es": "PyODPS", "def": "SDK de Python para escribir transformaciones sobre MaxCompute." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de dashboards y visualización self-service de Alibaba Cloud." },
+    { "en": "DataV", "es": "DataV", "def": "Herramienta de visualización de datos orientada a paneles y pantallas grandes." },
+    { "en": "RAM", "es": "RAM", "def": "Resource Access Management: control de identidad y permisos por usuario/rol sobre cada servicio." },
+    { "en": "Batch processing", "es": "Procesamiento por lotes", "def": "Ejecución de un job sobre un conjunto de datos completo, con latencia de minutos u horas, no milisegundos." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Arquitectura Alibaba Cloud?",
-      "options": [
-        "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga."
-    },
-    {
-      "q": "¿Qué es <strong>Well-Architected</strong> (Well-Architected) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Well-Architected (Well-Architected): 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-region</strong> (Multi-región) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Despliegue en varias regiones para DR/latencia.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-region (Multi-región): Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-AZ</strong> (Multi-AZ) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Múltiples zonas dentro de región.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-AZ (Multi-AZ): Múltiples zonas dentro de región."
-    },
-    {
-      "q": "¿Qué es <strong>Elastic</strong> (Elástico) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Auto-scale según demanda.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Elastic (Elástico): Auto-scale según demanda."
-    },
-    {
-      "q": "¿Qué es <strong>Fault Tolerance</strong> (Tolerancia a fallos) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Diseño que sobrevive a fallos parciales.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Fault Tolerance (Tolerancia a fallos): Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Arquitectura Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Arquitectura Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Arquitectura Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Arquitectura Alibaba Cloud es la elección típica:",
-      "options": [
-        "E-commerce con picos estacionales (Double 11 pattern)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: E-commerce con picos estacionales (Double 11 pattern)."
-    }
+    { "q": "¿Por qué no conviene ejecutar consultas analíticas pesadas directamente sobre una base transaccional de producción como RDS?", "options": ["Porque RDS no soporta SQL", "Porque compite por recursos con el tráfico transaccional y puede degradar la experiencia del usuario", "Porque RDS no permite más de una consulta simultánea", "Porque RDS no tiene esquema de tablas"], "answer": 1, "explain": "Separar la carga operacional de la analítica evita que un análisis pesado degrade el rendimiento del sistema transaccional en producción." },
+    { "q": "Un equipo necesita ejecutar SQL sobre petabytes de logs históricos sin administrar ningún clúster. ¿Qué servicio es el más adecuado?", "options": ["Tablestore", "MaxCompute", "RDS", "Security Group"], "answer": 1, "explain": "MaxCompute es un data warehouse totalmente gestionado; el usuario escribe SQL y la plataforma gestiona todo el cómputo distribuido." },
+    { "q": "Un equipo ya tiene jobs Spark y Hive de un clúster on-premise y quiere migrarlos a la nube sin reescribirlos. ¿Qué servicio elegirían?", "options": ["Tablestore", "E-MapReduce", "OSS", "CDN"], "answer": 1, "explain": "EMR ofrece Hadoop/Spark/Hive/Flink gestionados, compatible con jobs existentes de ese ecosistema." },
+    { "q": "¿Qué característica distingue a Tablestore de MaxCompute?", "options": ["Tablestore es más barato en todos los casos", "Tablestore sirve lecturas/escrituras individuales en milisegundos; MaxCompute procesa lotes en minutos", "Tablestore solo funciona con datos estructurados en filas y columnas fijas", "No hay diferencia real entre ambos"], "answer": 1, "explain": "Tablestore es una NoSQL de baja latencia para operaciones puntuales de alta concurrencia; MaxCompute está diseñado para análisis batch masivo." },
+    { "q": "¿Qué es un clúster EMR efímero?", "options": ["Un clúster que nunca se apaga", "Un clúster creado para un job puntual y destruido al terminar, para minimizar costo", "Un clúster que solo puede tener un nodo", "Un clúster exclusivo para Tablestore"], "answer": 1, "explain": "Los clústeres efímeros reducen costo frente a mantener infraestructura corriendo permanentemente para jobs esporádicos." },
+    { "q": "¿Por qué separar cómputo y almacenamiento usando OSS en vez de HDFS local en un clúster EMR?", "options": ["Porque HDFS no existe en la nube", "Porque permite apagar el clúster sin perder datos y escalar cómputo independientemente", "Porque OSS es más rápido que la memoria RAM", "Porque es obligatorio por la certificación"], "answer": 1, "explain": "Separar cómputo de almacenamiento es la práctica estándar para reducir costo y permitir apagar/escalar el clúster libremente." },
+    { "q": "¿Qué rol cumple DataWorks en esta arquitectura?", "options": ["Es el motor de almacenamiento NoSQL", "Orquesta los pipelines ETL, programa ejecuciones y aplica calidad de datos", "Reemplaza a MaxCompute como motor SQL", "Es un balanceador de carga"], "answer": 1, "explain": "DataWorks es la capa de orquestación: define dependencias entre tareas ETL y valida la calidad de los datos antes de publicarlos." },
+    { "q": "Un sistema recibe millones de eventos IoT por segundo y necesita responder consultas puntuales en milisegundos. ¿Qué componente de la arquitectura de análisis de Alibaba Cloud usarían?", "options": ["MaxCompute", "Tablestore", "DataV", "ROS"], "answer": 1, "explain": "Tablestore está diseñado específicamente para ingesta y lectura de alta concurrencia con latencia de milisegundos." },
+    { "q": "En el patrón de recomendación de e-commerce descrito en el curso, ¿dónde se entrenan las features de afinidad usuario-producto?", "options": ["Directamente en Tablestore", "De forma batch en MaxCompute, y luego se sirven desde Tablestore", "En un Security Group", "En DataV"], "answer": 1, "explain": "El procesamiento pesado (batch) ocurre en MaxCompute; el resultado se sirve en producción desde Tablestore por su baja latencia." },
+    { "q": "¿Qué antipatrón describe usar Tablestore para generar un reporte con múltiples joins complejos entre tablas históricas?", "options": ["Es la forma recomendada de usar Tablestore", "Es un antipatrón: Tablestore no está pensado para agregaciones complejas, para eso está MaxCompute", "Tablestore no permite ningún tipo de consulta", "Es obligatorio hacerlo así por seguridad"], "answer": 1, "explain": "Tablestore sirve datos operacionales por clave; el análisis agregado complejo pertenece a MaxCompute/EMR." },
+    { "q": "¿Qué es una 'Partition' (partición) en el contexto de una tabla de MaxCompute?", "options": ["Un tipo de instancia ECS", "Una división de la tabla (típicamente por fecha) que acota el volumen escaneado por consulta", "Un grupo de seguridad de red", "Un tipo de balanceador de carga"], "answer": 1, "explain": "Particionar por fecha u otra dimensión reduce drásticamente el volumen de datos que cada consulta necesita escanear." },
+    { "q": "¿Qué principio de identidad se recomienda para que los pipelines automatizados de DataWorks accedan a MaxCompute y Tablestore?", "options": ["Compartir la contraseña de la cuenta raíz", "Usar RAM roles con permisos mínimos necesarios", "Desactivar la autenticación para simplificar", "No es necesario ningún control de acceso"], "answer": 1, "explain": "RAM (Resource Access Management) permite aplicar el principio de mínimo privilegio también a pipelines automatizados." },
+    { "q": "Durante un pico de tráfico estacional extremo (patrón Double 11), ¿por qué es clave separar la capa operacional de la capa analítica?", "options": ["Porque son el mismo sistema y no hay diferencia", "Para que el pico de tráfico transaccional no afecte el procesamiento analítico batch, y viceversa", "Porque MaxCompute no admite más de un usuario", "Porque Tablestore se apaga automáticamente en picos de tráfico"], "answer": 1, "explain": "Aislar la capa que absorbe el pico (Tablestore, escalado automático) de la capa que analiza históricos (MaxCompute, batch nocturno) evita que ambas cargas se degraden mutuamente." }
   ],
-  "exam_focus": "5 pilares Well-Architected, Multi-AZ vs Multi-Region, Elastic patterns, Double 11 lessons.",
+  "exam_focus": "El examen evalúa: (a) elegir MaxCompute vs. EMR vs. Tablestore según el patrón de acceso descrito, (b) por qué separar carga operacional de analítica, (c) el rol de DataWorks como orquestador, (d) reconocer los patrones de caso de estudio (recomendación, dashboard near-real-time, IoT) y su arquitectura común.",
   "official_intro": "Through this course, you will learn the core services of Alibaba Cloud Analysis Architecture (E-MapReduce, MaxCompute, Table Store). By studying some classic use cases, you can understand how to build an analysis architecture in Alibaba Cloud.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_analycase",

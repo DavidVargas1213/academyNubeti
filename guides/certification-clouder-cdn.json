@@ -2,442 +2,217 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-cdn",
   "title_en": "Use Alibaba Cloud CDN to Accelerate Your Content Globally",
-  "title_es": "Usar Alibaba Cloud CDN to Accelerate Your Content Globally",
+  "title_es": "Acelerar tu Contenido de Forma Global con Alibaba Cloud CDN",
+  "title_es_html": "Acelerar tu Contenido de Forma <em>Global</em> con Alibaba Cloud CDN",
   "duration_es": "37 minutos",
   "level_es": "Principiante",
   "category_es": "Redes y CDN",
   "subcategory_es": "CDN and Acceleration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_cdn",
-  "lead": "Guía completa en español para el curso «Use Alibaba Cloud CDN to Accelerate Your Content Globally» de Alibaba Cloud Academy. Cubre en profundidad Alibaba Cloud CDN. Alibaba CDN opera 3200+ nodos edge globales cacheando contenido cerca del usuario. Reduce latencia, descarga origen, y protege contra ataques básicos. DCDN extiende para contenido dinámico con aceleración TCP y ruteo optimizado. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Use Alibaba Cloud CDN to Accelerate Your Content Globally» de Alibaba Cloud Academy, centrada en Alibaba Cloud CDN: la red de distribución de contenido que acerca tus archivos estáticos y multimedia a los usuarios finales mediante miles de nodos edge. Cubre cómo funciona la resolución DNS/GSLB, la configuración de dominios de aceleración, las reglas de caché, la seguridad de acceso y la operación diaria — con la profundidad conceptual que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Alibaba Cloud CDN</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Edge Node, Origin, TTL, Cache Hit Ratio, Refresh.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Alibaba Cloud CDN y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema de latencia y carga de origen resuelve un CDN y por qué una empresa lo adopta frente a servir todo desde el origen.",
+    "<strong>Configurar</strong> un dominio de aceleración en Alibaba Cloud CDN, incluyendo el origen (OSS, ECS o IP/dominio externo) y el protocolo de retroceso.",
+    "<strong>Diseñar</strong> reglas de caché (TTL, cache-control, manejo de query string) según el tipo de contenido servido.",
+    "<strong>Proteger</strong> un dominio acelerado con HTTPS, protección anti-hotlinking y autenticación remota mediante URL firmada.",
+    "<strong>Distinguir</strong> refresh de preload/prefetch y elegir el mecanismo correcto de invalidación de caché en cada escenario.",
+    "<strong>Interpretar</strong> métricas y logs de CDN (CloudMonitor, real-time logs) para diagnosticar un cache hit ratio bajo o un origen sobrecargado.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre Alibaba Cloud CDN."
   ],
-  "architecture": "Usuario → nodo edge más cercano (GSLB DNS) → si miss, cache regional → origin (OSS o ECS). TLS terminado en edge. Reglas por path/extensión definen TTL. Purge/refresh para invalidación. Real-time logs a SLS para análisis.",
+  "architecture": "Un usuario resuelve el dominio acelerado mediante GSLB (Global Server Load Balancing) DNS, que lo dirige al POP (Point of Presence) más cercano según su ubicación geográfica y la salud de la red en ese momento. Si el nodo edge tiene el objeto en caché (cache hit) lo sirve directamente; si no (cache miss), lo solicita a un nodo de nivel intermedio (mid-tier) y, en última instancia, al origen (bucket OSS, instancia ECS o cualquier IP/dominio con salida a internet), guardando una copia según la regla de TTL antes de responder al usuario. El origen debería aceptar tráfico únicamente desde los rangos de IP de back-to-origin de Alibaba Cloud o validando una cabecera secreta — nunca quedar abierto a todo internet, para forzar que todo el tráfico pase por el CDN. HTTPS se termina en el edge con un certificado propio o gestionado, y opcionalmente se vuelve a cifrar en el tramo hacia el origen si el compliance lo exige.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Alibaba Cloud CDN",
-      "title_en": "Introduction to Alibaba Cloud CDN",
-      "intro": "Alibaba CDN opera 3200+ nodos edge globales cacheando contenido cerca del usuario. Reduce latencia, descarga origen, y protege contra ataques básicos. DCDN extiende para contenido dinámico con aceleración TCP y ruteo optimizado. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué problema resuelve un CDN",
+      "title_en": "Why Content Delivery Matters",
+      "intro": "Antes de tocar la consola hay que entender el problema de fondo: sin CDN, cada usuario en el mundo golpea directamente al servidor de origen, sin importar cuán lejos esté ni cuántas veces se haya pedido el mismo archivo minutos antes.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba CDN opera 3200+ nodos edge globales cacheando contenido cerca del usuario.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Alibaba Cloud CDN se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Latencia geográfica</strong>: un usuario en São Paulo pidiendo un archivo alojado únicamente en Hangzhou sufre decenas o cientos de milisegundos de ida y vuelta antes de recibir el primer byte.",
+        "<strong>Carga de origen</strong>: sin caché intermedia, cada solicitud —incluidas las repetidas del mismo archivo— llega al origen, multiplicando el ancho de banda y el cómputo necesarios allí.",
+        "<strong>Picos de tráfico (flash crowd)</strong>: lanzamientos de producto, promociones o contenido viral generan ráfagas de tráfico que un único origen no puede absorber sin sobreaprovisionar hardware permanentemente.",
+        "<strong>La solución</strong>: distribuir copias del contenido en nodos edge cercanos al usuario, de modo que la mayoría de las solicitudes se resuelvan sin tocar el origen — reduciendo latencia, costo de egress del origen y superficie de ataque directo."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Alibaba Cloud CDN es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Un CDN no reemplaza al origen — lo protege y lo descarga. La métrica que mide ese éxito es el <em>Cache Hit Ratio</em>: cuanto más alto, menos tráfico llega al origen."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Alibaba Cloud CDN no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Cómo enruta el tráfico un CDN",
+      "title_en": "How CDN Routing Works",
+      "intro": "El mecanismo que decide a qué nodo edge llega cada usuario es DNS inteligente, no una IP fija — esto es lo que permite que el mismo dominio resuelva a servidores distintos según quién pregunta.",
       "points": [
-        "<strong>Patrón canónico</strong>: Usuario → nodo edge más cercano (GSLB DNS) → si miss, cache regional → origin (OSS o ECS). TLS terminado en edge. Reglas por path/extensión definen TTL. Purge/refresh para invalidación. Real-time logs a SLS para análisis.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Alibaba Cloud CDN (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Nodo edge</strong> <em>(Edge Node)</em>: Servidor de caché cerca del usuario.",
-        "<strong>Origen</strong> <em>(Origin)</em>: Servidor fuente. Puede ser OSS, ECS, IP o dominio.",
-        "<strong>TTL</strong> <em>(TTL)</em>: Tiempo de vida del objeto en caché.",
-        "<strong>Tasa de acierto</strong> <em>(Cache Hit Ratio)</em>: % de requests servidos desde caché.",
-        "<strong>Refresh</strong> <em>(Refresh)</em>: Invalidación forzada de URLs/directorios.",
-        "<strong>Preload</strong> <em>(Preload)</em>: Empuja contenido al edge antes de que se pida.",
-        "<strong>HTTPS</strong> <em>(HTTPS)</em>: Certificado en edge, opcional back-to-origin HTTPS.",
-        "<strong>Anti-hotlinking</strong> <em>(Anti-hotlinking)</em>: Bloquea referers/dominios no autorizados."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>CNAME de aceleración</strong>: al activar un dominio en Alibaba Cloud CDN, se apunta con un registro CNAME hacia un dominio gestionado por la plataforma (no una IP fija).",
+        "<strong>GSLB (Global Server Load Balancing)</strong>: el sistema DNS de Alibaba Cloud responde con la IP del POP más adecuado según la ubicación del resolutor DNS del usuario, la carga actual de cada nodo y la salud de la red.",
+        "<strong>Jerarquía de caché</strong>: un miss en el nodo edge no siempre va directo al origen — primero puede consultar un nodo mid-tier (capa intermedia) que agrega solicitudes de varios edges antes de tocar el origen una sola vez.",
+        "<strong>Origin Shield / colapso de solicitudes</strong>: cuando muchos edges piden el mismo objeto en frío simultáneamente, el CDN colapsa esas solicitudes en una sola hacia el origen en vez de multiplicarlas."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta «por qué dos usuarios en distintos países obtienen respuesta de IPs distintas para el mismo dominio», la respuesta es GSLB — no balanceo de carga clásico ni DNS round-robin simple."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Configurar un dominio de aceleración",
+      "title_en": "Configuring an Acceleration Domain",
+      "intro": "Dar de alta un dominio en CDN implica decidir de dónde viene el contenido original y cómo se comunica el edge con ese origen — la base de todo lo que sigue.",
       "points": [
-        "<strong>Seguridad</strong>: TTLs largos para assets versionados (foo.a1b2c3.js)",
-        "<strong>Buenas prácticas</strong>: HTTPS obligatorio + HTTP/2",
-        "<strong>Buenas prácticas</strong>: Anti-hotlinking en video y descargas",
-        "<strong>Buenas prácticas</strong>: Signed URLs para contenido premium",
-        "<strong>Buenas prácticas</strong>: Preload previo a campañas de marketing"
+        "<strong>Tipo de origen</strong>: bucket OSS, instancia ECS con IP pública, SLB, o un dominio/IP externo a Alibaba Cloud (multi-cloud u on-premise).",
+        "<strong>Protocolo de retroceso (back-to-origin)</strong>: HTTP, HTTPS o «seguir el protocolo del cliente» — si el cliente pide HTTPS pero el origen solo habla HTTP, hay que decidir explícitamente cómo se traduce ese tramo.",
+        "<strong>Puerto de origen</strong>: por defecto 80/443, pero puede personalizarse si el origen expone la aplicación en un puerto distinto.",
+        "<strong>Cabecera Host de retroceso</strong>: el CDN puede reescribir el header <code>Host</code> hacia el origen, útil cuando el origen aloja múltiples sitios detrás de la misma IP (virtual hosting).",
+        "<strong>Aceleración de acuerdo al tipo de contenido</strong>: la consola distingue plantillas (imagen/pequeño archivo, descarga, video bajo demanda, sitio web dinámico) que preconfiguran reglas de caché razonables por defecto."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El origen NUNCA debería quedar accesible directamente desde internet sin restricción — si un atacante descubre la IP real del origen, puede saltarse el CDN por completo (bypass) y atacarlo directamente."
+      }
+    },
+    {
+      "title_es": "4 · Reglas de caché y su ciclo de vida",
+      "title_en": "Cache Rules and TTL Strategy",
+      "intro": "El corazón operativo de un CDN es decidir cuánto tiempo vive cada tipo de archivo en el edge antes de revalidarse — un TTL mal elegido puede ser tan dañino como no tener CDN.",
+      "points": [
+        "<strong>TTL (Time To Live)</strong>: tiempo que un objeto permanece en caché antes de considerarse obsoleto y volver a pedirse al origen. Se define por extensión de archivo, ruta (path) o cabecera <code>Cache-Control</code> del origen.",
+        "<strong>Cache-Control / Expires del origen</strong>: si el origen ya envía estas cabeceras, el CDN puede respetarlas en vez de aplicar una regla propia — útil cuando distintas rutas necesitan políticas distintas sin tocar la consola de CDN.",
+        "<strong>Manejo de query string</strong>: se puede ignorar el query string al cachear (todas las variantes de <code>?v=1</code>, <code>?v=2</code> comparten una sola entrada) o incluirlo como parte de la clave de caché (cada combinación se cachea por separado) — la elección incorrecta genera cache poisoning o un cache hit ratio artificialmente bajo.",
+        "<strong>Versionado de assets</strong>: nombrar los archivos con un hash o versión en el path (<code>app.a1b2c3.js</code>) permite usar TTLs muy largos sin arriesgarse a servir una versión vieja tras un despliegue.",
+        "<strong>Contenido no cacheable</strong>: respuestas dinámicas y personalizadas (carritos de compra, APIs con datos por usuario) deben marcarse explícitamente como no cacheables para evitar que un usuario reciba datos de otro."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Contenido estático versionado → TTL largo (días/meses). Contenido estático sin versionar → TTL moderado (horas). Contenido dinámico o personalizado → no cachear."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Invalidar caché: Refresh, Preload y Purge",
+      "title_en": "Cache Invalidation: Refresh, Preload and Purge",
+      "intro": "Cuando el contenido cambia antes de que expire el TTL, hay tres mecanismos distintos para actuar — confundirlos es uno de los errores más comunes en producción y en el examen.",
       "points": [
-        "<strong>Antipattern</strong>: TTL bajo — muchos misses, origen sobrecargado",
-        "<strong>Antipattern</strong>: Sin versioning en assets — cambios no se propagan hasta expirar TTL",
-        "<strong>Antipattern</strong>: Origen expuesto a internet directamente — bypass del CDN",
-        "<strong>Antipattern</strong>: Purge masivo constante — costoso y anula caché",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Refresh (URL)</strong>: fuerza a que la próxima solicitud de una URL específica vaya al origen a revalidar, sin borrar físicamente el objeto de inmediato en todos los nodos.",
+        "<strong>Refresh (directorio)</strong>: igual que el anterior pero aplicado a todo un prefijo de ruta — más lento de propagar y más costoso, se usa con moderación.",
+        "<strong>Preload / Prefetch</strong>: empuja proactivamente un objeto a los nodos edge ANTES de que un usuario lo pida — típico antes de un lanzamiento o campaña con tráfico esperado alto.",
+        "<strong>Cuotas y límites</strong>: los refresh y preload masivos suelen tener límites diarios de URLs/directorios; abusar de ellos anula buena parte del beneficio del caché.",
+        "<strong>Alternativa preferida</strong>: en la mayoría de los casos, versionar el nombre del archivo (ver lección 4) es más simple y barato que depender de refresh manual cada vez que cambia un asset."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario dice «necesito que el contenido nuevo esté disponible desde el primer usuario, antes de que nadie lo pida», la respuesta es Preload. Si dice «ya publiqué contenido incorrecto y hay que invalidarlo ya», la respuesta es Refresh."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad del dominio acelerado",
+      "title_en": "Securing an Accelerated Domain",
+      "intro": "Un CDN mal asegurado puede convertirse en un vector de robo de ancho de banda (hotlinking) o de acceso no autorizado a contenido premium — el examen dedica preguntas específicas a estos controles.",
+      "points": [
+        "<strong>HTTPS / certificado SSL</strong>: se sube o gestiona un certificado en el edge; el CDN puede forzar HTTPS y redirigir automáticamente el tráfico HTTP.",
+        "<strong>Protección anti-hotlinking (Referer whitelist/blacklist)</strong>: restringe qué dominios pueden enlazar directamente a tus objetos — evita que un tercero incruste tus imágenes/video y consuma tu ancho de banda sin autorización.",
+        "<strong>Lista de IP permitidas/bloqueadas</strong>: filtra el acceso por rango de IP de origen del cliente, útil para contenido restringido geográfica o corporativamente.",
+        "<strong>Autenticación remota / URL firmada (URL Signing)</strong>: genera una URL con un token temporal calculado con una clave secreta compartida; el edge valida la firma y expiración antes de servir el contenido — la forma correcta de proteger descargas o video premium sin exponer el origen.",
+        "<strong>UA (User-Agent) blacklist</strong>: bloquea bots o scrapers conocidos identificados por su cabecera User-Agent."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Hotlink protection controla QUIÉN puede enlazar el recurso (por dominio referer); la URL firmada controla POR CUÁNTO TIEMPO y con QUÉ permiso se puede acceder — son controles complementarios, no sustitutos."
+      }
+    },
+    {
+      "title_es": "7 · Monitoreo, logs y diagnóstico",
+      "title_en": "Monitoring, Logs and Troubleshooting",
+      "intro": "Operar un CDN en producción exige poder responder rápido a la pregunta «¿por qué el cache hit ratio bajó de golpe?» o «¿por qué el origen se está sobrecargando?».",
+      "points": [
+        "<strong>CloudMonitor</strong>: expone métricas agregadas — tráfico servido, QPS, código de estado HTTP, cache hit ratio — con alarmas configurables sobre umbrales.",
+        "<strong>Logs en tiempo real</strong>: registro detallado por solicitud (IP cliente, URL, nodo edge, estado de caché) enviable a Simple Log Service (SLS) para análisis y auditoría fina.",
+        "<strong>Reportes de uso</strong>: desglose de tráfico y solicitudes por región, ISP y código de estado — útil para detectar de dónde viene tráfico anómalo o abusivo.",
+        "<strong>Causas típicas de cache hit ratio bajo</strong>: TTL demasiado corto, query string incluido en la clave de caché sin necesidad, contenido marcado como no cacheable por error, o gran volumen de objetos «long-tail» pedidos una sola vez cada uno."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Un cache hit ratio bajo casi siempre apunta primero a revisar la configuración de TTL y el manejo de query string antes de sospechar de un ataque o de un problema de origen."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de las preguntas difíciles del examen sobre CDN están inspiradas en errores reales de operación — reconocer el antipatrón suele ser más rápido que razonar desde cero.",
+      "points": [
+        "<strong>Antipatrón</strong>: dejar el origen accesible directamente desde internet sin restricción de IP — permite saltarse el CDN por completo.",
+        "<strong>Antipatrón</strong>: TTL demasiado bajo en assets estáticos pesados — el origen recibe tráfico innecesario y la latencia percibida sube.",
+        "<strong>Antipatrón</strong>: no versionar los assets y depender de Refresh manual cada despliegue — lento, propenso a errores y con cuotas limitadas.",
+        "<strong>Antipatrón</strong>: incluir todo el query string en la clave de caché sin necesidad (p.ej. parámetros de tracking como <code>utm_source</code>) — fragmenta el caché y hunde el hit ratio.",
+        "<strong>Antipatrón</strong>: no habilitar protección anti-hotlinking en contenido de video/imagen de alto costo de egress.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles del examen, prioriza la que reduce carga sobre el origen y la que usa el mecanismo de invalidación más específico (URL puntual antes que directorio completo)."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el escenario buscando si describe un problema de <em>latencia</em> (arquitectura/GSLB), de <em>frescura de contenido</em> (TTL/refresh/preload) o de <em>acceso no autorizado</em> (hotlinking/URL firmada) — cada categoría apunta a una familia distinta de opciones."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Streaming de video/audio global"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "APK/binarios de apps móviles"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Sitios web con assets estáticos (imgs, CSS, JS)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "APIs con contenido semi-estático (product catalog)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Live streaming de baja latencia (LSS)"
-    }
+    { "title": "Escenario 1", "text": "Tienda online con imágenes de producto y CSS/JS versionados servidos globalmente" },
+    { "title": "Escenario 2", "text": "Distribución de instaladores y APKs de gran tamaño con soporte de descarga reanudable (Range Request)" },
+    { "title": "Escenario 3", "text": "Video bajo demanda con protección anti-hotlinking y URL firmada para contenido premium" },
+    { "title": "Escenario 4", "text": "Sitio de noticias que espera un pico de tráfico (flash crowd) por un evento en vivo" },
+    { "title": "Escenario 5", "text": "Distribución de parches de un videojuego con Preload antes del lanzamiento" },
+    { "title": "Escenario 6", "text": "Origen multi-cloud (servidor fuera de Alibaba Cloud) acelerado sin migrar la aplicación" }
   ],
   "mistakes": [
-    "TTL bajo — muchos misses, origen sobrecargado",
-    "Sin versioning en assets — cambios no se propagan hasta expirar TTL",
-    "Origen expuesto a internet directamente — bypass del CDN",
-    "Purge masivo constante — costoso y anula caché"
+    "Dejar el origen accesible directamente desde internet sin restricción de IP de retroceso — permite saltarse el CDN",
+    "TTL demasiado bajo en assets estáticos pesados — el origen recibe tráfico innecesario",
+    "No versionar los assets y depender de Refresh manual en cada despliegue",
+    "Incluir parámetros de tracking en la clave de caché sin necesidad — fragmenta el caché",
+    "No habilitar protección anti-hotlinking en contenido de alto costo de egress (video, imágenes pesadas)",
+    "Confundir Refresh (invalidación puntual) con Preload (empuje proactivo) y usar el mecanismo equivocado"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cdn AddCdnDomain",
-      "desc": "Añadir dominio"
-    },
-    {
-      "cmd": "aliyun cdn RefreshObjectCaches",
-      "desc": "Purge de URL/dir"
-    },
-    {
-      "cmd": "aliyun cdn PushObjectCache",
-      "desc": "Preload"
-    }
+    { "cmd": "aliyun cdn AddCdnDomain --DomainName static.midominio.com --CdnType web --Sources '[{\"content\":\"midominio-oss.oss-cn-hangzhou.aliyuncs.com\",\"type\":\"oss\"}]'", "desc": "Dar de alta un nuevo dominio de aceleración" },
+    { "cmd": "aliyun cdn DescribeCdnDomainDetail --DomainName static.midominio.com", "desc": "Consultar el estado y configuración de un dominio" },
+    { "cmd": "aliyun cdn SetCdnDomainSSLCertificate --DomainName static.midominio.com --CertName mi-cert --SSLProtocol on", "desc": "Habilitar HTTPS en el dominio acelerado" },
+    { "cmd": "aliyun cdn RefreshObjectCaches --ObjectPath https://static.midominio.com/app.js --ObjectType File", "desc": "Forzar la invalidación de una URL puntual" },
+    { "cmd": "aliyun cdn PushObjectCache --ObjectPath https://static.midominio.com/banner.jpg", "desc": "Empujar (preload) un objeto a los nodos edge antes de que se pida" },
+    { "cmd": "aliyun cdn DescribeDomainRealTimeQpsData --DomainName static.midominio.com --StartTime ... --EndTime ...", "desc": "Consultar QPS en tiempo casi real de un dominio" }
   ],
   "glossary": [
-    {
-      "en": "Edge Node",
-      "es": "Nodo edge",
-      "def": "Servidor de caché cerca del usuario."
-    },
-    {
-      "en": "Origin",
-      "es": "Origen",
-      "def": "Servidor fuente. Puede ser OSS, ECS, IP o dominio."
-    },
-    {
-      "en": "TTL",
-      "es": "TTL",
-      "def": "Tiempo de vida del objeto en caché."
-    },
-    {
-      "en": "Cache Hit Ratio",
-      "es": "Tasa de acierto",
-      "def": "% de requests servidos desde caché."
-    },
-    {
-      "en": "Refresh",
-      "es": "Refresh",
-      "def": "Invalidación forzada de URLs/directorios."
-    },
-    {
-      "en": "Preload",
-      "es": "Preload",
-      "def": "Empuja contenido al edge antes de que se pida."
-    },
-    {
-      "en": "HTTPS",
-      "es": "HTTPS",
-      "def": "Certificado en edge, opcional back-to-origin HTTPS."
-    },
-    {
-      "en": "Anti-hotlinking",
-      "es": "Anti-hotlinking",
-      "def": "Bloquea referers/dominios no autorizados."
-    },
-    {
-      "en": "Signed URL",
-      "es": "URL firmada",
-      "def": "URL con token temporal para contenido protegido."
-    },
-    {
-      "en": "Range Request",
-      "es": "Range Request",
-      "def": "Descarga parcial — clave para video."
-    },
-    {
-      "en": "DCDN",
-      "es": "Dynamic CDN",
-      "def": "Aceleración de contenido dinámico (no cacheable)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Edge Node / POP", "es": "Nodo edge / Punto de presencia", "def": "Servidor de caché desplegado cerca del usuario final; Alibaba Cloud opera miles distribuidos globalmente." },
+    { "en": "Origin", "es": "Origen", "def": "Servidor fuente del contenido real: bucket OSS, instancia ECS, SLB o un servidor externo a Alibaba Cloud." },
+    { "en": "GSLB (Global Server Load Balancing)", "es": "GSLB", "def": "Mecanismo de resolución DNS inteligente que dirige a cada usuario al POP más adecuado." },
+    { "en": "TTL (Time To Live)", "es": "TTL", "def": "Tiempo que un objeto permanece válido en caché antes de revalidarse contra el origen." },
+    { "en": "Cache Hit Ratio", "es": "Tasa de acierto de caché", "def": "Porcentaje de solicitudes servidas desde el edge sin tocar el origen." },
+    { "en": "Refresh", "es": "Refresh (invalidación)", "def": "Fuerza la revalidación de una URL o directorio específico contra el origen." },
+    { "en": "Preload / Prefetch", "es": "Preload", "def": "Empuja un objeto a los nodos edge antes de que un usuario lo solicite." },
+    { "en": "Back-to-origin", "es": "Retroceso al origen", "def": "Tráfico que el edge envía al origen cuando ocurre un cache miss." },
+    { "en": "Query String Handling", "es": "Manejo de query string", "def": "Configuración que decide si los parámetros de la URL forman parte de la clave de caché." },
+    { "en": "Anti-hotlinking (Referer Whitelist)", "es": "Protección anti-hotlinking", "def": "Restringe qué dominios referer pueden enlazar directamente a tus objetos cacheados." },
+    { "en": "URL Signing (Remote Authentication)", "es": "URL firmada", "def": "Token temporal calculado con clave secreta que autoriza el acceso a un objeto por tiempo limitado." },
+    { "en": "Range Request", "es": "Solicitud de rango", "def": "Descarga parcial de un archivo (bytes específicos); esencial para reanudar descargas y hacer seek en video." },
+    { "en": "Origin Shield", "es": "Escudo de origen", "def": "Capa intermedia que colapsa múltiples solicitudes de distintos edges en una sola hacia el origen." },
+    { "en": "CNAME", "es": "CNAME", "def": "Registro DNS que apunta el dominio del cliente hacia la infraestructura gestionada del CDN." },
+    { "en": "Real-time Log", "es": "Log en tiempo real", "def": "Registro detallado por solicitud, enviable a Simple Log Service (SLS) para análisis fino." },
+    { "en": "DCDN (Dynamic Content Delivery Network)", "es": "DCDN", "def": "Servicio complementario para acelerar contenido dinámico no cacheable, vía ruteo optimizado en lugar de caché." },
+    { "en": "Cache-Control", "es": "Cache-Control", "def": "Cabecera HTTP del origen que el CDN puede respetar para decidir el TTL efectivo." },
+    { "en": "SSL Certificate", "es": "Certificado SSL", "def": "Certificado cargado o gestionado en el edge para terminar HTTPS antes de reenviar al origen." },
+    { "en": "CloudMonitor", "es": "CloudMonitor", "def": "Servicio nativo de métricas y alarmas — usado sobre CDN para observar tráfico, QPS y cache hit ratio." },
+    { "en": "Flash Crowd", "es": "Pico de tráfico repentino", "def": "Ráfaga de solicitudes concentrada en poco tiempo, típica de lanzamientos o contenido viral." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Alibaba Cloud CDN?",
-      "options": [
-        "Alibaba CDN opera 3200+ nodos edge globales cacheando contenido cerca del usuario. Reduce latencia, descarga origen, y protege contra ataques básicos. DCDN extiende para contenido dinámico con acelera",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba CDN opera 3200+ nodos edge globales cacheando contenido cerca del usuario. Reduce latencia, descarga origen, y protege contra ataques básicos. DCDN extiende para contenido dinámico con aceleración TCP y ruteo optimizado."
-    },
-    {
-      "q": "¿Qué es <strong>Edge Node</strong> (Nodo edge) en Alibaba Cloud CDN?",
-      "options": [
-        "Servidor de caché cerca del usuario.",
-        "Servidor fuente. Puede ser OSS, ECS, IP o dominio.",
-        "Tiempo de vida del objeto en caché.",
-        "% de requests servidos desde caché."
-      ],
-      "answer": 0,
-      "explain": "Edge Node (Nodo edge): Servidor de caché cerca del usuario."
-    },
-    {
-      "q": "¿Qué es <strong>Origin</strong> (Origen) en Alibaba Cloud CDN?",
-      "options": [
-        "Servidor fuente. Puede ser OSS, ECS, IP o dominio.",
-        "Servidor de caché cerca del usuario.",
-        "Tiempo de vida del objeto en caché.",
-        "% de requests servidos desde caché."
-      ],
-      "answer": 0,
-      "explain": "Origin (Origen): Servidor fuente. Puede ser OSS, ECS, IP o dominio."
-    },
-    {
-      "q": "¿Qué es <strong>TTL</strong> (TTL) en Alibaba Cloud CDN?",
-      "options": [
-        "Tiempo de vida del objeto en caché.",
-        "Servidor de caché cerca del usuario.",
-        "Servidor fuente. Puede ser OSS, ECS, IP o dominio.",
-        "% de requests servidos desde caché."
-      ],
-      "answer": 0,
-      "explain": "TTL (TTL): Tiempo de vida del objeto en caché."
-    },
-    {
-      "q": "¿Qué es <strong>Cache Hit Ratio</strong> (Tasa de acierto) en Alibaba Cloud CDN?",
-      "options": [
-        "% de requests servidos desde caché.",
-        "Servidor de caché cerca del usuario.",
-        "Servidor fuente. Puede ser OSS, ECS, IP o dominio.",
-        "Tiempo de vida del objeto en caché."
-      ],
-      "answer": 0,
-      "explain": "Cache Hit Ratio (Tasa de acierto): % de requests servidos desde caché."
-    },
-    {
-      "q": "¿Qué es <strong>Refresh</strong> (Refresh) en Alibaba Cloud CDN?",
-      "options": [
-        "Invalidación forzada de URLs/directorios.",
-        "Servidor de caché cerca del usuario.",
-        "Servidor fuente. Puede ser OSS, ECS, IP o dominio.",
-        "Tiempo de vida del objeto en caché."
-      ],
-      "answer": 0,
-      "explain": "Refresh (Refresh): Invalidación forzada de URLs/directorios."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Alibaba Cloud CDN, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Alibaba Cloud CDN en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Alibaba Cloud CDN, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Alibaba Cloud CDN es la elección típica:",
-      "options": [
-        "Streaming de video/audio global",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Streaming de video/audio global."
-    }
+    { "q": "¿Cuál es la función principal de un CDN como Alibaba Cloud CDN?", "options": ["Reemplazar completamente al servidor de origen", "Servir copias del contenido desde nodos cercanos al usuario, reduciendo latencia y carga sobre el origen", "Cifrar todo el tráfico de una aplicación", "Reemplazar la necesidad de un balanceador de carga"], "answer": 1, "explain": "El CDN cachea contenido en nodos edge cercanos al usuario final, reduciendo latencia y la cantidad de solicitudes que llegan al origen." },
+    { "q": "¿Qué mecanismo decide a qué nodo edge (POP) se dirige cada usuario al resolver el dominio acelerado?", "options": ["Un balanceador de carga clásico L4", "GSLB (Global Server Load Balancing) sobre DNS", "Una IP estática fija para todo el mundo", "El navegador del usuario decide manualmente"], "answer": 1, "explain": "GSLB responde de forma dinámica con la IP del POP más adecuado según ubicación del resolutor DNS y salud de la red." },
+    { "q": "Un archivo se sirve con el nombre <code>app.js</code> sin versión y necesita actualizarse frecuentemente sin invalidación manual constante. ¿Qué práctica soluciona esto de raíz?", "options": ["Configurar un TTL de 0 permanentemente", "Versionar el nombre del archivo (p.ej. app.a1b2c3.js) y usar TTL largo", "Deshabilitar el CDN para ese archivo", "Usar solo Preload cada vez que cambia"], "answer": 1, "explain": "Versionar el nombre permite TTLs largos sin riesgo de servir contenido obsoleto, evitando depender de invalidaciones manuales." },
+    { "q": "¿Cuál es la diferencia principal entre Refresh y Preload en Alibaba Cloud CDN?", "options": ["Son sinónimos exactos", "Refresh invalida contenido existente; Preload empuja contenido nuevo a los edges antes de que se pida", "Preload solo aplica a video", "Refresh solo funciona sobre buckets OSS"], "answer": 1, "explain": "Refresh fuerza revalidación de algo ya cacheado; Preload anticipa la demanda empujando el objeto proactivamente." },
+    { "q": "¿Por qué es un riesgo dejar el servidor de origen accesible directamente desde internet sin restricciones?", "options": ["No hay ningún riesgo, es la configuración recomendada", "Un atacante puede descubrir la IP real y saltarse el CDN (bypass), atacando el origen directamente", "El CDN deja de funcionar automáticamente", "Aumenta el cache hit ratio"], "answer": 1, "explain": "Si el origen queda expuesto, el CDN pierde su función protectora: cualquiera puede evitarlo y golpear el origen directamente." },
+    { "q": "¿Qué configuración de caché es responsable de que <code>imagen.jpg?utm_source=fb</code> y <code>imagen.jpg?utm_source=tw</code> generen dos entradas de caché distintas para el mismo archivo?", "options": ["El TTL configurado", "Incluir el query string completo como parte de la clave de caché", "El protocolo de retroceso", "El certificado SSL"], "answer": 1, "explain": "Si el query string se incluye en la clave de caché, cada combinación de parámetros —incluso irrelevantes como tracking— se cachea por separado, fragmentando el caché." },
+    { "q": "Un sitio de video quiere evitar que otros sitios incrusten sus videos y consuman su ancho de banda sin autorización. ¿Qué mecanismo de Alibaba Cloud CDN resuelve esto?", "options": ["TTL largo", "Protección anti-hotlinking (whitelist de Referer)", "GSLB", "Preload"], "answer": 1, "explain": "La protección anti-hotlinking restringe qué dominios pueden referenciar directamente los objetos del CDN." },
+    { "q": "¿Qué mecanismo protege contenido premium (p.ej. un video de pago) dando acceso solo por tiempo limitado y con una firma criptográfica?", "options": ["Anti-hotlinking", "URL firmada (autenticación remota)", "Refresh", "CNAME"], "answer": 1, "explain": "La URL firmada añade un token con expiración calculado con una clave secreta compartida, validado por el edge antes de servir el contenido." },
+    { "q": "¿Qué función cumple un Origin Shield (o capa mid-tier) en la arquitectura de un CDN?", "options": ["Cifra el tráfico entre edge y cliente", "Colapsa múltiples solicitudes de distintos edges en una sola hacia el origen, evitando sobrecarga en cache miss simultáneos", "Sustituye por completo al origen", "Aumenta el TTL automáticamente"], "answer": 1, "explain": "Cuando muchos edges piden el mismo objeto en frío al mismo tiempo, la capa intermedia evita multiplicar esas solicitudes hacia el origen." },
+    { "q": "Un archivo grande necesita permitir que el usuario reanude una descarga interrumpida o que un reproductor de video haga seek. ¿Qué capacidad HTTP es indispensable?", "options": ["Range Request (solicitudes de rango)", "Refresh", "GSLB", "Anti-hotlinking"], "answer": 0, "explain": "Range Request permite pedir bytes específicos de un archivo, esencial para reanudar descargas y hacer seek en video." },
+    { "q": "¿Cuál es la causa más común de un cache hit ratio bajo cuando no hay ataque ni falla de origen?", "options": ["El certificado SSL expiró", "TTL demasiado corto o query string innecesario incluido en la clave de caché", "El dominio tiene CNAME mal configurado", "Demasiados nodos edge activos"], "answer": 1, "explain": "Un TTL corto o incluir parámetros irrelevantes en la clave de caché son las causas más frecuentes de un hit ratio bajo." },
+    { "q": "¿Qué servicio permite enviar el detalle de cada solicitud (IP, URL, estado de caché) para análisis fino, más allá de las métricas agregadas de CloudMonitor?", "options": ["Real-time Log Service, integrado con SLS", "RAM", "VPC Flow Log", "KMS"], "answer": 0, "explain": "Los logs en tiempo real de CDN, enviados a Simple Log Service (SLS), dan visibilidad por solicitud individual." },
+    { "q": "¿Cuál de las siguientes NO es una plantilla típica de aceleración ofrecida al configurar un dominio en Alibaba Cloud CDN?", "options": ["Imagen/pequeño archivo", "Descarga de archivos grandes", "Video bajo demanda", "Base de datos relacional gestionada"], "answer": 3, "explain": "Las plantillas de CDN preconfiguran reglas de caché para tipos de contenido (imagen, descarga, video), no para bases de datos." },
+    { "q": "¿Qué diferencia a DCDN de Alibaba Cloud CDN estándar?", "options": ["DCDN es exactamente lo mismo con otro nombre", "DCDN acelera contenido dinámico no cacheable mediante ruteo optimizado, mientras CDN estándar se enfoca en contenido cacheable", "DCDN solo funciona con archivos de imagen", "CDN estándar no admite HTTPS"], "answer": 1, "explain": "DCDN complementa al CDN tradicional para contenido que no se puede cachear, optimizando la ruta de red en vez de servir desde caché." },
+    { "q": "Una empresa necesita que un banner promocional esté disponible desde el primer usuario, sin esperar a que el caché se vaya llenando orgánicamente. ¿Qué acción es la correcta antes del lanzamiento?", "options": ["Refresh de todo el dominio", "Preload del objeto específico", "Bajar el TTL a 0", "Deshabilitar HTTPS temporalmente"], "answer": 1, "explain": "Preload empuja el objeto proactivamente a los nodos edge antes de que exista demanda real, evitando el primer cache miss de cada usuario." }
   ],
-  "exam_focus": "Preguntas: (a) CDN vs DCDN, (b) refresh vs preload, (c) TTL strategy, (d) HTTPS back-to-origin, (e) protección de origen.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar Refresh de Preload según el escenario, (b) diseño correcto de TTL y manejo de query string, (c) mecanismos de seguridad (anti-hotlinking vs. URL firmada), (d) por qué proteger el origen de acceso directo, (e) lectura de métricas para diagnosticar un cache hit ratio bajo.",
   "official_intro": "In the era of big data with explosive growth of network resources, improving the response speed and success rate of user access and solving the problem of access delay caused by distribution, bandwidth and server performance are of great significance for enterprise websites and applications. This clouder online course and certification is designed to help students learn about CDN related knowledge and skills, and master the specific operations of Alibaba Cloud CDN's multiple functional modules to accelerate website access.",
   "recommended_for": "Cloud administrator, Cloud operator, Website owner on cloud",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_cdn",

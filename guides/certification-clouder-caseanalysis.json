@@ -2,423 +2,160 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-caseanalysis",
   "title_en": "Alibaba Cloud Fundamental Architecture and Case Study",
-  "title_es": "Alibaba Cloud Fundamental Architecture y Case Study",
+  "title_es": "Arquitectura Fundamental de Alibaba Cloud y Casos de Estudio",
+  "title_es_html": "Arquitectura <em>Fundamental</em> de Alibaba Cloud",
   "duration_es": "45 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_caseanalysis",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Fundamental Architecture and Case Study» de Alibaba Cloud Academy. Cubre en profundidad Arquitectura Alibaba Cloud. Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Alibaba Cloud Fundamental Architecture and Case Study», el curso introductorio de arquitectura de Alibaba Cloud. A diferencia de los cursos de casos analíticos o elásticos, aquí el foco son los cuatro servicios que forman la base de cualquier arquitectura web: ECS, SLB, RDS y OSS, combinados en el patrón de tres capas más común de la nube.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Arquitectura Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Well-Architected, Multi-region, Multi-AZ, Elastic, Fault Tolerance.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Arquitectura Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Identificar</strong> los cuatro servicios fundamentales de una arquitectura web básica: ECS, SLB, RDS y OSS.",
+    "<strong>Explicar</strong> por qué una arquitectura de una sola instancia es un punto único de falla.",
+    "<strong>Diseñar</strong> una arquitectura de tres capas (web, aplicación, datos) con balanceo de carga.",
+    "<strong>Aplicar</strong> el patrón maestro-réplica de RDS para separar lectura de escritura.",
+    "<strong>Delegar</strong> a OSS el almacenamiento de archivos estáticos en vez de guardarlos en el disco de ECS.",
+    "<strong>Reconocer</strong> los casos de estudio clásicos que ilustran esta arquitectura fundamental.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre arquitectura básica."
   ],
-  "architecture": "Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+  "architecture": "El patrón fundamental es de tres capas: el usuario llega a un Server Load Balancer (SLB), que distribuye el tráfico HTTP/HTTPS entre dos o más instancias ECS idénticas ejecutando la capa web/aplicación en distintas zonas de disponibilidad. Cada instancia ECS es sin estado (stateless): no guarda archivos subidos por el usuario ni sesiones locales — los archivos van a OSS y las sesiones a una caché compartida o a la base de datos. La capa de datos es una instancia RDS con una réplica maestro-esclavo (o maestro-múltiples réplicas de lectura), donde las escrituras van al maestro y las lecturas pesadas se reparten hacia las réplicas. Un Security Group protege cada capa, permitiendo solo el tráfico necesario entre ellas.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Arquitectura Alibaba Cloud",
-      "title_en": "Introduction to Arquitectura Alibaba Cloud",
-      "intro": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema de la instancia única",
+      "title_en": "The Single-Instance Problem",
+      "intro": "El curso arranca con el escenario más simple posible: una aplicación entera corriendo en una sola instancia ECS con base de datos local. Antes de nombrar servicios, hay que entender por qué ese diseño falla en producción.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Arquitectura Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Punto único de falla</strong>: si la instancia se cae (falla de hardware, saturación de CPU, mantenimiento), la aplicación completa deja de estar disponible — no hay redundancia de ningún tipo.",
+        "<strong>Límite de capacidad</strong>: una sola instancia tiene un techo de CPU/memoria/red; cuando el tráfico crece, la única opción es escalar verticalmente (una instancia más grande), lo cual tiene límites físicos y requiere downtime para redimensionar en muchos casos.",
+        "<strong>Acoplamiento de capas</strong>: tener la aplicación y la base de datos en la misma instancia significa que un pico de carga de la aplicación compite por CPU/memoria con la base de datos, degradando ambas a la vez.",
+        "<strong>Archivos en disco local</strong>: si los usuarios suben imágenes o documentos que se guardan en el disco de la instancia, esos archivos desaparecen si la instancia se destruye, y no son accesibles desde una segunda instancia si se agrega una."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Arquitectura Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El objetivo de toda la arquitectura fundamental es eliminar puntos únicos de falla separando responsabilidades en servicios especializados: cómputo (ECS), balanceo (SLB), datos (RDS) y archivos (OSS)." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Arquitectura Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · ECS y SLB: escalando la capa de cómputo",
+      "title_en": "ECS and SLB: Scaling the Compute Layer",
+      "intro": "El primer paso para resolver el punto único de falla es duplicar la capa de cómputo y repartir el tráfico entre las copias — para eso existe el Server Load Balancer.",
       "points": [
-        "<strong>Patrón canónico</strong>: Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Múltiples instancias idénticas</strong>: en vez de una instancia ECS, se despliegan dos o más con la misma imagen y configuración, idealmente en zonas de disponibilidad distintas.",
+        "<strong>SLB como punto de entrada único</strong>: el balanceador recibe todo el tráfico entrante y lo distribuye entre las instancias sanas según un algoritmo (round robin, conexiones activas, hash de origen).",
+        "<strong>Health checks</strong>: SLB verifica periódicamente que cada instancia responda correctamente; si una falla los chequeos, se retira automáticamente de la rotación sin intervención manual.",
+        "<strong>Aplicaciones sin estado (stateless)</strong>: para que el balanceo funcione bien, ninguna instancia debe depender de datos guardados solo en su propio disco o memoria — cualquier instancia debe poder atender cualquier petición.",
+        "<strong>Escalado horizontal</strong>: añadir capacidad ya no significa agrandar una instancia, sino agregar más instancias idénticas detrás del mismo SLB — la base conceptual del Auto Scaling."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Arquitectura Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «eliminar el punto único de falla de la capa web», la respuesta combina SLB + 2 o más instancias ECS en zonas distintas, nunca una sola instancia por grande que sea." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · RDS: separar la capa de datos",
+      "title_en": "RDS: Separating the Data Layer",
+      "intro": "Una vez la capa de cómputo está duplicada, la base de datos sigue siendo un cuello de botella si vive dentro de una de esas instancias — RDS la convierte en un servicio gestionado e independiente.",
       "points": [
-        "<strong>Well-Architected</strong> <em>(Well-Architected)</em>: 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "<strong>Multi-región</strong> <em>(Multi-region)</em>: Despliegue en varias regiones para DR/latencia.",
-        "<strong>Multi-AZ</strong> <em>(Multi-AZ)</em>: Múltiples zonas dentro de región.",
-        "<strong>Elástico</strong> <em>(Elastic)</em>: Auto-scale según demanda.",
-        "<strong>Tolerancia a fallos</strong> <em>(Fault Tolerance)</em>: Diseño que sobrevive a fallos parciales.",
-        "<strong>Blast radius</strong> <em>(Blast Radius)</em>: Alcance de una falla.",
-        "<strong>Chaos engineering</strong> <em>(Chaos Engineering)</em>: Introducir fallos controlados para validar resiliencia.",
-        "<strong>Landing zone</strong> <em>(Landing Zone)</em>: Baseline de cuenta lista para cargas."
+        "<strong>Base de datos gestionada</strong>: RDS se encarga de parches, backups automáticos y failover, liberando al equipo de operar la base de datos manualmente sobre una instancia ECS.",
+        "<strong>Arquitectura maestro-réplica</strong>: todas las escrituras van al nodo maestro; una o más réplicas de solo lectura reciben una copia asíncrona de los datos y absorben las consultas de lectura pesadas (reportes, dashboards).",
+        "<strong>Alta disponibilidad</strong>: una configuración RDS de alta disponibilidad mantiene un nodo en espera (standby) en otra zona, listo para asumir el rol de maestro automáticamente si el nodo activo falla.",
+        "<strong>Backups automáticos</strong>: RDS realiza snapshots periódicos y conserva binlogs para restauración a un punto en el tiempo, sin que el equipo tenga que scriptear el proceso.",
+        "<strong>Separación de la capa de aplicación</strong>: al mover la base de datos a RDS, las instancias ECS quedan completamente sin estado respecto a los datos persistentes, lo que simplifica escalarlas horizontalmente."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El patrón maestro-réplica no es solo para disponibilidad — también es la primera herramienta de escalado de lectura: si el cuello de botella son consultas SELECT, se agregan réplicas antes de considerar redimensionar el maestro." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · OSS: sacar los archivos del servidor de aplicación",
+      "title_en": "OSS: Taking Files Off the Application Server",
+      "intro": "El último componente fundamental resuelve un error de diseño frecuente: guardar archivos subidos por usuarios en el disco de la instancia de aplicación.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Por qué no guardar archivos en ECS</strong>: si hay múltiples instancias detrás de un SLB, un archivo subido a la instancia A no es visible desde la instancia B — y si la instancia se destruye, el archivo se pierde.",
+        "<strong>OSS como almacenamiento centralizado</strong>: todas las instancias, sin importar cuántas haya, leen y escriben contra el mismo bucket de OSS — el almacenamiento queda desacoplado del ciclo de vida de las instancias.",
+        "<strong>Servir contenido estático directamente</strong>: imágenes, videos y documentos se pueden servir directamente desde OSS (opcionalmente detrás de un CDN), sin pasar por las instancias de aplicación, liberando su capacidad para lógica de negocio.",
+        "<strong>Durabilidad</strong>: OSS ofrece una durabilidad de datos muy superior a la de un disco de instancia individual, gracias a la replicación interna del servicio.",
+        "<strong>Consecuencia arquitectónica</strong>: al sacar archivos y sesiones del disco local, cualquier instancia ECS se vuelve reemplazable en cualquier momento sin pérdida de datos — la propiedad clave de una arquitectura escalable."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "«Los usuarios suben imágenes de perfil y algunas desaparecen al reiniciar instancias» es la descripción clásica del antipatrón de guardar archivos en disco local en vez de OSS." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Ensamblando la arquitectura de tres capas",
+      "title_en": "Assembling the Three-Tier Architecture",
+      "intro": "Con los cuatro servicios cubiertos, este módulo recorre cómo encajan juntos en el diagrama de referencia que el examen suele presentar.",
       "points": [
-        "<strong>HA</strong>: Multi-AZ default, multi-región para tier-1",
-        "<strong>HA</strong>: Chaos engineering en pre-prod",
-        "<strong>Buenas prácticas</strong>: Elasticidad automática (HPA + Cluster Autoscaler + Auto Scaling ECS)",
-        "<strong>Buenas prácticas</strong>: Blast radius pequeño (celdas independientes)",
-        "<strong>Buenas prácticas</strong>: Landing zone estándar antes de cargar"
+        "<strong>Capa de entrada</strong>: DNS apunta al SLB; el SLB termina TLS (opcionalmente) y reparte tráfico HTTP/HTTPS entre las instancias de la capa de aplicación.",
+        "<strong>Capa de aplicación</strong>: instancias ECS idénticas, sin estado, distribuidas en al menos dos zonas de disponibilidad, ejecutando la lógica de negocio.",
+        "<strong>Capa de datos</strong>: RDS con maestro + réplica(s) de lectura, y opcionalmente una capa de caché (Redis/Tair) delante para reducir la carga sobre la base de datos en lecturas repetitivas.",
+        "<strong>Capa de archivos</strong>: OSS almacena todo contenido estático o subido por usuarios, servido directamente o vía CDN.",
+        "<strong>Seguridad por capas</strong>: Security Groups distintos para cada capa — el SLB acepta tráfico público, las instancias de aplicación solo aceptan tráfico del SLB, y RDS solo acepta conexiones desde las instancias de aplicación."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Diagrama típico", "text": "Internet → SLB → ECS (2+ zonas) → RDS maestro/réplica, con OSS al costado sirviendo archivos estáticos y Security Groups restringiendo el tráfico entre cada salto." }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas del examen sobre arquitectura fundamental suelen presentar un diseño con un defecto específico y pedir identificarlo.",
       "points": [
-        "<strong>Antipattern</strong>: Single-AZ en producción tier-1",
-        "<strong>Antipattern</strong>: Sin auto-scale — capacity planning manual",
-        "<strong>Antipattern</strong>: Blast radius global (un servicio caído cae todo)",
-        "<strong>Antipattern</strong>: Sin ejercicios DR",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: una sola instancia ECS ejecutando aplicación y base de datos juntas — sin separación de capas ni redundancia.",
+        "<strong>Antipatrón</strong>: guardar archivos subidos por usuarios en el disco local de la instancia en vez de OSS.",
+        "<strong>Antipatrón</strong>: todas las instancias de la capa de aplicación en la misma zona de disponibilidad, anulando el propósito del balanceo.",
+        "<strong>Antipatrón</strong>: enviar todas las lecturas al nodo maestro de RDS existiendo réplicas de lectura disponibles y ociosas.",
+        "<strong>Antipatrón</strong>: Security Groups demasiado permisivos que permiten que la base de datos sea alcanzable directamente desde internet.",
+        "<strong>Estrategia</strong>: identifica primero cuántas capas describe el enunciado (web, datos, archivos) y verifica que cada una tenga redundancia y esté aislada de las demás antes de evaluar el resto de opciones."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante un diagrama de arquitectura en el examen, verifica en orden: ¿hay más de una instancia por capa crítica? ¿están en zonas distintas? ¿los archivos están en OSS y no en disco local? Esas tres preguntas resuelven la mayoría de los casos." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "E-commerce con picos estacionales (Double 11 pattern)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "SaaS multi-tenant global"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Fintech con requerimientos compliance"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "IoT + real-time analytics"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Media con content delivery global"
-    }
+    { "title": "Escenario 1", "text": "Sitio corporativo o blog con tráfico moderado: SLB + 2 ECS + RDS single-zone" },
+    { "title": "Escenario 2", "text": "Tienda online con picos de tráfico estacionales: SLB + ECS multi-zona + RDS con réplica de lectura" },
+    { "title": "Escenario 3", "text": "Aplicación con subida masiva de imágenes de usuario: OSS como almacenamiento central + CDN" },
+    { "title": "Escenario 4", "text": "Dashboard de reportes pesado que no debe afectar el tráfico transaccional: réplica de lectura dedicada de RDS" },
+    { "title": "Escenario 5", "text": "Migración de una aplicación monolítica en un solo servidor físico a arquitectura de tres capas en la nube" }
   ],
   "mistakes": [
-    "Single-AZ en producción tier-1",
-    "Sin auto-scale — capacity planning manual",
-    "Blast radius global (un servicio caído cae todo)",
-    "Sin ejercicios DR"
+    "Ejecutar aplicación y base de datos en la misma instancia ECS sin separación de capas",
+    "Guardar archivos subidos por usuarios en el disco local de la instancia en vez de OSS",
+    "Colocar todas las instancias de la capa de aplicación en una sola zona de disponibilidad",
+    "Enviar todas las lecturas al maestro de RDS teniendo réplicas de lectura disponibles",
+    "Permitir que la base de datos sea alcanzable directamente desde internet en vez de solo desde la capa de aplicación",
+    "Diseñar instancias de aplicación con estado local (sesiones en memoria) que rompen el balanceo de carga"
   ],
   "cli": [
-    {
-      "cmd": "Consulta Well-Architected Review",
-      "desc": "Framework"
-    },
-    {
-      "cmd": "aliyun sae CreateApplication",
-      "desc": "App SAE"
-    }
+    { "cmd": "aliyun ecs RunInstances --ImageId img-xxxxx --InstanceType ecs.g6.large --Amount 2", "desc": "Lanzar dos instancias ECS idénticas para la capa de aplicación" },
+    { "cmd": "aliyun slb CreateLoadBalancer --LoadBalancerName web-lb --AddressType internet", "desc": "Crear un Server Load Balancer público" },
+    { "cmd": "aliyun rds CreateDBInstance --Engine MySQL --DBInstanceClass rds.mysql.s2.large", "desc": "Crear una instancia RDS" },
+    { "cmd": "aliyun rds CreateReadOnlyDBInstance --DBInstanceId rm-xxxxx", "desc": "Crear una réplica de solo lectura de RDS" },
+    { "cmd": "aliyun oss mb oss://mi-app-assets --region cn-hangzhou", "desc": "Crear el bucket OSS para archivos estáticos" }
   ],
   "glossary": [
-    {
-      "en": "Well-Architected",
-      "es": "Well-Architected",
-      "def": "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "en": "Multi-region",
-      "es": "Multi-región",
-      "def": "Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "en": "Multi-AZ",
-      "es": "Multi-AZ",
-      "def": "Múltiples zonas dentro de región."
-    },
-    {
-      "en": "Elastic",
-      "es": "Elástico",
-      "def": "Auto-scale según demanda."
-    },
-    {
-      "en": "Fault Tolerance",
-      "es": "Tolerancia a fallos",
-      "def": "Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "en": "Blast Radius",
-      "es": "Blast radius",
-      "def": "Alcance de una falla."
-    },
-    {
-      "en": "Chaos Engineering",
-      "es": "Chaos engineering",
-      "def": "Introducir fallos controlados para validar resiliencia."
-    },
-    {
-      "en": "Landing Zone",
-      "es": "Landing zone",
-      "def": "Baseline de cuenta lista para cargas."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Three-tier architecture", "es": "Arquitectura de tres capas", "def": "Patrón que separa web/aplicación, datos y archivos en componentes independientes." },
+    { "en": "Single point of failure", "es": "Punto único de falla", "def": "Componente cuya caída deja fuera de servicio a toda la aplicación." },
+    { "en": "Stateless application", "es": "Aplicación sin estado", "def": "Instancia que no depende de datos guardados localmente; cualquier réplica puede atender cualquier petición." },
+    { "en": "SLB (Server Load Balancer)", "es": "Balanceador de carga", "def": "Distribuye tráfico entrante entre varias instancias sanas de la capa de aplicación." },
+    { "en": "Health check", "es": "Chequeo de salud", "def": "Verificación periódica que retira automáticamente instancias no saludables de la rotación de un SLB." },
+    { "en": "Master-replica", "es": "Maestro-réplica", "def": "Patrón de RDS donde las escrituras van al maestro y las lecturas se reparten hacia réplicas." },
+    { "en": "Read replica", "es": "Réplica de lectura", "def": "Copia de solo lectura de la base de datos usada para escalar consultas sin afectar al maestro." },
+    { "en": "High availability (HA)", "es": "Alta disponibilidad", "def": "Configuración con un nodo standby listo para asumir el rol activo ante una falla." },
+    { "en": "Availability Zone", "es": "Zona de disponibilidad", "def": "Data center físicamente aislado dentro de una región; base del diseño multi-zona." },
+    { "en": "OSS bucket", "es": "Bucket de OSS", "def": "Contenedor de almacenamiento de objetos usado para desacoplar archivos del ciclo de vida de las instancias." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful que restringe el tráfico permitido entre capas de la arquitectura." },
+    { "en": "Horizontal scaling", "es": "Escalado horizontal", "def": "Agregar más instancias idénticas en vez de agrandar una sola instancia existente." },
+    { "en": "Vertical scaling", "es": "Escalado vertical", "def": "Aumentar la capacidad de una instancia individual (más vCPU/memoria) en vez de agregar más instancias." },
+    { "en": "Point-in-time recovery", "es": "Recuperación a un punto en el tiempo", "def": "Capacidad de RDS de restaurar la base de datos a un instante específico usando backups y binlogs." },
+    { "en": "CDN", "es": "CDN", "def": "Red de distribución de contenido que cachea archivos estáticos cerca del usuario final, reduciendo carga sobre OSS/ECS." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Arquitectura Alibaba Cloud?",
-      "options": [
-        "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga."
-    },
-    {
-      "q": "¿Qué es <strong>Well-Architected</strong> (Well-Architected) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Well-Architected (Well-Architected): 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-region</strong> (Multi-región) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Despliegue en varias regiones para DR/latencia.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-region (Multi-región): Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-AZ</strong> (Multi-AZ) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Múltiples zonas dentro de región.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-AZ (Multi-AZ): Múltiples zonas dentro de región."
-    },
-    {
-      "q": "¿Qué es <strong>Elastic</strong> (Elástico) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Auto-scale según demanda.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Elastic (Elástico): Auto-scale según demanda."
-    },
-    {
-      "q": "¿Qué es <strong>Fault Tolerance</strong> (Tolerancia a fallos) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Diseño que sobrevive a fallos parciales.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Fault Tolerance (Tolerancia a fallos): Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Arquitectura Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Arquitectura Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Arquitectura Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Arquitectura Alibaba Cloud es la elección típica:",
-      "options": [
-        "E-commerce con picos estacionales (Double 11 pattern)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: E-commerce con picos estacionales (Double 11 pattern)."
-    }
+    { "q": "¿Cuál es el problema principal de ejecutar una aplicación completa (app + base de datos) en una sola instancia ECS?", "options": ["Es más barato que cualquier alternativa", "Es un punto único de falla: si la instancia cae, toda la aplicación deja de estar disponible", "No se puede acceder por SSH", "No permite instalar ningún software"], "answer": 1, "explain": "Sin redundancia, la caída de la única instancia tumba la aplicación completa; separar en capas con múltiples instancias elimina ese riesgo." },
+    { "q": "¿Qué función cumple el Server Load Balancer (SLB) en la arquitectura fundamental?", "options": ["Almacena archivos estáticos", "Distribuye el tráfico entrante entre varias instancias ECS sanas", "Reemplaza a la base de datos", "Cifra el tráfico interno entre capas automáticamente sin configuración"], "answer": 1, "explain": "El SLB es el punto de entrada que reparte las peticiones entre las instancias de la capa de aplicación, retirando automáticamente las que fallan los health checks." },
+    { "q": "¿Por qué las instancias de la capa de aplicación deben ser 'sin estado' (stateless)?", "options": ["Porque ECS no permite guardar archivos", "Para que el balanceo de carga funcione: cualquier instancia debe poder atender cualquier petición", "Porque así consumen menos electricidad", "Es un requisito solo para instancias Windows"], "answer": 1, "explain": "Si una instancia depende de datos guardados solo localmente, el balanceador no puede repartir tráfico libremente entre instancias sin romper la experiencia del usuario." },
+    { "q": "Un usuario sube una imagen de perfil que desaparece cuando el SLB enruta su siguiente petición a otra instancia. ¿Cuál es la causa más probable?", "options": ["El SLB está mal configurado y no puede solucionarse", "La imagen se guardó en el disco local de una instancia en vez de en OSS", "RDS eliminó el archivo automáticamente", "El usuario subió un formato de archivo no soportado"], "answer": 1, "explain": "Guardar archivos en disco local de una instancia específica los hace invisibles para las demás instancias — la solución es un almacenamiento centralizado como OSS." },
+    { "q": "¿Qué resuelve una réplica de lectura (read replica) de RDS?", "options": ["Aumenta el espacio de almacenamiento del maestro", "Permite repartir consultas de lectura pesadas sin sobrecargar el nodo maestro", "Reemplaza la necesidad de hacer backups", "Solo sirve para pruebas, nunca para producción"], "answer": 1, "explain": "Las réplicas de lectura absorben tráfico de consulta (reportes, dashboards) dejando al maestro dedicado principalmente a escrituras." },
+    { "q": "¿Qué caracteriza a una configuración de alta disponibilidad (HA) en RDS?", "options": ["Solo existe un nodo activo sin respaldo", "Un nodo standby en otra zona listo para asumir el rol de maestro ante una falla", "Los backups se hacen manualmente cada mes", "No requiere ninguna configuración adicional sobre RDS estándar"], "answer": 1, "explain": "HA mantiene un nodo en espera sincronizado que puede tomar el control automáticamente si el nodo activo falla, minimizando el tiempo de inactividad." },
+    { "q": "¿Por qué se recomienda distribuir las instancias de la capa de aplicación en al menos dos zonas de disponibilidad?", "options": ["Porque reduce el costo de las instancias", "Para que la falla de una zona completa no tumbe toda la capa de aplicación", "Porque ECS lo requiere obligatoriamente", "Porque mejora la velocidad de procesamiento de CPU"], "answer": 1, "explain": "Distribuir en varias zonas evita que un solo punto de falla física (un data center) derribe toda la capacidad de cómputo disponible." },
+    { "q": "¿Qué configuración de Security Groups es la correcta entre la capa de aplicación y la base de datos RDS?", "options": ["RDS debe aceptar conexiones desde cualquier IP de internet", "RDS solo debe aceptar conexiones desde las instancias de la capa de aplicación", "No es necesario ningún Security Group entre ambas capas", "El SLB debe conectarse directamente a RDS sin pasar por la aplicación"], "answer": 1, "explain": "Restringir el acceso a la base de datos únicamente desde la capa de aplicación reduce la superficie de ataque frente a exponerla directamente a internet." },
+    { "q": "¿Qué ventaja ofrece OSS frente a guardar archivos estáticos en el disco de cada instancia ECS?", "options": ["OSS es más lento pero más seguro", "El almacenamiento queda desacoplado del ciclo de vida de las instancias y accesible desde todas ellas por igual", "OSS solo puede ser usado por una instancia a la vez", "No hay ninguna ventaja real"], "answer": 1, "explain": "Al centralizar los archivos en OSS, cualquier instancia (o una nueva agregada por escalado) puede acceder al mismo contenido sin depender de dónde se subió originalmente." },
+    { "q": "En el diagrama de referencia de la arquitectura fundamental, ¿cuál es el orden correcto del flujo de tráfico?", "options": ["Internet → RDS → SLB → ECS", "Internet → SLB → ECS (capa de aplicación) → RDS (capa de datos)", "Internet → OSS → SLB → RDS", "Internet → ECS → Internet → RDS"], "answer": 1, "explain": "El tráfico público llega primero al SLB, que lo distribuye a la capa de aplicación (ECS), la cual a su vez consulta la capa de datos (RDS)." },
+    { "q": "Un equipo redimensiona su única instancia ECS a un tipo más grande cada vez que el tráfico aumenta. ¿Qué tipo de escalado están practicando y cuál es su limitación?", "options": ["Escalado horizontal; no tiene límites", "Escalado vertical; tiene un techo físico y suele requerir downtime", "No es ningún tipo de escalado reconocido", "Escalado automático sin intervención humana"], "answer": 1, "explain": "Agrandar una sola instancia es escalado vertical: tiene un límite máximo de tamaño y frecuentemente exige reiniciar la instancia, a diferencia del escalado horizontal." },
+    { "q": "¿Qué antipatrón describe enviar el 100% de las consultas de lectura al nodo maestro de RDS existiendo réplicas de lectura disponibles?", "options": ["Es la configuración recomendada siempre", "Desaprovecha la capacidad de las réplicas y sobrecarga innecesariamente al maestro", "Hace que las réplicas se eliminen automáticamente", "No tiene ningún efecto negativo"], "answer": 1, "explain": "Las réplicas de lectura existen precisamente para descargar al maestro; no usarlas anula su propósito y puede degradar el rendimiento de las escrituras." },
+    { "q": "¿Qué caso de uso ilustra mejor la migración de una aplicación monolítica en un servidor físico hacia esta arquitectura fundamental?", "options": ["Separar la aplicación en instancias ECS detrás de SLB, mover la base de datos a RDS y los archivos a OSS", "Copiar el servidor físico completo a una única instancia ECS sin cambios", "Eliminar la base de datos y guardar todo en archivos de texto", "Usar solo OSS para todo el sistema, incluida la lógica de negocio"], "answer": 0, "explain": "La migración fundamental consiste en descomponer el monolito en las capas especializadas (cómputo, balanceo, datos, archivos) que ofrece la nube." }
   ],
-  "exam_focus": "5 pilares Well-Architected, Multi-AZ vs Multi-Region, Elastic patterns, Double 11 lessons.",
+  "exam_focus": "El examen evalúa: (a) identificar los cuatro servicios fundamentales (ECS, SLB, RDS, OSS) y su rol específico, (b) reconocer el antipatrón de instancia única o archivos en disco local, (c) el patrón maestro-réplica de RDS, (d) diseño multi-zona para la capa de aplicación, (e) Security Groups por capa.",
   "official_intro": "Through this course, you will learn the core services of Alibaba Cloud Fundamental Architecture (ECS, SLB, OSS and RDS). By studying some classic use cases, you can understand how to build a basic architecture in Alibaba Cloud.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_caseanalysis",

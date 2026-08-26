@@ -2,421 +2,167 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-architecture",
   "title_en": "An Introduction to Microservice Architecture",
-  "title_es": "An Introducción a Microservice Architecture",
+  "title_es": "Introducción a la Arquitectura de Microservicios",
+  "title_es_html": "Introducción a la <em>Arquitectura de Microservicios</em>",
   "duration_es": "65 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Micro Services",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_architecture",
-  "lead": "Guía completa en español para el curso «An Introduction to Microservice Architecture» de Alibaba Cloud Academy. Cubre en profundidad Microservicios en Alibaba Cloud. Alibaba tiene una historia larga con microservicios (Dubbo, Spring Cloud Alibaba). El stack cloud: ACK/SAE para runtime, MSE (Nacos/ZK/Sentinel) para registry+config+flow control, ASM (Istio gestionado) para service mesh, ARMS para observabilidad. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «An Introduction to Microservice Architecture» de Alibaba Cloud Academy: un curso conceptual sobre por qué y cómo descomponer una aplicación monolítica en servicios independientes. Cubre los patrones de comunicación, descubrimiento de servicios, resiliencia y datos distribuidos que sostienen cualquier arquitectura de microservicios, situando el stack de Alibaba Cloud (Nacos, Sentinel, Seata, ASM) como implementación concreta de esos patrones.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Microservicios en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Service Discovery, Nacos, Sentinel, Seata, Dubbo.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Microservicios en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema de escala organizativa y técnica resuelve migrar de un monolito a microservicios, y cuándo NO conviene hacerlo.",
+    "<strong>Distinguir</strong> comunicación síncrona (REST/RPC) de asíncrona (mensajería) entre servicios y elegir la adecuada según el escenario.",
+    "<strong>Explicar</strong> el rol de un registro de servicios y un centro de configuración en un sistema con decenas de servicios desplegados de forma independiente.",
+    "<strong>Aplicar</strong> patrones de resiliencia — circuit breaker, retry, timeout, degradación — para evitar fallos en cascada.",
+    "<strong>Razonar</strong> sobre el problema de datos distribuidos: base de datos por servicio y transacciones distribuidas (Saga/TCC).",
+    "<strong>Ubicar</strong> el stack de microservicios de Alibaba Cloud (Nacos/MSE, Sentinel, Seata, Dubbo, ASM) frente a sus equivalentes open source.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre patrones y trade-offs de microservicios."
   ],
-  "architecture": "Servicios (Spring Cloud + Nacos SDK) → registro en MSE Nacos → service discovery + config → invocación cross-service via Dubbo/HTTP → Sentinel rate limiting/circuit breaking → ARMS tracing → API Gateway al frente.",
+  "architecture": "Cada servicio expone su propia API y posee su propia base de datos (database-per-service), eliminando el acoplamiento a nivel de esquema que tiene un monolito. Al arrancar, cada instancia se registra en un Service Registry (Nacos); un cliente que necesita llamar a otro servicio consulta ese registro para obtener una instancia sana, en vez de usar una IP fija. Las llamadas síncronas entre servicios pasan por un proxy o SDK con Circuit Breaker (Sentinel) que corta el tráfico hacia un servicio degradado; las operaciones que no requieren respuesta inmediata se desacoplan con una cola de mensajes (RocketMQ/Kafka). Un API Gateway concentra el tráfico externo y lo enruta hacia el servicio correcto. La configuración compartida vive en un Config Center (también Nacos) y se recarga sin reiniciar los servicios. Trazas distribuidas (ARMS) permiten seguir una petición a través de todos los servicios que atraviesa.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Microservicios en Alibaba Cloud",
-      "title_en": "Introduction to Microservicios en Alibaba Cloud",
-      "intro": "Alibaba tiene una historia larga con microservicios (Dubbo, Spring Cloud Alibaba). El stack cloud: ACK/SAE para runtime, MSE (Nacos/ZK/Sentinel) para registry+config+flow control, ASM (Istio gestionado) para service mesh, ARMS para observabilidad. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Del monolito a los microservicios",
+      "title_en": "From Monolith to Microservices",
+      "intro": "Antes de adoptar microservicios hay que entender qué problema resuelven realmente — no es una moda técnica, es una respuesta a un problema concreto de escala de equipo y de código.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba tiene una historia larga con microservicios (Dubbo, Spring Cloud Alibaba).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Microservicios en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El monolito no es malo por definición</strong>: una única base de código, un único proceso desplegable, es simple de desarrollar, probar y desplegar mientras el equipo y el dominio son pequeños.",
+        "<strong>El problema aparece con la escala</strong>: cuando decenas de desarrolladores tocan el mismo código, un cambio pequeño de un equipo puede romper una funcionalidad de otro, y cada despliegue exige probar y liberar la aplicación completa.",
+        "<strong>Microservicios</strong>: descomponer el sistema en servicios pequeños, cada uno con una responsabilidad de negocio acotada (bounded context), desplegable y escalable de forma independiente por un equipo dueño de ese servicio.",
+        "<strong>Costo del cambio</strong>: se gana independencia de despliegue y escalado granular, pero se paga con complejidad operativa — ahora hay que resolver comunicación de red, consistencia de datos distribuida y observabilidad de un sistema con muchas piezas móviles.",
+        "<strong>Cuándo NO migrar</strong>: un equipo pequeño, un dominio simple o un producto en fase temprana de validación rara vez se benefician de microservicios — la complejidad operativa añadida supera el beneficio de escalar equipos que aún no existen."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Microservicios en Alibaba Cloud es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Microservicios resuelven un problema de <em>organización y despliegue independiente</em>, no un problema de rendimiento por sí solo. El examen suele penalizar la respuesta «migrar siempre mejora el rendimiento»." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Microservicios en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Comunicación entre servicios: síncrona vs. asíncrona",
+      "title_en": "Synchronous vs Asynchronous Communication",
+      "intro": "Una vez que el sistema son varios procesos independientes, cada llamada entre ellos cruza la red — y esa decisión de comunicación define la resiliencia de todo el sistema.",
       "points": [
-        "<strong>Patrón canónico</strong>: Servicios (Spring Cloud + Nacos SDK) → registro en MSE Nacos → service discovery + config → invocación cross-service via Dubbo/HTTP → Sentinel rate limiting/circuit breaking → ARMS tracing → API Gateway al frente.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Comunicación síncrona (REST/RPC)</strong>: el llamador espera la respuesta antes de continuar. Simple de razonar, pero acopla la disponibilidad del llamador a la del servicio llamado — si B está lento, A también lo está.",
+        "<strong>RPC binario (Dubbo/gRPC)</strong>: más eficiente que REST/JSON en payload y latencia para comunicación interna entre servicios de la misma organización, a costa de mayor acoplamiento de esquema (contratos IDL/interfaces compartidas).",
+        "<strong>Comunicación asíncrona (mensajería)</strong>: el productor publica un evento y continúa sin esperar; el consumidor lo procesa cuando puede. Desacopla la disponibilidad temporal de ambos servicios — si el consumidor está caído, el mensaje espera en la cola.",
+        "<strong>Cuándo usar cada una</strong>: síncrona para operaciones que necesitan una respuesta inmediata para continuar (validar un pago antes de confirmar un pedido); asíncrona para efectos secundarios que pueden ocurrir con demora (enviar un email de confirmación, actualizar un índice de búsqueda).",
+        "<strong>Riesgo de cadenas síncronas largas</strong>: si el servicio A llama a B, que llama a C, que llama a D, la latencia se acumula y una falla en D puede propagarse hacia arriba — es la raíz del problema que resuelven los patrones de resiliencia."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Microservicios en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe una acción que debe confirmarse antes de continuar el flujo, la respuesta es comunicación síncrona; si describe un efecto secundario tolerante a demora, es mensajería asíncrona." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Descubrimiento de servicios y configuración centralizada",
+      "title_en": "Service Discovery and Centralized Configuration",
+      "intro": "Con decenas de instancias que se crean y destruyen constantemente (auto-escalado, despliegues), ninguna IP fija es confiable — el sistema necesita un directorio vivo de quién existe y dónde está.",
       "points": [
-        "<strong>Service discovery</strong> <em>(Service Discovery)</em>: Servicios se encuentran por nombre.",
-        "<strong>Nacos</strong> <em>(Nacos)</em>: Registry + config center Alibaba.",
-        "<strong>Sentinel</strong> <em>(Sentinel)</em>: Rate limiting, circuit breaker, degradation.",
-        "<strong>Seata</strong> <em>(Seata)</em>: Transacciones distribuidas AT/TCC/SAGA.",
-        "<strong>Dubbo</strong> <em>(Dubbo)</em>: RPC framework de Alibaba.",
-        "<strong>SCA</strong> <em>(Spring Cloud Alibaba)</em>: Bindings SCA para stack Spring Cloud.",
-        "<strong>Alibaba Service Mesh</strong> <em>(ASM)</em>: Istio gestionado.",
-        "<strong>Envoy</strong> <em>(Envoy)</em>: Proxy L7 usado como sidecar en el mesh."
+        "<strong>Service Registry</strong>: cada instancia se registra al arrancar (nombre del servicio + IP + puerto + estado de salud) y se da de baja al detenerse o cuando deja de responder al heartbeat.",
+        "<strong>Service Discovery del lado del cliente</strong>: el llamador consulta el registro, obtiene la lista de instancias sanas y aplica balanceo de carga en el propio cliente antes de invocar — el modelo que usa Nacos con SDKs de Spring Cloud Alibaba/Dubbo.",
+        "<strong>Nacos</strong>: el registro de servicios y centro de configuración nativo del ecosistema Alibaba (Spring Cloud Alibaba, Dubbo); en la nube se consume gestionado a través de MSE (Microservice Engine), sin operar el clúster Nacos manualmente.",
+        "<strong>Config Center</strong>: parámetros compartidos (feature flags, umbrales, endpoints) se centralizan y se distribuyen a todas las instancias en caliente, sin reiniciar el servicio ni reconstruir la imagen para cambiar un valor.",
+        "<strong>Por qué no hardcodear endpoints</strong>: con IPs fijas en el código, cada despliegue o auto-escalado rompe la comunicación; el descubrimiento dinámico es lo que permite que instancias nazcan y mueran sin coordinación manual."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Endpoints hardcodeados es el antipatrón número uno del examen en este tema: sin descubrimiento de servicios, la arquitectura de microservicios no puede escalar ni auto-recuperarse." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Resiliencia: circuit breaker, retry, timeout y degradación",
+      "title_en": "Resilience Patterns",
+      "intro": "En un sistema distribuido, algún servicio va a fallar tarde o temprano. El objetivo de estos patrones no es evitar el fallo, sino impedir que se propague y tumbe todo el sistema.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Timeout</strong>: toda llamada de red debe tener un límite de tiempo explícito; sin timeout, un servicio lento puede agotar los hilos/conexiones del llamador esperando indefinidamente una respuesta que nunca llega.",
+        "<strong>Retry (reintento)</strong>: reintentar una llamada fallida puede ayudar ante fallos transitorios, pero sin límite ni backoff puede amplificar una sobrecarga — reintentar agresivamente contra un servicio ya saturado empeora el problema.",
+        "<strong>Circuit Breaker (cortacircuitos)</strong>: tras un umbral de fallos, el circuito se «abre» y deja de intentar llamar al servicio degradado durante un período, devolviendo un error rápido en vez de esperar timeouts repetidos — así se evita la cascada de fallos.",
+        "<strong>Degradación (fallback)</strong>: cuando el circuito está abierto, el llamador puede devolver una respuesta reducida (caché, valor por defecto) en vez de un error total, manteniendo el sistema parcialmente funcional.",
+        "<strong>Sentinel</strong>: el componente de Alibaba (parte de MSE) que implementa rate limiting, circuit breaking y degradación de forma declarativa sobre servicios Spring Cloud Alibaba/Dubbo, sin reescribir lógica de resiliencia en cada servicio."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Cadena de fallos donde un servicio lento tumba a todos los que lo llaman = ausencia de timeout + circuit breaker. Es uno de los escenarios de diagnóstico más frecuentes del examen." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Datos distribuidos y transacciones",
+      "title_en": "Distributed Data and Transactions",
+      "intro": "El monolito tenía una única base de datos con transacciones ACID nativas. Al dividir el sistema, cada servicio gestiona sus propios datos — y coordinar una operación que toca varios servicios deja de ser trivial.",
       "points": [
-        "<strong>Buenas prácticas</strong>: MSE gestionado, no self-hosted",
-        "<strong>Buenas prácticas</strong>: Circuit breakers configurados desde día 1",
-        "<strong>Buenas prácticas</strong>: Tracing obligatorio (ARMS)",
-        "<strong>Buenas prácticas</strong>: Deploy independiente + canary",
-        "<strong>Buenas prácticas</strong>: Contract testing entre servicios"
+        "<strong>Database-per-service</strong>: cada microservicio posee su propia base de datos, inaccesible directamente por otros servicios — solo se accede a través de la API del servicio dueño, preservando el encapsulamiento.",
+        "<strong>El problema de la transacción distribuida</strong>: una operación de negocio (p.ej. «crear pedido») puede requerir cambios consistentes en el servicio de Pedidos, Inventario y Pagos — tres bases de datos distintas, sin una transacción ACID que las cubra a todas.",
+        "<strong>Patrón Saga</strong>: descompone la operación en una secuencia de pasos locales, cada uno con una acción de compensación; si un paso falla, se ejecutan las compensaciones de los pasos anteriores para revertir el efecto — consistencia eventual, no inmediata.",
+        "<strong>TCC (Try-Confirm-Cancel)</strong>: variante de dos fases explícitas por servicio (reservar recursos, confirmar o cancelar) que da más control que Saga a cambio de más código de coordinación.",
+        "<strong>Seata</strong>: el framework de transacciones distribuidas de Alibaba, que implementa los modos AT (automático, similar a 2PC optimizado), TCC y Saga sobre el mismo ecosistema Spring Cloud Alibaba/Dubbo."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "No existe una transacción ACID nativa que abarque varios microservicios. Saga y TCC son formas de lograr consistencia eventual con compensación, no una transacción distribuida instantánea." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Observabilidad, service mesh y estrategia de examen",
+      "title_en": "Observability, Service Mesh and Exam Strategy",
+      "intro": "Con decenas de servicios, entender qué está pasando en producción exige herramientas distintas a las de un monolito. Este módulo cierra con observabilidad, la alternativa del service mesh y los antipatrones más preguntados.",
       "points": [
-        "<strong>Antipattern</strong>: Sin service discovery — endpoints hardcodeados",
-        "<strong>Antipattern</strong>: Sin timeouts — cascadas de fallo",
-        "<strong>Antipattern</strong>: Distributed monolith (deploys sincrónicos entre servicios)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Trazas distribuidas (distributed tracing)</strong>: cada petición recibe un identificador único que se propaga entre servicios, permitiendo reconstruir el camino completo y detectar en qué salto se originó la latencia o el error — en Alibaba Cloud, ARMS.",
+        "<strong>Service Mesh (ASM)</strong>: mueve el circuit breaking, retry, mTLS y observabilidad fuera del código de la aplicación hacia un proxy sidecar (Envoy) junto a cada Pod — Alibaba Service Mesh es Istio gestionado sobre ACK, útil cuando hay servicios en distintos lenguajes que no pueden compartir una librería SDK común.",
+        "<strong>SDK vs. Mesh</strong>: el enfoque SDK (Sentinel/Dubbo embebido en el código) es más liviano y maduro en el ecosistema Java; el mesh es agnóstico al lenguaje pero añade un salto de red y complejidad operativa del propio mesh.",
+        "<strong>Antipatrón: distributed monolith</strong>: servicios técnicamente separados pero desplegados siempre juntos y acoplados por llamadas síncronas encadenadas — se pierde la independencia de despliegue sin ganar simplicidad, lo peor de ambos mundos.",
+        "<strong>Estrategia de examen</strong>: ante un escenario, identifica primero si describe un problema de comunicación (síncrona/asíncrona), de descubrimiento, de resiliencia o de datos distribuidos — cada categoría tiene un patrón de respuesta característico."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Lee el escenario buscando la palabra clave del patrón: «responder antes de continuar» → síncrono; «tolerante a demora» → mensajería; «servicio lento tumba a otros» → circuit breaker; «operación que toca varios servicios» → Saga/TCC." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Descomposición de monolito legado"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Alta disponibilidad con circuit breakers"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Deploy independiente por equipo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Escalado granular por servicio"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Multi-lenguaje (mesh gRPC/HTTP)"
-    }
+    { "title": "Escenario 1", "text": "Descomposición de un monolito de e-commerce en servicios de Catálogo, Pedidos, Pagos e Inventario" },
+    { "title": "Escenario 2", "text": "Confirmación de pago que debe bloquear el flujo hasta obtener respuesta — comunicación síncrona con timeout y circuit breaker" },
+    { "title": "Escenario 3", "text": "Envío de email de bienvenida tras un registro — comunicación asíncrona vía cola de mensajes" },
+    { "title": "Escenario 4", "text": "Creación de un pedido que afecta Inventario y Pagos — patrón Saga con compensación" },
+    { "title": "Escenario 5", "text": "Sistema con servicios en Java, Go y Node.js que necesitan resiliencia uniforme — Service Mesh (ASM)" },
+    { "title": "Escenario 6", "text": "Diagnóstico de una petición lenta que atraviesa 5 servicios — trazas distribuidas (ARMS)" }
   ],
   "mistakes": [
-    "Sin service discovery — endpoints hardcodeados",
-    "Sin timeouts — cascadas de fallo",
-    "Distributed monolith (deploys sincrónicos entre servicios)"
+    "Migrar a microservicios sin un problema real de escala de equipo o despliegue que lo justifique",
+    "Hardcodear IPs o endpoints entre servicios en vez de usar descubrimiento de servicios",
+    "Llamadas síncronas sin timeout ni circuit breaker → un servicio lento tumba a toda la cadena",
+    "Compartir una base de datos entre varios microservicios, rompiendo el encapsulamiento de datos",
+    "Asumir que existe una transacción ACID distribuida nativa entre servicios sin implementar Saga/TCC",
+    "Crear un 'distributed monolith': servicios separados en el código pero acoplados y desplegados siempre juntos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun mse ListClusters",
-      "desc": "Listar Nacos/MSE"
-    },
-    {
-      "cmd": "kubectl get svc -A",
-      "desc": "Servicios K8s"
-    }
+    { "cmd": "aliyun mse ListClusters --RegionId cn-hangzhou", "desc": "Listar instancias de Nacos/MSE (registro y config center)" },
+    { "cmd": "aliyun mse ListNacosConfigs --InstanceId <id>", "desc": "Ver configuraciones publicadas en el Config Center" },
+    { "cmd": "aliyun arms QueryTraceApp --RegionId cn-hangzhou", "desc": "Consultar aplicaciones con tracing habilitado en ARMS" },
+    { "cmd": "kubectl get pods -n istio-system", "desc": "Ver los proxies del Service Mesh (ASM) en un clúster ACK" },
+    { "cmd": "aliyun mse ListSentinelNamespaces", "desc": "Ver namespaces de reglas de Sentinel (circuit breaking / rate limiting)" }
   ],
   "glossary": [
-    {
-      "en": "Service Discovery",
-      "es": "Service discovery",
-      "def": "Servicios se encuentran por nombre."
-    },
-    {
-      "en": "Nacos",
-      "es": "Nacos",
-      "def": "Registry + config center Alibaba."
-    },
-    {
-      "en": "Sentinel",
-      "es": "Sentinel",
-      "def": "Rate limiting, circuit breaker, degradation."
-    },
-    {
-      "en": "Seata",
-      "es": "Seata",
-      "def": "Transacciones distribuidas AT/TCC/SAGA."
-    },
-    {
-      "en": "Dubbo",
-      "es": "Dubbo",
-      "def": "RPC framework de Alibaba."
-    },
-    {
-      "en": "Spring Cloud Alibaba",
-      "es": "SCA",
-      "def": "Bindings SCA para stack Spring Cloud."
-    },
-    {
-      "en": "ASM",
-      "es": "Alibaba Service Mesh",
-      "def": "Istio gestionado."
-    },
-    {
-      "en": "Envoy",
-      "es": "Envoy",
-      "def": "Proxy L7 usado como sidecar en el mesh."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Monolith", "es": "Monolito", "def": "Aplicación desplegada como un único proceso/artefacto con toda su lógica de negocio." },
+    { "en": "Bounded Context", "es": "Contexto acotado", "def": "Frontera de responsabilidad de negocio que define el alcance de un microservicio." },
+    { "en": "Service Registry", "es": "Registro de servicios", "def": "Directorio vivo de instancias disponibles por servicio, usado para descubrimiento dinámico." },
+    { "en": "Nacos", "es": "Nacos", "def": "Registro de servicios y centro de configuración del ecosistema Alibaba, consumido gestionado vía MSE." },
+    { "en": "Config Center", "es": "Centro de configuración", "def": "Almacén centralizado de parámetros compartidos, distribuidos en caliente a las instancias." },
+    { "en": "Synchronous communication", "es": "Comunicación síncrona", "def": "El llamador espera la respuesta antes de continuar (REST, RPC)." },
+    { "en": "Asynchronous communication", "es": "Comunicación asíncrona", "def": "El productor publica y continúa; el consumidor procesa cuando puede (mensajería)." },
+    { "en": "Circuit Breaker", "es": "Cortacircuitos", "def": "Patrón que corta llamadas hacia un servicio degradado tras un umbral de fallos, evitando cascadas." },
+    { "en": "Timeout", "es": "Tiempo de espera", "def": "Límite explícito de espera en una llamada de red, evita bloqueos indefinidos." },
+    { "en": "Retry with backoff", "es": "Reintento con espera creciente", "def": "Reintentar una llamada fallida aumentando el intervalo entre intentos, evitando amplificar la carga." },
+    { "en": "Fallback / Degradation", "es": "Degradación", "def": "Respuesta reducida (caché, valor por defecto) cuando el servicio real no está disponible." },
+    { "en": "Sentinel", "es": "Sentinel", "def": "Componente de Alibaba para rate limiting, circuit breaking y degradación declarativa." },
+    { "en": "Database-per-service", "es": "Base de datos por servicio", "def": "Cada microservicio posee su propia base de datos, sin acceso directo de otros servicios." },
+    { "en": "Saga pattern", "es": "Patrón Saga", "def": "Secuencia de pasos locales con compensación ante fallo, para consistencia eventual entre servicios." },
+    { "en": "TCC (Try-Confirm-Cancel)", "es": "TCC", "def": "Patrón de transacción distribuida en dos fases explícitas por servicio." },
+    { "en": "Seata", "es": "Seata", "def": "Framework de Alibaba para transacciones distribuidas en modos AT, TCC y Saga." },
+    { "en": "Distributed Tracing", "es": "Trazas distribuidas", "def": "Seguimiento de una petición a través de todos los servicios que atraviesa, vía un ID de traza." },
+    { "en": "Service Mesh", "es": "Malla de servicios", "def": "Capa de proxies sidecar (Envoy) que gestiona comunicación y resiliencia fuera del código de la app." },
+    { "en": "ASM (Alibaba Service Mesh)", "es": "ASM", "def": "Istio gestionado por Alibaba Cloud, service mesh sobre ACK." },
+    { "en": "Distributed Monolith", "es": "Monolito distribuido", "def": "Antipatrón: servicios separados en el código pero acoplados y desplegados siempre juntos." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Microservicios en Alibaba Cloud?",
-      "options": [
-        "Alibaba tiene una historia larga con microservicios (Dubbo, Spring Cloud Alibaba). El stack cloud: ACK/SAE para runtime, MSE (Nacos/ZK/Sentinel) para registry+config+flow control, ASM (Istio gestionad",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba tiene una historia larga con microservicios (Dubbo, Spring Cloud Alibaba). El stack cloud: ACK/SAE para runtime, MSE (Nacos/ZK/Sentinel) para registry+config+flow control, ASM (Istio gestionado) para service mesh, ARMS para observabilidad."
-    },
-    {
-      "q": "¿Qué es <strong>Service Discovery</strong> (Service discovery) en Microservicios en Alibaba Cloud?",
-      "options": [
-        "Servicios se encuentran por nombre.",
-        "Registry + config center Alibaba.",
-        "Rate limiting, circuit breaker, degradation.",
-        "Transacciones distribuidas AT/TCC/SAGA."
-      ],
-      "answer": 0,
-      "explain": "Service Discovery (Service discovery): Servicios se encuentran por nombre."
-    },
-    {
-      "q": "¿Qué es <strong>Nacos</strong> (Nacos) en Microservicios en Alibaba Cloud?",
-      "options": [
-        "Registry + config center Alibaba.",
-        "Servicios se encuentran por nombre.",
-        "Rate limiting, circuit breaker, degradation.",
-        "Transacciones distribuidas AT/TCC/SAGA."
-      ],
-      "answer": 0,
-      "explain": "Nacos (Nacos): Registry + config center Alibaba."
-    },
-    {
-      "q": "¿Qué es <strong>Sentinel</strong> (Sentinel) en Microservicios en Alibaba Cloud?",
-      "options": [
-        "Rate limiting, circuit breaker, degradation.",
-        "Servicios se encuentran por nombre.",
-        "Registry + config center Alibaba.",
-        "Transacciones distribuidas AT/TCC/SAGA."
-      ],
-      "answer": 0,
-      "explain": "Sentinel (Sentinel): Rate limiting, circuit breaker, degradation."
-    },
-    {
-      "q": "¿Qué es <strong>Seata</strong> (Seata) en Microservicios en Alibaba Cloud?",
-      "options": [
-        "Transacciones distribuidas AT/TCC/SAGA.",
-        "Servicios se encuentran por nombre.",
-        "Registry + config center Alibaba.",
-        "Rate limiting, circuit breaker, degradation."
-      ],
-      "answer": 0,
-      "explain": "Seata (Seata): Transacciones distribuidas AT/TCC/SAGA."
-    },
-    {
-      "q": "¿Qué es <strong>Dubbo</strong> (Dubbo) en Microservicios en Alibaba Cloud?",
-      "options": [
-        "RPC framework de Alibaba.",
-        "Servicios se encuentran por nombre.",
-        "Registry + config center Alibaba.",
-        "Rate limiting, circuit breaker, degradation."
-      ],
-      "answer": 0,
-      "explain": "Dubbo (Dubbo): RPC framework de Alibaba."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Microservicios en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Microservicios en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Microservicios en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Microservicios en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Descomposición de monolito legado",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Descomposición de monolito legado."
-    }
+    { "q": "Según el curso, ¿qué problema resuelven principalmente los microservicios?", "options": ["Garantizan automáticamente mejor rendimiento que un monolito", "Permiten escalar equipos y desplegar servicios de forma independiente", "Eliminan la necesidad de bases de datos", "Evitan por completo la necesidad de monitoreo"], "answer": 1, "explain": "Microservicios resuelven un problema organizativo y de despliegue independiente, no garantizan rendimiento por sí solos." },
+    { "q": "Un servicio necesita confirmar un pago antes de continuar el flujo de compra. ¿Qué tipo de comunicación es apropiada?", "options": ["Asíncrona vía cola de mensajes", "Síncrona (REST/RPC) con timeout y circuit breaker", "No requiere comunicación entre servicios", "Solo por lotes cada 24 horas"], "answer": 1, "explain": "Una operación que bloquea el flujo hasta obtener respuesta requiere comunicación síncrona, protegida con timeout y circuit breaker." },
+    { "q": "¿Por qué hardcodear IPs de otros servicios en el código es un antipatrón en microservicios?", "options": ["Porque consume más memoria", "Porque instancias se crean y destruyen dinámicamente; sin descubrimiento de servicios la comunicación se rompe", "Porque las IPs siempre son públicas", "No es un antipatrón, es la práctica recomendada"], "answer": 1, "explain": "Con auto-escalado y despliegues frecuentes, las IPs cambian constantemente; el descubrimiento dinámico es indispensable." },
+    { "q": "¿Qué hace un Circuit Breaker cuando un servicio dependiente falla repetidamente?", "options": ["Reintenta indefinidamente hasta obtener respuesta", "Abre el circuito y deja de llamar al servicio degradado por un período, devolviendo error rápido", "Elimina el servicio fallido de la base de datos", "Aumenta automáticamente los recursos del servicio fallido"], "answer": 1, "explain": "El circuit breaker evita esperar timeouts repetidos contra un servicio ya degradado, previniendo la propagación del fallo." },
+    { "q": "¿Cuál es el riesgo de un Retry sin límite ni backoff contra un servicio ya sobrecargado?", "options": ["Ninguno, siempre es seguro reintentar", "Puede amplificar la sobrecarga y empeorar el problema", "Los reintentos se cobran como tráfico extra únicamente", "El servicio se reinicia automáticamente"], "answer": 1, "explain": "Reintentar agresivamente contra un servicio saturado añade más carga, agravando la situación en vez de mitigarla." },
+    { "q": "¿Por qué cada microservicio debe tener su propia base de datos (database-per-service)?", "options": ["Para reducir el número de servidores necesarios", "Para preservar el encapsulamiento: solo se accede a los datos vía la API del servicio dueño", "Porque las bases de datos compartidas son ilegales en la nube", "No es una práctica recomendada"], "answer": 1, "explain": "Compartir una base de datos entre servicios rompe el encapsulamiento y crea acoplamiento a nivel de esquema, contrario al principio de microservicios." },
+    { "q": "Una operación de negocio requiere cambios consistentes en tres microservicios distintos. ¿Qué patrón se usa al no existir una transacción ACID distribuida nativa?", "options": ["Se ignora el problema, no tiene solución", "Patrón Saga o TCC, con pasos locales y compensación ante fallo", "Se fusionan los tres servicios en uno solo automáticamente", "Se usa siempre una tabla compartida entre los tres servicios"], "answer": 1, "explain": "Saga y TCC logran consistencia eventual mediante compensación, sin requerir una transacción ACID que abarque varios servicios." },
+    { "q": "¿Qué framework de Alibaba implementa transacciones distribuidas en los modos AT, TCC y Saga?", "options": ["Sentinel", "Nacos", "Seata", "Dubbo"], "answer": 2, "explain": "Seata es el framework de Alibaba dedicado específicamente a transacciones distribuidas." },
+    { "q": "¿Qué componente de Alibaba Cloud implementa rate limiting, circuit breaking y degradación de forma declarativa?", "options": ["Sentinel (parte de MSE)", "OSS", "VPC", "RAM"], "answer": 0, "explain": "Sentinel es el componente dedicado a resiliencia: limita tasa, corta circuitos y degrada respuestas sin reescribir lógica en cada servicio." },
+    { "q": "¿Cuál es la diferencia principal entre el enfoque SDK (Sentinel/Dubbo embebido) y un Service Mesh (ASM) para resiliencia?", "options": ["Son exactamente lo mismo", "El SDK vive dentro del código de la app; el mesh mueve la lógica a un proxy sidecar agnóstico al lenguaje", "El mesh solo funciona con bases de datos relacionales", "El SDK no puede usarse en Kubernetes"], "answer": 1, "explain": "El service mesh externaliza la resiliencia y observabilidad a un proxy sidecar, útil cuando hay múltiples lenguajes que no comparten SDK." },
+    { "q": "¿Qué es un 'distributed monolith' y por qué es un antipatrón?", "options": ["Un monolito ejecutado en varios servidores idénticos", "Servicios técnicamente separados pero acoplados por llamadas síncronas encadenadas y siempre desplegados juntos", "Un microservicio con más de una base de datos", "Una arquitectura recomendada para sistemas grandes"], "answer": 1, "explain": "El distributed monolith pierde la independencia de despliegue de los microservicios sin ganar la simplicidad de un monolito real." },
+    { "q": "¿Para qué sirven las trazas distribuidas (distributed tracing) en una arquitectura de microservicios?", "options": ["Para cifrar el tráfico entre servicios", "Para seguir una petición a través de todos los servicios que atraviesa y ubicar dónde se originó un problema", "Para reemplazar la necesidad de un registro de servicios", "Para generar backups automáticos de las bases de datos"], "answer": 1, "explain": "Un identificador de traza propagado entre servicios permite reconstruir el camino completo de una petición y localizar la causa de latencia o errores." },
+    { "q": "¿Cuándo es razonable NO migrar un sistema monolítico a microservicios, según el curso?", "options": ["Nunca, siempre conviene migrar", "Cuando el equipo es pequeño, el dominio es simple o el producto está en validación temprana", "Solo si el sistema usa una base de datos NoSQL", "Solo si el sistema ya está en la nube"], "answer": 1, "explain": "La complejidad operativa añadida por microservicios rara vez se justifica cuando aún no existe el problema de escala de equipo que resuelven." },
+    { "q": "Un servicio de Notificaciones debe enviar un correo tras cada registro de usuario, sin bloquear el flujo de registro. ¿Qué mecanismo de comunicación es el más apropiado?", "options": ["Llamada síncrona con timeout largo", "Mensajería asíncrona vía cola de mensajes", "Consulta directa a la base de datos del servicio de Usuarios", "No se necesita comunicación entre servicios"], "answer": 1, "explain": "Un efecto secundario tolerante a demora, como el envío de un correo, se desacopla correctamente con mensajería asíncrona." }
   ],
-  "exam_focus": "Service discovery, circuit breakers, service mesh vs SDK, ASM, Sentinel.",
+  "exam_focus": "El examen suele evaluar: (a) cuándo microservicios se justifican frente a un monolito, (b) comunicación síncrona vs. asíncrona según el escenario, (c) patrones de resiliencia (timeout, retry, circuit breaker, degradación) y el antipatrón de cascada de fallos, (d) datos distribuidos y Saga/TCC frente a la ausencia de ACID distribuido, (e) service mesh (ASM) frente al enfoque SDK (Sentinel/Nacos).",
   "official_intro": "This course is designed to help IT companies that want to containerise and microservice their business applications, as well as cloud computing engineers and enthusiasts who want to learn about microservice architecture. Through this course, you can get a comprehensive understanding of what a microservice architecture is, what the common open source frameworks of microservice are, what the characteristics of Alibaba Cloud microservice are, what the advantages and disadvantages of microservice architecture are, and how to implement microservice architecture based on Alibaba Cloud container service. It can provide reference for the evaluation, design and implementation of the application with microservice architecture.",
   "recommended_for": "Cloud Computing Architects, Cloud Service Providers, Cloud Computing Enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_architecture",

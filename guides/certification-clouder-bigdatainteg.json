@@ -2,433 +2,184 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-bigdatainteg",
   "title_en": "Alibaba Cloud Big Data - Data Integration",
-  "title_es": "Alibaba Cloud Big Datos - Datos Integration",
+  "title_es": "Alibaba Cloud Big Data - Integración de Datos",
+  "title_es_html": "Alibaba Cloud Big Data - <em>Integración de Datos</em>",
   "duration_es": "45 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Development",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_bigdatainteg",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Big Data - Data Integration» de Alibaba Cloud Academy. Cubre en profundidad DataWorks. DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud Big Data - Data Integration» de Alibaba Cloud Academy, centrado en el módulo Data Integration de DataWorks: el motor de sincronización de datos que mueve información entre bases de datos, OSS, colas de mensajería y MaxCompute sin que el usuario escriba un ETL a mano. Cubre el modelo reader-writer, los modos asistente y código, los grupos de recursos y las decisiones que el examen evalúa sobre sincronización batch y en tiempo real.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DataWorks</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Workspace, Node, Workflow, Scheduler, Data Integration.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DataWorks y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve Data Integration frente a escribir scripts ETL propios para mover datos entre sistemas heterogéneos.",
+    "<strong>Distinguir</strong> el modelo reader-writer de una tarea de sincronización y los conectores (RDS, OSS, MaxCompute, Kafka, y otros) disponibles a cada lado.",
+    "<strong>Configurar</strong> una tarea de sincronización batch en modo asistente y entender cuándo conviene pasar a modo código (JSON).",
+    "<strong>Elegir</strong> el grupo de recursos correcto (compartido, exclusivo o personalizado) según los requisitos de red y rendimiento.",
+    "<strong>Aplicar</strong> control de velocidad (rate limiting) y umbrales de datos sucios (dirty data) para proteger sistemas origen y destino.",
+    "<strong>Diferenciar</strong> sincronización batch (offline) de sincronización en tiempo real (CDC) y cuándo usar cada una.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen sobre configuración y troubleshooting de tareas de integración."
   ],
-  "architecture": "Módulos: Data Integration (ingestas batch/stream), Data Studio (IDE SQL/Python con workflows DAG), Data Quality (reglas), Data Map (catálogo y linaje), Data Security (DLP), AI Studio. El scheduler ejecuta DAGs con dependencias, reintentos y alertas.",
+  "architecture": "Un origen (RDS MySQL, PostgreSQL, OSS, un archivo local, otra nube) se conecta mediante una Data Source registrada en el Workspace de DataWorks. Una tarea de sincronización batch usa un Reader para extraer registros del origen y un Writer para insertarlos en el destino (típicamente una tabla particionada de MaxCompute), ejecutándose sobre un grupo de recursos (Resource Group for Data Integration) que puede ser compartido (multi-tenant, sin control de IP fija) o exclusivo (aislado, con IP fija para whitelisting y mayor control de concurrencia). Para replicación continua, una tarea de sincronización en tiempo real usa captura de cambios (CDC, vía DTS) para escribir eventos insert/update/delete casi en el momento en que ocurren. El Scheduler de DataWorks dispara las tareas batch por cron; CloudMonitor y las alertas de DataWorks notifican fallos o retrasos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DataWorks",
-      "title_en": "Introduction to DataWorks",
-      "intro": "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es Data Integration y qué problema resuelve",
+      "title_en": "What is Data Integration",
+      "intro": "Antes de configurar una sola tarea, el curso sitúa Data Integration dentro de DataWorks: es el módulo especializado en mover datos entre sistemas, no en transformarlos con lógica de negocio compleja. Esa distinción evita errores conceptuales frecuentes en el examen.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DataWorks se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Problema que resuelve</strong>: sin una herramienta dedicada, cada integración entre un sistema origen y uno destino requiere un script custom con su propio manejo de errores, reintentos y paginación — Data Integration estandariza eso en una tarea configurable.",
+        "<strong>Arquitectura reader-writer</strong>: toda tarea de sincronización batch se compone de un plugin Reader (lee del origen) y un plugin Writer (escribe en el destino); ambos son intercambiables, lo que permite decenas de combinaciones origen-destino sin código nuevo.",
+        "<strong>Más de 50 conectores</strong>: bases de datos relacionales (MySQL, PostgreSQL, SQL Server, Oracle), almacenamiento (OSS, HDFS, FTP), NoSQL (MongoDB, Redis, HBase), colas (Kafka, DataHub) y el propio MaxCompute como origen o destino.",
+        "<strong>No es un motor de transformación</strong>: Data Integration mueve y hace mapeos simples de columnas; las transformaciones complejas (joins, agregaciones, lógica de negocio) se hacen después, con nodos SQL de MaxCompute orquestados por el Scheduler de DataWorks.",
+        "<strong>Batch vs. tiempo real</strong>: la mayoría de tareas son batch (ejecutadas por cron, por ejemplo cada noche); para replicación continua de una base transaccional existe la sincronización en tiempo real basada en CDC."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DataWorks es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Data Integration no reemplaza la lógica de negocio de un ETL — mueve datos de A a B de forma confiable y escalable. La transformación de negocio vive en los nodos SQL que se ejecutan después, dentro del mismo workflow de DataWorks."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DataWorks no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Modo asistente vs. modo código",
+      "title_en": "Wizard Mode vs. Script Mode",
+      "intro": "DataWorks ofrece dos formas de definir una tarea de sincronización batch: un asistente visual paso a paso y un editor de la configuración JSON subyacente. Saber cuándo usar cada uno es una pregunta recurrente del examen.",
       "points": [
-        "<strong>Patrón canónico</strong>: Módulos: Data Integration (ingestas batch/stream), Data Studio (IDE SQL/Python con workflows DAG), Data Quality (reglas), Data Map (catálogo y linaje), Data Security (DLP), AI Studio. El scheduler ejecuta DAGs con dependencias, reintentos y alertas.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DataWorks (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Espacio de trabajo</strong> <em>(Workspace)</em>: Unidad top con quotas, engines y permisos.",
-        "<strong>Nodo</strong> <em>(Node)</em>: Tarea individual: SQL, Python, shell, ML.",
-        "<strong>Workflow</strong> <em>(Workflow)</em>: DAG de nodos con dependencias.",
-        "<strong>Scheduler</strong> <em>(Scheduler)</em>: Ejecuta DAGs por cron; maneja retry, catch-up, alertas.",
-        "<strong>Data Integration</strong> <em>(Data Integration)</em>: Sincronización batch/stream entre 50+ conectores.",
-        "<strong>DQC</strong> <em>(Data Quality (DQC))</em>: Reglas de calidad: null, ranges, unicidad; bloquea downstream si falla.",
-        "<strong>Data Map</strong> <em>(Data Map)</em>: Catálogo con búsqueda, tags, linaje columnar.",
-        "<strong>Data Security</strong> <em>(Data Security)</em>: DLP: detecta y enmascara PII."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Modo asistente (wizard)</strong>: se eligen origen, destino y se mapean columnas por interfaz gráfica — rápido para tareas simples de una tabla a otra sin transformación de tipos complicada.",
+        "<strong>Modo código (script)</strong>: expone directamente el JSON que describe el Reader, el Writer, el mapeo de columnas y los parámetros de rendimiento — necesario cuando se requiere una transformación de columna a nivel de expresión, un filtro WHERE complejo en el origen, o parámetros no expuestos en el asistente.",
+        "<strong>Conversión entre modos</strong>: se puede empezar en asistente y pasar a código para ajustes finos, pero una vez editado el JSON manualmente, volver al asistente puede perder esos ajustes — es una vía de un solo sentido en la práctica.",
+        "<strong>Parámetros de contexto</strong>: ambas modalidades permiten variables de sistema como la fecha de negocio (bizdate) para que la tarea sepa qué partición leer o escribir sin hardcodear la fecha.",
+        "<strong>Prueba antes de programar</strong>: siempre conviene ejecutar la tarea manualmente una vez, revisando el reporte de sincronización (registros leídos, escritos, descartados) antes de dejarla en manos del Scheduler."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una necesidad que el asistente no cubre (transformación de expresión, filtro condicional avanzado), la respuesta correcta es modo código, no 'no es posible con Data Integration'."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Grupos de recursos para Data Integration",
+      "title_en": "Resource Groups for Data Integration",
+      "intro": "Cada tarea de sincronización se ejecuta sobre un grupo de recursos que provee el cómputo real — elegir el tipo correcto es una de las decisiones de diseño más preguntadas.",
       "points": [
-        "<strong>Costo</strong>: Resource Groups reservados para integración crítica",
-        "<strong>Buenas prácticas</strong>: Workspaces separados por ambiente (dev/prod)",
-        "<strong>Buenas prácticas</strong>: Reglas DQC bloqueantes en tablas críticas",
-        "<strong>Buenas prácticas</strong>: Baselines para procesos con SLA de reporte",
-        "<strong>Buenas prácticas</strong>: Data Map con owners obligatorios — sin owner, sin acceso"
+        "<strong>Grupo compartido (shared)</strong>: recursos multi-tenant gestionados por Alibaba Cloud, sin costo adicional; conveniente para desarrollo y tareas pequeñas, pero sin IP fija predecible ni aislamiento de rendimiento frente a otros tenants.",
+        "<strong>Grupo exclusivo (exclusive)</strong>: instancias de cómputo dedicadas a la cuenta, con IP fija — necesario cuando el sistema origen (por ejemplo, una base de datos on-premise) exige whitelisting de IP para permitir la conexión.",
+        "<strong>Grupo personalizado (custom / self-managed)</strong>: el cliente aporta sus propias instancias ECS como agentes de integración, útil cuando la red corporativa exige que el tráfico nunca salga de una VPC específica.",
+        "<strong>Aislamiento de red</strong>: un grupo exclusivo se puede vincular a la VPC del origen o destino, evitando exponer una base de datos a internet solo para permitir la sincronización.",
+        "<strong>Escalado de concurrencia</strong>: el grupo exclusivo permite ejecutar más tareas en paralelo sin competir por recursos con otros clientes de la plataforma, relevante cuando hay decenas de sincronizaciones nocturnas con la misma ventana de tiempo."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Si el escenario menciona una base de datos on-premise que solo acepta conexiones desde IPs en whitelist, la respuesta es un grupo de recursos exclusivo con IP fija — el grupo compartido no la ofrece."
+      }
+    },
+    {
+      "title_es": "4 · Control de velocidad y datos sucios",
+      "title_en": "Rate Limiting and Dirty Data Handling",
+      "intro": "Una sincronización mal configurada puede saturar la base de datos origen o fallar por completo ante un puñado de registros corruptos — este módulo cubre las dos salvaguardas principales.",
+      "points": [
+        "<strong>Control de velocidad (rate limiting)</strong>: limita cuántos registros por segundo o cuánto ancho de banda consume la tarea de lectura, protegiendo a una base de datos transaccional de producción de una carga que compita con el tráfico de la aplicación en horario laboral.",
+        "<strong>Concurrencia (parallelism)</strong>: número de hilos que leen simultáneamente, típicamente dividiendo la tabla origen por rangos de una columna clave — más concurrencia acelera la sincronización, pero también aumenta la carga sobre el origen.",
+        "<strong>Datos sucios (dirty data)</strong>: registros que fallan al escribirse (tipo incompatible, violación de restricción) — se puede configurar un umbral de tolerancia (por ejemplo, hasta 100 registros o 1% del total) antes de que la tarea completa se marque como fallida.",
+        "<strong>Ventana de sincronización</strong>: programar las tareas más pesadas fuera del horario pico del sistema origen reduce el riesgo de contención, especialmente en migraciones de bases de datos compartidas con aplicaciones en producción.",
+        "<strong>Checkpoint y reintentos</strong>: ante un fallo transitorio de red, la tarea puede reintentar automáticamente un número configurado de veces antes de marcarse como fallida y notificar por alarma."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe una tabla origen en producción que no debe verse afectada por la sincronización, la respuesta combina límite de velocidad + ventana fuera de horario pico, no simplemente 'más concurrencia para terminar rápido'."
+      }
+    },
+    {
+      "title_es": "5 · Sincronización en tiempo real (CDC)",
+      "title_en": "Real-Time Synchronization (CDC)",
+      "intro": "Cuando una tarea batch nocturna no es suficiente porque el negocio necesita ver los cambios casi de inmediato, Data Integration ofrece sincronización en tiempo real basada en captura de cambios.",
+      "points": [
+        "<strong>CDC (Change Data Capture)</strong>: en vez de volver a leer la tabla completa, un proceso lee el log de transacciones de la base de datos origen (binlog en MySQL) y propaga solo los eventos insert/update/delete a medida que ocurren.",
+        "<strong>Latencia</strong>: la sincronización en tiempo real reduce la latencia de horas (batch nocturno) a segundos o minutos, a cambio de mayor complejidad operativa y costo de mantener el proceso corriendo continuamente.",
+        "<strong>Casos de uso típicos</strong>: dashboards operacionales que necesitan datos frescos, sincronización de un catálogo de productos entre microservicios, o alimentar un motor de búsqueda que debe reflejar cambios casi de inmediato.",
+        "<strong>No siempre es la opción correcta</strong>: para un reporte financiero mensual o un análisis histórico, el costo operativo adicional de CDC no se justifica frente a una tarea batch simple — el examen espera que se elija la opción proporcional a la necesidad real de frescura.",
+        "<strong>Requisitos del origen</strong>: no toda fuente admite CDC de forma nativa; suele requerir habilitar el binlog (o equivalente) y permisos específicos en la base de datos origen."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "CDC no es 'la opción más moderna, siempre mejor' — es la respuesta correcta solo cuando el escenario exige baja latencia. Para reportes periódicos, la sincronización batch sigue siendo la opción más simple y económica."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de preguntas difíciles sobre Data Integration están inspiradas en configuraciones reales que fallan en producción por descuidos evitables.",
       "points": [
-        "<strong>Antipattern</strong>: Un solo workspace mezclando dev y prod",
-        "<strong>Antipattern</strong>: DQC solo informativo — sin bloqueo el error llega a producción",
-        "<strong>Antipattern</strong>: Nodos sin retry — jobs fallan por errores transitorios",
-        "<strong>Antipattern</strong>: Cron con timezone incorrecto — jobs corren fuera de ventana",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: usar el grupo de recursos compartido para sincronizar una base de datos on-premise que exige whitelisting de IP fija — la conexión simplemente no es posible sin un grupo exclusivo.",
+        "<strong>Antipatrón</strong>: dejar la concurrencia al máximo contra una base de datos transaccional en horario pico, degradando el rendimiento de la aplicación productiva.",
+        "<strong>Antipatrón</strong>: no definir un umbral de datos sucios y dejar que un solo registro corrupto tumbe una sincronización de millones de filas.",
+        "<strong>Antipatrón</strong>: elegir sincronización en tiempo real (CDC) para un reporte mensual, añadiendo complejidad operativa innecesaria.",
+        "<strong>Antipatrón</strong>: mezclar tareas de desarrollo y producción en el mismo grupo de recursos, sin aislamiento de rendimiento entre ambientes.",
+        "<strong>Estrategia</strong>: ante un escenario con restricciones de red o IP, piensa primero en el tipo de grupo de recursos; ante un escenario con restricción de latencia, piensa en batch vs. tiempo real; el resto suele ser configuración de umbrales."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el enunciado buscando tres señales: restricción de red (→ grupo exclusivo), restricción de latencia (→ CDC vs. batch), y restricción de impacto en el origen (→ rate limiting y ventana de ejecución)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data pipelines diarios de ingesta desde 50+ fuentes"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Data lake governance — quién accede a qué"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Data quality monitoring en producción"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Colaboración multi-equipo en un mismo proyecto"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Linaje end-to-end para auditorías"
-    }
+    { "title": "Escenario 1", "text": "Migrar un catálogo de productos desde MySQL on-premise (con whitelist de IP) hacia MaxCompute cada noche" },
+    { "title": "Escenario 2", "text": "Sincronizar en tiempo real los pedidos de un e-commerce hacia un dashboard operacional" },
+    { "title": "Escenario 3", "text": "Consolidar logs de aplicación almacenados en OSS hacia tablas particionadas de MaxCompute" },
+    { "title": "Escenario 4", "text": "Cargar un archivo CSV exportado manualmente hacia una tabla de staging antes de un análisis puntual" },
+    { "title": "Escenario 5", "text": "Replicar datos de un clúster Kafka de eventos de clics hacia MaxCompute para análisis batch" }
   ],
   "mistakes": [
-    "Un solo workspace mezclando dev y prod",
-    "DQC solo informativo — sin bloqueo el error llega a producción",
-    "Nodos sin retry — jobs fallan por errores transitorios",
-    "Cron con timezone incorrecto — jobs corren fuera de ventana"
+    "Usar el grupo de recursos compartido cuando el origen exige whitelisting de IP fija",
+    "Dejar la concurrencia al máximo contra una base de datos productiva en horario pico",
+    "No configurar un umbral de datos sucios, dejando que un registro corrupto tumbe toda la tarea",
+    "Elegir CDC en tiempo real para un reporte mensual que no lo necesita",
+    "Reutilizar el mismo grupo de recursos para tareas de desarrollo y de producción",
+    "No programar reintentos automáticos ante fallos de red transitorios"
   ],
   "cli": [
-    {
-      "cmd": "Consola: DataWorks → Data Studio",
-      "desc": "Editor visual con git integrado"
-    },
-    {
-      "cmd": "aliyun dataworks-public GetNode",
-      "desc": "Ver definición de nodo"
-    }
+    { "cmd": "aliyun dataworks-public CreateDISyncTask --ProjectId 12345 --TaskContent @task.json", "desc": "Crear una tarea de sincronización batch desde un archivo de configuración" },
+    { "cmd": "aliyun dataworks-public StartDISyncInstance --InstanceId 67890", "desc": "Ejecutar manualmente una instancia de sincronización" },
+    { "cmd": "aliyun dataworks-public GetDISyncInstance --InstanceId 67890", "desc": "Consultar el estado y el reporte de una ejecución (registros leídos/escritos/sucios)" },
+    { "cmd": "aliyun dataworks-public ListResourceGroups --ProjectId 12345", "desc": "Listar los grupos de recursos disponibles para Data Integration" },
+    { "cmd": "aliyun dataworks-public CreateConnection --Name mysql_prod --Type mysql", "desc": "Registrar una nueva Data Source (conexión) en el Workspace" }
   ],
   "glossary": [
-    {
-      "en": "Workspace",
-      "es": "Espacio de trabajo",
-      "def": "Unidad top con quotas, engines y permisos."
-    },
-    {
-      "en": "Node",
-      "es": "Nodo",
-      "def": "Tarea individual: SQL, Python, shell, ML."
-    },
-    {
-      "en": "Workflow",
-      "es": "Workflow",
-      "def": "DAG de nodos con dependencias."
-    },
-    {
-      "en": "Scheduler",
-      "es": "Scheduler",
-      "def": "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-    },
-    {
-      "en": "Data Integration",
-      "es": "Data Integration",
-      "def": "Sincronización batch/stream entre 50+ conectores."
-    },
-    {
-      "en": "Data Quality (DQC)",
-      "es": "DQC",
-      "def": "Reglas de calidad: null, ranges, unicidad; bloquea downstream si falla."
-    },
-    {
-      "en": "Data Map",
-      "es": "Data Map",
-      "def": "Catálogo con búsqueda, tags, linaje columnar."
-    },
-    {
-      "en": "Data Security",
-      "es": "Data Security",
-      "def": "DLP: detecta y enmascara PII."
-    },
-    {
-      "en": "Resource Group",
-      "es": "Resource Group",
-      "def": "Compute reservado para tareas de integración."
-    },
-    {
-      "en": "Baseline",
-      "es": "Baseline",
-      "def": "SLA de completitud diario; alerta si retraso."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Data Integration", "es": "Integración de datos", "def": "Módulo de DataWorks especializado en mover datos entre sistemas origen y destino mediante tareas de sincronización." },
+    { "en": "Reader / Writer", "es": "Lector / Escritor", "def": "Plugins intercambiables que leen del origen y escriben en el destino dentro de una tarea de sincronización batch." },
+    { "en": "Data Source", "es": "Fuente de datos", "def": "Conexión registrada en el Workspace hacia un sistema origen o destino (base de datos, OSS, Kafka, etc.)." },
+    { "en": "Wizard Mode", "es": "Modo asistente", "def": "Configuración visual de una tarea de sincronización mediante formularios guiados." },
+    { "en": "Script Mode", "es": "Modo código", "def": "Edición directa del JSON que describe una tarea de sincronización, para configuraciones avanzadas." },
+    { "en": "Resource Group (shared)", "es": "Grupo de recursos compartido", "def": "Cómputo multi-tenant sin costo adicional, sin IP fija; adecuado para tareas simples o desarrollo." },
+    { "en": "Resource Group (exclusive)", "es": "Grupo de recursos exclusivo", "def": "Instancias dedicadas con IP fija, necesarias para conectar a orígenes con whitelisting de IP." },
+    { "en": "Rate Limiting", "es": "Control de velocidad", "def": "Límite de registros por segundo o ancho de banda que consume una tarea de sincronización." },
+    { "en": "Dirty Data", "es": "Datos sucios", "def": "Registros que fallan al escribirse en el destino por incompatibilidad de tipo o restricción violada." },
+    { "en": "Parallelism", "es": "Concurrencia", "def": "Número de hilos que leen simultáneamente del origen, dividiendo la tabla por rangos." },
+    { "en": "CDC (Change Data Capture)", "es": "Captura de cambios", "def": "Técnica que lee el log de transacciones del origen para propagar solo los cambios (insert/update/delete) en tiempo real." },
+    { "en": "Binlog", "es": "Log binario", "def": "Registro de transacciones de MySQL que CDC utiliza como fuente de eventos de cambio." },
+    { "en": "Batch Synchronization", "es": "Sincronización por lotes", "def": "Tarea de sincronización disparada periódicamente (por ejemplo cada noche), en oposición a la sincronización continua." },
+    { "en": "Scheduler", "es": "Programador", "def": "Componente de DataWorks que dispara tareas de sincronización y nodos según un cron y sus dependencias." },
+    { "en": "Business Date (bizdate)", "es": "Fecha de negocio", "def": "Variable de sistema usada para que una tarea sepa qué partición leer o escribir sin fecha fija en el código." },
+    { "en": "Custom Resource Group", "es": "Grupo de recursos personalizado", "def": "Instancias ECS propias del cliente usadas como agentes de integración, para mantener el tráfico dentro de una VPC." },
+    { "en": "Whitelisting", "es": "Lista blanca de IP", "def": "Restricción de acceso a una base de datos que solo permite conexiones desde IPs autorizadas." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Destino más común de las tareas de sincronización batch de Data Integration; almacena las tablas analíticas." },
+    { "en": "Retry Policy", "es": "Política de reintentos", "def": "Configuración que determina cuántas veces y con qué espera se reintenta una tarea tras un fallo transitorio." },
+    { "en": "Sync Report", "es": "Reporte de sincronización", "def": "Resumen de una ejecución con registros leídos, escritos y descartados como datos sucios." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DataWorks?",
-      "options": [
-        "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natura",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB."
-    },
-    {
-      "q": "¿Qué es <strong>Workspace</strong> (Espacio de trabajo) en DataWorks?",
-      "options": [
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Workspace (Espacio de trabajo): Unidad top con quotas, engines y permisos."
-    },
-    {
-      "q": "¿Qué es <strong>Node</strong> (Nodo) en DataWorks?",
-      "options": [
-        "Tarea individual: SQL, Python, shell, ML.",
-        "Unidad top con quotas, engines y permisos.",
-        "DAG de nodos con dependencias.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Node (Nodo): Tarea individual: SQL, Python, shell, ML."
-    },
-    {
-      "q": "¿Qué es <strong>Workflow</strong> (Workflow) en DataWorks?",
-      "options": [
-        "DAG de nodos con dependencias.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Workflow (Workflow): DAG de nodos con dependencias."
-    },
-    {
-      "q": "¿Qué es <strong>Scheduler</strong> (Scheduler) en DataWorks?",
-      "options": [
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias."
-      ],
-      "answer": 0,
-      "explain": "Scheduler (Scheduler): Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-    },
-    {
-      "q": "¿Qué es <strong>Data Integration</strong> (Data Integration) en DataWorks?",
-      "options": [
-        "Sincronización batch/stream entre 50+ conectores.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias."
-      ],
-      "answer": 0,
-      "explain": "Data Integration (Data Integration): Sincronización batch/stream entre 50+ conectores."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DataWorks, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DataWorks en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DataWorks, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DataWorks es la elección típica:",
-      "options": [
-        "Data pipelines diarios de ingesta desde 50+ fuentes",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data pipelines diarios de ingesta desde 50+ fuentes."
-    }
+    { "q": "¿Qué compone fundamentalmente una tarea de sincronización batch en Data Integration?", "options": ["Un único script SQL", "Un plugin Reader y un plugin Writer intercambiables", "Solo un archivo de configuración YAML", "Un contenedor Docker por tarea"], "answer": 1, "explain": "El modelo reader-writer permite combinar decenas de orígenes y destinos sin escribir código nuevo para cada combinación." },
+    { "q": "Una base de datos MySQL on-premise solo acepta conexiones desde un conjunto reducido de IPs autorizadas. ¿Qué grupo de recursos de Data Integration se necesita?", "options": ["Grupo compartido", "Grupo exclusivo, con IP fija para whitelisting", "No es posible sincronizar bases on-premise", "Un grupo compartido con más concurrencia"], "answer": 1, "explain": "Solo el grupo de recursos exclusivo ofrece una IP fija que se puede añadir a la whitelist del origen." },
+    { "q": "¿Cuándo conviene usar el modo código en vez del modo asistente al configurar una tarea de sincronización?", "options": ["Siempre, el modo asistente está deprecado", "Cuando se necesita una transformación de columna por expresión o un filtro avanzado no soportado por el asistente", "Nunca, el modo código es solo para lectura", "Solo para tareas en tiempo real"], "answer": 1, "explain": "El modo código expone el JSON completo de configuración, permitiendo ajustes que el asistente visual no cubre." },
+    { "q": "¿Qué logra configurar un umbral de datos sucios (dirty data) en una tarea de sincronización?", "options": ["Cifra los datos en tránsito", "Tolera un número o porcentaje de registros fallidos antes de marcar la tarea completa como fallida", "Acelera automáticamente la tarea", "Elimina duplicados automáticamente"], "answer": 1, "explain": "Sin ese umbral, un solo registro incompatible podría hacer fallar toda una sincronización de millones de filas." },
+    { "q": "¿Qué diferencia principal existe entre sincronización batch y sincronización en tiempo real (CDC)?", "options": ["No hay diferencia real", "CDC lee el log de transacciones del origen para propagar cambios casi de inmediato, en vez de releer la tabla completa periódicamente", "Batch solo funciona con OSS", "CDC no puede escribir en MaxCompute"], "answer": 1, "explain": "CDC captura eventos de cambio del log de transacciones (como el binlog de MySQL), reduciendo la latencia de horas a segundos o minutos." },
+    { "q": "Un equipo necesita un reporte financiero que se actualiza una vez al mes. ¿Qué tipo de sincronización es la más apropiada?", "options": ["Sincronización en tiempo real (CDC), por ser más moderna", "Sincronización batch programada, por ser proporcional a la necesidad real de frescura", "No se puede automatizar", "Solo carga manual"], "answer": 1, "explain": "CDC añade complejidad operativa que no se justifica cuando la frescura de datos requerida es de semanas, no de segundos." },
+    { "q": "¿Qué riesgo corre una tarea de sincronización si se configura con concurrencia máxima contra una base de datos transaccional en horario laboral?", "options": ["Ninguno, más concurrencia siempre es mejor", "Puede degradar el rendimiento de la aplicación productiva que comparte esa base de datos", "La tarea se cancela automáticamente", "Los datos se duplican"], "answer": 1, "explain": "Alta concurrencia de lectura compite por recursos con el tráfico transaccional real de la aplicación." },
+    { "q": "¿Qué habilita el control de velocidad (rate limiting) en una tarea de sincronización?", "options": ["Cifrado de datos en reposo", "Limitar registros por segundo o ancho de banda consumido, protegiendo al sistema origen", "Aumentar automáticamente la concurrencia", "Convertir la tarea en tiempo real"], "answer": 1, "explain": "El rate limiting evita que una sincronización masiva sature un sistema origen que también sirve tráfico productivo." },
+    { "q": "¿Qué requisito suele necesitar el origen para habilitar sincronización en tiempo real (CDC)?", "options": ["Ninguno, funciona con cualquier configuración por defecto", "Habilitar el log de transacciones (por ejemplo, binlog en MySQL) y permisos específicos", "Migrar primero a OSS", "Desactivar el Scheduler"], "answer": 1, "explain": "CDC depende de leer el log de transacciones del motor de base de datos, que debe estar habilitado y accesible." },
+    { "q": "Una tarea de sincronización batch necesita saber qué partición de la tabla destino escribir cada día sin hardcodear la fecha. ¿Qué mecanismo se usa?", "options": ["Un grupo de recursos exclusivo", "Una variable de sistema como la fecha de negocio (bizdate)", "El modo asistente exclusivamente", "Dirty data threshold"], "answer": 1, "explain": "Las variables de contexto como bizdate permiten que la misma tarea programada escriba en la partición correcta cada ejecución." },
+    { "q": "¿Qué distingue a un grupo de recursos personalizado (custom) frente a uno exclusivo gestionado por Alibaba Cloud?", "options": ["Son exactamente lo mismo", "El personalizado usa instancias ECS propias del cliente como agentes, manteniendo el tráfico dentro de su VPC", "El personalizado no admite tareas batch", "El personalizado es siempre más barato"], "answer": 1, "explain": "Un grupo custom permite que el cómputo de integración corra sobre infraestructura propia del cliente, útil ante requisitos estrictos de red." },
+    { "q": "¿Qué NO forma parte del alcance típico de Data Integration?", "options": ["Sincronizar tablas entre MySQL y MaxCompute", "Ejecutar transformaciones complejas de lógica de negocio con múltiples joins", "Sincronizar en tiempo real vía CDC", "Cargar archivos desde OSS hacia una tabla particionada"], "answer": 1, "explain": "Data Integration mueve y mapea datos; las transformaciones complejas de negocio se hacen en nodos SQL posteriores dentro del workflow." },
+    { "q": "¿Qué reporta el resumen de ejecución (sync report) de una tarea de sincronización?", "options": ["Solo el tiempo total de ejecución", "Registros leídos, escritos y descartados como datos sucios", "El costo exacto en la factura mensual", "El plan de ejecución SQL"], "answer": 1, "explain": "El reporte permite verificar si la sincronización se completó correctamente o si hubo registros descartados por incompatibilidad." }
   ],
-  "exam_focus": "Preguntas: (a) integración con MaxCompute, (b) DQC bloqueante vs informativo, (c) baselines y SLA, (d) Data Map y linaje, (e) permisos por rol.",
+  "exam_focus": "El examen suele evaluar: (a) elegir el tipo de grupo de recursos según restricciones de red (whitelisting de IP), (b) cuándo usar modo asistente vs. modo código, (c) sincronización batch vs. tiempo real (CDC) según la latencia requerida, (d) control de velocidad y umbral de datos sucios para proteger el origen, (e) el rol de Data Integration frente a la transformación de datos con SQL.",
   "official_intro": "This course explains what is Data Integration and the basic terminology, functions and characteristics of Data Integration. We will also learn how to develop and configure data synchronization tasksl, what are the common configurations synchronization tasks and what role configuration plays.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_bigdatainteg",

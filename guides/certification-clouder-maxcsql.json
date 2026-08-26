@@ -2,442 +2,178 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-maxcsql",
   "title_en": "Alibaba Cloud MaxCompute - SQL Development",
-  "title_es": "Alibaba Cloud MaxCompute - SQL Development",
+  "title_es": "Alibaba Cloud MaxCompute - Desarrollo SQL",
+  "title_es_html": "Alibaba Cloud MaxCompute - <em>Desarrollo SQL</em>",
   "duration_es": "96 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_maxcsql",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud MaxCompute - SQL Development» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud MaxCompute - SQL Development» de Alibaba Cloud Academy. Es el módulo más extenso de la familia MaxCompute y cubre el dialecto SQL propio de la plataforma: tipos de datos y operadores, DDL de tablas/vistas/particiones, las cláusulas de Select (joins, union all, having), las variantes de Insert (overwrite, into, multi-insert, partición dinámica) y las funciones incorporadas más usadas.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Aplicar</strong> correctamente los operadores y las reglas de conversión de tipos de MaxCompute SQL.",
+    "<strong>Escribir</strong> DDL para tablas, vistas, particiones y sus operaciones de ciclo de vida (lifecycle).",
+    "<strong>Construir</strong> consultas Select con joins, union all y filtros con having sobre datos particionados.",
+    "<strong>Elegir</strong> correctamente entre Insert Overwrite, Insert Into, multi-insert y partición dinámica.",
+    "<strong>Usar</strong> las funciones incorporadas más comunes de agregación, fecha y cadena.",
+    "<strong>Distinguir</strong> las cláusulas de ordenamiento y distribución propias del dialecto (order by, sort by, distribute by, cluster by)."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "MaxCompute SQL comparte gran parte de su sintaxis con HiveQL, pero con extensiones y matices propios que el examen distingue con cuidado. Una sentencia se somete como una Instance de tipo SQL: el planificador la valida, genera un plan de ejecución que aprovecha el particionamiento de las tablas involucradas, y lo ejecuta sobre el motor interno del Project. Las tablas particionadas son la unidad de optimización más importante: filtrar por partición reduce directamente el volumen de datos leído, mientras que consultas sin ese filtro escanean todas las particiones. Las sentencias Insert determinan cómo se escribe el resultado: Overwrite reemplaza el contenido de la partición o tabla destino, Into lo añade, y la partición dinámica permite escribir en múltiples particiones destino calculadas en tiempo de ejecución a partir de una columna de la propia consulta.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Tipos de datos, operadores y conversión de tipos",
+      "title_en": "Data Types, Operators and Type Conversion",
+      "intro": "Antes de escribir una sola consulta compleja hay que dominar el vocabulario básico del dialecto: qué tipos existen, cómo se comparan y cuándo MaxCompute convierte un valor de forma implícita.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
-      ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
-    },
-    {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
-      "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Tipos numéricos</strong>: <code>TINYINT</code>, <code>SMALLINT</code>, <code>INT</code>, <code>BIGINT</code> para enteros de distinto rango; <code>FLOAT</code>, <code>DOUBLE</code>, <code>DECIMAL(precision, scale)</code> para valores decimales, siendo <code>DECIMAL</code> el recomendado para cálculos financieros donde la precisión exacta importa.",
+        "<strong>Tipos de texto y fecha</strong>: <code>STRING</code> para texto de longitud variable, <code>VARCHAR(n)</code> con longitud máxima explícita, <code>DATE</code> y <code>DATETIME</code>/<code>TIMESTAMP</code> para valores temporales.",
+        "<strong>Operadores</strong>: aritméticos (<code>+ - * / %</code>), de comparación (<code>= != &lt; &gt; &lt;= &gt;=</code>), lógicos (<code>AND OR NOT</code>) y el operador de concatenación de cadenas <code>||</code> o la función <code>CONCAT()</code>.",
+        "<strong>Conversión implícita</strong>: MaxCompute convierte automáticamente entre tipos numéricos compatibles en una comparación o una operación aritmética (por ejemplo, INT contra DOUBLE), pero no todas las combinaciones son seguras — comparar STRING contra un tipo numérico sin conversión explícita es una fuente común de resultados inesperados.",
+        "<strong>Conversión explícita</strong>: <code>CAST(columna AS BIGINT)</code> es la forma recomendada de forzar un tipo cuando la conversión implícita no es evidente o cuando se necesita controlar el redondeo/truncamiento."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Ante dudas de comparación entre tipos distintos, la respuesta más segura del examen casi siempre es usar CAST explícito en vez de confiar en la conversión implícita."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "2 · DDL: tablas, vistas, particiones y lifecycle",
+      "title_en": "DDL: Tables, Views, Partitions and Lifecycle",
+      "intro": "El lenguaje de definición de datos es donde se decide la forma física de una tabla — y muchas de las decisiones de rendimiento y costo posteriores dependen de acertar aquí desde el principio.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>CREATE TABLE</strong>: define columnas y tipos, y opcionalmente la cláusula <code>PARTITIONED BY</code> para declarar una o más claves de partición (por ejemplo, una fecha), que no son columnas regulares sino subdivisiones físicas de la tabla.",
+        "<strong>Vistas</strong>: <code>CREATE VIEW</code> define una consulta guardada reutilizable; no almacena datos propios, se re-ejecuta contra las tablas base cada vez que se consulta la vista.",
+        "<strong>ALTER TABLE</strong>: permite añadir, eliminar o renombrar columnas, y añadir o eliminar particiones concretas (<code>ADD PARTITION</code>, <code>DROP PARTITION</code>) sin reescribir la tabla completa.",
+        "<strong>Lifecycle</strong>: propiedad que se puede fijar sobre una tabla o partición para que MaxCompute elimine automáticamente los datos tras N días desde su última modificación — la herramienta principal de retención automática y ahorro de almacenamiento a largo plazo.",
+        "<strong>DROP TABLE / TRUNCATE</strong>: DROP elimina la tabla y su definición por completo; TRUNCATE vacía el contenido pero conserva la estructura — la diferencia importa cuando el objetivo es solo reiniciar los datos sin perder el esquema ni los permisos ya otorgados."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Definir la clave de partición correcta en el CREATE TABLE inicial es la decisión de diseño con mayor impacto en el costo futuro de las consultas — cambiarla después implica recrear la tabla."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "3 · Select: joins, union all y filtros con having",
+      "title_en": "Select: Joins, Union All and Having Filters",
+      "intro": "El grueso del trabajo analítico diario ocurre en la cláusula Select — este módulo cubre las variantes de combinación y filtrado de datos más usadas en el examen.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Tipos de join</strong>: <code>INNER JOIN</code> (solo filas con coincidencia en ambos lados), <code>LEFT/RIGHT OUTER JOIN</code> (conserva todas las filas de un lado aunque no haya coincidencia), <code>FULL OUTER JOIN</code> (conserva todas las filas de ambos lados).",
+        "<strong>UNION ALL</strong>: combina los resultados de dos consultas con el mismo número y tipo de columnas, apilando filas sin eliminar duplicados — es preferible a UNION (con deduplicación) cuando el rendimiento importa y se sabe que no hay solapamiento, porque evita el costo de comparar y eliminar duplicados.",
+        "<strong>WHERE vs. HAVING</strong>: <code>WHERE</code> filtra filas antes de agrupar; <code>HAVING</code> filtra grupos después de aplicar <code>GROUP BY</code> y las funciones de agregación — usar HAVING para condiciones sobre columnas no agregadas es un error común que MaxCompute rechaza o produce resultados inesperados.",
+        "<strong>Filtro por partición en joins</strong>: al unir dos tablas particionadas, filtrar la partición en cada una de ellas por separado (no solo en una) es indispensable para evitar que el motor escanee todas las particiones del lado no filtrado.",
+        "<strong>Subconsultas</strong>: se pueden anidar consultas dentro de la cláusula FROM o dentro de condiciones WHERE/EXISTS, útiles para filtros basados en agregaciones intermedias que no se pueden expresar en una sola pasada."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Si el enunciado pide filtrar por el resultado de una función de agregación (por ejemplo, «grupos con más de 100 registros»), la respuesta es HAVING, no WHERE."
+      }
+    },
+    {
+      "title_es": "4 · Insert: Overwrite vs. Into, multi-insert y partición dinámica",
+      "title_en": "Insert: Overwrite vs. Into, Multi-Insert and Dynamic Partition",
+      "intro": "Escribir el resultado de una consulta es tan importante como leerlo correctamente — elegir mal entre Overwrite e Into es una de las causas más comunes de pérdida accidental de datos en producción.",
+      "points": [
+        "<strong>INSERT OVERWRITE</strong>: reemplaza por completo el contenido de la tabla o partición destino antes de escribir el nuevo resultado — es la opción correcta para un job idempotente que recalcula una partición completa cada vez que corre.",
+        "<strong>INSERT INTO</strong>: añade filas al contenido existente sin borrar nada — apropiado cuando se quiere acumular datos incrementalmente, pero peligroso si el job se ejecuta dos veces por error, porque duplica los datos.",
+        "<strong>Multi-insert</strong>: una sola consulta puede escribir simultáneamente en varias tablas o particiones distintas usando <code>FROM ... INSERT OVERWRITE TABLE a SELECT ... INSERT OVERWRITE TABLE b SELECT ...</code>, evitando leer la fuente varias veces.",
+        "<strong>Partición dinámica</strong>: en vez de fijar el valor de partición de forma literal, se deriva de una columna de la propia consulta (<code>INSERT OVERWRITE TABLE ventas PARTITION (pt) SELECT ..., fecha AS pt FROM origen;</code>), útil cuando un solo job debe escribir en muchas particiones distintas según el dato.",
+        "<strong>Riesgo de partición dinámica sin control</strong>: si la columna usada para derivar la partición tiene valores inesperados (nulos, formatos erróneos), puede generar un número descontrolado de particiones pequeñas — conviene limitar y validar los valores de esa columna antes de escribir."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Un job que recalcula la misma partición en cada ejecución debe usar INSERT OVERWRITE para ser idempotente; usar INSERT INTO en ese escenario duplica los datos en cada reejecución."
+      }
+    },
+    {
+      "title_es": "5 · Funciones incorporadas: agregación, fecha y texto",
+      "title_en": "Built-in Functions: Aggregation, Date and String",
+      "intro": "MaxCompute SQL incluye una biblioteca amplia de funciones listas para usar, que cubren la mayoría de las necesidades sin tener que escribir una UDF propia.",
+      "points": [
+        "<strong>Agregación</strong>: <code>COUNT()</code>, <code>SUM()</code>, <code>MAX()</code>, <code>MIN()</code>, <code>AVG()</code> operan sobre grupos definidos por <code>GROUP BY</code>; <code>COUNT(DISTINCT columna)</code> cuenta valores únicos, con un costo de cómputo mayor que un COUNT simple.",
+        "<strong>Funciones de fecha</strong>: <code>DATEADD(fecha, n, 'dd')</code> suma o resta un intervalo a una fecha, <code>DATEDIFF()</code> calcula la diferencia entre dos fechas, <code>TO_CHAR()</code> y <code>TO_DATE()</code> convierten entre texto y fecha con un formato explícito.",
+        "<strong>Funciones de texto</strong>: <code>CONCAT()</code> une cadenas, <code>SUBSTR()</code> extrae un fragmento, <code>TRIM()</code> elimina espacios en los extremos, <code>UPPER()</code>/<code>LOWER()</code> normalizan mayúsculas/minúsculas para comparaciones consistentes.",
+        "<strong>ORDER BY</strong>: ordena el resultado final completo de la consulta; requiere procesar todo el conjunto de resultados en un único reductor, por lo que es costoso sobre volúmenes grandes si no se combina con un LIMIT.",
+        "<strong>Funciones de ventana</strong>: funciones como <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> permiten calcular rankings o acumulados dentro de grupos sin colapsar las filas individuales, a diferencia de una agregación con GROUP BY."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "COUNT(DISTINCT) y ORDER BY sin LIMIT son las dos operaciones de esta lección con mayor costo de cómputo en tablas grandes — el examen las usa a menudo como distractor de «solución simple pero cara»."
+      }
+    },
+    {
+      "title_es": "6 · Cláusulas de distribución y ordenamiento: order by, sort by, distribute by, cluster by",
+      "title_en": "Distribution and Ordering Clauses",
+      "intro": "Este es el bloque más específico del dialecto y una de las áreas donde más se diferencia de un SQL genérico — el examen suele probar directamente la diferencia entre estas cuatro cláusulas.",
+      "points": [
+        "<strong>ORDER BY</strong>: ordena el resultado global de la consulta de principio a fin, forzando que todos los datos pasen por un único reductor — garantiza un orden total pero no paraleliza.",
+        "<strong>SORT BY</strong>: ordena los datos dentro de cada reductor de forma independiente, sin garantizar un orden global entre reductores distintos — permite paralelismo mientras se mantiene un orden local.",
+        "<strong>DISTRIBUTE BY</strong>: controla cómo se reparten las filas entre los reductores según el valor de una o más columnas (todas las filas con el mismo valor van al mismo reductor), sin ordenar nada por sí solo.",
+        "<strong>CLUSTER BY</strong>: atajo que combina DISTRIBUTE BY y SORT BY sobre las mismas columnas — reparte las filas por esas columnas y además las ordena dentro de cada reductor resultante.",
+        "<strong>Cuándo usar cada una</strong>: ORDER BY para un ranking global pequeño con LIMIT; SORT BY + DISTRIBUTE BY (o su atajo CLUSTER BY) cuando se necesita preparar los datos para una escritura particionada eficiente o para un procesamiento posterior que requiere agrupar por clave sin pagar el costo de un orden global."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado pide «orden global exacto», la respuesta es ORDER BY; si pide «paralelizar y solo garantizar orden dentro de cada grupo de reductor», la respuesta es SORT BY combinado con DISTRIBUTE BY (o CLUSTER BY si las columnas coinciden)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Reporte diario que recalcula la partición del día — INSERT OVERWRITE para idempotencia" },
+    { "title": "Escenario 2", "text": "Job que escribe simultáneamente un resumen agregado y el detalle en dos tablas distintas — multi-insert" },
+    { "title": "Escenario 3", "text": "Consulta que necesita filtrar grupos con más de un umbral de ventas — HAVING tras GROUP BY" },
+    { "title": "Escenario 4", "text": "Carga que distribuye eventos de muchos días distintos en una sola ejecución — partición dinámica" },
+    { "title": "Escenario 5", "text": "Preparar datos ordenados dentro de cada partición de salida sin pagar el costo de un orden global — SORT BY / DISTRIBUTE BY" },
+    { "title": "Escenario 6", "text": "Ranking de los 10 clientes con mayor gasto del mes — ORDER BY combinado con LIMIT" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Usar INSERT INTO en un job que recalcula la misma partición cada día, duplicando datos en cada reejecución",
+    "Filtrar con WHERE una condición que en realidad depende de una función de agregación, en vez de usar HAVING",
+    "Confiar en la conversión implícita de tipos al comparar STRING con columnas numéricas, obteniendo resultados inesperados",
+    "Usar ORDER BY sobre un resultado grande sin LIMIT, forzando todo el volumen por un único reductor",
+    "Habilitar partición dinámica sin validar la columna origen, generando un número descontrolado de particiones pequeñas",
+    "Unir dos tablas particionadas filtrando la partición solo en una de ellas, dejando que el motor escanee todas las particiones del otro lado"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "odpscmd -e 'select * from ventas where pt=\"20260101\" and monto > 100 order by monto desc limit 10;'", "desc": "Ranking simple con filtro de partición y ORDER BY + LIMIT" },
+    { "cmd": "odpscmd -e 'insert overwrite table resumen partition(pt=\"20260101\") select region, sum(monto) from ventas where pt=\"20260101\" group by region;'", "desc": "Reescritura idempotente de una partición con agregación" },
+    { "cmd": "odpscmd -e 'insert overwrite table ventas partition(pt) select *, fecha as pt from staging;'", "desc": "Escritura con partición dinámica derivada de una columna" },
+    { "cmd": "odpscmd -e 'alter table ventas add partition (pt=\"20260102\");'", "desc": "Añadir una partición manualmente" },
+    { "cmd": "odpscmd -e 'alter table ventas set lifecycle 90;'", "desc": "Configurar retención automática a 90 días" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DDL", "es": "DDL", "def": "Lenguaje de definición de datos: CREATE, ALTER, DROP sobre tablas, vistas y particiones." },
+    { "en": "Lifecycle", "es": "Lifecycle", "def": "Propiedad que elimina automáticamente datos de una tabla o partición tras N días sin modificación." },
+    { "en": "View", "es": "Vista", "def": "Consulta guardada reutilizable que no almacena datos propios." },
+    { "en": "Inner/Outer Join", "es": "Join interno/externo", "def": "Formas de combinar filas de dos tablas según coincidencia de una condición." },
+    { "en": "UNION ALL", "es": "UNION ALL", "def": "Combina resultados de dos consultas apilando filas sin eliminar duplicados." },
+    { "en": "HAVING", "es": "HAVING", "def": "Filtra grupos después de GROUP BY, a diferencia de WHERE que filtra filas antes de agrupar." },
+    { "en": "INSERT OVERWRITE", "es": "INSERT OVERWRITE", "def": "Reemplaza por completo el contenido de la tabla o partición destino antes de escribir." },
+    { "en": "INSERT INTO", "es": "INSERT INTO", "def": "Añade filas al contenido existente de la tabla o partición destino." },
+    { "en": "Multi-insert", "es": "Multi-insert", "def": "Escritura simultánea en varias tablas o particiones a partir de una sola lectura de origen." },
+    { "en": "Dynamic Partition", "es": "Partición dinámica", "def": "Escritura donde el valor de partición se deriva de una columna de la consulta en tiempo de ejecución." },
+    { "en": "CAST", "es": "CAST", "def": "Conversión explícita de tipo de dato de una columna o expresión." },
+    { "en": "ORDER BY", "es": "ORDER BY", "def": "Ordena el resultado global de la consulta forzando un único reductor." },
+    { "en": "SORT BY", "es": "SORT BY", "def": "Ordena los datos dentro de cada reductor sin garantizar orden global." },
+    { "en": "DISTRIBUTE BY", "es": "DISTRIBUTE BY", "def": "Controla el reparto de filas entre reductores según columnas clave." },
+    { "en": "CLUSTER BY", "es": "CLUSTER BY", "def": "Atajo que combina DISTRIBUTE BY y SORT BY sobre las mismas columnas." },
+    { "en": "Window Function", "es": "Función de ventana", "def": "Función como ROW_NUMBER() OVER() que calcula valores por grupo sin colapsar filas." },
+    { "en": "COUNT(DISTINCT)", "es": "COUNT(DISTINCT)", "def": "Conteo de valores únicos, con mayor costo de cómputo que un COUNT simple." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿Qué diferencia hay entre WHERE y HAVING en una consulta con GROUP BY?", "options": ["Son intercambiables en cualquier caso", "WHERE filtra filas antes de agrupar; HAVING filtra grupos después de aplicar las funciones de agregación", "HAVING solo funciona sin GROUP BY", "WHERE solo puede usarse con funciones de agregación"], "answer": 1, "explain": "WHERE actúa sobre filas individuales antes de agrupar; HAVING actúa sobre los grupos ya formados y sus valores agregados." },
+    { "q": "Un job recalcula la misma partición cada vez que se ejecuta. ¿Qué sentencia de escritura garantiza idempotencia?", "options": ["INSERT INTO", "INSERT OVERWRITE", "UPDATE", "MERGE sin condición"], "answer": 1, "explain": "INSERT OVERWRITE reemplaza el contenido completo de la partición destino, evitando duplicados en reejecuciones." },
+    { "q": "¿Qué hace la partición dinámica en una sentencia INSERT?", "options": ["Elimina automáticamente particiones antiguas", "Deriva el valor de partición destino a partir de una columna de la propia consulta en tiempo de ejecución", "Convierte una tabla particionada en no particionada", "Ordena las particiones alfabéticamente"], "answer": 1, "explain": "La partición dinámica permite que un solo INSERT escriba en múltiples particiones calculadas a partir de una columna del resultado." },
+    { "q": "¿Cuál es la diferencia principal entre UNION ALL y UNION en MaxCompute SQL?", "options": ["No hay ninguna diferencia", "UNION ALL apila filas sin eliminar duplicados; UNION elimina duplicados con un costo adicional", "UNION ALL solo funciona con tablas particionadas", "UNION solo puede combinar dos columnas"], "answer": 1, "explain": "UNION ALL es más económico porque no compara ni elimina duplicados, a diferencia de UNION." },
+    { "q": "¿Qué cláusula ordena los datos dentro de cada reductor de forma independiente, sin garantizar un orden global entre reductores?", "options": ["ORDER BY", "SORT BY", "GROUP BY", "HAVING"], "answer": 1, "explain": "SORT BY ordena localmente dentro de cada reductor y permite paralelismo, a diferencia de ORDER BY que fuerza un único reductor." },
+    { "q": "¿Qué combinación de cláusulas equivale al atajo CLUSTER BY?", "options": ["WHERE y HAVING sobre las mismas columnas", "DISTRIBUTE BY y SORT BY sobre las mismas columnas", "UNION ALL y GROUP BY", "INSERT OVERWRITE y INSERT INTO"], "answer": 1, "explain": "CLUSTER BY combina en una sola cláusula el reparto de DISTRIBUTE BY y el ordenamiento local de SORT BY sobre las mismas columnas." },
+    { "q": "¿Por qué usar ORDER BY sin LIMIT sobre una tabla muy grande es costoso en MaxCompute?", "options": ["Porque no está permitido por el motor", "Porque fuerza que todo el conjunto de resultados pase por un único reductor para garantizar el orden global", "Porque solo funciona sobre tablas no particionadas", "Porque desactiva automáticamente el particionamiento"], "answer": 1, "explain": "ORDER BY exige un orden total del resultado, lo que obliga a centralizar todos los datos en un único reductor, sin paralelismo." },
+    { "q": "Un job debe escribir simultáneamente un resumen agregado y el detalle original en dos tablas distintas a partir de la misma lectura de origen. ¿Qué mecanismo evita leer la fuente dos veces?", "options": ["Dos sentencias INSERT independientes en sesiones separadas", "Multi-insert dentro de una sola consulta FROM", "UNION ALL entre las dos tablas destino", "Partición dinámica sin especificar columna"], "answer": 1, "explain": "El multi-insert permite escribir en varias tablas o particiones a partir de una sola lectura de la fuente, evitando reprocesar los datos de entrada." },
+    { "q": "¿Qué tipo de dato es el más adecuado para cálculos financieros donde la precisión exacta importa?", "options": ["FLOAT", "DOUBLE", "DECIMAL(precision, scale)", "STRING"], "answer": 2, "explain": "DECIMAL permite fijar precisión y escala exactas, evitando los errores de redondeo típicos de FLOAT y DOUBLE en cálculos financieros." },
+    { "q": "¿Qué función cuenta valores únicos dentro de un grupo, con mayor costo de cómputo que un conteo simple?", "options": ["COUNT(*)", "COUNT(DISTINCT columna)", "SUM(columna)", "AVG(columna)"], "answer": 1, "explain": "COUNT(DISTINCT) requiere identificar valores únicos antes de contarlos, lo que implica un costo de cómputo mayor que un COUNT simple." },
+    { "q": "Al unir dos tablas particionadas grandes, ¿qué error de diseño provoca que el motor escanee todas las particiones de una de ellas?", "options": ["Usar INNER JOIN en vez de LEFT JOIN", "Filtrar la partición solo en una de las dos tablas del join, dejando la otra sin filtro", "Usar CAST en una columna del join", "Usar HAVING en vez de WHERE"], "answer": 1, "explain": "Si solo una de las tablas del join tiene filtro de partición, el motor debe escanear todas las particiones de la tabla sin filtrar, disparando el costo de la consulta." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) la diferencia entre INSERT OVERWRITE e INSERT INTO y su efecto sobre idempotencia, (b) WHERE frente a HAVING, (c) el uso correcto de partición dinámica y multi-insert, (d) la diferencia entre ORDER BY, SORT BY, DISTRIBUTE BY y CLUSTER BY, (e) funciones de agregación, fecha y texto más comunes.",
   "official_intro": "This course explains the basic knowledge of MaxCompute SQL, including the operators, type transformation, the DDL (table, life cycle, view, partition, column), the Select operation (join, union all, have, etc.), Insert(insert overwrite/into, multi insert, dynamic partition) operations. We will also learn SQL built-in functions,and how to write common functions (such as: Max, Count, Sum, DateAdd, Order by, etc.)",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_maxcsql",

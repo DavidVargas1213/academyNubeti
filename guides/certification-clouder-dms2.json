@@ -2,403 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-dms2",
   "title_en": "Secure and Easy Data Management with DMS",
-  "title_es": "Secure y Easy Datos Gestión con DMS",
+  "title_es": "Gestión de Datos Segura y Sencilla con DMS",
+  "title_es_html": "Gestión de Datos Segura y Sencilla con <em>DMS</em>",
   "duration_es": "53 minutos",
   "level_es": "Intermedio",
   "category_es": "Bases de Datos",
   "subcategory_es": "Utility & Tools",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_dms2",
-  "lead": "Guía completa en español para el curso «Secure and Easy Data Management with DMS» de Alibaba Cloud Academy. Cubre en profundidad Data Management Service (DMS). DMS es el IDE unificado para todas las bases de Alibaba Cloud (RDS, PolarDB, MongoDB, Redis, HBase, MaxCompute, ClickHouse). Provee editor SQL, workflow de cambios con approval, data masking, auditoría. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre Data Management Service (DMS), el IDE web unificado de Alibaba Cloud para operar bases de datos de forma segura. DMS no reemplaza a RDS, PolarDB ni a los demás motores: se coloca encima de todos ellos como un único punto de acceso, con flujo de aprobación para cambios sensibles, enmascaramiento automático de datos personales y auditoría completa — resolviendo el problema clásico de dar acceso directo a producción a decenas de desarrolladores.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Data Management Service (DMS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Instance, Ticket/Change Request, Data Masking, Cross-DB Query, Task Orchestration.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Data Management Service (DMS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué el acceso directo a producción (vía cliente SQL tradicional) es un antipatrón que DMS resuelve.",
+    "<strong>Diferenciar</strong> los modos de seguridad de DMS: Standard Mode (SQL Console libre) frente a Security Collaboration Mode (flujo de tickets con aprobación).",
+    "<strong>Aplicar</strong> reglas de enmascaramiento de datos (data masking) sobre columnas sensibles sin modificar los datos reales.",
+    "<strong>Diseñar</strong> un flujo de cambio de esquema/datos en producción usando tickets, revisión y ejecución controlada.",
+    "<strong>Ejecutar</strong> consultas federadas entre distintas instancias y motores desde una sola sesión (Cross-Database Query).",
+    "<strong>Auditar</strong> quién ejecutó qué sentencia, cuándo y sobre qué datos.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre gobernanza de datos con DMS."
   ],
-  "architecture": "DBA registra instancias en DMS → asigna permisos por rol RAM → developers usan DMS Studio con approval obligatorio para DDL/DML sensibles → cambios se auditan y son rollback-eables → data masking para PII.",
+  "architecture": "Un DBA registra cada instancia (RDS, PolarDB, MongoDB, Redis, HBase, MaxCompute, ClickHouse, o incluso un motor on-premise) dentro de DMS y asigna permisos por usuario o rol RAM sobre bases, tablas o incluso columnas específicas. Los desarrolladores nunca reciben la contraseña ni la IP real de la base: trabajan siempre a través de DMS Studio, el editor SQL web. En Security Collaboration Mode, cualquier DDL o DML marcado como sensible genera un ticket que debe ser aprobado por el propietario de la base antes de ejecutarse; el cambio se aplica de forma controlada, queda registrado con posibilidad de rollback, y las columnas configuradas como sensibles (teléfono, correo, identificación) se muestran enmascaradas en los resultados de cualquier consulta, sin importar quién la ejecute. ActionTrail y los logs internos de DMS conservan un historial inmutable de cada sentencia ejecutada.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Data Management Service (DMS)",
-      "title_en": "Introduction to Data Management Service (DMS)",
-      "intro": "DMS es el IDE unificado para todas las bases de Alibaba Cloud (RDS, PolarDB, MongoDB, Redis, HBase, MaxCompute, ClickHouse). Provee editor SQL, workflow de cambios con approval, data masking, auditoría. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema del acceso directo a producción",
+      "title_en": "The Problem With Direct Production Access",
+      "intro": "Antes de ver qué es DMS hay que entender el problema que resuelve: cuando cada desarrollador tiene la IP y contraseña de la base de datos productiva en su cliente SQL local, no hay forma de controlar ni auditar lo que ocurre ahí.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DMS es el IDE unificado para todas las bases de Alibaba Cloud (RDS, PolarDB, MongoDB, Redis, HBase, MaxCompute, ClickHouse).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Data Management Service (DMS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El patrón antiguo</strong>: compartir credenciales de la base con el equipo de desarrollo, cada quien conectado con MySQL Workbench o similar directo a producción — cualquier <code>UPDATE</code> sin <code>WHERE</code> es un incidente esperando a ocurrir, y nadie sabe quién lo ejecutó hasta revisar logs dispersos.",
+        "<strong>DMS como capa intermedia obligatoria</strong>: en vez de conectar directo, todos los accesos pasan por DMS Studio, un IDE web que centraliza la conexión real a la base, de forma que la credencial nunca se comparte ni sale del control del DBA.",
+        "<strong>Multi-motor desde un solo lugar</strong>: DMS no es exclusivo de bases relacionales — administra RDS, PolarDB, MongoDB, Redis, HBase/Lindorm, MaxCompute y ClickHouse desde la misma interfaz, evitando que cada equipo use una herramienta distinta según el motor.",
+        "<strong>No es solo para DBAs</strong>: analistas de datos, desarrolladores y auditores de seguridad usan DMS con roles distintos — el mismo servicio sirve tanto para consultas exploratorias como para cambios estructurales controlados.",
+        "<strong>Base de la gobernanza de datos</strong>: centralizar el acceso es el primer paso antes de poder aplicar enmascaramiento, aprobación de cambios y auditoría de forma consistente en toda la organización."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Data Management Service (DMS) es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen más común no es «¿qué es DMS?» sino «¿por qué no basta con dar acceso directo a la base?» — la respuesta siempre apunta a falta de control, auditoría y protección de datos sensibles."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Data Management Service (DMS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Standard Mode vs. Security Collaboration Mode",
+      "title_en": "Standard Mode vs. Security Collaboration Mode",
+      "intro": "DMS ofrece dos formas de operar sobre una instancia registrada, y elegir la correcta según el entorno (desarrollo vs. producción) es una de las decisiones de diseño más evaluadas en el examen.",
       "points": [
-        "<strong>Patrón canónico</strong>: DBA registra instancias en DMS → asigna permisos por rol RAM → developers usan DMS Studio con approval obligatorio para DDL/DML sensibles → cambios se auditan y son rollback-eables → data masking para PII.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Data Management Service (DMS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Instance</strong> <em>(Instance)</em>: Base de datos registrada en DMS.",
-        "<strong>Ticket</strong> <em>(Ticket/Change Request)</em>: Cambio con approval workflow.",
-        "<strong>Enmascarado</strong> <em>(Data Masking)</em>: Ocultar PII en resultados de query.",
-        "<strong>Cross-DB Query</strong> <em>(Cross-DB Query)</em>: Query federado entre múltiples bases.",
-        "<strong>Orquestación</strong> <em>(Task Orchestration)</em>: Workflows tipo DAG de tareas SQL."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Standard Mode</strong>: el usuario con permisos ejecuta SQL libremente en el editor, sin flujo de aprobación — adecuado para entornos de desarrollo o test donde el riesgo de un cambio erróneo es bajo.",
+        "<strong>Security Collaboration Mode</strong>: cualquier sentencia DDL/DML considerada sensible (alterar una tabla, borrar filas, actualizar en masa) genera un <em>ticket</em> que debe pasar por revisión y aprobación del propietario de la base antes de ejecutarse — el modo recomendado para producción.",
+        "<strong>Flujo de un ticket</strong>: el solicitante redacta el cambio, el sistema simula su impacto (filas afectadas), un aprobador revisa y aprueba o rechaza, y solo entonces DMS ejecuta el cambio de forma controlada y deja el registro completo.",
+        "<strong>Rollback</strong>: los cambios ejecutados a través de un ticket en Security Collaboration Mode pueden revertirse, algo que no es posible con una sentencia ejecutada directamente en un cliente SQL tradicional sin planificación previa.",
+        "<strong>Permisos por objeto</strong>: dentro de cualquiera de los dos modos, los permisos pueden otorgarse a nivel de instancia, base de datos, tabla o incluso columna específica, siguiendo el principio de mínimo privilegio."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el escenario describe 'cambios en una base de datos productiva' o 'evitar que un DELETE accidental afecte al negocio', la respuesta es Security Collaboration Mode con flujo de tickets, no Standard Mode."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Data Masking: proteger datos sensibles sin ocultar la base",
+      "title_en": "Data Masking: Protecting Sensitive Data Without Hiding the Database",
+      "intro": "Un analista necesita consultar la tabla de clientes para hacer un reporte, pero no necesita ver el número de teléfono completo de cada persona. Data Masking resuelve esa tensión sin duplicar datos ni construir vistas manuales.",
       "points": [
-        "<strong>HA</strong>: Backup lógico previo a cambios estructurales",
-        "<strong>Buenas prácticas</strong>: DML/DDL productivos siempre con ticket + approval",
-        "<strong>Buenas prácticas</strong>: Data masking obligatorio para PII",
-        "<strong>Buenas prácticas</strong>: Sin acceso directo — todo por DMS"
+        "<strong>Enmascaramiento automático</strong>: al marcar una columna como sensible (teléfono, correo, número de identificación, tarjeta), DMS oculta parcialmente su valor en cualquier resultado de consulta —p.ej. <code>138****1234</code>— sin alterar el dato real almacenado.",
+        "<strong>Aplicado por rol, no por consulta</strong>: la regla de enmascaramiento se define una vez sobre la columna y se aplica automáticamente a cualquier usuario sin permiso explícito para ver el valor completo, evitando depender de que cada analista recuerde ocultar el dato manualmente.",
+        "<strong>Detección asistida de columnas sensibles</strong>: DMS puede escanear el esquema y sugerir qué columnas parecen contener PII (información personal identificable) según patrones de nombre y contenido, acelerando la clasificación inicial.",
+        "<strong>Diferencia con cifrado</strong>: el enmascaramiento no cifra el dato en el motor de base de datos — actúa en la capa de presentación de resultados dentro de DMS; para protección en reposo se combina con TDE/KMS a nivel de la instancia.",
+        "<strong>Casos de uso</strong>: analistas de BI que necesitan patrones de comportamiento sin identificar personas, soporte técnico que confirma parcialmente un dato sin exponerlo completo, o auditores externos con acceso de solo lectura enmascarado."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Data Masking protege la <em>visualización</em> del dato para quien consulta, no reemplaza el cifrado en reposo. Un examen que combine ambos conceptos espera que sepas que son capas complementarias, no sustitutas."
+      }
+    },
+    {
+      "title_es": "4 · Cross-Database Query: consultar varias fuentes a la vez",
+      "title_en": "Cross-Database Query: Querying Multiple Sources at Once",
+      "intro": "Una de las funciones menos obvias pero más potentes de DMS es poder combinar datos de instancias y motores distintos en una sola consulta, sin construir un pipeline ETL previo.",
+      "points": [
+        "<strong>Qué resuelve</strong>: si los datos de pedidos viven en una instancia RDS y el catálogo de productos vive en otra instancia PolarDB, Cross-Database Query permite un <code>JOIN</code> lógico entre ambas desde una sola sesión de DMS Studio.",
+        "<strong>Motores federables</strong>: aplica entre instancias del mismo motor en distintos servidores, y también entre motores compatibles con SQL registrados en DMS, ampliando el alcance de un análisis puntual sin mover datos primero.",
+        "<strong>Uso típico</strong>: investigaciones ad hoc, validación de consistencia entre un sistema legado y uno nuevo durante una migración, o reportes que cruzan información operativa con información de otro dominio.",
+        "<strong>Limitación</strong>: no está pensado para reemplazar un data warehouse ni para cargas analíticas pesadas y recurrentes — para eso la arquitectura correcta sigue siendo AnalyticDB o Data Lake Analytics; Cross-Database Query resuelve consultas puntuales, no un pipeline de producción.",
+        "<strong>Gobernanza</strong>: las mismas reglas de permisos y enmascaramiento aplicadas a cada instancia individual se respetan también dentro de una consulta federada, sin crear un atajo alrededor del control de acceso."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado dice 'consulta puntual que cruza dos bases distintas sin construir infraestructura nueva' → Cross-Database Query de DMS. Si dice 'pipeline analítico recurrente sobre datos federados' → DLA o un ETL formal."
+      }
+    },
+    {
+      "title_es": "5 · Orquestación de tareas y operación diaria",
+      "title_en": "Task Orchestration and Daily Operations",
+      "intro": "Más allá del editor SQL interactivo, DMS permite automatizar flujos recurrentes de mantenimiento y sincronización de datos con una interfaz visual tipo DAG.",
+      "points": [
+        "<strong>Task Orchestration</strong>: permite encadenar tareas SQL, de exportación o de sincronización en un flujo con dependencias (tipo DAG), programado por horario, para procesos recurrentes de mantenimiento de datos.",
+        "<strong>Importación y exportación</strong>: DMS permite cargar datos desde CSV/Excel hacia una tabla o exportar resultados de una consulta, con el mismo control de permisos y enmascaramiento que aplica al resto del servicio.",
+        "<strong>Comparación y sincronización de esquemas</strong>: útil al promover cambios de un entorno de desarrollo a producción, comparando la estructura de dos bases y generando el script de alineación en vez de escribirlo a mano.",
+        "<strong>Diagnóstico de rendimiento</strong>: DMS expone métricas y planes de ejecución de las consultas ejecutadas dentro de la plataforma, ayudando a identificar sentencias lentas antes de que lleguen a producción vía el flujo de tickets.",
+        "<strong>Integración con el ecosistema</strong>: se apoya en RAM para identidad, en CloudMonitor para métricas de las instancias subyacentes y en ActionTrail para complementar su propio registro de auditoría interno."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "DMS cubre tanto el uso interactivo (un desarrollador ejecutando una consulta) como el uso programático recurrente (un flujo de mantenimiento nocturno) — no es solo un editor SQL, es una plataforma de operación de datos."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Los distractores más frecuentes del examen sobre DMS mezclan sus funciones con las de otros servicios de bases de datos, o ignoran el flujo de aprobación como respuesta esperada.",
       "points": [
-        "<strong>Antipattern</strong>: Permisos root compartidos",
-        "<strong>Antipattern</strong>: Conexión directa saltando DMS",
-        "<strong>Antipattern</strong>: Sin approval workflow",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: seguir compartiendo la contraseña real de la base de datos con el equipo en vez de centralizar el acceso a través de DMS.",
+        "<strong>Antipatrón</strong>: usar Standard Mode (sin flujo de aprobación) sobre una instancia de producción, permitiendo que un DDL/DML destructivo se ejecute sin revisión.",
+        "<strong>Antipatrón</strong>: confundir Data Masking (protección en la capa de presentación) con cifrado en reposo (protección del dato almacenado) — son complementarios, no intercambiables.",
+        "<strong>Antipatrón</strong>: usar Cross-Database Query como sustituto de un pipeline analítico recurrente en vez de una herramienta de consulta puntual.",
+        "<strong>Antipatrón</strong>: otorgar permisos de instancia completa a un analista que solo necesita ver una tabla o columna específica.",
+        "<strong>Regla de oro</strong>: cuando el examen describa 'producción' + 'cambio de esquema o datos', la respuesta casi siempre involucra Security Collaboration Mode con ticket de aprobación."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Identifica primero si la pregunta trata sobre <em>control de cambios</em> (tickets/aprobación), <em>protección de datos sensibles</em> (masking) o <em>consulta federada</em> (Cross-Database Query) — son las tres funciones que el examen distingue con más frecuencia."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Aprobación de cambios en producción (Change Request)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Workspace unificado para múltiples DBs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Data masking automático de PII"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Auditoría de queries"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Backup lógico programado"
-    }
+    { "title": "Escenario 1", "text": "Eliminar la práctica de compartir credenciales de producción entre desarrolladores — acceso centralizado vía DMS Studio" },
+    { "title": "Escenario 2", "text": "Cambio de esquema en una tabla productiva crítica — ticket con aprobación en Security Collaboration Mode" },
+    { "title": "Escenario 3", "text": "Equipo de BI que necesita consultar la tabla de clientes sin ver teléfonos completos — Data Masking" },
+    { "title": "Escenario 4", "text": "Validar consistencia de datos entre un sistema legado en RDS y uno nuevo en PolarDB durante una migración — Cross-Database Query" },
+    { "title": "Escenario 5", "text": "Job nocturno recurrente que sincroniza y limpia datos entre tablas — Task Orchestration" },
+    { "title": "Escenario 6", "text": "Auditoría externa que exige saber quién ejecutó cada DELETE en el último trimestre — historial de tickets y ActionTrail" }
   ],
   "mistakes": [
-    "Permisos root compartidos",
-    "Conexión directa saltando DMS",
-    "Sin approval workflow"
+    "Compartir la contraseña real de la base de datos productiva en vez de centralizar el acceso vía DMS",
+    "Operar producción en Standard Mode, sin flujo de aprobación para cambios sensibles",
+    "Confundir Data Masking con cifrado en reposo — son capas complementarias, no sustitutas",
+    "Usar Cross-Database Query como reemplazo de un pipeline analítico recurrente",
+    "Otorgar permisos de instancia completa cuando el usuario solo necesita una tabla o columna",
+    "No clasificar las columnas con PII, dejando datos sensibles visibles sin enmascarar"
   ],
   "cli": [
-    {
-      "cmd": "Consola DMS",
-      "desc": "Editor SQL + workflows"
-    },
-    {
-      "cmd": "aliyun dms-enterprise ListInstances",
-      "desc": "Listar instancias registradas"
-    }
+    { "cmd": "aliyun dms-enterprise ListInstances", "desc": "Listar las instancias registradas en DMS" },
+    { "cmd": "aliyun dms-enterprise RegisterInstance --Host rm-xxxxx.mysql.rds.aliyuncs.com --Port 3306 --DbType mysql", "desc": "Registrar una nueva instancia en DMS" },
+    { "cmd": "aliyun dms-enterprise SubmitOrder --OrderType DML --Content 'UPDATE ventas SET estado=1 WHERE id=100'", "desc": "Enviar un ticket de cambio para aprobación" },
+    { "cmd": "aliyun dms-enterprise ListOrders --Status APPROVED", "desc": "Listar tickets aprobados pendientes de ejecución" },
+    { "cmd": "aliyun dms-enterprise GetUserActiveInstance --UserId user1", "desc": "Consultar a qué instancia tiene acceso activo un usuario" }
   ],
   "glossary": [
-    {
-      "en": "Instance",
-      "es": "Instance",
-      "def": "Base de datos registrada en DMS."
-    },
-    {
-      "en": "Ticket/Change Request",
-      "es": "Ticket",
-      "def": "Cambio con approval workflow."
-    },
-    {
-      "en": "Data Masking",
-      "es": "Enmascarado",
-      "def": "Ocultar PII en resultados de query."
-    },
-    {
-      "en": "Cross-DB Query",
-      "es": "Cross-DB Query",
-      "def": "Query federado entre múltiples bases."
-    },
-    {
-      "en": "Task Orchestration",
-      "es": "Orquestación",
-      "def": "Workflows tipo DAG de tareas SQL."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DMS Studio", "es": "DMS Studio", "def": "Editor SQL web que centraliza el acceso a todas las instancias registradas, sin exponer credenciales reales al usuario." },
+    { "en": "Standard Mode", "es": "Modo estándar", "def": "Modo de operación sin flujo de aprobación; el usuario ejecuta SQL libremente según sus permisos." },
+    { "en": "Security Collaboration Mode", "es": "Modo de colaboración segura", "def": "Modo que exige aprobación vía ticket para DDL/DML sensible antes de ejecutarse, recomendado en producción." },
+    { "en": "Ticket / Order", "es": "Ticket de cambio", "def": "Solicitud de cambio que pasa por revisión y aprobación antes de ejecutarse en Security Collaboration Mode." },
+    { "en": "Data Masking", "es": "Enmascaramiento de datos", "def": "Ocultamiento parcial automático de columnas sensibles en los resultados de consulta, sin alterar el dato almacenado." },
+    { "en": "PII", "es": "Información personal identificable", "def": "Datos que permiten identificar a una persona (teléfono, correo, identificación), candidatos a enmascaramiento." },
+    { "en": "Cross-Database Query", "es": "Consulta federada", "def": "Capacidad de combinar datos de instancias y motores distintos en una sola consulta desde DMS Studio." },
+    { "en": "Task Orchestration", "es": "Orquestación de tareas", "def": "Flujos programados tipo DAG que encadenan tareas SQL, de sincronización o exportación con dependencias." },
+    { "en": "Rollback", "es": "Reversión", "def": "Capacidad de deshacer un cambio ejecutado a través de un ticket aprobado en Security Collaboration Mode." },
+    { "en": "Schema Comparison", "es": "Comparación de esquemas", "def": "Función que compara la estructura de dos bases y genera el script de alineación entre ellas." },
+    { "en": "RAM", "es": "RAM", "def": "Servicio de identidad y permisos de Alibaba Cloud, base de los roles asignados dentro de DMS." },
+    { "en": "ActionTrail", "es": "ActionTrail", "def": "Servicio de auditoría de llamadas API de Alibaba Cloud, complementario al registro interno de DMS." },
+    { "en": "TDE / KMS", "es": "Cifrado en reposo", "def": "Protección del dato almacenado en el motor, distinta y complementaria al enmascaramiento en DMS." },
+    { "en": "Least Privilege", "es": "Mínimo privilegio", "def": "Principio de otorgar solo el acceso estrictamente necesario, aplicable a nivel de instancia, tabla o columna en DMS." },
+    { "en": "Instance Registration", "es": "Registro de instancia", "def": "Proceso de dar de alta una base de datos (RDS, PolarDB, MongoDB, etc.) dentro de DMS para poder administrarla." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Data Management Service (DMS)?",
-      "options": [
-        "DMS es el IDE unificado para todas las bases de Alibaba Cloud (RDS, PolarDB, MongoDB, Redis, HBase, MaxCompute, ClickHouse). Provee editor SQL, workflow de cambios con approval, data masking, auditorí",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DMS es el IDE unificado para todas las bases de Alibaba Cloud (RDS, PolarDB, MongoDB, Redis, HBase, MaxCompute, ClickHouse). Provee editor SQL, workflow de cambios con approval, data masking, auditoría."
-    },
-    {
-      "q": "¿Qué es <strong>Instance</strong> (Instance) en Data Management Service (DMS)?",
-      "options": [
-        "Base de datos registrada en DMS.",
-        "Cambio con approval workflow.",
-        "Ocultar PII en resultados de query.",
-        "Query federado entre múltiples bases."
-      ],
-      "answer": 0,
-      "explain": "Instance (Instance): Base de datos registrada en DMS."
-    },
-    {
-      "q": "¿Qué es <strong>Ticket/Change Request</strong> (Ticket) en Data Management Service (DMS)?",
-      "options": [
-        "Cambio con approval workflow.",
-        "Base de datos registrada en DMS.",
-        "Ocultar PII en resultados de query.",
-        "Query federado entre múltiples bases."
-      ],
-      "answer": 0,
-      "explain": "Ticket/Change Request (Ticket): Cambio con approval workflow."
-    },
-    {
-      "q": "¿Qué es <strong>Data Masking</strong> (Enmascarado) en Data Management Service (DMS)?",
-      "options": [
-        "Ocultar PII en resultados de query.",
-        "Base de datos registrada en DMS.",
-        "Cambio con approval workflow.",
-        "Query federado entre múltiples bases."
-      ],
-      "answer": 0,
-      "explain": "Data Masking (Enmascarado): Ocultar PII en resultados de query."
-    },
-    {
-      "q": "¿Qué es <strong>Cross-DB Query</strong> (Cross-DB Query) en Data Management Service (DMS)?",
-      "options": [
-        "Query federado entre múltiples bases.",
-        "Base de datos registrada en DMS.",
-        "Cambio con approval workflow.",
-        "Ocultar PII en resultados de query."
-      ],
-      "answer": 0,
-      "explain": "Cross-DB Query (Cross-DB Query): Query federado entre múltiples bases."
-    },
-    {
-      "q": "¿Qué es <strong>Task Orchestration</strong> (Orquestación) en Data Management Service (DMS)?",
-      "options": [
-        "Workflows tipo DAG de tareas SQL.",
-        "Base de datos registrada en DMS.",
-        "Cambio con approval workflow.",
-        "Ocultar PII en resultados de query."
-      ],
-      "answer": 0,
-      "explain": "Task Orchestration (Orquestación): Workflows tipo DAG de tareas SQL."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Data Management Service (DMS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Data Management Service (DMS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Data Management Service (DMS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Data Management Service (DMS) es la elección típica:",
-      "options": [
-        "Aprobación de cambios en producción (Change Request)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Aprobación de cambios en producción (Change Request)."
-    }
+    { "q": "¿Cuál es el problema principal que resuelve DMS frente a dar acceso directo con un cliente SQL tradicional?", "options": ["DMS es simplemente más rápido para escribir consultas", "Centraliza el acceso, evitando compartir credenciales reales y permitiendo controlar y auditar los cambios", "DMS reemplaza por completo a RDS y PolarDB", "DMS solo sirve para bases de datos NoSQL"], "answer": 1, "explain": "El valor central de DMS es que ningún usuario necesita la contraseña real de la base: todo pasa por una capa controlada y auditable." },
+    { "q": "Un equipo va a modificar una tabla en una base de datos productiva crítica. ¿Qué modo de DMS es el más adecuado?", "options": ["Standard Mode, para mayor velocidad", "Security Collaboration Mode, con ticket de aprobación antes de ejecutar el cambio", "Ninguno, es mejor conectarse directo con un cliente SQL", "Cross-Database Query"], "answer": 1, "explain": "Security Collaboration Mode exige revisión y aprobación antes de ejecutar cambios sensibles, reduciendo el riesgo de incidentes en producción." },
+    { "q": "¿Qué hace Data Masking en DMS con una columna marcada como sensible, por ejemplo un número de teléfono?", "options": ["Cifra el dato en el motor de base de datos de forma permanente", "Oculta parcialmente el valor en los resultados de consulta, sin alterar el dato real almacenado", "Elimina la columna de la tabla", "Bloquea por completo cualquier consulta sobre esa tabla"], "answer": 1, "explain": "El enmascaramiento actúa en la capa de presentación de resultados, mostrando el dato parcialmente oculto sin modificar lo almacenado." },
+    { "q": "¿Por qué Data Masking NO reemplaza al cifrado en reposo (TDE/KMS)?", "options": ["Porque son exactamente lo mismo", "Porque Data Masking protege la visualización del dato al consultarlo, mientras que el cifrado en reposo protege el dato almacenado en el motor", "Porque Data Masking es más seguro que cualquier cifrado", "Porque el cifrado en reposo solo aplica a bases NoSQL"], "answer": 1, "explain": "Son capas complementarias: una protege cómo se ve el resultado de una consulta, la otra protege el dato físicamente almacenado." },
+    { "q": "¿Qué permite Cross-Database Query en DMS?", "options": ["Migrar automáticamente datos entre motores distintos de forma permanente", "Combinar datos de instancias y motores distintos en una sola consulta federada, sin construir un pipeline ETL previo", "Cifrar automáticamente todas las bases registradas", "Eliminar la necesidad de permisos RAM"], "answer": 1, "explain": "Cross-Database Query permite consultas puntuales que cruzan múltiples fuentes registradas en DMS, útil para investigaciones ad hoc." },
+    { "q": "¿Para qué caso de uso NO es apropiado Cross-Database Query, según este curso?", "options": ["Una consulta puntual que cruza dos instancias durante una migración", "Un pipeline analítico recurrente de producción sobre datos federados a gran escala", "Validar consistencia de datos entre un sistema legado y uno nuevo", "Una investigación ad hoc sobre dos bases distintas"], "answer": 1, "explain": "Para cargas analíticas recurrentes y pesadas, la arquitectura correcta es un data warehouse como AnalyticDB o un motor como DLA, no Cross-Database Query." },
+    { "q": "¿Qué es un 'ticket' (order) dentro del flujo de Security Collaboration Mode?", "options": ["Un reporte de facturación de DMS", "Una solicitud de cambio que debe pasar por revisión y aprobación antes de ejecutarse", "Un tipo de índice de base de datos", "Un certificado SSL para la conexión"], "answer": 1, "explain": "El ticket representa el cambio propuesto, su revisión y la aprobación necesaria antes de que DMS lo ejecute de forma controlada." },
+    { "q": "¿Qué función de DMS permite programar un flujo recurrente de tareas SQL con dependencias, similar a un DAG?", "options": ["Data Masking", "Task Orchestration", "Cross-Database Query", "Security Collaboration Mode"], "answer": 1, "explain": "Task Orchestration encadena tareas SQL, de sincronización o exportación en un flujo programado con dependencias." },
+    { "q": "¿Qué ventaja ofrece ejecutar un cambio a través de un ticket en Security Collaboration Mode frente a ejecutarlo directo en un cliente SQL?", "options": ["Ninguna, el resultado final es idéntico", "El cambio queda registrado, revisado, y puede revertirse (rollback) si es necesario", "Es más lento y no aporta ningún beneficio", "Elimina la necesidad de tener permisos sobre la base"], "answer": 1, "explain": "El flujo de tickets aporta revisión previa, registro completo y la posibilidad de deshacer el cambio, algo que un cliente SQL tradicional no ofrece por sí solo." },
+    { "q": "Un analista de BI solo necesita consultar una tabla específica, sin ver columnas con datos personales. ¿Qué principio debe aplicarse al otorgar sus permisos en DMS?", "options": ["Otorgar acceso completo a la instancia por simplicidad", "Mínimo privilegio: acceso solo a esa tabla, con las columnas sensibles enmascaradas", "No otorgar ningún acceso y exportar los datos manualmente cada vez", "Otorgar rol de administrador de DMS"], "answer": 1, "explain": "El principio de mínimo privilegio limita el acceso exactamente a lo necesario, combinado con Data Masking para las columnas sensibles." },
+    { "q": "¿Qué motores de base de datos puede administrar DMS desde una sola interfaz, según este curso?", "options": ["Únicamente instancias RDS de MySQL", "RDS, PolarDB, MongoDB, Redis, HBase/Lindorm, MaxCompute y ClickHouse, entre otros", "Solo bases de datos on-premise", "Solo servicios de almacenamiento de objetos"], "answer": 1, "explain": "DMS es multi-motor: centraliza el acceso a bases relacionales, NoSQL y de big data desde una sola plataforma." },
+    { "q": "¿Qué antipatrón describe mejor seguir compartiendo la contraseña real de una base productiva entre el equipo de desarrollo?", "options": ["Es la práctica recomendada para agilizar el trabajo", "Anula el propósito central de DMS: control de acceso, auditoría y aprobación de cambios sensibles", "No tiene relación con la seguridad de los datos", "Es obligatorio para usar Cross-Database Query"], "answer": 1, "explain": "Compartir credenciales reales elimina la trazabilidad y el control que DMS está diseñado para aportar." }
   ],
-  "exam_focus": "Change management flow, RAM integration, cross-DB queries, data masking.",
+  "exam_focus": "El examen evalúa: (a) por qué centralizar el acceso vía DMS en vez de conexión directa, (b) Standard Mode vs. Security Collaboration Mode según el entorno, (c) Data Masking como protección de presentación distinta del cifrado en reposo, (d) alcance correcto de Cross-Database Query, (e) el flujo de tickets como mecanismo de control de cambios en producción.",
   "official_intro": "In this course, you will not only learn what Data Management Service is, you'll also gain an understanding of some of the pain points of the modern Database Administrator, and see how DMS can address those pain points. You'll also learn how to perform operations in the DMS console, including creating new database tables, querying and modifying data, and importing data from CSV files. For Whom Database Administrator, Security Auditor",
+  "recommended_for": "Database Administrator, Security Auditor",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_dms2",
   "exam_meta": {
     "duration_min": 30,

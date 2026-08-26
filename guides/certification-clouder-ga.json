@@ -2,402 +2,217 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-ga",
   "title_en": "Global Accelerator - Network Acceleration Service Technical Operations",
-  "title_es": "Global Accelerator - Red Acceleration Servicio Technical Operations",
+  "title_es": "Global Accelerator: Operación Técnica del Servicio de Aceleración de Red",
+  "title_es_html": "Global Accelerator: Operación Técnica del Servicio de <em>Aceleración de Red</em>",
   "duration_es": "36 minutos",
   "level_es": "Principiante",
   "category_es": "Redes y CDN",
   "subcategory_es": "CDN and Acceleration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_ga",
-  "lead": "Guía completa en español para el curso «Global Accelerator - Network Acceleration Service Technical Operations» de Alibaba Cloud Academy. Cubre en profundidad Global Accelerator (GA). Global Accelerator provee ruteo optimizado mediante backbone privado de Alibaba Cloud desde nodos edge globales hacia tus recursos. Reduce latencia y jitter cuando usuarios están lejos de la región. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Global Accelerator - Network Acceleration Service Technical Operations» de Alibaba Cloud Academy, centrada en Global Accelerator (GA): el servicio que entrega el tráfico de tus aplicaciones al backbone privado de Alibaba Cloud lo antes posible, en vez de dejarlo cruzar el internet público. Cubre por qué GA no es un CDN, cómo funcionan sus Listeners y Endpoint Groups, el failover cross-región y su modelo de facturación — con la profundidad conceptual que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Global Accelerator (GA)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Accelerator, Listener, Endpoint Group, Anycast IP, Cross-region.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Global Accelerator (GA) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema de latencia y jitter resuelve Global Accelerator frente a servir tráfico directo por internet público.",
+    "<strong>Distinguir</strong> Accelerator, Anycast EIP, Listener y Endpoint Group como piezas de una misma arquitectura.",
+    "<strong>Configurar</strong> un Accelerator con listeners TCP/UDP/HTTP/HTTPS y grupos de endpoints en varias regiones.",
+    "<strong>Diseñar</strong> failover cross-región usando health checks y prioridad entre Endpoint Groups.",
+    "<strong>Diferenciar</strong> con precisión Global Accelerator de CDN y DCDN, y elegir el servicio correcto según el escenario.",
+    "<strong>Aplicar</strong> buenas prácticas de seguridad (Security Groups del backend, TLS end-to-end) sobre un Accelerator en producción.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre Global Accelerator."
   ],
-  "architecture": "Usuario global → Anycast IP del GA en edge cercano → backbone privado Alibaba → SLB en la región del backend. Bypass del internet público en la parte crítica del path.",
+  "architecture": "Un usuario se conecta a la Anycast EIP del Accelerator, dirección que se anuncia simultáneamente vía BGP desde decenas de puntos de acceso (PoP) de la red backbone privada de Alibaba Cloud alrededor del mundo; el propio enrutamiento de internet lleva al usuario al PoP topológicamente más cercano, sin resolución DNS inteligente de por medio. Desde ese PoP, el tráfico recorre la red privada de Alibaba Cloud —evitando el internet público en el tramo más largo del trayecto— hasta llegar a la región donde vive el Endpoint Group activo: típicamente un Server Load Balancer (CLB/ALB/NLB), una instancia ECS con EIP, o incluso otro Accelerator encadenado. Un Listener define protocolo (TCP/UDP/HTTP/HTTPS) y puerto de entrada, y enruta hacia uno o más Endpoint Groups regionales con peso relativo (traffic dial) y health checks continuos; si el grupo primario deja de estar saludable, GA conmuta automáticamente el tráfico hacia el Endpoint Group de respaldo en otra región.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Global Accelerator (GA)",
-      "title_en": "Introduction to Global Accelerator (GA)",
-      "intro": "Global Accelerator provee ruteo optimizado mediante backbone privado de Alibaba Cloud desde nodos edge globales hacia tus recursos. Reduce latencia y jitter cuando usuarios están lejos de la región. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué problema resuelve Global Accelerator",
+      "title_en": "The Problem Global Accelerator Solves",
+      "intro": "Cuando una aplicación tiene usuarios en varios continentes pero su backend vive en una sola región, cada solicitud cruza el internet público completo, saltando entre proveedores de tránsito que ni Alibaba Cloud ni el cliente controlan. Global Accelerator ataca ese problema entrando a una red privada lo antes posible en el trayecto.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Global Accelerator provee ruteo optimizado mediante backbone privado de Alibaba Cloud desde nodos edge globales hacia tus recursos.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Global Accelerator (GA) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Problema de fondo</strong>: el internet público enruta por el camino más barato para cada proveedor de tránsito, no por el más rápido para el usuario — eso produce saltos innecesarios, jitter variable y pérdida de paquetes impredecible en tramos internacionales.",
+        "<strong>Solución de GA</strong>: el usuario entra a la red de Alibaba Cloud en el punto de acceso (PoP) más cercano a él —no al backend— y desde ahí viaja por el backbone privado de fibra de Alibaba Cloud hasta la región de destino.",
+        "<strong>No es solo HTTP</strong>: a diferencia de un CDN, GA acelera cualquier tráfico TCP o UDP — juegos en tiempo real, señalización VoIP, replicación de bases de datos, protocolos binarios propietarios — no solo tráfico HTTP cacheable.",
+        "<strong>Latencia y jitter, no solo throughput</strong>: el beneficio de GA se mide sobre todo en estabilidad y previsibilidad de la latencia (menos jitter, menos pérdida de paquetes), más que en ancho de banda bruto adicional."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Global Accelerator (GA) es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "GA no cachea nada: reduce la distancia que el tráfico recorre por un internet público sin control, entregándolo lo antes posible a una red privada de punta a punta. Si el enunciado menciona <em>reducir jitter</em> o <em>estabilizar la latencia de tráfico no cacheable</em>, la respuesta apunta a GA, no a CDN."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Global Accelerator (GA) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Accelerator, Anycast EIP y regiones de aceleración",
+      "title_en": "Accelerator, Anycast EIP and Acceleration Regions",
+      "intro": "El objeto central de GA es la instancia Accelerator, que recibe una o dos direcciones IP anycast fijas — el punto de entrada único para todo el tráfico acelerado, sin importar desde qué continente se conecte el usuario.",
       "points": [
-        "<strong>Patrón canónico</strong>: Usuario global → Anycast IP del GA en edge cercano → backbone privado Alibaba → SLB en la región del backend. Bypass del internet público en la parte crítica del path.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Accelerator</strong>: instancia GA que agrupa listeners y endpoint groups bajo una IP pública fija (Anycast EIP) que no cambia aunque el usuario se mueva de continente.",
+        "<strong>Anycast EIP</strong>: la misma dirección IP se anuncia simultáneamente vía BGP desde múltiples PoP alrededor del mundo; el enrutamiento del internet decide automáticamente qué PoP recibe cada paquete según cercanía de red, sin depender de DNS.",
+        "<strong>Bandwidth Plan (plan de ancho de banda)</strong>: GA se contrata por suscripción sobre un plan de ancho de banda (básico, mejorado o premium según el tramo de red) — no existe una modalidad de pago por tráfico puro, sin comprometer un ancho de banda.",
+        "<strong>Regiones de aceleración vs. región del backend</strong>: el Accelerator no vive «en» una región como una instancia ECS — su punto de entrada es global; lo que sí tiene región concreta es cada Endpoint Group, donde efectivamente vive el backend."
       ],
       "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Global Accelerator (GA) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+        "label": "Diferencia con CDN",
+        "text": "Un CDN resuelve un DNS distinto por usuario para llevarlo a un nodo edge distinto; GA usa la MISMA IP anycast para todos los usuarios y deja que el enrutamiento BGP del internet decida el camino más corto — no hay resolución DNS de por medio en la elección del punto de entrada."
       }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Listeners: protocolo, puerto y tipo de enrutamiento",
+      "title_en": "Listeners: Protocol, Port and Routing Type",
+      "intro": "Un listener define cómo entra el tráfico al Accelerator, y GA ofrece dos filosofías de enrutamiento hacia los endpoints que resuelven necesidades distintas.",
       "points": [
-        "<strong>Accelerator</strong> <em>(Accelerator)</em>: Instancia GA con IP anycast global.",
-        "<strong>Listener</strong> <em>(Listener)</em>: Puerto+protocolo por donde entra tráfico.",
-        "<strong>Endpoint Group</strong> <em>(Endpoint Group)</em>: Grupo de backends en una región.",
-        "<strong>IP Anycast</strong> <em>(Anycast IP)</em>: Misma IP servida desde múltiples nodos edge.",
-        "<strong>Cross-region</strong> <em>(Cross-region)</em>: Health check y failover entre grupos regionales."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Protocolos soportados</strong>: TCP, UDP, HTTP y HTTPS — un mismo Accelerator admite varios listeners en distintos puertos y protocolos simultáneamente, hasta un límite por instancia ampliable por ticket de soporte.",
+        "<strong>Intelligent Routing (enrutamiento inteligente)</strong>: modo por defecto — GA elige automáticamente, entre los Endpoint Groups saludables, el que ofrece mejor latencia de red hacia cada usuario. Ideal cuando el mismo servicio está replicado en varias regiones.",
+        "<strong>Custom Routing (enrutamiento personalizado)</strong>: el cliente define reglas explícitas de a qué endpoint concreto (IP:puerto) va cada rango de direcciones de origen o puerto de entrada — útil en escenarios de multi-tenencia, a costa de perder el failover automático entre regiones.",
+        "<strong>Terminación TLS</strong>: en un listener HTTPS, el certificado puede terminarse en el propio Accelerator (ahorra CPU al backend) o dejarse pasar cifrado sin descifrar (pass-through) cuando el compliance exige cifrado de extremo a extremo."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el escenario describe «la misma aplicación desplegada en 3 regiones y quiero que cada usuario llegue automáticamente a la más rápida», la respuesta es Intelligent Routing. Si describe «necesito control manual y determinístico de a qué backend va cada origen», es Custom Routing."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Endpoint Groups, health checks y failover cross-región",
+      "title_en": "Endpoint Groups, Health Checks and Cross-Region Failover",
+      "intro": "Un Endpoint Group agrupa los backends reales de una región concreta — es la pieza que convierte a GA de un simple «atajo de red» en una solución con alta disponibilidad activa entre regiones.",
       "points": [
-        "<strong>Seguridad</strong>: TLS end-to-end sin terminación en GA (si compliance)",
-        "<strong>Buenas prácticas</strong>: Endpoint groups en 2+ regiones para failover",
-        "<strong>Buenas prácticas</strong>: Health checks reales apuntando al backend",
-        "<strong>Buenas prácticas</strong>: Cross-border acceleration entre China/global"
+        "<strong>Endpoint Group</strong>: conjunto de uno o más endpoints (instancia ECS, CLB/ALB/NLB, EIP o incluso otro Accelerator) anclado a una región específica, con un peso relativo (traffic dial) que controla qué proporción de tráfico recibe.",
+        "<strong>Health check por endpoint</strong>: chequeos periódicos (TCP o HTTP) que retiran automáticamente un endpoint no saludable del grupo activo, sin que el usuario final note el cambio.",
+        "<strong>Prioridad entre grupos</strong>: se puede declarar un Endpoint Group primario y otro de respaldo en otra región — si el grupo primario falla por completo, GA conmuta el tráfico al de respaldo automáticamente.",
+        "<strong>Un solo Endpoint Group es un antipatrón</strong>: sin un segundo grupo en otra región, GA sigue acelerando la ruta de red pero no aporta redundancia geográfica ante la caída de una región completa."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "El failover de GA ocurre a nivel de Endpoint Group (región completa), no a nivel de backend individual dentro de una región — para eso último se sigue apoyando en el health check propio del SLB o del grupo de escalado detrás del endpoint."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · GA frente a CDN y DCDN",
+      "title_en": "GA vs CDN vs DCDN",
+      "intro": "Esta es la pregunta de examen más frecuente sobre el servicio: los tres aceleran contenido para usuarios distribuidos globalmente, pero resuelven problemas distintos y no son intercambiables.",
       "points": [
-        "<strong>Antipattern</strong>: GA para tráfico local a la región (desperdicio)",
-        "<strong>Antipattern</strong>: Un solo endpoint group",
-        "<strong>Antipattern</strong>: Confundir GA con CDN — CDN cachea, GA sólo acelera path",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>CDN</strong>: cachea copias de contenido estático (imágenes, video, JS/CSS) en miles de nodos edge — el objetivo es que la mayoría de solicitudes nunca lleguen al origen.",
+        "<strong>DCDN (Dynamic Content Delivery Network)</strong>: optimiza el camino de red para contenido dinámico NO cacheable (HTML generado por servidor, respuestas de API personalizadas), combinando ruteo inteligente con técnicas de aceleración TCP — sigue siendo un servicio orientado a HTTP/HTTPS.",
+        "<strong>Global Accelerator</strong>: opera en la capa de transporte (TCP/UDP), sin entender ni cachear el contenido — acelera cualquier protocolo sobre TCP/UDP, incluido tráfico que nunca podría cachearse: juegos en tiempo real, bases de datos, VoIP, protocolos binarios propietarios.",
+        "<strong>Regla práctica</strong>: si el contenido se puede cachear → CDN. Si es HTTP dinámico no cacheable → DCDN. Si no es HTTP en absoluto, o se necesita una IP fija global para cualquier protocolo → Global Accelerator."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado menciona «juego en tiempo real», «protocolo UDP propietario» o «IP fija para todo el tráfico TCP de una aplicación», descarta CDN y DCDN de inmediato — solo GA opera por debajo de la capa HTTP."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad y monitoreo del Accelerator",
+      "title_en": "Securing and Monitoring the Accelerator",
+      "intro": "Como con cualquier punto de entrada público, un Accelerator mal asegurado expone directamente los backends que se supone debía proteger.",
+      "points": [
+        "<strong>Security Groups del backend</strong>: aunque el tráfico llega vía GA, el Security Group de la instancia o SLB detrás del endpoint sigue aplicándose — GA no reemplaza el firewall del backend.",
+        "<strong>Restricción de origen en el backend</strong>: cuando el backend es una instancia con EIP propia, conviene restringir su Security Group para aceptar tráfico únicamente desde los rangos de IP de los PoP de GA, evitando que alguien la alcance sin pasar por el Accelerator.",
+        "<strong>TLS end-to-end</strong>: para cargas con requisitos de compliance estrictos, se prefiere no terminar TLS en el Accelerator y dejar que el certificado se valide en el propio backend (pass-through).",
+        "<strong>CloudMonitor</strong>: expone métricas de tráfico, conexiones activas y estado de salud de cada Endpoint Group; se pueden configurar alarmas si el porcentaje de endpoints saludables cae por debajo de un umbral crítico."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "GA acelera la ruta, no sustituye ningún control de seguridad del backend — Security Groups, WAF (si aplica en el SLB detrás) y cifrado siguen siendo responsabilidad de cada capa."
+      }
+    },
+    {
+      "title_es": "7 · Facturación y modelo de suscripción",
+      "title_en": "Billing and Subscription Model",
+      "intro": "A diferencia de servicios como ECS u OSS, GA no tiene un modelo de pago por uso puro sobre el tráfico — entender su facturación evita sorpresas y es tema recurrente del examen.",
+      "points": [
+        "<strong>Solo suscripción</strong>: el Accelerator y su Bandwidth Plan se contratan por suscripción (mensual o anual), no por hora ni exclusivamente por tráfico consumido.",
+        "<strong>Bandwidth Plan</strong>: se compra un ancho de banda contratado —básico, mejorado (enhanced) o premium según el nivel de servicio del tramo de red— que limita el throughput máximo agregado de todos los listeners del Accelerator.",
+        "<strong>Anycast EIP con ancho de banda comprometido</strong>: al acelerar mediante una Anycast EIP, el plan contratado fija un ancho de banda de diseño; ampliarlo implica cambiar de plan, no escala automáticamente como el tráfico bajo demanda de otros servicios.",
+        "<strong>Costo adicional del tramo hacia el backend</strong>: además del Bandwidth Plan de entrada, puede aplicar costo por el tráfico entre el PoP y la región del Endpoint Group, según el tipo de instancia GA contratada — conviene revisar la calculadora de precios oficial antes de dimensionar."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario pregunta por qué GA no ofrece «pay-as-you-go» puro como ECS, la respuesta es que se factura sobre un ancho de banda contratado en un Bandwidth Plan de suscripción, no por consumo instantáneo sin compromiso."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de preguntas difíciles sobre Global Accelerator están inspiradas en confusiones reales entre GA y otros servicios de red y aceleración de Alibaba Cloud.",
+      "points": [
+        "<strong>Antipatrón</strong>: usar GA para acelerar tráfico que ya es local a la región del usuario — sin distancia de red que ahorrar, GA solo añade costo sin beneficio.",
+        "<strong>Antipatrón</strong>: configurar un único Endpoint Group — se pierde la posibilidad de failover cross-región, una de las razones principales para adoptar GA en producción.",
+        "<strong>Antipatrón</strong>: confundir GA con un CDN y esperar que «cachee» contenido — GA no tiene caché; si el escenario necesita reducir carga de origen sirviendo el mismo archivo repetidamente, la respuesta correcta es CDN.",
+        "<strong>Antipatrón</strong>: dejar el backend (ECS o SLB) con una EIP propia sin restringir el Security Group, permitiendo saltarse el Accelerator por completo.",
+        "<strong>Antipatrón</strong>: dimensionar el Bandwidth Plan sin margen de crecimiento, dado que no escala automáticamente como el tráfico bajo demanda de otros servicios.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, descarta primero la que ignora el failover multi-región (razón de ser de GA) y la que confunde capa de transporte (GA) con capa de aplicación cacheable (CDN)."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el escenario buscando si describe un problema de <em>ruta de red</em> (GA), de <em>contenido cacheable</em> (CDN) o de <em>HTTP dinámico</em> (DCDN) — cada categoría apunta a un servicio distinto, aunque los tres compartan la promesa de «acelerar para usuarios globales»."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Aplicaciones con usuarios distribuidos globalmente"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Gaming online con latencia crítica"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Video-conferencia empresarial"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "APIs cross-región para SaaS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Trading financiero"
-    }
+    { "title": "Escenario 1", "text": "Videojuego multijugador en tiempo real con jugadores en distintos continentes — tráfico UDP acelerado por el backbone privado" },
+    { "title": "Escenario 2", "text": "API de trading o mercados financieros que exige latencia estable y predecible entre regiones" },
+    { "title": "Escenario 3", "text": "Aplicación SaaS con un único backend regional que sirve usuarios globales sin desplegar infraestructura en cada continente" },
+    { "title": "Escenario 4", "text": "Replicación de base de datos o sincronización entre data centers en regiones distintas vía TCP" },
+    { "title": "Escenario 5", "text": "Failover automático de un servicio crítico entre dos regiones ante la caída total de una de ellas" },
+    { "title": "Escenario 6", "text": "Videoconferencia empresarial donde el jitter variable degrada la experiencia más que el ancho de banda bruto" }
   ],
   "mistakes": [
-    "GA para tráfico local a la región (desperdicio)",
-    "Un solo endpoint group",
-    "Confundir GA con CDN — CDN cachea, GA sólo acelera path"
+    "Usar GA para acelerar tráfico que ya es local a la región del usuario — costo sin beneficio real",
+    "Configurar un único Endpoint Group, perdiendo la posibilidad de failover cross-región",
+    "Confundir GA con un CDN y esperar que cachee contenido — GA no tiene caché",
+    "Dejar el backend con EIP propia sin restringir el Security Group a los rangos de IP de GA",
+    "Dimensionar el Bandwidth Plan sin margen de crecimiento, ya que no escala automáticamente",
+    "Elegir Custom Routing cuando en realidad se necesita failover automático entre regiones (que solo da Intelligent Routing)"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ga CreateAccelerator",
-      "desc": "Crear accelerator"
-    },
-    {
-      "cmd": "aliyun ga CreateEndpointGroup",
-      "desc": "Crear grupo de endpoints"
-    }
+    { "cmd": "aliyun ga CreateAccelerator --Duration 1 --PricingCycle Month --AutoPay true", "desc": "Crear una instancia Accelerator con suscripción mensual" },
+    { "cmd": "aliyun ga CreateListener --AcceleratorId ga-xxxxx --Protocol TCP --PortRanges '[{\"FromPort\":443,\"ToPort\":443}]'", "desc": "Crear un listener TCP en el puerto 443" },
+    { "cmd": "aliyun ga CreateEndpointGroup --AcceleratorId ga-xxxxx --ListenerId lsr-xxxxx --EndpointGroupRegion cn-hangzhou --EndpointConfigurations '[{\"Endpoint\":\"1.2.3.4\",\"Type\":\"PublicIp\"}]'", "desc": "Crear un Endpoint Group apuntando a un backend en una región" },
+    { "cmd": "aliyun ga DescribeEndpointGroups --AcceleratorId ga-xxxxx", "desc": "Consultar el estado de salud de los Endpoint Groups" },
+    { "cmd": "aliyun ga UpdateEndpointGroup --EndpointGroupId epg-xxxxx --TrafficPercentage 50", "desc": "Ajustar el peso (traffic dial) de un Endpoint Group" },
+    { "cmd": "aliyun ga DescribeAccelerators --RegionId cn-hangzhou", "desc": "Listar las instancias Accelerator de la cuenta" }
   ],
   "glossary": [
-    {
-      "en": "Accelerator",
-      "es": "Accelerator",
-      "def": "Instancia GA con IP anycast global."
-    },
-    {
-      "en": "Listener",
-      "es": "Listener",
-      "def": "Puerto+protocolo por donde entra tráfico."
-    },
-    {
-      "en": "Endpoint Group",
-      "es": "Endpoint Group",
-      "def": "Grupo de backends en una región."
-    },
-    {
-      "en": "Anycast IP",
-      "es": "IP Anycast",
-      "def": "Misma IP servida desde múltiples nodos edge."
-    },
-    {
-      "en": "Cross-region",
-      "es": "Cross-region",
-      "def": "Health check y failover entre grupos regionales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Accelerator", "es": "Accelerator", "def": "Instancia central de GA que agrupa listeners y endpoint groups bajo una Anycast EIP fija." },
+    { "en": "Anycast EIP", "es": "IP Anycast", "def": "Dirección IP anunciada simultáneamente desde múltiples PoP; el internet dirige a cada usuario al PoP más cercano." },
+    { "en": "Listener", "es": "Listener", "def": "Combinación de protocolo (TCP/UDP/HTTP/HTTPS) y puerto por donde el Accelerator acepta tráfico." },
+    { "en": "Endpoint Group", "es": "Grupo de endpoints", "def": "Conjunto de backends (ECS, SLB, EIP) anclado a una región, con peso y health check propios." },
+    { "en": "Endpoint", "es": "Endpoint", "def": "Backend individual dentro de un Endpoint Group: una instancia, un SLB, una EIP o incluso otro Accelerator." },
+    { "en": "Intelligent Routing", "es": "Enrutamiento inteligente", "def": "Modo por defecto: GA elige el Endpoint Group con mejor latencia entre los saludables." },
+    { "en": "Custom Routing", "es": "Enrutamiento personalizado", "def": "Reglas explícitas que mapean origen/puerto a un endpoint concreto, sin failover automático." },
+    { "en": "Traffic Dial", "es": "Peso de tráfico", "def": "Porcentaje de tráfico que se asigna a un Endpoint Group frente a otros disponibles." },
+    { "en": "Health Check", "es": "Chequeo de salud", "def": "Verificación periódica TCP/HTTP que retira endpoints no saludables del enrutamiento activo." },
+    { "en": "Cross-region Failover", "es": "Failover entre regiones", "def": "Conmutación automática del tráfico hacia un Endpoint Group de respaldo si el primario falla." },
+    { "en": "Bandwidth Plan", "es": "Plan de ancho de banda", "def": "Suscripción que fija el throughput contratado del Accelerator; único modelo de facturación de GA." },
+    { "en": "PoP (Point of Presence)", "es": "Punto de acceso", "def": "Nodo de la red de Alibaba Cloud donde el tráfico del usuario entra al backbone privado." },
+    { "en": "Backbone privado", "es": "Backbone privado", "def": "Red de fibra propia de Alibaba Cloud que conecta regiones sin depender del internet público." },
+    { "en": "TLS Pass-through", "es": "Paso de TLS sin terminar", "def": "El Accelerator reenvía tráfico HTTPS cifrado sin descifrarlo, dejando la terminación al backend." },
+    { "en": "CDN", "es": "CDN", "def": "Red de distribución de contenido que cachea objetos estáticos en nodos edge cercanos al usuario." },
+    { "en": "DCDN", "es": "DCDN", "def": "Servicio que acelera contenido HTTP dinámico no cacheable mediante ruteo optimizado." },
+    { "en": "Jitter", "es": "Jitter", "def": "Variación en la latencia entre paquetes consecutivos; crítico en VoIP, gaming y videoconferencia." },
+    { "en": "BGP Anycast", "es": "BGP Anycast", "def": "Técnica de enrutamiento donde la misma IP se anuncia desde múltiples ubicaciones vía BGP." },
+    { "en": "CLB / ALB / NLB", "es": "CLB / ALB / NLB", "def": "Tipos de balanceador de carga de Alibaba Cloud que suelen actuar como endpoint detrás de un Accelerator." },
+    { "en": "CloudMonitor", "es": "CloudMonitor", "def": "Servicio nativo de métricas y alarmas, usado sobre GA para observar tráfico y salud de endpoints." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Global Accelerator (GA)?",
-      "options": [
-        "Global Accelerator provee ruteo optimizado mediante backbone privado de Alibaba Cloud desde nodos edge globales hacia tus recursos. Reduce latencia y jitter cuando usuarios están lejos de la región.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Global Accelerator provee ruteo optimizado mediante backbone privado de Alibaba Cloud desde nodos edge globales hacia tus recursos. Reduce latencia y jitter cuando usuarios están lejos de la región."
-    },
-    {
-      "q": "¿Qué es <strong>Accelerator</strong> (Accelerator) en Global Accelerator (GA)?",
-      "options": [
-        "Instancia GA con IP anycast global.",
-        "Puerto+protocolo por donde entra tráfico.",
-        "Grupo de backends en una región.",
-        "Misma IP servida desde múltiples nodos edge."
-      ],
-      "answer": 0,
-      "explain": "Accelerator (Accelerator): Instancia GA con IP anycast global."
-    },
-    {
-      "q": "¿Qué es <strong>Listener</strong> (Listener) en Global Accelerator (GA)?",
-      "options": [
-        "Puerto+protocolo por donde entra tráfico.",
-        "Instancia GA con IP anycast global.",
-        "Grupo de backends en una región.",
-        "Misma IP servida desde múltiples nodos edge."
-      ],
-      "answer": 0,
-      "explain": "Listener (Listener): Puerto+protocolo por donde entra tráfico."
-    },
-    {
-      "q": "¿Qué es <strong>Endpoint Group</strong> (Endpoint Group) en Global Accelerator (GA)?",
-      "options": [
-        "Grupo de backends en una región.",
-        "Instancia GA con IP anycast global.",
-        "Puerto+protocolo por donde entra tráfico.",
-        "Misma IP servida desde múltiples nodos edge."
-      ],
-      "answer": 0,
-      "explain": "Endpoint Group (Endpoint Group): Grupo de backends en una región."
-    },
-    {
-      "q": "¿Qué es <strong>Anycast IP</strong> (IP Anycast) en Global Accelerator (GA)?",
-      "options": [
-        "Misma IP servida desde múltiples nodos edge.",
-        "Instancia GA con IP anycast global.",
-        "Puerto+protocolo por donde entra tráfico.",
-        "Grupo de backends en una región."
-      ],
-      "answer": 0,
-      "explain": "Anycast IP (IP Anycast): Misma IP servida desde múltiples nodos edge."
-    },
-    {
-      "q": "¿Qué es <strong>Cross-region</strong> (Cross-region) en Global Accelerator (GA)?",
-      "options": [
-        "Health check y failover entre grupos regionales.",
-        "Instancia GA con IP anycast global.",
-        "Puerto+protocolo por donde entra tráfico.",
-        "Grupo de backends en una región."
-      ],
-      "answer": 0,
-      "explain": "Cross-region (Cross-region): Health check y failover entre grupos regionales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Global Accelerator (GA), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Global Accelerator (GA) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Global Accelerator (GA), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Global Accelerator (GA) es la elección típica:",
-      "options": [
-        "Aplicaciones con usuarios distribuidos globalmente",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Aplicaciones con usuarios distribuidos globalmente."
-    }
+    { "q": "¿Cuál es la función principal de Global Accelerator (GA)?", "options": ["Cachear contenido estático en nodos edge cercanos al usuario", "Entregar el tráfico al backbone privado de Alibaba Cloud lo antes posible, reduciendo distancia recorrida por internet público", "Reemplazar la necesidad de un balanceador de carga regional", "Cifrar todo el tráfico de una aplicación"], "answer": 1, "explain": "GA no cachea nada: acorta el tramo que el tráfico recorre por internet público sin control, entrando a la red privada de Alibaba Cloud en el punto más cercano al usuario." },
+    { "q": "Un usuario en Buenos Aires y otro en Tokio se conectan al mismo Accelerator. ¿Qué IP ven ambos?", "options": ["Dos IPs distintas resueltas por DNS geográfico", "La misma Anycast EIP; el enrutamiento BGP del internet los lleva a PoP distintos", "Cada uno recibe una IP aleatoria por sesión", "Solo el usuario más cercano a la región del backend puede conectarse"], "answer": 1, "explain": "GA usa una única Anycast EIP anunciada desde múltiples PoP; no hay resolución DNS geográfica de por medio, el enrutamiento de red decide el PoP más cercano." },
+    { "q": "¿Qué diferencia principal existe entre Intelligent Routing y Custom Routing en un listener de GA?", "options": ["Son exactamente lo mismo con nombres distintos", "Intelligent Routing elige automáticamente el mejor Endpoint Group por latencia; Custom Routing mapea manualmente origen/puerto a un endpoint fijo, sin failover automático", "Custom Routing solo funciona con HTTPS", "Intelligent Routing requiere configurar reglas manuales de IP de origen"], "answer": 1, "explain": "Intelligent Routing automatiza la elección del mejor Endpoint Group; Custom Routing da control determinístico pero renuncia al failover automático entre regiones." },
+    { "q": "Un Accelerator tiene un solo Endpoint Group en la región cn-hangzhou. Si esa región sufre una falla total, ¿qué ocurre?", "options": ["GA conmuta automáticamente a otra región por defecto", "El servicio queda caído: sin un segundo Endpoint Group no hay failover posible", "GA cachea la última respuesta conocida", "El tráfico se redirige automáticamente a un CDN"], "answer": 1, "explain": "El failover de GA depende de tener al menos un segundo Endpoint Group en otra región; con uno solo, GA acelera la ruta pero no aporta redundancia geográfica." },
+    { "q": "Una empresa necesita reducir la latencia de descargas de imágenes que se repiten miles de veces al día para distintos usuarios. ¿Qué servicio de Alibaba Cloud es más adecuado, GA o CDN?", "options": ["Global Accelerator, porque acelera cualquier tráfico", "CDN, porque cachea el contenido estático y evita tocar el origen en la mayoría de solicitudes repetidas", "Ninguno de los dos resuelve ese problema", "Solo DCDN puede resolverlo"], "answer": 1, "explain": "Cuando el contenido es cacheable y se repite entre usuarios, un CDN es la opción correcta; GA no cachea, por lo que no reduce la carga de origen en ese escenario." },
+    { "q": "¿Qué tipo de tráfico puede acelerar Global Accelerator que un CDN tradicional NO puede?", "options": ["Solo archivos HTML", "Tráfico UDP de un juego en tiempo real o un protocolo binario propietario", "Únicamente tráfico HTTPS", "Streaming de video bajo demanda"], "answer": 1, "explain": "GA opera en la capa de transporte (TCP/UDP) y no requiere que el tráfico sea HTTP ni cacheable, a diferencia de un CDN." },
+    { "q": "¿Cómo se factura Global Accelerator respecto al ancho de banda?", "options": ["Pay-as-you-go puro por GB transferido, sin compromiso", "Por suscripción, sobre un Bandwidth Plan contratado (básico, mejorado o premium)", "Es gratuito si se usa menos de 1 TB al mes", "Se factura únicamente por el número de listeners creados"], "answer": 1, "explain": "GA se contrata por suscripción sobre un Bandwidth Plan; no existe una modalidad de pago por tráfico puro sin ancho de banda comprometido." },
+    { "q": "¿Qué mecanismo retira automáticamente un endpoint que dejó de responder dentro de un Endpoint Group?", "options": ["El Bandwidth Plan", "El Health Check periódico (TCP/HTTP)", "La terminación TLS", "El Traffic Dial"], "answer": 1, "explain": "El health check evalúa periódicamente cada endpoint y lo retira del enrutamiento activo si deja de responder correctamente." },
+    { "q": "Una aplicación de videoconferencia empresarial reporta cortes y audio entrecortado entre continentes, aunque el ancho de banda disponible es suficiente. ¿Qué problema describe mejor este síntoma?", "options": ["Falta de espacio en disco del servidor", "Jitter alto y pérdida de paquetes por una ruta de internet público inestable", "Un certificado SSL expirado", "Un Bucket OSS mal configurado"], "answer": 1, "explain": "La videoconferencia es sensible al jitter y a la pérdida de paquetes, no solo al ancho de banda bruto — exactamente el problema que GA busca estabilizar." },
+    { "q": "¿Qué opción de terminación TLS elegiría una aplicación con requisitos estrictos de cifrado de extremo a extremo?", "options": ["Terminar TLS siempre en el Accelerator", "TLS pass-through, dejando que el backend termine el cifrado", "Deshabilitar TLS por completo", "Usar solo el protocolo UDP"], "answer": 1, "explain": "El pass-through evita que el tráfico se descifre en el Accelerator, manteniendo el cifrado de extremo a extremo hasta el backend." },
+    { "q": "¿Por qué es un antipatrón dejar la EIP de un backend accesible directamente desde internet cuando ya está detrás de un Accelerator?", "options": ["No es un antipatrón, mejora el rendimiento", "Permite que un atacante se salte el Accelerator y acceda al backend directamente si no se restringe el Security Group", "Duplica automáticamente el costo del Bandwidth Plan", "Hace que el Health Check deje de funcionar"], "answer": 1, "explain": "Sin restringir el Security Group del backend a los rangos de IP de GA, cualquiera puede evitar el Accelerator y golpear la EIP pública directamente." },
+    { "q": "Un escenario describe: 'servicio replicado en 3 regiones, quiero que cada usuario llegue automáticamente a la de menor latencia, con failover si una falla'. ¿Qué configuración de GA es la adecuada?", "options": ["Custom Routing con un solo Endpoint Group", "Intelligent Routing con múltiples Endpoint Groups y health checks", "Desactivar GA y usar solo DNS round-robin", "Un único listener UDP sin Endpoint Group"], "answer": 1, "explain": "Intelligent Routing con varios Endpoint Groups saludables es exactamente el diseño que da selección automática de la región más rápida y failover entre ellas." },
+    { "q": "¿Qué NO puede hacer Global Accelerator por sí mismo?", "options": ["Reducir la distancia que recorre el tráfico por internet público", "Cachear contenido estático como imágenes o video", "Aceptar tráfico TCP y UDP", "Balancear tráfico entre Endpoint Groups de distintas regiones"], "answer": 1, "explain": "GA no tiene ninguna capacidad de caché; esa función es exclusiva de servicios como CDN o DCDN." }
   ],
-  "exam_focus": "GA vs CDN vs DCDN, cross-border acceleration, failover multi-región, anycast IP.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar con precisión GA de CDN y DCDN según el tipo de tráfico del escenario, (b) Intelligent Routing vs. Custom Routing, (c) el rol de Endpoint Groups y health checks en el failover cross-región, (d) el modelo de facturación por suscripción y Bandwidth Plan, (e) por qué los Security Groups del backend siguen siendo necesarios detrás de un Accelerator.",
   "official_intro": "Through this course, you will not only learn about Alibaba Cloud Global Accelerator and its applicable scenarios, but also learn how to use this product to build a cross-region acceleration solution. For Whom Solution Architect",
-  "source_url": "https://edu.alibabacloud.com/certification/clouder_ga"
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_ga",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
 }

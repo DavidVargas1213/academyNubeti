@@ -2,467 +2,193 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-ecs-costcontrol",
   "title_en": "ECS Cost Control: An Overview",
-  "title_es": "ECS Control de Costos: Una Visión General",
+  "title_es": "Control de Costos de ECS: Una Visión General",
+  "title_es_html": "Control de <em>Costos de ECS</em>: Una Visión General",
   "duration_es": "46 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_ecs_costcontrol",
-  "lead": "Guía completa en español para el curso «ECS Cost Control: An Overview» de Alibaba Cloud Academy. Cubre en profundidad Optimización de Costos. Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «ECS Cost Control: An Overview» de Alibaba Cloud Academy. El curso no enseña a elegir un modelo de compra puntual (eso lo cubre «ECS Product Purchasing Options»), sino a gobernar el gasto de ECS en el tiempo: combinar Savings Plan, Reserved Instance y Storage Capacity Unit (SCU) para cubrir una carga base, dejar picos en Pay-As-You-Go, y usar los paneles de facturación para detectar desperdicio antes de que aparezca en la factura.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Optimización de Costos</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pay-as-you-go, Subscription, Reserved Instance, Savings Plan, Spot / Preemptible.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Optimización de Costos y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Diferenciar</strong> los tipos de facturación de ECS y cuándo conviene mezclar varios en la misma cuenta.",
+    "<strong>Explicar</strong> cómo un Savings Plan aplica descuento automáticamente al consumo elegible, y cómo difiere de una Reserved Instance.",
+    "<strong>Usar</strong> Storage Capacity Unit (SCU) para prepagar almacenamiento (discos, NAS, snapshots, OSS) por separado del cómputo.",
+    "<strong>Combinar</strong> Savings Plan/RI (baseline) + Pay-As-You-Go (picos) + Spot (batch) + SCU (almacenamiento) en una estrategia coherente.",
+    "<strong>Aplicar</strong> etiquetas de asignación de costos para atribuir el gasto por proyecto, entorno o equipo.",
+    "<strong>Monitorear</strong> cobertura (coverage) y utilización (utilization) de los compromisos de ahorro para no dejar dinero sobre la mesa.",
+    "<strong>Detectar</strong> recursos ociosos (EIPs sin asociar, discos huérfanos, snapshots olvidados) que facturan sin aportar valor."
   ],
-  "architecture": "Cost Center consolida spend → tags por proyecto/equipo → alertas por budget → recomendaciones automáticas (right-sizing, reservas) → scripts de cleanup (unused EIPs, snapshots huérfanos).",
+  "architecture": "El Billing Center consolida el gasto de toda la cuenta (y de las subcuentas si se usa Resource Directory) por producto, región y etiqueta. Sobre esa base de datos de consumo se aplican, en orden: primero los compromisos de ahorro (Savings Plan y/o Reserved Instance) que cubren la carga base recurrente; segundo, Storage Capacity Unit (SCU) que compensa automáticamente las facturas de discos, NAS, snapshots y OSS mientras dure su vigencia; el consumo restante que no cae dentro de ningún compromiso se factura en Pay-As-You-Go, y las cargas tolerantes a interrupción se desplazan a Spot para maximizar el descuento. Presupuestos (Budgets) con alertas por umbral notifican desviaciones, y un tablero de cobertura/utilización muestra qué porcentaje del consumo real está siendo descontado por los compromisos vigentes — la señal principal para decidir si conviene comprar más compromiso o dejarlo como está.",
   "lessons": [
     {
-      "title_es": "0 · Sílabo oficial del curso",
-      "title_en": "Official Course Syllabus",
-      "intro": "El curso original en Alibaba Cloud Academy está estructurado en las lecciones que se listan a continuación. Los módulos posteriores (fundamentos, arquitectura, operación...) amplían cada lección con contenido de referencia en español, alineado con la certificación.",
+      "title_es": "1 · Tipos de facturación de ECS",
+      "title_en": "ECS Billing Types",
+      "intro": "Antes de optimizar nada hay que dominar el vocabulario de facturación: cada tipo de cobro responde a un patrón de uso distinto, y el examen evalúa que sepas emparejar carga con modelo.",
       "points": [
-        "<strong>Lección 1</strong>: ECS Billing Types",
-        "<strong>Lección 2</strong>: Savings Plan",
-        "<strong>Lección 3</strong>: SCUs",
-        "<strong>Lección 4</strong>: Putting It Together",
-        "<strong>Lección 5</strong>: ECS Pricing And The Savings Plan - Doc"
-      ],
-      "keypoint": {
-        "label": "Fuente oficial",
-        "text": "Títulos extraídos directamente del catálogo <em>edu.alibabacloud.com</em>. Ver el curso original para ver los videos y materiales."
-      }
-    },
-    {
-      "title_es": "1 · Introducción a Optimización de Costos",
-      "title_en": "Introduction to Optimización de Costos",
-      "intro": "Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
-      "points": [
-        "<strong>Problema que resuelve</strong>: Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Optimización de Costos se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Pay-As-You-Go (PayG)</strong>: facturación por hora o segundo sin compromiso previo; es el modelo por defecto al crear una instancia y el más caro por unidad de cómputo.",
+        "<strong>Subscription</strong>: pago anticipado mensual o anual sobre una instancia concreta; obliga a mantener esa instancia el período contratado, con descuento frente a PayG equivalente.",
+        "<strong>Reserved Instance (RI)</strong>: no reemplaza a la instancia PayG, sino que aplica un descuento sobre su consumo cuando coincide en familia, región y tipo de sistema operativo con lo comprometido — 1 o 3 años.",
+        "<strong>Preemptible / Spot Instance</strong>: precio de mercado con hasta 90% de descuento sobre PayG; Alibaba Cloud puede reclamarla con minutos de aviso si necesita la capacidad.",
+        "<strong>Mezcla en la misma cuenta</strong>: no hay que elegir un único modelo para toda la cuenta — es normal tener RI cubriendo el clúster de base de datos, PayG para el entorno de staging y Spot para el pipeline de batch, todo simultáneamente."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Optimización de Costos es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen distingue entre <em>comprar una instancia distinta</em> (Subscription) y <em>aplicar un descuento sobre una instancia PayG existente</em> (Reserved Instance, Savings Plan) — son mecanismos de facturación diferentes aunque ambos reduzcan el costo."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Optimización de Costos no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Savings Plan: descuento flexible por compromiso de gasto",
+      "title_en": "Savings Plan",
+      "intro": "El Savings Plan resuelve la principal limitación de la Reserved Instance: la rigidez. En vez de comprometerte a una familia y región exactas, te comprometes a un monto de gasto por hora y el descuento se aplica automáticamente donde corresponda.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cost Center consolida spend → tags por proyecto/equipo → alertas por budget → recomendaciones automáticas (right-sizing, reservas) → scripts de cleanup (unused EIPs, snapshots huérfanos).",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Optimización de Costos (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>PayG</strong> <em>(Pay-as-you-go)</em>: Facturación por uso (default).",
-        "<strong>Subscription</strong> <em>(Subscription)</em>: Compra anticipada mensual/anual.",
-        "<strong>RI</strong> <em>(Reserved Instance)</em>: Compromiso 1-3 años con descuento.",
-        "<strong>Savings Plan</strong> <em>(Savings Plan)</em>: Compromiso $/hora flexible.",
-        "<strong>Spot</strong> <em>(Spot / Preemptible)</em>: Descuento agresivo, interrumpible.",
-        "<strong>Cost Center</strong> <em>(Cost Center)</em>: Consolidación de spend.",
-        "<strong>Budget</strong> <em>(Budget)</em>: Presupuesto con alerta.",
-        "<strong>Right-sizing</strong> <em>(Right-sizing)</em>: Ajustar recursos a uso real."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Compromiso por $/hora</strong>: se contrata un gasto mínimo por hora (p.ej. $10/hora) durante 1 o 3 años; el descuento se aplica automáticamente a cualquier consumo elegible hasta cubrir ese monto, sin importar la familia de instancia exacta dentro del alcance contratado.",
+        "<strong>Flexibilidad frente a Reserved Instance</strong>: si cambias de familia de instancia (por ejemplo migras de <code>g6</code> a <code>g7</code>) o de zona dentro de la misma región, el Savings Plan sigue aplicando el descuento; una RI tradicional puede perder cobertura si el recurso ya no coincide exactamente con lo comprometido.",
+        "<strong>Aplicación automática</strong>: no hace falta asociar manualmente el plan a una instancia — el sistema de facturación aplica el descuento al consumo PayG elegible de mayor costo primero, de forma transparente cada hora.",
+        "<strong>Coverage vs. Utilization</strong>: <em>coverage</em> mide qué porcentaje del consumo total elegible está cubierto por el plan; <em>utilization</em> mide qué porcentaje del compromiso contratado se está aprovechando. Un plan sobredimensionado tiene baja utilization; una cuenta con poco compromiso tiene baja coverage.",
+        "<strong>Riesgo del compromiso</strong>: si el consumo real cae por debajo del monto comprometido, se sigue pagando el compromiso completo — por eso conviene dimensionar el Savings Plan sobre la carga base histórica más estable, no sobre picos ocasionales."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Cuando el enunciado describe una carga que cambia de tipo de instancia o de zona con frecuencia pero mantiene un gasto base estable, la respuesta suele ser Savings Plan, no Reserved Instance."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · SCU: Storage Capacity Unit para prepagar almacenamiento",
+      "title_en": "SCUs",
+      "intro": "Mientras que Savings Plan y Reserved Instance descuentan cómputo, el Storage Capacity Unit (SCU) es el mecanismo equivalente para el almacenamiento — y el examen los distingue con precisión.",
       "points": [
-        "<strong>Costo</strong>: Baseline con RI/Savings + picos PayG",
-        "<strong>Costo</strong>: Spot para batch idempotente",
-        "<strong>Costo</strong>: Lifecycle OSS Standard → IA → Archive",
-        "<strong>Buenas prácticas</strong>: Tag obligatorio (project/env/owner)",
-        "<strong>Buenas prácticas</strong>: Auto-stop dev/test fuera de horario"
+        "<strong>Qué es</strong>: una SCU es un paquete de almacenamiento prepagado que compensa automáticamente las facturas Pay-As-You-Go de productos de almacenamiento asociados a la cuenta.",
+        "<strong>Qué cubre</strong>: discos en la nube (ESSD, SSD estándar, discos ultra y básicos), sistemas de archivos NAS (Capacity y Performance), snapshots, y las clases de almacenamiento Standard, Infrequent Access y Archive de OSS.",
+        "<strong>Qué NO cubre</strong>: el cómputo de la instancia ECS en sí — una SCU no descuenta vCPU ni memoria, solo la capa de almacenamiento y snapshots asociados.",
+        "<strong>Modelo de pago</strong>: se contrata por suscripción con un período de validez fijo y solo admite la modalidad <em>All Upfront</em> — se paga el 100% por adelantado, sin opción de pago parcial o mensual.",
+        "<strong>Cuándo conviene</strong>: cuando el volumen de almacenamiento es predecible y creciente (backups, logs, media de una aplicación en producción); no aporta valor si el almacenamiento es errático o se prevé migrarlo pronto a otra clase o región."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "SCU es al almacenamiento lo que Savings Plan es al cómputo: un prepago que se compensa automáticamente contra el consumo real, pero limitado a discos, NAS, snapshots y OSS — nunca a instancias ECS."
+      }
+    },
+    {
+      "title_es": "4 · Combinando modelos: la estrategia de costo real",
+      "title_en": "Putting It Together",
+      "intro": "Ninguna cuenta de producción usa un solo modelo de facturación. El curso cierra mostrando cómo se combinan las piezas anteriores en una estrategia de costo integral, que es exactamente lo que el examen pide reconocer en escenarios de varias capas.",
+      "points": [
+        "<strong>Capa base (baseline)</strong>: la carga mínima que la aplicación consume las 24 horas se cubre con Savings Plan o Reserved Instance — es la parte más predecible y donde el descuento comprometido rinde más.",
+        "<strong>Capa de picos</strong>: el consumo por encima de la carga base (campañas, horas pico) se deja en Pay-As-You-Go, sin comprometer capital en capacidad que no se usará todo el tiempo.",
+        "<strong>Capa batch</strong>: procesos tolerantes a interrupción (renderizado, ETL nocturno, entrenamiento de modelos no crítico) se ejecutan en Spot, maximizando el descuento donde el riesgo de interrupción es aceptable.",
+        "<strong>Capa de almacenamiento</strong>: el crecimiento predecible de discos, NAS y snapshots se prepaga con SCU, independientemente de qué modelo de cómputo se use encima.",
+        "<strong>Etiquetado</strong>: sin etiquetas de asignación de costos (proyecto, entorno, equipo) en cada recurso, ninguna de las capas anteriores se puede auditar por separado cuando la cuenta crece.",
+        "<strong>Revisión periódica</strong>: coverage y utilization de los compromisos deben revisarse mensualmente — un compromiso que dejó de ajustarse a la carga real es tan costoso como no tener ninguno."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "<strong>Base con compromiso, picos con PayG, batch con Spot, almacenamiento con SCU.</strong> Cada capa de la carga tiene su modelo de facturación óptimo — mezclar es la estrategia correcta, no una señal de indecisión."
+      }
+    },
+    {
+      "title_es": "5 · Documentación de precios y calculadora oficial",
+      "title_en": "ECS Pricing And The Savings Plan - Doc",
+      "intro": "Los porcentajes de descuento y las condiciones exactas de cada modelo cambian con el tiempo — el curso cierra remitiendo a la documentación oficial y a la calculadora de precios como fuente de verdad, algo que también aplica al preparar el examen.",
+      "points": [
+        "<strong>Calculadora de precios oficial</strong>: permite simular el costo total de una combinación de instancias, discos y modelos de facturación antes de comprometer presupuesto, comparando escenarios lado a lado.",
+        "<strong>Documentación de Savings Plan</strong>: detalla el alcance exacto (qué familias y regiones cubre cada tipo de plan), los porcentajes de descuento vigentes y las reglas de aplicación automática.",
+        "<strong>No memorizar porcentajes exactos</strong>: el examen rara vez pregunta un número de descuento preciso — evalúa que sepas qué mecanismo aplica a cada escenario, no la tarifa exacta del mes en curso.",
+        "<strong>Fuente de verdad</strong>: ante cualquier duda de qué producto cubre qué (por ejemplo si SCU cubre NAS Performance en una región específica), la documentación oficial —no un tercero— es la referencia autorizada."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta da cifras de descuento muy específicas, trátalas como ilustrativas del enunciado, no como un dato a memorizar de por vida — los porcentajes cambian, los mecanismos no."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de las preguntas de este curso giran en torno a confundir mecanismos de descuento entre sí, o a ignorar el monitoreo continuo de lo ya comprometido.",
       "points": [
-        "<strong>Antipattern</strong>: Todo PayG cuando hay carga estable",
-        "<strong>Antipattern</strong>: Sin tags — imposible atribuir",
-        "<strong>Antipattern</strong>: EIPs huérfanas facturando",
-        "<strong>Antipattern</strong>: Storage sin lifecycle",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: comprar una Reserved Instance sin analizar el historial de uso — si la carga cambia de familia con frecuencia, el descuento se pierde.",
+        "<strong>Antipatrón</strong>: contratar un Savings Plan sobredimensionado y nunca revisar su utilization — se paga por compromiso que no se consume.",
+        "<strong>Antipatrón</strong>: asumir que una SCU descuenta también el cómputo de la instancia — solo cubre almacenamiento, NAS, snapshots y OSS.",
+        "<strong>Antipatrón</strong>: no etiquetar recursos, perdiendo la capacidad de saber qué proyecto genera qué parte de la factura.",
+        "<strong>Antipatrón</strong>: dejar EIPs sin asociar, discos sin adjuntar o snapshots antiguos sin política de expiración — cada uno sigue facturando de forma silenciosa.",
+        "<strong>Antipatrón</strong>: usar Spot para una carga sin capacidad de reintento, perdiendo trabajo cuando la instancia es reclamada."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de costos, identifica primero si el enunciado habla de <em>cómputo</em> (PayG/Subscription/RI/Savings Plan/Spot) o de <em>almacenamiento</em> (SCU) — son familias de mecanismos distintas y el examen las mezcla a propósito como distractor."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Cargas 24/7 → Reserved / Savings Plan (30-70% off)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas variables → pay-as-you-go + auto-scale"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Batch tolerante → spot (70-90% off)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Dev/test → apagado nocturno"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Datos fríos → lifecycle a Archive OSS"
-    }
+    { "title": "Escenario 1", "text": "Startup con gasto impredecible y presupuesto ajustado — PayG puro + Budgets con alertas de umbral" },
+    { "title": "Escenario 2", "text": "Carga base estable a 3 años que cambia de familia de instancia cada cierto tiempo — Savings Plan en vez de Reserved Instance" },
+    { "title": "Escenario 3", "text": "Bucket de backups y logs con crecimiento lineal previsible — SCU cubriendo discos, snapshots y OSS" },
+    { "title": "Escenario 4", "text": "Reportes batch nocturnos tolerantes a interrupción — instancias Spot con reintento automático" },
+    { "title": "Escenario 5", "text": "Cuenta multi-proyecto sin visibilidad de quién gasta qué — etiquetado obligatorio + Cost Center por proyecto" },
+    { "title": "Escenario 6", "text": "Migración desde on-premise con presupuesto anual fijo aprobado por finanzas — Subscription o Reserved Instance de 1 año" }
   ],
   "mistakes": [
-    "Todo PayG cuando hay carga estable",
-    "Sin tags — imposible atribuir",
-    "EIPs huérfanas facturando",
-    "Storage sin lifecycle"
+    "Comprar una Reserved Instance en la familia equivocada sin analizar el historial real de uso",
+    "No revisar coverage/utilization del Savings Plan, dejándolo sobre o subdimensionado",
+    "Confundir SCU con un descuento de cómputo — solo cubre almacenamiento, NAS, snapshots y OSS",
+    "No etiquetar recursos, perdiendo la capacidad de atribuir costo por proyecto o equipo",
+    "Dejar EIPs sin asociar, discos huérfanos o snapshots sin expiración facturando en silencio",
+    "Usar instancias Spot para cargas sin capacidad de reintento ante interrupción"
   ],
   "cli": [
-    {
-      "cmd": "aliyun bssopenapi QueryCostUnit",
-      "desc": "Cost Center"
-    },
-    {
-      "cmd": "aliyun ecs DescribeInstances --Tag ..",
-      "desc": "Filtrar por tag"
-    }
+    { "cmd": "aliyun bssopenapi QueryAccountBill --BillingCycle 2026-07", "desc": "Consultar la factura consolidada de un ciclo mensual" },
+    { "cmd": "aliyun bssopenapi QueryCostUnit", "desc": "Listar los centros de costo (Cost Center) configurados en la cuenta" },
+    { "cmd": "aliyun ecs DescribeInstances --Tag.1.Key project --Tag.1.Value tienda-online", "desc": "Filtrar instancias por etiqueta de proyecto para atribuir costo" },
+    { "cmd": "aliyun bssopenapi QueryAvailableInstances --SubscriptionType Subscription", "desc": "Ver instancias Subscription próximas a vencer" },
+    { "cmd": "aliyun ecs DescribeDisks --DiskChargeType PostPaid --Status Available", "desc": "Detectar discos PayG sin adjuntar (candidatos a limpieza o a SCU)" }
   ],
   "glossary": [
-    {
-      "en": "Pay-as-you-go",
-      "es": "PayG",
-      "def": "Facturación por uso (default)."
-    },
-    {
-      "en": "Subscription",
-      "es": "Subscription",
-      "def": "Compra anticipada mensual/anual."
-    },
-    {
-      "en": "Reserved Instance",
-      "es": "RI",
-      "def": "Compromiso 1-3 años con descuento."
-    },
-    {
-      "en": "Savings Plan",
-      "es": "Savings Plan",
-      "def": "Compromiso $/hora flexible."
-    },
-    {
-      "en": "Spot / Preemptible",
-      "es": "Spot",
-      "def": "Descuento agresivo, interrumpible."
-    },
-    {
-      "en": "Cost Center",
-      "es": "Cost Center",
-      "def": "Consolidación de spend."
-    },
-    {
-      "en": "Budget",
-      "es": "Budget",
-      "def": "Presupuesto con alerta."
-    },
-    {
-      "en": "Right-sizing",
-      "es": "Right-sizing",
-      "def": "Ajustar recursos a uso real."
-    },
-    {
-      "en": "Tagging",
-      "es": "Tagging",
-      "def": "Etiquetado para atribución."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Pay-As-You-Go (PayG)", "es": "Pago por uso", "def": "Facturación por hora/segundo sin compromiso previo; el modelo más flexible y más caro por unidad." },
+    { "en": "Subscription", "es": "Suscripción", "def": "Compra anticipada mensual o anual sobre una instancia concreta, con descuento frente a PayG." },
+    { "en": "Reserved Instance (RI)", "es": "Instancia reservada", "def": "Descuento aplicado sobre consumo PayG cuando coincide en familia, región y SO con lo comprometido a 1-3 años." },
+    { "en": "Savings Plan", "es": "Plan de ahorro", "def": "Compromiso de gasto por hora que aplica descuento automático a cualquier consumo elegible, con más flexibilidad que una RI." },
+    { "en": "Storage Capacity Unit (SCU)", "es": "SCU", "def": "Paquete de almacenamiento prepagado (All Upfront) que compensa facturas PayG de discos, NAS, snapshots y OSS." },
+    { "en": "Spot / Preemptible Instance", "es": "Instancia Spot", "def": "Hasta 90% de descuento sobre PayG; puede ser reclamada por Alibaba Cloud con minutos de aviso." },
+    { "en": "Coverage", "es": "Cobertura", "def": "Porcentaje del consumo elegible total que está siendo descontado por un compromiso vigente (RI o Savings Plan)." },
+    { "en": "Utilization", "es": "Utilización", "def": "Porcentaje del compromiso contratado que efectivamente se está aprovechando; baja utilization indica sobrecompra." },
+    { "en": "All Upfront", "es": "Pago total anticipado", "def": "Modalidad de pago donde se abona el 100% del compromiso al momento de la compra; único modo admitido por SCU." },
+    { "en": "Cost Center / Billing Center", "es": "Centro de costos", "def": "Panel que consolida y desglosa el gasto de la cuenta por producto, región y etiqueta." },
+    { "en": "Budget & Alert", "es": "Presupuesto y alerta", "def": "Umbral de gasto configurado que dispara una notificación cuando el consumo real se acerca o supera el límite." },
+    { "en": "Cost Allocation Tag", "es": "Etiqueta de asignación de costos", "def": "Par clave-valor sobre un recurso usado para desglosar la factura por proyecto, entorno o equipo." },
+    { "en": "Right-sizing", "es": "Ajuste de tamaño", "def": "Práctica de redimensionar instancias o discos al tamaño real necesario, eliminando capacidad sobreaprovisionada." },
+    { "en": "BSS OpenAPI", "es": "BSS OpenAPI", "def": "API de administración de facturación y suscripciones de Alibaba Cloud, usada para automatizar consultas de costo." },
+    { "en": "Resource Directory", "es": "Directorio de recursos", "def": "Estructura de múltiples cuentas bajo una organización, con facturación consolidada opcional." },
+    { "en": "Idle resource", "es": "Recurso ocioso", "def": "Recurso que sigue facturando sin aportar valor: EIP sin asociar, disco sin adjuntar, snapshot sin expiración." },
+    { "en": "TCO (Total Cost of Ownership)", "es": "Costo total de propiedad", "def": "Suma de todos los costos (cómputo, almacenamiento, red, licencias) de operar una carga durante su vida útil." },
+    { "en": "Instance family", "es": "Familia de instancia", "def": "Agrupación de tipos de instancia (g, c, r, gn...) con perfil de vCPU/memoria similar; relevante para el alcance de una RI." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Optimización de Costos?",
-      "options": [
-        "Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, aut",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Cost management en Alibaba Cloud combina: elegir modelo de facturación correcto, right-sizing, usar Cost Center/Billing Analysis para atribución, tags obligatorios, y automatizaciones (auto-scale, auto-stop dev nocturno, lifecycle policies)."
-    },
-    {
-      "q": "¿Qué es <strong>Pay-as-you-go</strong> (PayG) en Optimización de Costos?",
-      "options": [
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso 1-3 años con descuento.",
-        "Compromiso $/hora flexible."
-      ],
-      "answer": 0,
-      "explain": "Pay-as-you-go (PayG): Facturación por uso (default)."
-    },
-    {
-      "q": "¿Qué es <strong>Subscription</strong> (Subscription) en Optimización de Costos?",
-      "options": [
-        "Compra anticipada mensual/anual.",
-        "Facturación por uso (default).",
-        "Compromiso 1-3 años con descuento.",
-        "Compromiso $/hora flexible."
-      ],
-      "answer": 0,
-      "explain": "Subscription (Subscription): Compra anticipada mensual/anual."
-    },
-    {
-      "q": "¿Qué es <strong>Reserved Instance</strong> (RI) en Optimización de Costos?",
-      "options": [
-        "Compromiso 1-3 años con descuento.",
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso $/hora flexible."
-      ],
-      "answer": 0,
-      "explain": "Reserved Instance (RI): Compromiso 1-3 años con descuento."
-    },
-    {
-      "q": "¿Qué es <strong>Savings Plan</strong> (Savings Plan) en Optimización de Costos?",
-      "options": [
-        "Compromiso $/hora flexible.",
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso 1-3 años con descuento."
-      ],
-      "answer": 0,
-      "explain": "Savings Plan (Savings Plan): Compromiso $/hora flexible."
-    },
-    {
-      "q": "¿Qué es <strong>Spot / Preemptible</strong> (Spot) en Optimización de Costos?",
-      "options": [
-        "Descuento agresivo, interrumpible.",
-        "Facturación por uso (default).",
-        "Compra anticipada mensual/anual.",
-        "Compromiso 1-3 años con descuento."
-      ],
-      "answer": 0,
-      "explain": "Spot / Preemptible (Spot): Descuento agresivo, interrumpible."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Optimización de Costos, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Optimización de Costos en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Optimización de Costos, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Optimización de Costos es la elección típica:",
-      "options": [
-        "Cargas 24/7 → Reserved / Savings Plan (30-70% off)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Cargas 24/7 → Reserved / Savings Plan (30-70% off)."
-    }
+    { "q": "¿Cuál es la diferencia principal entre una Reserved Instance y un Savings Plan?", "options": ["Son exactamente lo mismo con nombres distintos", "La RI ata el descuento a una familia y región específicas; el Savings Plan aplica automáticamente a cualquier consumo elegible dentro de su alcance", "El Savings Plan solo aplica a almacenamiento, la RI solo a cómputo", "La RI no requiere compromiso de tiempo, el Savings Plan sí"], "answer": 1, "explain": "La RI es rígida en cuanto a familia/región; el Savings Plan es más flexible porque el descuento se mueve con el consumo elegible." },
+    { "q": "¿Qué cubre una Storage Capacity Unit (SCU)?", "options": ["El cómputo (vCPU y memoria) de instancias ECS", "Discos en la nube, NAS, snapshots y clases de almacenamiento de OSS", "Solo el tráfico de red saliente", "Licencias de software de terceros"], "answer": 1, "explain": "SCU es un prepago de almacenamiento; nunca descuenta el cómputo de una instancia ECS." },
+    { "q": "¿Qué modalidad de pago admite una SCU?", "options": ["Mensual sin compromiso", "Solo All Upfront (pago total por adelantado)", "Pago al final del período de validez", "Pago por uso sin prepago"], "answer": 1, "explain": "SCU solo admite pago total anticipado (All Upfront) al momento de la compra." },
+    { "q": "Una carga cambia frecuentemente de familia de instancia dentro de la misma región, pero mantiene un gasto base estable. ¿Qué mecanismo de descuento es más adecuado?", "options": ["Reserved Instance atada a una familia fija", "Savings Plan", "Instancia Spot", "Suscripción anual sobre una única instancia"], "answer": 1, "explain": "El Savings Plan sigue aplicando el descuento aunque cambie la familia de instancia, a diferencia de una RI tradicional." },
+    { "q": "¿Qué mide la métrica de 'utilization' de un Savings Plan?", "options": ["Qué porcentaje del consumo total de la cuenta está cubierto por algún compromiso", "Qué porcentaje del monto comprometido por hora se está aprovechando realmente", "La cantidad de instancias Spot activas", "El tiempo restante hasta que expire el plan"], "answer": 1, "explain": "Utilization indica si el compromiso contratado se está consumiendo; baja utilization significa que se pagó de más por un compromiso sobredimensionado." },
+    { "q": "En la estrategia de 'capas' del curso, ¿qué modelo de facturación cubre típicamente la carga base 24/7 de una aplicación?", "options": ["Pay-As-You-Go puro", "Instancias Spot", "Savings Plan o Reserved Instance", "Solo SCU"], "answer": 2, "explain": "La carga base predecible es la que mejor aprovecha un compromiso de ahorro; los picos se dejan en PayG y el batch tolerante en Spot." },
+    { "q": "¿Por qué es riesgoso usar instancias Spot para una base de datos productiva sin réplicas?", "options": ["Porque Spot no admite bases de datos técnicamente", "Porque Alibaba Cloud puede reclamar la instancia con minutos de aviso, interrumpiendo el servicio", "Porque Spot es más cara que PayG", "Porque Spot no permite abrir el puerto de la base de datos"], "answer": 1, "explain": "Spot puede perderse en cualquier momento si Alibaba Cloud necesita la capacidad; solo es apta para cargas tolerantes a interrupción." },
+    { "q": "¿Qué mecanismo de Alibaba Cloud permite atribuir el gasto de ECS a un proyecto o equipo específico?", "options": ["Security Groups", "Etiquetas de asignación de costos (Cost Allocation Tags)", "Snapshots", "Savings Plan"], "answer": 1, "explain": "Las etiquetas permiten desglosar la factura por proyecto, entorno o equipo en el Cost Center." },
+    { "q": "¿Cuál de los siguientes es un ejemplo típico de recurso ocioso que sigue generando costo sin aportar valor?", "options": ["Una instancia Subscription en uso activo", "Una Elastic IP sin asociar a ninguna instancia", "Un Savings Plan con alta utilization", "Una SCU recién comprada"], "answer": 1, "explain": "Una EIP sin asociar sigue facturando aunque no esté sirviendo tráfico — es uno de los desperdicios más comunes y fáciles de pasar por alto." },
+    { "q": "¿Qué debería revisarse periódicamente para asegurar que un compromiso de ahorro (RI o Savings Plan) sigue siendo rentable?", "options": ["El color de la consola de Alibaba Cloud", "Coverage y utilization del compromiso frente al consumo real", "El número de regiones disponibles", "El nombre de la cuenta raíz"], "answer": 1, "explain": "Revisar coverage y utilization mensualmente permite ajustar el compromiso si la carga cambió." },
+    { "q": "Una empresa tiene backups y logs con crecimiento lineal y predecible durante los próximos 12 meses. ¿Qué mecanismo minimiza el costo de ese almacenamiento?", "options": ["Reserved Instance", "Savings Plan", "Storage Capacity Unit (SCU)", "Instancia Spot"], "answer": 2, "explain": "SCU está diseñado exactamente para prepagar almacenamiento predecible y creciente, compensando la factura PayG de discos y OSS." },
+    { "q": "¿Qué diferencia a la facturación Subscription de aplicar una Reserved Instance sobre una instancia PayG?", "options": ["Son idénticas en todos los aspectos", "Subscription es la compra anticipada de la instancia misma; RI es un descuento aplicado sobre el consumo de una instancia que sigue siendo PayG", "Subscription solo existe para discos, no para instancias", "RI requiere detener la instancia cada mes"], "answer": 1, "explain": "Con Subscription pagas la instancia por adelantado; con RI la instancia sigue siendo PayG pero su costo se descuenta automáticamente si coincide con el compromiso." },
+    { "q": "¿Cuál es el propósito principal de la calculadora de precios oficial de Alibaba Cloud mencionada en el curso?", "options": ["Reemplazar la necesidad de leer la documentación", "Simular el costo total de distintas combinaciones antes de comprometer presupuesto", "Aplicar automáticamente descuentos a la cuenta", "Crear instancias Spot de forma automática"], "answer": 1, "explain": "La calculadora permite comparar escenarios de costo antes de tomar una decisión de compra, sin comprometer capital todavía." },
+    { "q": "Una cuenta multi-proyecto no puede saber qué equipo generó qué parte de la factura mensual. ¿Cuál es la causa más probable según el curso?", "options": ["Falta de instancias Spot", "Ausencia de etiquetas de asignación de costos en los recursos", "Exceso de Savings Plans contratados", "Uso de SCU en vez de Reserved Instance"], "answer": 1, "explain": "Sin etiquetas por proyecto/equipo, el Cost Center no puede desglosar el gasto, sin importar qué modelos de facturación se usen." },
+    { "q": "¿Qué combinación de modelos de facturación describe mejor la estrategia recomendada por el curso para una carga con base estable, picos ocasionales y un proceso batch nocturno?", "options": ["Todo en Pay-As-You-Go para simplificar", "Savings Plan/RI para la base + PayG para los picos + Spot para el batch", "Solo instancias Spot para todo, por el descuento", "Solo SCU para todo el cómputo"], "answer": 1, "explain": "Cada capa de la carga tiene un modelo óptimo distinto: compromiso para lo estable, PayG para lo variable, Spot para lo tolerante a interrupción." }
   ],
-  "exam_focus": "Modelos de facturación, right-sizing, cost centers, tagging strategy.",
+  "exam_focus": "El examen evalúa: (a) distinguir Savings Plan de Reserved Instance y saber cuándo cada uno rinde más, (b) qué cubre exactamente una SCU (solo almacenamiento, nunca cómputo) y su modalidad de pago All Upfront, (c) diseñar una estrategia de facturación por capas (base/picos/batch/almacenamiento), (d) leer coverage/utilization para detectar sobre o subcompra de compromisos, (e) identificar recursos ociosos y la importancia del etiquetado para atribución de costos.",
   "official_intro": "Learn how to use Ris, SCUs, Savings Plans, and Preemptible Instances to control the cost of our ECS resources on Alibaba Cloud.",
   "recommended_for": "Developers, Solution Architects, IT Administrators",
   "official_lessons": [
-    {
-      "num": 1,
-      "title_en": "ECS Billing Types"
-    },
-    {
-      "num": 2,
-      "title_en": "Savings Plan"
-    },
-    {
-      "num": 3,
-      "title_en": "SCUs"
-    },
-    {
-      "num": 4,
-      "title_en": "Putting It Together"
-    },
-    {
-      "num": 5,
-      "title_en": "ECS Pricing And The Savings Plan - Doc"
-    }
+    { "num": 1, "title_en": "ECS Billing Types" },
+    { "num": 2, "title_en": "Savings Plan" },
+    { "num": 3, "title_en": "SCUs" },
+    { "num": 4, "title_en": "Putting It Together" },
+    { "num": 5, "title_en": "ECS Pricing And The Savings Plan - Doc" }
   ],
   "source_url": "https://edu.alibabacloud.com/certification/clouder_ecs_costcontrol",
   "exam_meta": {

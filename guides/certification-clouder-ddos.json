@@ -2,477 +2,192 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-ddos",
   "title_en": "Use Alibaba Cloud Anti-DDoS Service to Defend DoS Attack",
-  "title_es": "Usar Alibaba Cloud Anti-DDoS Servicio to Defend DoS Attack",
+  "title_es": "Usar el Servicio Anti-DDoS de Alibaba Cloud para Defenderse de Ataques DoS",
+  "title_es_html": "Usar Anti-DDoS de Alibaba Cloud para Defenderse de <em>Ataques DoS</em>",
   "duration_es": "53 minutos",
   "level_es": "Intermedio",
   "category_es": "Seguridad",
   "subcategory_es": "Seguridad en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_ddos",
-  "lead": "Guía completa en español para el curso «Use Alibaba Cloud Anti-DDoS Service to Defend DoS Attack» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre ataques de denegación de servicio (DoS/DDoS) y cómo Alibaba Cloud Anti-DDoS los mitiga en la práctica. Cubre desde los mecanismos de un SYN flood hasta el diseño de una arquitectura de scrubbing en capas, con el vocabulario exacto que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia entre un ataque DoS y un ataque DDoS, y por qué el segundo es mucho más difícil de mitigar en origen.",
+    "<strong>Clasificar</strong> los vectores de ataque en volumétricos (capa 3/4), de protocolo y de aplicación (capa 7), con ejemplos concretos de cada uno.",
+    "<strong>Distinguir</strong> Anti-DDoS Basic, Anti-DDoS Pro y Anti-DDoS Premium y elegir la edición correcta según el escenario del examen.",
+    "<strong>Comprender</strong> cómo funciona un scrubbing center y qué ocurre cuando se activa un blackhole (null route) por umbral superado.",
+    "<strong>Diseñar</strong> una arquitectura de defensa en capas que combine Anti-DDoS, WAF, SLB y CDN.",
+    "<strong>Reconocer</strong> un ataque de aplicación tipo CC (Challenge Collapsar) y diferenciarlo de un ataque volumétrico.",
+    "<strong>Responder</strong> con confianza preguntas de certificación sobre umbrales de mitigation, IP blackhole y protección de la IP origen."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Defensa anti-DDoS en capas: (1) el tráfico entra primero a los scrubbing centers de Anti-DDoS Pro/Premium, que anuncian la IP protegida vía BGP y limpian el tráfico volumétrico y de protocolo antes de reenviarlo; (2) el tráfico limpio llega a un SLB con la IP origen oculta detrás de la IP de protección; (3) WAF filtra ataques de aplicación (CC, inyección) que un Anti-DDoS no puede distinguir por sí solo; (4) un CDN absorbe parte del tráfico estático y distribuye la carga geográficamente, reduciendo la superficie expuesta directamente a internet; (5) CloudMonitor y los logs de Anti-DDoS alimentan alarmas para ajustar umbrales de mitigation en tiempo real.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Fundamentos de DoS y DDoS",
+      "title_en": "Fundamentals of DoS and DDoS",
+      "intro": "Antes de hablar de defensas hay que entender el ataque. Un DoS (Denial of Service) busca agotar un recurso finito del objetivo —ancho de banda, conexiones, CPU— hasta que deje de responder a usuarios legítimos. Un DDoS (Distributed DoS) hace lo mismo pero desde miles o millones de orígenes simultáneos, típicamente una botnet, lo que hace inútil bloquear una sola IP de origen.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>DoS</strong>: un único origen (o pocos) satura un recurso del objetivo; es relativamente fácil de bloquear filtrando esa IP o rango.",
+        "<strong>DDoS</strong>: miles de hosts comprometidos (botnet) o dispositivos IoT vulnerables atacan simultáneamente; bloquear IP por IP es inviable a esa escala.",
+        "<strong>Botnet</strong>: red de dispositivos infectados controlados remotamente por un atacante (C2, command and control) que los usa como fuerza de ataque distribuida sin que sus dueños lo sepan.",
+        "<strong>Objetivo del atacante</strong>: no siempre es tumbar el servicio por completo — a veces basta degradar la latencia lo suficiente para dañar la experiencia o forzar gasto de banda ancha adicional (ataques de extorsión económica).",
+        "<strong>Superficie de ataque</strong>: cualquier IP pública expuesta a internet es un blanco potencial; minimizar IPs expuestas directamente (usando SLB/CDN/Anti-DDoS delante) reduce esa superficie.",
+        "<strong>Motivación típica</strong>: competencia desleal, extorsión (pagar o seguir atacado), hacktivismo, o cortina de humo para otro ataque simultáneo (p.ej. exfiltración de datos)."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen distingue DoS de DDoS por el número de orígenes distribuidos, no por el tamaño del ataque. Un ataque pequeño desde 50.000 IPs distintas sigue siendo DDoS."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Ataques volumétricos y de protocolo (capa 3/4)",
+      "title_en": "Volumetric and Protocol Attacks (Layer 3/4)",
+      "intro": "Estos ataques buscan agotar el ancho de banda de red o las tablas de conexión del sistema objetivo, sin necesidad de entender la lógica de la aplicación que corre encima. Son los más «ruidosos» en volumen de tráfico (Gbps) y los que primero atiende Anti-DDoS al recibir el tráfico.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>SYN Flood</strong>: el atacante envía miles de paquetes TCP SYN sin completar el handshake (nunca responde al SYN-ACK), agotando la tabla de conexiones semi-abiertas del servidor objetivo.",
+        "<strong>UDP Flood</strong>: envío masivo de paquetes UDP a puertos aleatorios; el servidor gasta CPU respondiendo con ICMP «port unreachable» a cada uno, o simplemente satura el ancho de banda.",
+        "<strong>ICMP Flood (Ping Flood)</strong>: saturación con paquetes ICMP echo request; hoy es menos efectivo porque la mayoría de firewalls limitan ICMP, pero sigue apareciendo combinado con otros vectores.",
+        "<strong>Ataques de reflexión y amplificación</strong>: el atacante envía una petición pequeña con la IP de origen falsificada (spoofed) a un servidor legítimo (DNS, NTP, memcached), que responde con un paquete mucho mayor directamente a la víctima — se mide en factor de amplificación (p.ej. memcached puede amplificar más de 50.000x).",
+        "<strong>Fragmentación IP</strong>: envío de fragmentos de paquete malformados o incompletos que fuerzan al objetivo a gastar recursos intentando reensamblarlos.",
+        "<strong>Por qué son fáciles de detectar pero difíciles de absorber</strong>: el patrón de tráfico es anómalo y detectable por firma, pero el volumen bruto (cientos de Gbps en ataques grandes) supera la capacidad de un solo data center — de ahí la necesidad de scrubbing centers distribuidos."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona IP de origen falsificada y una respuesta desproporcionadamente grande desde un servidor legítimo (DNS/NTP), es un ataque de <em>reflexión y amplificación</em>, no un flood directo."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Ataques de aplicación (capa 7) y CC attack",
+      "title_en": "Application-Layer Attacks and CC Attack",
+      "intro": "A diferencia de los ataques volumétricos, los ataques de capa 7 imitan tráfico legítimo de usuario — no siempre requieren gran volumen de Gbps, sino agotar recursos de la aplicación (CPU, conexiones a base de datos, hilos del servidor web). Por eso Anti-DDoS por sí solo no basta: se necesita WAF o el módulo anti-CC específico.",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>HTTP Flood</strong>: peticiones HTTP GET/POST masivas hacia URLs reales de la aplicación, cada una válida a nivel de protocolo pero cuyo volumen agota el pool de conexiones o de workers del backend.",
+        "<strong>CC Attack (Challenge Collapsar)</strong>: variante de HTTP flood centrada en peticiones a endpoints costosos de procesar (búsquedas, generación de reportes, login) para maximizar el daño con relativamente poco tráfico bruto — nombre acuñado en China, muy referenciado en el examen de Alibaba Cloud.",
+        "<strong>Slowloris</strong>: abre muchas conexiones HTTP y las mantiene abiertas enviando encabezados muy lentamente, agotando el número máximo de conexiones concurrentes del servidor sin generar mucho tráfico.",
+        "<strong>Diferencia clave con capa 3/4</strong>: estos ataques no siempre disparan los umbrales de mitigation volumétrica de Anti-DDoS, porque el tráfico «parece» normal en Gbps — se detectan por patrones de comportamiento (frecuencia por IP, user-agent, ausencia de cookies/JS challenge).",
+        "<strong>Mitigación específica</strong>: rate limiting por IP/sesión, CAPTCHA o JS challenge, listas de reputación de IP, y reglas de WAF orientadas a bots — no un simple aumento de ancho de banda protegido."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Cuando el examen describe un ataque con tráfico HTTP «aparentemente normal» pero volumen anómalo de peticiones a un endpoint específico, la respuesta correcta suele ser CC Attack + WAF/anti-bot, no solo Anti-DDoS."
+      }
+    },
+    {
+      "title_es": "4 · Ediciones de Anti-DDoS y arquitectura de scrubbing",
+      "title_en": "Anti-DDoS Editions and Scrubbing Architecture",
+      "intro": "Alibaba Cloud ofrece tres niveles de protección Anti-DDoS con capacidades y alcance geográfico muy distintos. Elegir el correcto para cada escenario es una de las preguntas más frecuentes del examen.",
+      "points": [
+        "<strong>Anti-DDoS Basic</strong>: incluido gratis con recursos de Alibaba Cloud (ECS, SLB); protege hasta unos pocos Gbps y aplica blackhole automático si se supera el umbral — adecuado solo para cargas de trabajo no críticas.",
+        "<strong>Anti-DDoS Pro</strong>: servicio pagado con scrubbing centers dedicados dentro de China continental, capacidad de mitigación de decenas a cientos de Gbps, oculta la IP origen detrás de una IP de protección.",
+        "<strong>Anti-DDoS Premium</strong>: para negocios con audiencia fuera de China o global; usa una red de scrubbing centers distribuida internacionalmente vía anycast/BGP, con capacidad de mitigación mucho mayor y menor latencia añadida para usuarios fuera de China.",
+        "<strong>Blackhole (Null Route)</strong>: cuando el tráfico de ataque supera el umbral de mitigation contratado, el proveedor puede enrutar TODO el tráfico hacia esa IP (legítimo incluido) a null route para proteger la red compartida — es una medida de último recurso, no una mitigación selectiva.",
+        "<strong>IP de protección vs. IP origen</strong>: el tráfico público llega primero a la IP de protección de Anti-DDoS; la IP origen real del servidor nunca debe exponerse directamente, o el atacante puede saltarse el scrubbing atacándola directamente.",
+        "<strong>Umbral de mitigation (mitigation threshold)</strong>: parámetro configurable que determina a partir de qué volumen de tráfico anómalo se activa el filtrado activo — ajustarlo demasiado bajo genera falsos positivos, demasiado alto retrasa la respuesta."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Basic = incluido/gratis pero limitado; Pro = pagado, foco China continental; Premium = pagado, alcance global/fuera de China. Un negocio internacional casi siempre necesita Premium, no Pro."
+      }
+    },
+    {
+      "title_es": "5 · Diseño de una arquitectura resiliente ante DDoS",
+      "title_en": "Designing a DDoS-Resilient Architecture",
+      "intro": "Anti-DDoS por sí solo no es una arquitectura completa. El examen espera que sepas combinarlo con otros servicios para formar una defensa en profundidad realista.",
+      "points": [
+        "<strong>Ocultar la IP origen</strong>: nunca exponer la IP real del servidor de aplicación; todo el tráfico público debe pasar por Anti-DDoS Pro/Premium o por un SLB/CDN delante que a su vez esté protegido.",
+        "<strong>WAF delante de la aplicación</strong>: complementa a Anti-DDoS filtrando ataques de capa 7 (CC, inyección) que el filtrado volumétrico no detecta.",
+        "<strong>CDN para contenido estático</strong>: distribuye la carga entre múltiples edge nodes, reduciendo el tráfico que llega al origen y absorbiendo parte de un ataque volumétrico dirigido a assets estáticos.",
+        "<strong>Auto Scaling como mitigación secundaria</strong>: ayuda ante picos de tráfico legítimo pero NO debe ser la defensa principal contra DDoS — escalar infinitamente para absorber un ataque genera una factura descontrolada sin resolver el problema de raíz.",
+        "<strong>Rate limiting a nivel de aplicación</strong>: límites por IP/usuario/API key en endpoints costosos (login, búsqueda, checkout) reducen el daño de un CC attack incluso si algo de tráfico anómalo pasa el filtrado perimetral.",
+        "<strong>Plan de respuesta</strong>: monitoreo con CloudMonitor + alarmas sobre tráfico anómalo, y un procedimiento documentado de escalamiento a Anti-DDoS Pro/Premium si el Basic incluido no es suficiente durante un incidente real."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La arquitectura correcta no es «un solo servicio mágico» sino capas complementarias: Anti-DDoS para volumen, WAF para aplicación, CDN para distribución, rate limiting para abuso fino."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas del examen sobre Anti-DDoS suelen construirse sobre malentendidos reales de operadores que confiaron en el nivel de protección equivocado o expusieron la IP origen sin darse cuenta.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: asumir que Anti-DDoS Basic (gratuito) es suficiente para un negocio crítico — está diseñado para cargas menores y aplica blackhole rápido ante ataques grandes.",
+        "<strong>Antipatrón</strong>: dejar la IP origen del servidor accesible directamente además de la IP de protección — el atacante simplemente ataca la IP origen y evita el scrubbing por completo.",
+        "<strong>Antipatrón</strong>: confiar solo en Anti-DDoS para ataques de capa 7 (CC attack) sin desplegar WAF ni rate limiting — el tráfico «parece» legítimo y no siempre dispara el filtrado volumétrico.",
+        "<strong>Antipatrón</strong>: contratar Anti-DDoS Pro para una audiencia mayoritariamente fuera de China, cuando Premium ofrece mejor cobertura y latencia para esos usuarios.",
+        "<strong>Antipatrón</strong>: no tener un plan de escalamiento documentado — durante un ataque real no es el momento de aprender a subir de Basic a Pro.",
+        "<strong>Regla de oro</strong>: cuando el examen describe tráfico anómalo pero de bajo volumen dirigido a endpoints específicos, piensa capa 7 (CC/WAF); cuando describe Gbps masivos desde miles de IPs, piensa capa 3/4 (Anti-DDoS Pro/Premium)."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el enunciado buscando dos señales: volumen de tráfico (Gbps altos → capa 3/4) y alcance geográfico del negocio (global/fuera de China → Premium). Esas dos variables resuelven la mayoría de preguntas de diseño."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "E-commerce durante una campaña de descuentos sufre un SYN flood de 200 Gbps — se requiere Anti-DDoS Pro con scrubbing dedicado" },
+    { "title": "Escenario 2", "text": "Servidor de videojuegos recibe UDP flood dirigido al puerto de juego — Anti-DDoS con protección de puerto UDP específico" },
+    { "title": "Escenario 3", "text": "API de login recibe miles de peticiones válidas por segundo desde IPs distintas (CC attack) — WAF + rate limiting, no solo Anti-DDoS" },
+    { "title": "Escenario 4", "text": "Fintech con clientes en Europa y Norteamérica necesita protección DDoS global de baja latencia — Anti-DDoS Premium" },
+    { "title": "Escenario 5", "text": "Startup con presupuesto ajustado y carga no crítica se apoya en Anti-DDoS Basic incluido, aceptando el riesgo de blackhole" },
+    { "title": "Escenario 6", "text": "Ataque de reflexión DNS satura el enlace antes de llegar al servidor — mitigación en el borde de la red del proveedor, no en el host" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Asumir que Anti-DDoS Basic gratuito protege un negocio crítico de la misma forma que Pro o Premium",
+    "Exponer la IP origen del servidor además de la IP de protección de Anti-DDoS",
+    "No desplegar WAF ni rate limiting, confiando en que Anti-DDoS detendrá también los ataques de capa 7",
+    "Elegir Anti-DDoS Pro para una audiencia global cuando Premium ofrece mejor cobertura fuera de China",
+    "No definir ni probar nunca el umbral de mitigation, dejando el valor por defecto sin ajustar al tráfico real del negocio",
+    "Tratar el auto-escalado como estrategia principal contra DDoS en lugar de como complemento ante picos legítimos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun ddoscoo DescribeInstanceList", "desc": "Listar instancias de Anti-DDoS Pro/Premium contratadas" },
+    { "cmd": "aliyun ddoscoo DescribeDomainResource", "desc": "Consultar dominios y recursos protegidos" },
+    { "cmd": "aliyun ddosbgp DescribeInstanceSpecs", "desc": "Consultar la capacidad de mitigación contratada" },
+    { "cmd": "aliyun ddoscoo ModifyPortConfig", "desc": "Ajustar la configuración de reenvío de puertos hacia la IP origen" },
+    { "cmd": "aliyun waf-openapi DescribeDomains", "desc": "Listar dominios protegidos por WAF (complemento de capa 7)" },
+    { "cmd": "aliyun cms QueryMetricList --MetricName NetworkIn", "desc": "Consultar métricas de tráfico entrante para detectar picos anómalos" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DoS", "es": "Denegación de servicio", "def": "Ataque desde un origen (o pocos) que agota un recurso finito del objetivo hasta dejarlo inaccesible." },
+    { "en": "DDoS", "es": "Denegación de servicio distribuida", "def": "Igual que DoS pero ejecutado desde miles de orígenes simultáneos, típicamente una botnet." },
+    { "en": "Botnet", "es": "Red de bots", "def": "Conjunto de dispositivos comprometidos controlados remotamente por un atacante para ejecutar ataques distribuidos." },
+    { "en": "SYN Flood", "es": "Inundación SYN", "def": "Ataque que agota la tabla de conexiones TCP semi-abiertas enviando SYN sin completar el handshake." },
+    { "en": "UDP Flood", "es": "Inundación UDP", "def": "Envío masivo de paquetes UDP a puertos aleatorios para saturar ancho de banda o CPU." },
+    { "en": "Reflection/Amplification Attack", "es": "Ataque de reflexión y amplificación", "def": "El atacante falsifica la IP de origen para que un servidor legítimo (DNS/NTP) responda con tráfico amplificado hacia la víctima." },
+    { "en": "CC Attack", "es": "Ataque Challenge Collapsar", "def": "Variante de HTTP flood dirigida a endpoints costosos de procesar, con relativamente poco volumen bruto de tráfico." },
+    { "en": "Slowloris", "es": "Ataque Slowloris", "def": "Mantiene abiertas muchas conexiones HTTP enviando datos muy lentamente para agotar el límite de conexiones concurrentes." },
+    { "en": "Scrubbing Center", "es": "Centro de limpieza de tráfico", "def": "Infraestructura dedicada que filtra tráfico malicioso antes de reenviar solo el tráfico legítimo al origen." },
+    { "en": "Blackhole / Null Route", "es": "Agujero negro / ruta nula", "def": "Medida de último recurso que descarta todo el tráfico hacia una IP (legítimo incluido) al superar el umbral contratado." },
+    { "en": "Anti-DDoS Basic", "es": "Anti-DDoS Básico", "def": "Protección gratuita incluida con recursos de Alibaba Cloud, con capacidad limitada de mitigación." },
+    { "en": "Anti-DDoS Pro", "es": "Anti-DDoS Pro", "def": "Servicio pagado con scrubbing dedicado enfocado en China continental." },
+    { "en": "Anti-DDoS Premium", "es": "Anti-DDoS Premium", "def": "Servicio pagado con cobertura global vía red de scrubbing distribuida, ideal para audiencias fuera de China." },
+    { "en": "Mitigation Threshold", "es": "Umbral de mitigación", "def": "Volumen de tráfico anómalo a partir del cual se activa el filtrado activo de Anti-DDoS." },
+    { "en": "Protection IP", "es": "IP de protección", "def": "Dirección pública publicada por Anti-DDoS que oculta la IP origen real del servidor." },
+    { "en": "Origin IP", "es": "IP origen", "def": "Dirección real del servidor de aplicación; nunca debe exponerse directamente al público." },
+    { "en": "Rate Limiting", "es": "Limitación de tasa", "def": "Control que restringe el número de peticiones por IP/sesión/API key en una ventana de tiempo." },
+    { "en": "BGP Anycast", "es": "Anycast BGP", "def": "Técnica de enrutamiento que dirige el tráfico al scrubbing center más cercano geográficamente." },
+    { "en": "WAF", "es": "Firewall de aplicaciones web", "def": "Filtro de capa 7 que complementa a Anti-DDoS contra CC attacks, inyección y otros ataques de aplicación." },
+    { "en": "C2 (Command and Control)", "es": "Comando y control", "def": "Infraestructura que un atacante usa para coordinar remotamente los nodos de una botnet." },
+    { "en": "IP Spoofing", "es": "Suplantación de IP", "def": "Falsificación de la dirección IP de origen de un paquete, base de los ataques de reflexión." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Cuál es la diferencia fundamental entre un ataque DoS y un ataque DDoS?", "options": ["No hay diferencia, son sinónimos", "DoS proviene de un origen (o pocos); DDoS proviene de miles de orígenes distribuidos, típicamente una botnet", "DoS solo afecta a bases de datos; DDoS solo afecta a servidores web", "DDoS es siempre más lento que DoS"], "answer": 1, "explain": "La distribución del origen del ataque es la diferencia clave: DDoS usa múltiples fuentes simultáneas, lo que hace inútil bloquear una sola IP." },
+    { "q": "Un atacante envía paquetes TCP SYN sin completar nunca el handshake, agotando la tabla de conexiones del servidor. ¿Qué tipo de ataque es?", "options": ["CC Attack", "SYN Flood", "Slowloris", "Reflection Attack"], "answer": 1, "explain": "El SYN Flood satura específicamente la tabla de conexiones semi-abiertas TCP." },
+    { "q": "Un atacante falsifica la IP de origen para que un servidor DNS legítimo responda con un paquete mucho mayor directamente hacia la víctima. ¿Cómo se llama esta técnica?", "options": ["SYN Flood", "Slowloris", "Ataque de reflexión y amplificación", "CC Attack"], "answer": 2, "explain": "La reflexión usa un tercero legítimo para amplificar el tráfico hacia la víctima mediante IP spoofing." },
+    { "q": "Un endpoint de búsqueda recibe miles de peticiones HTTP válidas por segundo desde múltiples IPs, saturando la base de datos sin generar un volumen de Gbps especialmente alto. ¿Qué tipo de ataque describe mejor este escenario?", "options": ["UDP Flood", "CC Attack (Challenge Collapsar)", "ICMP Flood", "Fragmentación IP"], "answer": 1, "explain": "El CC Attack se caracteriza por dirigirse a endpoints costosos de procesar con tráfico que parece legítimo, no por su volumen bruto." },
+    { "q": "¿Qué edición de Anti-DDoS de Alibaba Cloud está incluida sin costo adicional pero con capacidad de mitigación limitada?", "options": ["Anti-DDoS Premium", "Anti-DDoS Pro", "Anti-DDoS Basic", "Anti-DDoS Enterprise"], "answer": 2, "explain": "Anti-DDoS Basic viene incluido gratis con recursos como ECS o SLB, pero con protección limitada frente a ataques grandes." },
+    { "q": "Una empresa con la mayoría de sus usuarios fuera de China necesita protección DDoS con baja latencia global. ¿Qué servicio es más adecuado?", "options": ["Anti-DDoS Basic", "Anti-DDoS Pro", "Anti-DDoS Premium", "Security Center"], "answer": 2, "explain": "Anti-DDoS Premium usa una red de scrubbing distribuida globalmente, ideal para audiencias fuera de China continental." },
+    { "q": "¿Qué ocurre cuando el tráfico de ataque hacia una IP supera el umbral de mitigation contratado y se activa un blackhole?", "options": ["Solo se bloquea el tráfico malicioso, el legítimo sigue pasando", "Se descarta TODO el tráfico hacia esa IP, incluido el legítimo, como medida de último recurso", "El servidor se reinicia automáticamente", "Se activa Auto Scaling para absorber el tráfico"], "answer": 1, "explain": "El blackhole (null route) es una medida drástica: descarta todo el tráfico hacia la IP, no solo el malicioso, para proteger la red compartida." },
+    { "q": "¿Por qué es un error crítico dejar accesible la IP origen del servidor además de contratar Anti-DDoS Pro?", "options": ["No es un error, mejora la redundancia", "El atacante puede atacar directamente la IP origen y evitar por completo el scrubbing center", "Aumenta el costo de forma innecesaria", "Reduce la latencia de las respuestas"], "answer": 1, "explain": "Si la IP origen es alcanzable directamente, el atacante la ataca sin pasar por el filtrado de Anti-DDoS, anulando la protección." },
+    { "q": "¿Qué servicio complementa a Anti-DDoS específicamente para detectar y filtrar ataques de capa 7 como CC attacks e inyección SQL?", "options": ["CloudMonitor", "WAF (Web Application Firewall)", "VPC", "OSS"], "answer": 1, "explain": "Anti-DDoS se enfoca en capas 3/4; WAF cubre el filtrado de tráfico de aplicación en capa 7." },
+    { "q": "En un ataque Slowloris, ¿qué recurso del servidor se agota principalmente?", "options": ["El espacio en disco", "El número máximo de conexiones concurrentes abiertas", "La memoria caché de DNS", "Las claves KMS"], "answer": 1, "explain": "Slowloris mantiene abiertas muchas conexiones enviando datos muy lentamente, agotando el pool de conexiones concurrentes." },
+    { "q": "¿Por qué el Auto Scaling no debería considerarse la defensa principal contra un ataque DDoS?", "options": ["Porque Auto Scaling no existe en Alibaba Cloud", "Porque escalar indefinidamente para absorber tráfico de ataque genera un costo descontrolado sin resolver el problema de raíz", "Porque Auto Scaling solo funciona con bases de datos", "Porque Auto Scaling desactiva automáticamente Anti-DDoS"], "answer": 1, "explain": "Auto Scaling ayuda ante picos legítimos, pero usarlo contra DDoS significa pagar por absorber el ataque en vez de mitigarlo." },
+    { "q": "¿Cuál de los siguientes NO es un ataque volumétrico o de protocolo (capa 3/4)?", "options": ["UDP Flood", "SYN Flood", "CC Attack", "Ataque de reflexión DNS"], "answer": 2, "explain": "El CC Attack opera en capa 7 (aplicación), no en capa 3/4 como los floods volumétricos y de protocolo." },
+    { "q": "¿Qué mecanismo de red permite que el tráfico de un ataque distribuido globalmente se dirija automáticamente al scrubbing center más cercano?", "options": ["DNS round robin", "BGP Anycast", "NAT Gateway", "VPN Gateway"], "answer": 1, "explain": "Anycast BGP anuncia la misma IP desde múltiples ubicaciones, dirigiendo el tráfico al nodo de scrubbing más cercano." },
+    { "q": "Una fintech sufre un ataque de 200 Gbps mediante SYN flood distribuido. ¿Cuál es la respuesta arquitectónica más adecuada?", "options": ["Aumentar el tamaño de la instancia ECS", "Contratar Anti-DDoS Pro o Premium con scrubbing dedicado según el alcance geográfico de sus usuarios", "Deshabilitar el firewall para simplificar el tráfico", "Migrar a instancias Spot para reducir costos"], "answer": 1, "explain": "Un volumen de 200 Gbps requiere scrubbing dedicado a gran escala; Basic sería insuficiente y probablemente activaría un blackhole." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen distingue con precisión entre ataques de capa 3/4 (SYN/UDP/ICMP flood, reflexión) y de capa 7 (CC attack, Slowloris), y evalúa elegir correctamente entre Anti-DDoS Basic/Pro/Premium según criticidad y alcance geográfico del negocio, además del concepto de blackhole por umbral superado.",
   "official_intro": "The network is the only entry point for all cloud services. Network attacks, especially denial of service attacks, are the most diverse and harmful, and one of the most difficult to protect against network risks. This course is designed to help students understand the principles of DoS attacks in a minimum amount of time and learn common protection methods and Alibaba Cloud Anti-DDoS protection solutions to minimize or reduce the risk of network layer attacks, protect your cloud network security.",
   "recommended_for": "Cloud security administrator, Cloud security operator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_ddos",

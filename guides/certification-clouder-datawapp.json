@@ -2,433 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datawapp",
   "title_en": "Alibaba Cloud DataWorks - Application Development",
-  "title_es": "Alibaba Cloud DataWorks - Aplicación Development",
+  "title_es": "Alibaba Cloud DataWorks - Desarrollo de Aplicaciones",
+  "title_es_html": "Alibaba Cloud DataWorks - <em>Desarrollo de Aplicaciones</em>",
   "duration_es": "78 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Development",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datawapp",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud DataWorks - Application Development» de Alibaba Cloud Academy. Cubre en profundidad DataWorks. DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud DataWorks - Application Development» de Alibaba Cloud Academy. Mientras «DataWorks - Basic Knowledge» explica el mapa general y los roles, este curso entra en el trabajo diario real dentro de Data Studio: crear nodos, ensamblarlos en un workflow con dependencias, parametrizar con variables de programación, y llevar el código de desarrollo a producción siguiendo un flujo de publicación controlado.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DataWorks</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Workspace, Node, Workflow, Scheduler, Data Integration.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DataWorks y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Crear</strong> nodos de distintos tipos en Data Studio: SQL de MaxCompute, PyODPS (Python), Shell y nodos de control de flujo.",
+    "<strong>Ensamblar</strong> nodos en un Workflow con dependencias explícitas, formando un DAG (grafo acíclico dirigido) de tareas.",
+    "<strong>Parametrizar</strong> nodos con variables de programación como la fecha de negocio (bizdate), evitando fechas hardcodeadas.",
+    "<strong>Configurar</strong> el Scheduler: periodicidad, dependencias cross-workflow y política de reintentos.",
+    "<strong>Publicar</strong> un cambio validado desde el entorno de desarrollo hacia producción siguiendo el flujo de despliegue.",
+    "<strong>Monitorear</strong> la ejecución en el Centro de Operaciones (O&M Center) y responder ante fallos y baselines incumplidas.",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre tipos de nodo, dependencias y ciclo de publicación."
   ],
-  "architecture": "Módulos: Data Integration (ingestas batch/stream), Data Studio (IDE SQL/Python con workflows DAG), Data Quality (reglas), Data Map (catálogo y linaje), Data Security (DLP), AI Studio. El scheduler ejecuta DAGs con dependencias, reintentos y alertas.",
+  "architecture": "Dentro de un Workspace, Data Studio organiza el trabajo en Workflows: contenedores de nodos con dependencias entre sí, representados como un DAG. Cada nodo ejecuta una unidad de trabajo (una consulta SQL sobre MaxCompute, un script PyODPS, un comando shell) y declara de qué otros nodos depende antes de poder ejecutarse. El Scheduler dispara el DAG completo según una periodicidad (normalmente diaria) y variables de contexto como bizdate, respetando el orden de dependencias y reintentando automáticamente ante fallos transitorios. Una vez el desarrollo se valida en el entorno de desarrollo, un flujo de publicación (deployment) formal — con revisión y aprobación — promueve el código al entorno de producción, donde el Centro de Operaciones (O&M Center) monitorea cada ejecución, mide el cumplimiento de baselines de tiempo y dispara alarmas ante retrasos o fallos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DataWorks",
-      "title_en": "Introduction to DataWorks",
-      "intro": "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Data Studio: el IDE de DataWorks",
+      "title_en": "Data Studio: The DataWorks IDE",
+      "intro": "Data Studio es donde ocurre el trabajo real de un desarrollador de datos en DataWorks: crear, editar y probar nodos antes de ensamblarlos en un pipeline completo.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DataWorks se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Estructura de carpetas</strong>: los nodos se organizan en una jerarquía de carpetas dentro del Workspace, facilitando encontrar y mantener pipelines a medida que el proyecto crece.",
+        "<strong>Edición y prueba puntual</strong>: cada nodo puede ejecutarse manualmente contra el entorno de desarrollo antes de integrarse al workflow, permitiendo depurar la lógica de forma aislada.",
+        "<strong>Control de versiones integrado</strong>: los cambios en el código de un nodo quedan versionados, permitiendo comparar revisiones anteriores y revertir si algo sale mal.",
+        "<strong>Autocompletado y validación de sintaxis</strong>: para nodos SQL, el editor valida sintaxis contra el dialecto de MaxCompute SQL antes de intentar ejecutar, reduciendo el ciclo de prueba-error.",
+        "<strong>Business Flow</strong>: la vista de negocio que agrupa uno o varios Workflows relacionados bajo un mismo objetivo, útil para mantener organizados proyectos con decenas de pipelines."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DataWorks es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Data Studio separa deliberadamente la edición y prueba individual de un nodo del despliegue del pipeline completo — un nodo puede probarse aislado antes de que su comportamiento dentro del DAG completo se valide."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DataWorks no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Tipos de nodo y cuándo usar cada uno",
+      "title_en": "Node Types and When to Use Each",
+      "intro": "No todo se resuelve con SQL — DataWorks ofrece varios tipos de nodo, y elegir el correcto para cada tarea es una decisión de diseño que el examen evalúa con frecuencia.",
       "points": [
-        "<strong>Patrón canónico</strong>: Módulos: Data Integration (ingestas batch/stream), Data Studio (IDE SQL/Python con workflows DAG), Data Quality (reglas), Data Map (catálogo y linaje), Data Security (DLP), AI Studio. El scheduler ejecuta DAGs con dependencias, reintentos y alertas.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DataWorks (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Espacio de trabajo</strong> <em>(Workspace)</em>: Unidad top con quotas, engines y permisos.",
-        "<strong>Nodo</strong> <em>(Node)</em>: Tarea individual: SQL, Python, shell, ML.",
-        "<strong>Workflow</strong> <em>(Workflow)</em>: DAG de nodos con dependencias.",
-        "<strong>Scheduler</strong> <em>(Scheduler)</em>: Ejecuta DAGs por cron; maneja retry, catch-up, alertas.",
-        "<strong>Data Integration</strong> <em>(Data Integration)</em>: Sincronización batch/stream entre 50+ conectores.",
-        "<strong>DQC</strong> <em>(Data Quality (DQC))</em>: Reglas de calidad: null, ranges, unicidad; bloquea downstream si falla.",
-        "<strong>Data Map</strong> <em>(Data Map)</em>: Catálogo con búsqueda, tags, linaje columnar.",
-        "<strong>Data Security</strong> <em>(Data Security)</em>: DLP: detecta y enmascara PII."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Nodo ODPS SQL</strong>: el tipo más común, ejecuta una consulta MaxCompute SQL — transformaciones, agregaciones, creación de tablas derivadas. Es la opción por defecto para lógica expresable en SQL puro.",
+        "<strong>Nodo PyODPS</strong>: script Python que se ejecuta con acceso al SDK de MaxCompute — necesario cuando la lógica requiere control de flujo complejo, iteración sobre resultados, o integración con librerías Python que SQL no puede expresar razonablemente.",
+        "<strong>Nodo Shell</strong>: ejecuta comandos de sistema — útil para invocar herramientas externas, mover archivos o disparar procesos que no encajan en SQL ni Python dentro del ecosistema MaxCompute.",
+        "<strong>Nodos de control de flujo</strong>: como nodos de rama condicional o de merge, permiten expresar lógica de bifurcación dentro del DAG (por ejemplo, ejecutar una rama distinta según el resultado de un nodo previo).",
+        "<strong>Criterio de elección</strong>: si la lógica es expresable en SQL declarativo, usar ODPS SQL por simplicidad y rendimiento; si necesita lógica imperativa compleja, PyODPS; si es una tarea de sistema operativo, Shell."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una transformación que requiere iterar programáticamente sobre resultados o aplicar lógica condicional compleja no expresable en un SELECT, la respuesta suele ser un nodo PyODPS, no forzar la lógica dentro de SQL."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Workflows y dependencias: construyendo el DAG",
+      "title_en": "Workflows and Dependencies: Building the DAG",
+      "intro": "Un pipeline real casi nunca es un solo nodo — es una cadena de nodos donde cada uno depende de que el anterior haya terminado exitosamente. Modelar esas dependencias correctamente es la habilidad central de este curso.",
       "points": [
-        "<strong>Costo</strong>: Resource Groups reservados para integración crítica",
-        "<strong>Buenas prácticas</strong>: Workspaces separados por ambiente (dev/prod)",
-        "<strong>Buenas prácticas</strong>: Reglas DQC bloqueantes en tablas críticas",
-        "<strong>Buenas prácticas</strong>: Baselines para procesos con SLA de reporte",
-        "<strong>Buenas prácticas</strong>: Data Map con owners obligatorios — sin owner, sin acceso"
+        "<strong>Dependencia dentro del mismo Workflow</strong>: un nodo declara explícitamente de qué otros nodos depende — el Scheduler no lo ejecuta hasta que todos sus predecesores terminaron con éxito.",
+        "<strong>Dependencia cross-workflow</strong>: un nodo en un Workflow puede depender de la salida de un nodo en otro Workflow distinto — común cuando distintos equipos mantienen pipelines separados que se alimentan entre sí.",
+        "<strong>Ciclos prohibidos</strong>: el DAG debe ser acíclico por definición — un ciclo de dependencias (A depende de B, B depende de A) es un error de diseño que DataWorks rechaza al validar el workflow.",
+        "<strong>Root node</strong>: el nodo raíz que marca el punto de entrada del Workflow y típicamente controla la periodicidad general del pipeline completo.",
+        "<strong>Impacto de un fallo intermedio</strong>: si un nodo intermedio falla, todos los nodos que dependen de él (directa o transitivamente) no se ejecutan ese ciclo, evitando que se propaguen datos calculados sobre una base incompleta o incorrecta."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "El valor de declarar dependencias explícitas no es solo orden de ejecución — es contención de errores: un fallo en un nodo intermedio detiene automáticamente todo lo que depende de él, evitando propagar datos incorrectos silenciosamente."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Parametrización con variables de programación",
+      "title_en": "Parameterization with Scheduling Variables",
+      "intro": "Un nodo que se ejecuta todos los días no puede tener la fecha escrita a mano en el código — las variables de programación resuelven ese problema de forma estándar en toda la plataforma.",
       "points": [
-        "<strong>Antipattern</strong>: Un solo workspace mezclando dev y prod",
-        "<strong>Antipattern</strong>: DQC solo informativo — sin bloqueo el error llega a producción",
-        "<strong>Antipattern</strong>: Nodos sin retry — jobs fallan por errores transitorios",
-        "<strong>Antipattern</strong>: Cron con timezone incorrecto — jobs corren fuera de ventana",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>bizdate (fecha de negocio)</strong>: la variable más usada — representa la fecha lógica de negocio para la que corre el nodo (normalmente el día anterior a la ejecución real), evitando hardcodear fechas en cada script.",
+        "<strong>Uso típico en SQL</strong>: un nodo que procesa la partición del día usa <code>bizdate</code> para construir dinámicamente el filtro <code>WHERE pt = '${bizdate}'</code>, de forma que el mismo código sirva para cualquier día sin modificarlo.",
+        "<strong>Reejecución histórica (backfill)</strong>: gracias a estas variables, un nodo puede reejecutarse manualmente para una fecha pasada específica (por ejemplo, para corregir un error de un día concreto) sin tocar el código del nodo.",
+        "<strong>Variables custom</strong>: además de las variables de sistema como bizdate, se pueden definir variables propias del proyecto para parámetros que varían entre entornos (por ejemplo, el nombre de una tabla de staging).",
+        "<strong>Antipatrón</strong>: escribir la fecha del día en el código de un nodo en vez de usar bizdate — funciona el primer día, pero rompe la reproducibilidad y el backfill desde el segundo día en adelante."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe un nodo que necesita reprocesar datos de una fecha pasada específica sin modificar su código, la respuesta es que el nodo ya está parametrizado correctamente con bizdate — ejecutar un backfill para esa fecha resuelve el caso."
+      }
+    },
+    {
+      "title_es": "5 · El Scheduler y las Baselines",
+      "title_en": "The Scheduler and Baselines",
+      "intro": "Un workflow definido no sirve de nada si no se ejecuta de forma confiable y a tiempo — el Scheduler y las baselines son el mecanismo que convierte un DAG en una promesa operativa cumplida.",
+      "points": [
+        "<strong>Periodicidad</strong>: cada nodo o workflow se configura con una frecuencia (diaria, por hora, etc.) y una ventana horaria dentro de la cual debe dispararse, respetando siempre las dependencias del DAG.",
+        "<strong>Política de reintentos</strong>: ante un fallo transitorio (por ejemplo, un timeout de red al leer una fuente externa), el nodo puede reintentar automáticamente un número configurado de veces antes de marcarse como fallido definitivamente.",
+        "<strong>Baseline</strong>: un SLA interno de tiempo — declara para qué hora debe haber terminado un nodo crítico (p.ej. 'la tabla de ventas del día debe estar lista antes de las 8:00 AM'); si se incumple, dispara una alarma de alta prioridad distinta de un fallo técnico normal.",
+        "<strong>Catch-up (recuperación de ejecuciones perdidas)</strong>: si el Scheduler estuvo inactivo o el clúster tuvo un incidente, puede configurarse para ejecutar automáticamente las instancias que se perdieron, en vez de saltárselas silenciosamente.",
+        "<strong>Zona horaria</strong>: un error de configuración de timezone en el cron subyacente hace que los nodos corran fuera de la ventana esperada — un antipatrón operativo real y frecuente en equipos distribuidos globalmente."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Una baseline no es lo mismo que un simple fallo de nodo: un nodo puede terminar exitosamente pero tarde, incumpliendo su baseline igualmente — ambas señales de alarma tienen causas y urgencias distintas."
+      }
+    },
+    {
+      "title_es": "6 · Publicación a producción y monitoreo (O&M Center)",
+      "title_en": "Publishing to Production and Monitoring (O&M Center)",
+      "intro": "El último tramo del ciclo de vida de una aplicación de datos: llevar el código validado a producción de forma controlada, y vigilar su comportamiento una vez ahí.",
+      "points": [
+        "<strong>Flujo de publicación</strong>: en un Workspace en modo estándar, un cambio se prueba en desarrollo, se envía a revisión y, con la aprobación del rol Deployer, se publica formalmente al entorno de producción.",
+        "<strong>Versionado del despliegue</strong>: cada publicación queda registrada como una versión, permitiendo identificar exactamente qué cambio de código corresponde a qué comportamiento observado en producción.",
+        "<strong>O&M Center</strong>: el panel donde el rol de Operaciones monitorea las ejecuciones en producción — estado de cada instancia de nodo, tiempo de ejecución, y alarmas activas.",
+        "<strong>Diagnóstico de fallos</strong>: ante un nodo fallido, el O&M Center permite inspeccionar logs de ejecución, reintentar manualmente o marcar como omitido (skip) para no bloquear el resto del DAG mientras se investiga.",
+        "<strong>Alertas</strong>: se configuran canales de notificación (correo, mensajería interna) para fallos de nodo, incumplimiento de baseline, o retraso general del pipeline, permitiendo reaccionar antes de que el problema llegue a un stakeholder de negocio."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un escenario de examen sobre 'un pipeline en producción falló', primero identifica si el fallo es técnico (nodo con error) o de SLA (baseline incumplida) — el diagnóstico y la urgencia de respuesta son distintos en cada caso."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data pipelines diarios de ingesta desde 50+ fuentes"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Data lake governance — quién accede a qué"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Data quality monitoring en producción"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Colaboración multi-equipo en un mismo proyecto"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Linaje end-to-end para auditorías"
-    }
+    { "title": "Escenario 1", "text": "Construir un workflow diario que sincroniza datos, los transforma con SQL y valida su calidad antes de publicarlos" },
+    { "title": "Escenario 2", "text": "Reprocesar (backfill) los datos de una fecha pasada tras corregir un error en la lógica de un nodo" },
+    { "title": "Escenario 3", "text": "Diagnosticar por qué un nodo crítico incumplió su baseline aunque terminó sin errores técnicos" },
+    { "title": "Escenario 4", "text": "Publicar un cambio de código validado desde desarrollo hacia producción siguiendo el flujo de revisión" },
+    { "title": "Escenario 5", "text": "Diseñar una dependencia cross-workflow entre el pipeline del equipo de ventas y el de finanzas" },
+    { "title": "Escenario 6", "text": "Elegir entre un nodo ODPS SQL y un nodo PyODPS para una transformación con lógica condicional compleja" }
   ],
   "mistakes": [
-    "Un solo workspace mezclando dev y prod",
-    "DQC solo informativo — sin bloqueo el error llega a producción",
-    "Nodos sin retry — jobs fallan por errores transitorios",
-    "Cron con timezone incorrecto — jobs corren fuera de ventana"
+    "Hardcodear la fecha del día en el código de un nodo en vez de usar la variable bizdate",
+    "Forzar lógica imperativa compleja dentro de un nodo SQL en vez de usar PyODPS",
+    "No declarar dependencias explícitas entre nodos, permitiendo que se ejecuten en un orden incorrecto",
+    "Publicar cambios directamente a producción sin pasar por el flujo de revisión del Deployer",
+    "Configurar el cron del Scheduler con una zona horaria incorrecta, corriendo nodos fuera de ventana",
+    "Confundir un fallo técnico de nodo con el incumplimiento de una baseline de tiempo"
   ],
   "cli": [
-    {
-      "cmd": "Consola: DataWorks → Data Studio",
-      "desc": "Editor visual con git integrado"
-    },
-    {
-      "cmd": "aliyun dataworks-public GetNode",
-      "desc": "Ver definición de nodo"
-    }
+    { "cmd": "Consola: DataWorks → Data Studio", "desc": "Editor visual de nodos y workflows con control de versiones integrado" },
+    { "cmd": "aliyun dataworks-public GetNode --NodeId 98765", "desc": "Consultar la definición y dependencias de un nodo" },
+    { "cmd": "aliyun dataworks-public RunSmokeTest --NodeId 98765", "desc": "Ejecutar una prueba puntual de un nodo antes de publicarlo" },
+    { "cmd": "aliyun dataworks-public Deploy --NodeId 98765", "desc": "Publicar un nodo validado desde desarrollo hacia producción" },
+    { "cmd": "aliyun dataworks-public GetInstance --InstanceId 55555", "desc": "Consultar el estado de una instancia de ejecución en el O&M Center" }
   ],
   "glossary": [
-    {
-      "en": "Workspace",
-      "es": "Espacio de trabajo",
-      "def": "Unidad top con quotas, engines y permisos."
-    },
-    {
-      "en": "Node",
-      "es": "Nodo",
-      "def": "Tarea individual: SQL, Python, shell, ML."
-    },
-    {
-      "en": "Workflow",
-      "es": "Workflow",
-      "def": "DAG de nodos con dependencias."
-    },
-    {
-      "en": "Scheduler",
-      "es": "Scheduler",
-      "def": "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-    },
-    {
-      "en": "Data Integration",
-      "es": "Data Integration",
-      "def": "Sincronización batch/stream entre 50+ conectores."
-    },
-    {
-      "en": "Data Quality (DQC)",
-      "es": "DQC",
-      "def": "Reglas de calidad: null, ranges, unicidad; bloquea downstream si falla."
-    },
-    {
-      "en": "Data Map",
-      "es": "Data Map",
-      "def": "Catálogo con búsqueda, tags, linaje columnar."
-    },
-    {
-      "en": "Data Security",
-      "es": "Data Security",
-      "def": "DLP: detecta y enmascara PII."
-    },
-    {
-      "en": "Resource Group",
-      "es": "Resource Group",
-      "def": "Compute reservado para tareas de integración."
-    },
-    {
-      "en": "Baseline",
-      "es": "Baseline",
-      "def": "SLA de completitud diario; alerta si retraso."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Data Studio", "es": "Data Studio", "def": "IDE visual de DataWorks para crear, editar y probar nodos y workflows." },
+    { "en": "ODPS SQL Node", "es": "Nodo ODPS SQL", "def": "Nodo que ejecuta una consulta MaxCompute SQL, el tipo de nodo más común." },
+    { "en": "PyODPS Node", "es": "Nodo PyODPS", "def": "Nodo que ejecuta un script Python con acceso al SDK de MaxCompute, para lógica imperativa compleja." },
+    { "en": "Shell Node", "es": "Nodo Shell", "def": "Nodo que ejecuta comandos de sistema operativo." },
+    { "en": "Workflow", "es": "Workflow", "def": "Contenedor de nodos con dependencias entre sí, representado como un DAG." },
+    { "en": "Business Flow", "es": "Flujo de negocio", "def": "Vista que agrupa uno o varios Workflows relacionados bajo un mismo objetivo de negocio." },
+    { "en": "DAG (Directed Acyclic Graph)", "es": "Grafo acíclico dirigido", "def": "Estructura que modela las dependencias entre nodos sin permitir ciclos." },
+    { "en": "Root Node", "es": "Nodo raíz", "def": "Nodo que marca el punto de entrada de un Workflow y controla su periodicidad general." },
+    { "en": "bizdate", "es": "Fecha de negocio", "def": "Variable de sistema que representa la fecha lógica para la que corre un nodo, evitando fechas hardcodeadas." },
+    { "en": "Backfill", "es": "Reejecución histórica", "def": "Reejecución manual de un nodo para una fecha pasada específica, sin modificar su código." },
+    { "en": "Scheduler", "es": "Programador", "def": "Componente que dispara nodos y workflows según periodicidad, dependencias y variables de contexto." },
+    { "en": "Baseline", "es": "Baseline", "def": "SLA interno de tiempo que declara para qué hora debe haber terminado un nodo o pipeline crítico." },
+    { "en": "Catch-up", "es": "Recuperación de ejecuciones perdidas", "def": "Mecanismo que ejecuta automáticamente instancias que se perdieron por inactividad del Scheduler." },
+    { "en": "Deployment Flow", "es": "Flujo de publicación", "def": "Proceso de revisión y promoción de código validado desde desarrollo hacia producción." },
+    { "en": "O&M Center", "es": "Centro de Operaciones", "def": "Panel donde se monitorean ejecuciones, logs y alarmas de nodos en producción." },
+    { "en": "Retry Policy", "es": "Política de reintentos", "def": "Configuración que determina cuántas veces se reintenta un nodo tras un fallo transitorio." },
+    { "en": "Cross-workflow Dependency", "es": "Dependencia cross-workflow", "def": "Dependencia de un nodo hacia la salida de un nodo en un Workflow distinto." },
+    { "en": "Version Control", "es": "Control de versiones", "def": "Registro de cambios de código de un nodo, permitiendo comparar y revertir revisiones anteriores." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DataWorks?",
-      "options": [
-        "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natura",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB."
-    },
-    {
-      "q": "¿Qué es <strong>Workspace</strong> (Espacio de trabajo) en DataWorks?",
-      "options": [
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Workspace (Espacio de trabajo): Unidad top con quotas, engines y permisos."
-    },
-    {
-      "q": "¿Qué es <strong>Node</strong> (Nodo) en DataWorks?",
-      "options": [
-        "Tarea individual: SQL, Python, shell, ML.",
-        "Unidad top con quotas, engines y permisos.",
-        "DAG de nodos con dependencias.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Node (Nodo): Tarea individual: SQL, Python, shell, ML."
-    },
-    {
-      "q": "¿Qué es <strong>Workflow</strong> (Workflow) en DataWorks?",
-      "options": [
-        "DAG de nodos con dependencias.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Workflow (Workflow): DAG de nodos con dependencias."
-    },
-    {
-      "q": "¿Qué es <strong>Scheduler</strong> (Scheduler) en DataWorks?",
-      "options": [
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias."
-      ],
-      "answer": 0,
-      "explain": "Scheduler (Scheduler): Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-    },
-    {
-      "q": "¿Qué es <strong>Data Integration</strong> (Data Integration) en DataWorks?",
-      "options": [
-        "Sincronización batch/stream entre 50+ conectores.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias."
-      ],
-      "answer": 0,
-      "explain": "Data Integration (Data Integration): Sincronización batch/stream entre 50+ conectores."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DataWorks, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DataWorks en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DataWorks, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DataWorks es la elección típica:",
-      "options": [
-        "Data pipelines diarios de ingesta desde 50+ fuentes",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data pipelines diarios de ingesta desde 50+ fuentes."
-    }
+    { "q": "¿Qué tipo de nodo de DataWorks es el más adecuado cuando la lógica requiere iteración programática compleja no expresable en SQL puro?", "options": ["Nodo ODPS SQL", "Nodo PyODPS", "Nodo Shell", "Root node"], "answer": 1, "explain": "PyODPS permite escribir lógica imperativa en Python con acceso al SDK de MaxCompute, para casos que SQL declarativo no puede resolver razonablemente." },
+    { "q": "¿Qué ocurre si se intenta crear una dependencia circular entre dos nodos (A depende de B y B depende de A)?", "options": ["DataWorks la ejecuta sin problema, alternando el orden", "Es rechazada, ya que el Workflow debe ser un grafo acíclico dirigido (DAG)", "Solo el nodo A se ejecuta, el B se ignora", "Se convierte automáticamente en un nodo de control de flujo"], "answer": 1, "explain": "Un DAG por definición no admite ciclos; DataWorks valida y rechaza dependencias circulares al construir el Workflow." },
+    { "q": "¿Para qué se usa principalmente la variable de sistema bizdate?", "options": ["Para cifrar los datos de un nodo", "Para representar la fecha lógica de negocio de la ejecución, evitando fechas hardcodeadas en el código", "Para definir el rol del usuario que ejecuta el nodo", "Para nombrar automáticamente los workflows"], "answer": 1, "explain": "bizdate permite que el mismo código de un nodo sirva para cualquier fecha de ejecución sin modificarlo manualmente." },
+    { "q": "Un nodo necesita reprocesar los datos de una fecha pasada específica sin modificar su código. ¿Qué mecanismo se usa?", "options": ["Republicar el nodo con una fecha hardcodeada", "Ejecutar un backfill para esa fecha, aprovechando que el nodo ya usa bizdate", "No es posible sin escribir un nodo nuevo", "Cambiar el rol del usuario a Deployer"], "answer": 1, "explain": "Gracias a la parametrización con bizdate, un backfill simplemente reejecuta el nodo para la fecha deseada sin tocar su código." },
+    { "q": "¿Qué diferencia a una baseline incumplida de un fallo técnico de nodo?", "options": ["Son exactamente lo mismo", "Un nodo puede terminar exitosamente pero tarde, incumpliendo su SLA de tiempo (baseline), sin que sea un error técnico", "Las baselines solo aplican a nodos PyODPS", "Un fallo técnico nunca dispara alarmas"], "answer": 1, "explain": "Una baseline mide cumplimiento de tiempo (SLA), independiente de si el nodo terminó con éxito técnico o no." },
+    { "q": "¿Qué rol debe aprobar la publicación de un cambio de código validado hacia producción en un Workspace en modo estándar?", "options": ["Visitor", "Developer, sin restricciones adicionales", "Deployer / Release", "Cualquier miembro del proyecto"], "answer": 2, "explain": "El flujo de publicación en modo estándar exige la intervención del rol Deployer para promover código a producción." },
+    { "q": "¿Qué panel de DataWorks permite inspeccionar logs de ejecución y reintentar manualmente un nodo fallido en producción?", "options": ["Data Map", "O&M Center", "Data Security", "Business Flow"], "answer": 1, "explain": "El Centro de Operaciones (O&M Center) es donde se monitorean y diagnostican las ejecuciones de nodos en producción." },
+    { "q": "¿Qué sucede con los nodos que dependen (directa o transitivamente) de un nodo que falló en un DAG?", "options": ["Se ejecutan de todas formas con los últimos datos disponibles", "No se ejecutan ese ciclo, evitando propagar datos calculados sobre una base incompleta", "Se ejecutan pero marcados con una advertencia visual únicamente", "El Scheduler los reprograma automáticamente para el día siguiente sin aviso"], "answer": 1, "explain": "Las dependencias explícitas contienen el error: un fallo intermedio detiene automáticamente todo lo que depende de él en ese ciclo." },
+    { "q": "¿Qué es una dependencia cross-workflow?", "options": ["Una dependencia entre dos nodos del mismo Workflow", "Una dependencia de un nodo hacia la salida de un nodo ubicado en un Workflow distinto", "Un tipo de nodo Shell especial", "Una variable de sistema de fecha"], "answer": 1, "explain": "Las dependencias cross-workflow permiten que pipelines de distintos equipos se alimenten entre sí sin fusionar sus workflows." },
+    { "q": "¿Qué antipatrón describe escribir la fecha del día directamente en el código de un nodo en vez de usar bizdate?", "options": ["Es la práctica recomendada por DataWorks", "Funciona el primer día pero rompe la reproducibilidad y el backfill desde el segundo día en adelante", "Mejora el rendimiento del nodo", "No tiene ningún efecto negativo"], "answer": 1, "explain": "Hardcodear la fecha impide que el mismo código sirva para ejecuciones futuras o para reprocesar fechas pasadas correctamente." },
+    { "q": "¿Qué configuración permite que un nodo se reintente automáticamente ante un fallo transitorio de red?", "options": ["Baseline", "Política de reintentos (retry policy)", "Business Flow", "Data Map"], "answer": 1, "explain": "La política de reintentos define cuántas veces y con qué espera se reintenta un nodo antes de marcarse como fallido definitivamente." },
+    { "q": "¿Qué mecanismo permite que el Scheduler ejecute automáticamente instancias que se perdieron por un incidente previo?", "options": ["Backfill manual únicamente", "Catch-up (recuperación de ejecuciones perdidas)", "Rollback de versión", "Data Security"], "answer": 1, "explain": "El catch-up ejecuta automáticamente las instancias que el Scheduler no pudo disparar por inactividad, en vez de saltárselas silenciosamente." }
   ],
-  "exam_focus": "Preguntas: (a) integración con MaxCompute, (b) DQC bloqueante vs informativo, (c) baselines y SLA, (d) Data Map y linaje, (e) permisos por rol.",
+  "exam_focus": "El examen suele evaluar: (a) elegir el tipo de nodo correcto (SQL/PyODPS/Shell) según la lógica requerida, (b) el uso correcto de bizdate y el mecanismo de backfill, (c) cómo las dependencias del DAG contienen fallos en cascada, (d) la diferencia entre un fallo técnico y el incumplimiento de una baseline, (e) el flujo de publicación y el rol del Deployer, (f) el diagnóstico de fallos en el O&M Center.",
   "official_intro": "This course explains the development process of DataWorks, it explains in detail about data development, scheduling configuration, data management, operation & maintenance management and project management modules of DataWorks. Fully explained the functional application of DataWorks.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datawapp",

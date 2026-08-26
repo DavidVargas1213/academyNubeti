@@ -2,433 +2,161 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-naivebayes",
   "title_en": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
-  "title_es": "Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier",
+  "title_es": "Series de Fundamentos de Machine Learning 2 - Clasificador Naive Bayes",
+  "title_es_html": "Series de Fundamentos de Machine Learning 2 - Clasificador <em>Naive Bayes</em>",
   "duration_es": "46 minutos",
   "level_es": "Principiante",
   "category_es": "Inteligencia Artificial",
   "subcategory_es": "Artificial Intelligence",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_naivebayes",
-  "lead": "Guía completa en español para el curso «Machine Learning Algorithm Primer Series 2- Naive Bayes Classifier» de Alibaba Cloud Academy. Cubre en profundidad Platform for AI (PAI). PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Machine Learning Algorithm Primer Series 2 - Naive Bayes Classifier» de Alibaba Cloud Academy. Cubre el teorema de Bayes aplicado a clasificación, por qué la «ingenuidad» (asumir independencia condicional entre features) hace al modelo extremadamente rápido y sorprendentemente efectivo en texto, el problema de probabilidad cero y su solución (suavizado de Laplace), y las tres variantes principales (Gaussian, Multinomial, Bernoulli) con su implementación en PAI y scikit-learn.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Platform for AI (PAI)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: PAI-DSW, PAI-DLC, PAI-EAS, PAI-Designer, QuickStart.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Platform for AI (PAI) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> el teorema de Bayes y cómo se usa para invertir una probabilidad condicional (de evidencia a hipótesis).",
+    "<strong>Justificar</strong> el supuesto de independencia condicional entre features («ingenuidad» del modelo) y por qué funciona bien en la práctica pese a ser una simplificación fuerte.",
+    "<strong>Distinguir</strong> las tres variantes del clasificador — Gaussian, Multinomial y Bernoulli — y elegir la correcta según el tipo de feature.",
+    "<strong>Diagnosticar</strong> el problema de probabilidad cero y aplicar suavizado de Laplace (add-one smoothing) para resolverlo.",
+    "<strong>Aplicar</strong> Naive Bayes a clasificación de texto usando representaciones Bag-of-Words o TF-IDF.",
+    "<strong>Evaluar</strong> el modelo con las métricas estándar de clasificación y reconocer sus limitaciones frente a modelos que sí capturan correlación entre features.",
+    "<strong>Implementar</strong> Naive Bayes en PAI y en scikit-learn para un problema de clasificación real."
   ],
-  "architecture": "Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
+  "architecture": "Flujo típico para clasificación de texto (el caso de uso más común de Naive Bayes): corpus de documentos etiquetados en OSS → limpieza (minúsculas, eliminación de stopwords, tokenización) → vectorización con Bag-of-Words o TF-IDF (componente de PAI-Designer o CountVectorizer/TfidfVectorizer de scikit-learn) → entrenamiento del clasificador Naive Bayes (Multinomial para conteos de palabras, Bernoulli para presencia/ausencia) → suavizado de Laplace configurado vía el hiperparámetro alpha → evaluación con matriz de confusión y F1 por clase → despliegue vía PAI-EAS para clasificación online de nuevos documentos (spam, sentimiento, categorización de tickets).",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Platform for AI (PAI)",
-      "title_en": "Introduction to Platform for AI (PAI)",
-      "intro": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El teorema de Bayes aplicado a clasificación",
+      "title_en": "Bayes' Theorem for Classification",
+      "intro": "Naive Bayes no aprende una frontera de decisión como la regresión logística — calcula directamente, para cada clase, qué tan probable es esa clase dado lo que observamos en las features, usando el teorema de Bayes.",
       "points": [
-        "<strong>Problema que resuelve</strong>: PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Platform for AI (PAI) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Teorema de Bayes</strong>: <code>P(clase | features) = P(features | clase) · P(clase) / P(features)</code> — permite invertir una probabilidad: en vez de calcular directamente la probabilidad de la clase dado los datos, se calcula a partir de qué tan probables son los datos dado cada clase.",
+        "<strong>Probabilidad a priori (prior)</strong>: <code>P(clase)</code>, la proporción de cada clase en el dataset de entrenamiento, antes de observar ninguna feature.",
+        "<strong>Verosimilitud (likelihood)</strong>: <code>P(features | clase)</code>, qué tan típicas son esas features dentro de cada clase — se estima a partir de las frecuencias observadas en el training set.",
+        "<strong>Evidencia</strong>: <code>P(features)</code> es la misma para todas las clases al comparar, por lo que en la práctica se ignora — el clasificador simplemente elige la clase que maximiza el numerador <code>P(features | clase) · P(clase)</code>.",
+        "<strong>Regla de decisión (MAP)</strong>: se elige la clase con mayor probabilidad posterior — este criterio se llama <em>Maximum A Posteriori (MAP)</em>."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Platform for AI (PAI) es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Naive Bayes es un clasificador <em>generativo</em>: modela cómo se generan las features dentro de cada clase (P(features|clase)), a diferencia de un modelo <em>discriminativo</em> como la regresión logística, que modela directamente la frontera entre clases." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Platform for AI (PAI) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · La 'ingenuidad': independencia condicional",
+      "title_en": "The 'Naive' Independence Assumption",
+      "intro": "Calcular P(features|clase) exactamente requeriría modelar todas las correlaciones posibles entre features, lo cual es intratable con muchas variables — Naive Bayes resuelve esto con una simplificación deliberada.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>El supuesto ingenuo</strong>: el modelo asume que, dada la clase, todas las features son condicionalmente independientes entre sí — <code>P(x₁,x₂,...,xₙ|clase) = P(x₁|clase)·P(x₂|clase)·...·P(xₙ|clase)</code>.",
+        "<strong>Por qué esta simplificación es tan drástica</strong>: en la realidad, las features casi nunca son independientes (p.ej. en texto, la palabra «gratis» y la palabra «premio» suelen aparecer juntas en spam) — el modelo ignora deliberadamente esa correlación.",
+        "<strong>Por qué funciona igual en la práctica</strong>: aunque las probabilidades estimadas no sean exactas, lo que importa para clasificar es el <em>orden relativo</em> entre las probabilidades de las distintas clases — el sesgo introducido por la independencia suele afectar a todas las clases de forma similar, dejando la decisión final correcta.",
+        "<strong>Ventaja computacional</strong>: gracias a esta simplificación, entrenar Naive Bayes requiere solo contar frecuencias (una pasada sobre los datos) — no hay optimización iterativa como en regresión logística o SVM, lo que lo hace extremadamente rápido incluso con millones de documentos."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Platform for AI (PAI) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta por qué Naive Bayes es «ingenuo», la respuesta siempre apunta al supuesto de independencia condicional entre features dada la clase — no a que el modelo sea impreciso o simple en otro sentido." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Las tres variantes del clasificador",
+      "title_en": "Gaussian, Multinomial and Bernoulli Naive Bayes",
+      "intro": "El examen distingue tres variantes de Naive Bayes según el tipo de dato que modelan las features — elegir la variante incorrecta produce estimaciones de probabilidad sin sentido.",
       "points": [
-        "<strong>Data Science Workshop</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado con GPUs opcionales.",
-        "<strong>Deep Learning Containers</strong> <em>(PAI-DLC)</em>: Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "<strong>Elastic Algorithm Service</strong> <em>(PAI-EAS)</em>: Serving online con auto-scaling y A/B.",
-        "<strong>PAI Designer</strong> <em>(PAI-Designer)</em>: Pipelines ML drag&drop.",
-        "<strong>QuickStart</strong> <em>(QuickStart)</em>: Modelos preentrenados y fine-tuning con un click.",
-        "<strong>Model Gallery</strong> <em>(Model Gallery)</em>: Catálogo de modelos (Qwen, Llama, SD, etc).",
-        "<strong>AutoML</strong> <em>(AutoML)</em>: Búsqueda automática de arquitectura e hiperparámetros.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Framework de compute distribuido soportado."
+        "<strong>Gaussian Naive Bayes</strong>: asume que cada feature numérica continua sigue una distribución normal dentro de cada clase; estima la media y varianza de cada feature por clase para calcular la verosimilitud. Ideal para features como edad, altura o mediciones de sensores.",
+        "<strong>Multinomial Naive Bayes</strong>: modela conteos discretos (cuántas veces aparece cada palabra en un documento) — el caso de uso clásico es clasificación de texto con representación Bag-of-Words o TF-IDF.",
+        "<strong>Bernoulli Naive Bayes</strong>: modela features binarias (presencia/ausencia de una palabra, sin importar cuántas veces aparece) — penaliza explícitamente la ausencia de una feature, a diferencia de Multinomial.",
+        "<strong>Cómo elegir</strong>: features numéricas continuas → Gaussian; conteos de ocurrencias (texto largo) → Multinomial; presencia/ausencia binaria (texto corto, features booleanas) → Bernoulli.",
+        "<strong>Error común</strong>: aplicar Gaussian Naive Bayes directamente sobre conteos de palabras (datos discretos, muy sesgados hacia cero) viola el supuesto de normalidad y produce estimaciones de probabilidad pobres."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Memoriza", "text": "Gaussian = features numéricas continuas. Multinomial = conteos (texto largo, Bag-of-Words). Bernoulli = binario (presencia/ausencia). El examen suele describir el tipo de feature y esperar que identifiques la variante correcta." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · El problema de probabilidad cero y el suavizado de Laplace",
+      "title_en": "The Zero-Probability Problem and Laplace Smoothing",
+      "intro": "Si una palabra o valor de feature nunca apareció en el training set para una clase determinada, el modelo asignaría probabilidad exactamente cero — un problema que arruinaría cualquier predicción futura donde esa palabra aparezca.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>El problema</strong>: como la verosimilitud total es un producto de probabilidades individuales, si una sola de ellas es 0, todo el producto se vuelve 0 — sin importar cuán fuerte sea la evidencia del resto de features, esa clase queda descartada por completo.",
+        "<strong>Ejemplo típico</strong>: un email legítimo contiene una palabra que nunca apareció en el training set etiquetado como «spam» — sin corrección, P(esa palabra | spam) = 0, forzando a que P(spam | email) = 0 sin importar el resto del contenido.",
+        "<strong>Suavizado de Laplace (add-one smoothing)</strong>: se suma una pequeña constante (típicamente 1, controlada por el hiperparámetro <code>alpha</code>) al conteo de cada feature/clase antes de calcular la probabilidad, garantizando que ninguna probabilidad sea exactamente cero.",
+        "<strong>Efecto de alpha</strong>: alpha=1 es el suavizado clásico de Laplace; valores más altos de alpha suavizan más agresivamente (acercan las probabilidades a una distribución uniforme), valores más bajos se acercan a las frecuencias observadas sin corrección."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Entrenar Naive Bayes sin suavizado (alpha=0) sobre un vocabulario grande es un antipatrón clásico: cualquier palabra nueva en producción que no apareció en una clase durante el entrenamiento anula esa clase por completo." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Naive Bayes en clasificación de texto",
+      "title_en": "Naive Bayes for Text Classification",
+      "intro": "El caso de uso histórico y más común de Naive Bayes es la clasificación de documentos — filtros de spam, análisis de sentimiento, categorización de tickets de soporte — donde sigue siendo un baseline fuerte y rapidísimo.",
       "points": [
-        "<strong>HA</strong>: EAS con autoscaling por QPS + provisioned min replicas",
-        "<strong>Costo</strong>: DLC con spot GPU para reducir costo de training",
-        "<strong>Buenas prácticas</strong>: Datos en OSS + versioning para reproducibilidad",
-        "<strong>Buenas prácticas</strong>: Model versioning y A/B antes de rollout completo",
-        "<strong>Buenas prácticas</strong>: Feature Store para evitar training-serving skew"
+        "<strong>Bag-of-Words</strong>: representa cada documento como un vector de conteos de palabras, ignorando el orden — la matriz resultante es enorme pero extremadamente dispersa (sparse), lo cual Naive Bayes maneja de forma muy eficiente.",
+        "<strong>TF-IDF</strong>: pondera cada palabra por su frecuencia en el documento (TF) y penaliza las palabras muy comunes en todo el corpus (IDF) — reduce el peso de palabras poco informativas como artículos y preposiciones.",
+        "<strong>Por qué la independencia molesta menos en texto</strong>: aunque las palabras en una oración claramente no son independientes entre sí, para el propósito de clasificar (spam/no spam, positivo/negativo) la combinación de palabras individuales suele bastar para separar bien las clases.",
+        "<strong>Velocidad como ventaja decisiva</strong>: con vocabularios de decenas de miles de palabras y millones de documentos, Naive Bayes entrena en segundos donde un SVM o una red neuronal tardaría órdenes de magnitud más — ideal como primer modelo de producción o como baseline de comparación."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Naive Bayes rara vez es el modelo con mayor accuracy posible en un problema de texto complejo, pero su combinación de velocidad de entrenamiento, bajo costo computacional y buen desempeño lo convierte en el baseline por defecto antes de invertir en modelos más costosos." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Limitaciones, evaluación e implementación en PAI",
+      "title_en": "Limitations, Evaluation and Implementation on PAI",
+      "intro": "El curso cierra con las limitaciones que hay que reconocer en el examen, cómo evaluar el modelo correctamente y cómo se implementa en el ecosistema de Alibaba Cloud.",
       "points": [
-        "<strong>Antipattern</strong>: Training en GPUs on-demand — 3-5x más caro que spot",
-        "<strong>Antipattern</strong>: EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-        "<strong>Antipattern</strong>: Modelos sin versionar — imposible rollback",
-        "<strong>Antipattern</strong>: Sin monitoreo de drift — modelo se degrada silente",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Limitación central</strong>: cuando las features están fuertemente correlacionadas entre sí, el modelo puede sobre-contar evidencia (dos features muy correlacionadas «votan» casi lo mismo dos veces), sesgando las probabilidades estimadas — modelos como regresión logística o árboles no sufren este problema de la misma forma.",
+        "<strong>Probabilidades mal calibradas</strong>: por la sobre-confianza que introduce la independencia asumida, las probabilidades que emite Naive Bayes suelen estar mal calibradas (demasiado cercanas a 0 o 1) — para clasificar suele bastar, pero si se necesitan probabilidades bien calibradas (p.ej. para tomar decisiones de negocio basadas en el valor exacto), se recomienda una calibración posterior (Platt scaling, isotonic regression).",
+        "<strong>Evaluación</strong>: se usan las mismas métricas de clasificación (matriz de confusión, precisión, recall, F1, AUC-ROC), prestando especial atención a las clases minoritarias cuando el dataset está desbalanceado.",
+        "<strong>PAI-Designer</strong>: ofrece un componente de Naive Bayes que recibe directamente una tabla vectorizada (Bag-of-Words/TF-IDF ya calculado) y expone el hiperparámetro de suavizado.",
+        "<strong>PAI-DSW + scikit-learn</strong>: <code>GaussianNB</code>, <code>MultinomialNB</code> y <code>BernoulliNB</code> comparten la misma API <code>fit</code>/<code>predict</code>/<code>predict_proba</code>."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario describe features fuertemente correlacionadas entre sí como un requisito central del problema, Naive Bayes no es la primera opción — el examen espera que reconozcas esa limitación y consideres un modelo que sí capture correlación." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Fine-tuning de Qwen y LLMs open-source"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Recomendación en tiempo real (CTR prediction)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Visión computacional (defectos, OCR, detección)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "NLP: clasificación, sentimiento, extracción"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "AutoML para equipos sin data scientists dedicados"
-    }
+    { "title": "Escenario 1", "text": "Filtro de spam de correo electrónico basado en las palabras del cuerpo del mensaje" },
+    { "title": "Escenario 2", "text": "Análisis de sentimiento de reseñas de producto (positivo/negativo/neutral)" },
+    { "title": "Escenario 3", "text": "Categorización automática de tickets de soporte por área (facturación, técnico, ventas)" },
+    { "title": "Escenario 4", "text": "Detección de idioma de un texto corto a partir de la frecuencia de caracteres/n-gramas" },
+    { "title": "Escenario 5", "text": "Baseline extremadamente rápido antes de invertir en un modelo de NLP más costoso (embeddings, transformers)" },
+    { "title": "Escenario 6", "text": "Diagnóstico médico preliminar con features numéricas continuas — variante Gaussian" }
   ],
   "mistakes": [
-    "Training en GPUs on-demand — 3-5x más caro que spot",
-    "EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-    "Modelos sin versionar — imposible rollback",
-    "Sin monitoreo de drift — modelo se degrada silente"
+    "Entrenar sin suavizado de Laplace (alpha=0), causando probabilidad cero ante cualquier feature no vista en entrenamiento",
+    "Usar Gaussian Naive Bayes sobre conteos discretos de palabras en vez de Multinomial",
+    "Confiar en las probabilidades exactas emitidas por el modelo sin calibrarlas, cuando el negocio necesita probabilidades precisas",
+    "Ignorar que features fuertemente correlacionadas pueden sesgar las probabilidades estimadas por sobre-conteo de evidencia",
+    "No eliminar stopwords ni normalizar texto antes de vectorizar, inflando el vocabulario con ruido",
+    "Usar Naive Bayes esperando el mejor accuracy posible en vez de usarlo como baseline rápido de comparación"
   ],
   "cli": [
-    {
-      "cmd": "aliyun pai CreateJob",
-      "desc": "Lanzar training DLC"
-    },
-    {
-      "cmd": "aliyun eas CreateService",
-      "desc": "Desplegar modelo"
-    }
+    { "cmd": "from sklearn.feature_extraction.text import CountVectorizer\nvectorizer = CountVectorizer(stop_words='english', max_features=20000)\nX = vectorizer.fit_transform(corpus)", "desc": "Vectorizar texto con Bag-of-Words antes de entrenar" },
+    { "cmd": "from sklearn.naive_bayes import MultinomialNB\nmodel = MultinomialNB(alpha=1.0)\nmodel.fit(X_train, y_train)", "desc": "Entrenar Naive Bayes Multinomial con suavizado de Laplace (alpha=1)" },
+    { "cmd": "from sklearn.naive_bayes import GaussianNB\ngnb = GaussianNB()\ngnb.fit(X_train_numeric, y_train)", "desc": "Entrenar Naive Bayes Gaussiano sobre features numéricas continuas" },
+    { "cmd": "from sklearn.feature_extraction.text import TfidfVectorizer\ntfidf = TfidfVectorizer(max_features=20000)\nX_tfidf = tfidf.fit_transform(corpus)", "desc": "Vectorizar texto ponderando por TF-IDF en vez de conteos simples" },
+    { "cmd": "log_probs = model.feature_log_prob_\ntop_words = vectorizer.get_feature_names_out()[log_probs[1].argsort()[-10:]]", "desc": "Inspeccionar las palabras más asociadas a una clase según el modelo entrenado" },
+    { "cmd": "from sklearn.calibration import CalibratedClassifierCV\ncalibrated = CalibratedClassifierCV(model, method='sigmoid').fit(X_train, y_train)", "desc": "Calibrar las probabilidades del modelo cuando se necesitan valores precisos, no solo la clase" }
   ],
   "glossary": [
-    {
-      "en": "PAI-DSW",
-      "es": "Data Science Workshop",
-      "def": "JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "en": "PAI-DLC",
-      "es": "Deep Learning Containers",
-      "def": "Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "en": "PAI-EAS",
-      "es": "Elastic Algorithm Service",
-      "def": "Serving online con auto-scaling y A/B."
-    },
-    {
-      "en": "PAI-Designer",
-      "es": "PAI Designer",
-      "def": "Pipelines ML drag&drop."
-    },
-    {
-      "en": "QuickStart",
-      "es": "QuickStart",
-      "def": "Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "en": "Model Gallery",
-      "es": "Model Gallery",
-      "def": "Catálogo de modelos (Qwen, Llama, SD, etc)."
-    },
-    {
-      "en": "AutoML",
-      "es": "AutoML",
-      "def": "Búsqueda automática de arquitectura e hiperparámetros."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Framework de compute distribuido soportado."
-    },
-    {
-      "en": "Blade",
-      "es": "Blade",
-      "def": "Compilador de optimización de inferencia."
-    },
-    {
-      "en": "Feature Store",
-      "es": "Feature Store",
-      "def": "Almacén centralizado de features online/offline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Bayes' Theorem", "es": "Teorema de Bayes", "def": "Fórmula que permite calcular P(clase|features) a partir de P(features|clase) y P(clase)." },
+    { "en": "Prior Probability", "es": "Probabilidad a priori", "def": "Proporción de cada clase en el dataset antes de observar ninguna feature." },
+    { "en": "Likelihood", "es": "Verosimilitud", "def": "Probabilidad de observar las features dado que la muestra pertenece a una clase." },
+    { "en": "Posterior Probability", "es": "Probabilidad posterior", "def": "Probabilidad de la clase dado que se observaron ciertas features; lo que el modelo predice." },
+    { "en": "Maximum A Posteriori (MAP)", "es": "Máximo a posteriori", "def": "Regla de decisión que elige la clase con mayor probabilidad posterior." },
+    { "en": "Conditional Independence", "es": "Independencia condicional", "def": "Supuesto 'ingenuo' de que las features son independientes entre sí dada la clase." },
+    { "en": "Generative Model", "es": "Modelo generativo", "def": "Modelo que estima cómo se generan las features dentro de cada clase, en vez de solo la frontera entre clases." },
+    { "en": "Gaussian Naive Bayes", "es": "Naive Bayes Gaussiano", "def": "Variante para features numéricas continuas, asumiendo distribución normal por clase." },
+    { "en": "Multinomial Naive Bayes", "es": "Naive Bayes Multinomial", "def": "Variante para conteos discretos, típica en clasificación de texto con Bag-of-Words." },
+    { "en": "Bernoulli Naive Bayes", "es": "Naive Bayes Bernoulli", "def": "Variante para features binarias (presencia/ausencia)." },
+    { "en": "Zero-Probability Problem", "es": "Problema de probabilidad cero", "def": "Cuando una feature nunca vista en una clase anula la probabilidad total de esa clase." },
+    { "en": "Laplace Smoothing", "es": "Suavizado de Laplace", "def": "Técnica que suma una constante (alpha) a los conteos para evitar probabilidades exactamente cero." },
+    { "en": "Bag-of-Words", "es": "Bolsa de palabras", "def": "Representación de un documento como vector de conteos de palabras, ignorando el orden." },
+    { "en": "TF-IDF", "es": "TF-IDF", "def": "Ponderación que combina frecuencia en el documento (TF) con rareza en el corpus (IDF)." },
+    { "en": "Sparse Matrix", "es": "Matriz dispersa", "def": "Matriz con mayoría de valores en cero, típica al vectorizar texto; se almacena de forma eficiente." },
+    { "en": "Stopwords", "es": "Palabras vacías", "def": "Palabras muy frecuentes y poco informativas (artículos, preposiciones) que suelen eliminarse antes de vectorizar." },
+    { "en": "Probability Calibration", "es": "Calibración de probabilidades", "def": "Ajuste posterior para que las probabilidades emitidas reflejen mejor la frecuencia real de acierto." },
+    { "en": "Alpha (smoothing parameter)", "es": "Alpha (parámetro de suavizado)", "def": "Hiperparámetro que controla la intensidad del suavizado de Laplace." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Platform for AI (PAI)?",
-      "options": [
-        "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y f",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart)."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (Data Science Workshop) en Platform for AI (PAI)?",
-      "options": [
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (Data Science Workshop): JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DLC</strong> (Deep Learning Containers) en Platform for AI (PAI)?",
-      "options": [
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DLC (Deep Learning Containers): Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-EAS</strong> (Elastic Algorithm Service) en Platform for AI (PAI)?",
-      "options": [
-        "Serving online con auto-scaling y A/B.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-EAS (Elastic Algorithm Service): Serving online con auto-scaling y A/B."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-Designer</strong> (PAI Designer) en Platform for AI (PAI)?",
-      "options": [
-        "Pipelines ML drag&drop.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "PAI-Designer (PAI Designer): Pipelines ML drag&drop."
-    },
-    {
-      "q": "¿Qué es <strong>QuickStart</strong> (QuickStart) en Platform for AI (PAI)?",
-      "options": [
-        "Modelos preentrenados y fine-tuning con un click.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "QuickStart (QuickStart): Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Platform for AI (PAI), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Platform for AI (PAI) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Platform for AI (PAI), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Platform for AI (PAI) es la elección típica:",
-      "options": [
-        "Fine-tuning de Qwen y LLMs open-source",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Fine-tuning de Qwen y LLMs open-source."
-    }
+    { "q": "¿Qué calcula el teorema de Bayes en el contexto de un clasificador?", "options": ["La correlación entre dos features", "La probabilidad de la clase dado lo observado, a partir de la probabilidad de lo observado dado la clase", "El error cuadrático medio del modelo", "El número óptimo de clústeres"], "answer": 1, "explain": "El teorema de Bayes invierte la probabilidad condicional: de P(features|clase) y P(clase) se obtiene P(clase|features)." },
+    { "q": "¿A qué se refiere la palabra 'ingenuo' (naive) en Naive Bayes?", "options": ["A que el modelo es poco preciso en general", "Al supuesto de que las features son condicionalmente independientes entre sí dada la clase", "A que solo funciona con dos clases", "A que no requiere datos de entrenamiento"], "answer": 1, "explain": "La 'ingenuidad' es específicamente el supuesto de independencia condicional entre features, una simplificación deliberada." },
+    { "q": "¿Qué variante de Naive Bayes es apropiada para features numéricas continuas como edad o presión arterial?", "options": ["Multinomial Naive Bayes", "Bernoulli Naive Bayes", "Gaussian Naive Bayes", "Ninguna variante admite features numéricas"], "answer": 2, "explain": "Gaussian Naive Bayes asume que cada feature continua sigue una distribución normal dentro de cada clase." },
+    { "q": "Para clasificar documentos de texto usando conteos de palabras (Bag-of-Words), ¿qué variante es la más adecuada?", "options": ["Gaussian Naive Bayes", "Multinomial Naive Bayes", "Regresión lineal", "K-Means"], "answer": 1, "explain": "Multinomial Naive Bayes está diseñado específicamente para modelar conteos discretos, el caso típico de Bag-of-Words." },
+    { "q": "¿Qué ocurre si una palabra del vocabulario nunca apareció en el training set etiquetado como 'spam', y no se aplica suavizado?", "options": ["El modelo la ignora automáticamente sin problema", "P(esa palabra|spam) = 0, lo que anula por completo la probabilidad de la clase spam sin importar el resto de la evidencia", "El modelo asigna probabilidad 0.5 automáticamente", "No tiene ningún efecto en la predicción"], "answer": 1, "explain": "Como la verosimilitud es un producto de probabilidades, una sola probabilidad en cero anula el producto completo — el problema de probabilidad cero." },
+    { "q": "¿Qué técnica resuelve el problema de probabilidad cero en Naive Bayes?", "options": ["Aumentar el número de árboles", "Suavizado de Laplace (add-one smoothing)", "Normalizar las features con StandardScaler", "Usar validación cruzada"], "answer": 1, "explain": "El suavizado de Laplace suma una constante (alpha) a los conteos, garantizando que ninguna probabilidad sea exactamente cero." },
+    { "q": "¿Por qué Naive Bayes es especialmente rápido de entrenar comparado con regresión logística o SVM?", "options": ["Porque usa descenso de gradiente optimizado", "Porque solo requiere contar frecuencias, sin optimización iterativa", "Porque siempre usa menos features", "Porque no requiere datos etiquetados"], "answer": 1, "explain": "Al no requerir optimización iterativa (solo estimar probabilidades a partir de conteos), Naive Bayes entrena en una sola pasada sobre los datos." },
+    { "q": "¿Cuál es la limitación central de Naive Bayes cuando las features están fuertemente correlacionadas entre sí?", "options": ["El modelo deja de funcionar por completo", "Puede sobre-contar evidencia, sesgando las probabilidades estimadas", "Se vuelve más lento que una red neuronal", "No puede usarse con más de dos clases"], "answer": 1, "explain": "Al asumir independencia, features correlacionadas 'votan' de forma redundante, distorsionando la probabilidad posterior calculada." },
+    { "q": "¿Por qué las probabilidades emitidas por Naive Bayes suelen estar mal calibradas?", "options": ["Porque el modelo nunca converge", "Por la sobre-confianza introducida por el supuesto de independencia entre features", "Porque siempre se usa un umbral de 0.5", "Porque no admite features categóricas"], "answer": 1, "explain": "La independencia asumida tiende a producir probabilidades demasiado extremas (cercanas a 0 o 1); si se necesitan valores precisos, se recomienda calibración posterior." },
+    { "q": "¿Qué representación de texto pondera las palabras frecuentes en un documento pero penaliza las que son comunes en todo el corpus?", "options": ["Bag-of-Words simple", "One-Hot Encoding", "TF-IDF", "Label Encoding"], "answer": 2, "explain": "TF-IDF combina la frecuencia en el documento (TF) con la rareza en el corpus (IDF), reduciendo el peso de palabras poco informativas." },
+    { "q": "¿Naive Bayes es un modelo generativo o discriminativo?", "options": ["Discriminativo, modela directamente la frontera entre clases", "Generativo, modela cómo se generan las features dentro de cada clase", "Ninguno de los dos, es un modelo basado en distancia", "Depende del número de clases"], "answer": 1, "explain": "Naive Bayes estima P(features|clase), un enfoque generativo, a diferencia de modelos discriminativos como la regresión logística." },
+    { "q": "En un problema donde las features están fuertemente correlacionadas entre sí y esa correlación es central para el negocio, ¿qué debería considerar el examen?", "options": ["Naive Bayes es siempre la mejor opción sin excepción", "Naive Bayes puede no ser la primera opción por su supuesto de independencia; conviene considerar un modelo que capture correlación", "Es imposible resolver ese problema con machine learning", "Solo Bernoulli Naive Bayes resuelve la correlación"], "answer": 1, "explain": "El supuesto de independencia condicional es una limitación real; cuando la correlación entre features es central, modelos como árboles o regresión logística la capturan mejor." }
   ],
-  "exam_focus": "Preguntas: (a) módulos PAI y cuándo usar cada uno, (b) training distribuido y spot GPUs, (c) EAS scaling, (d) Model Gallery + QuickStart para GenAI, (e) MLOps con PAI.",
+  "exam_focus": "El examen suele evaluar: (a) el mecanismo del teorema de Bayes aplicado a clasificación, (b) el supuesto de independencia condicional y sus implicaciones, (c) elegir la variante correcta (Gaussian/Multinomial/Bernoulli) según el tipo de feature, (d) el problema de probabilidad cero y el suavizado de Laplace, (e) fortalezas y limitaciones de Naive Bayes frente a otros clasificadores.",
   "official_intro": "This course is the 2nd class of the Alibaba Cloud Machine Learning Algorithm QuickStart series, It mainly introduces the basic concept on Bayesian Probability and Naive Bayes Classifier Method Principle, as well as the evaluation metrics toword Naive Bayes Classifier Model , explains and demonstrates a complete process of building Naive Bayes Classifier Model with PAI, prepare for the knowledge associate with subsequent machine learning courses.",
   "recommended_for": "Machine Learning beginners, cloud computing beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_naivebayes",

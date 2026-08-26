@@ -2,423 +2,197 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-migrateapp",
   "title_en": "Migrate Your Application to Alibaba Cloud",
-  "title_es": "Migrar Your Aplicación to Alibaba Cloud",
+  "title_es": "Migrar tu Aplicación a Alibaba Cloud",
+  "title_es_html": "Migrar tu <em>Aplicación</em> a Alibaba Cloud",
   "duration_es": "50 minutos",
   "level_es": "Intermedio",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Cloud Migration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_migrateapp",
-  "lead": "Guía completa en español para el curso «Migrate Your Application to Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad Migración a Alibaba Cloud. Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Migrate Your Application to Alibaba Cloud» de Alibaba Cloud Academy. A diferencia del panorama general de migración, este curso se enfoca en un solo tramo del proceso: llevar la capa de aplicación —el código, su runtime y sus dependencias en tiempo de ejecución— desde un servidor on-premise o de otro proveedor hacia ECS, adaptándola para que funcione correctamente en un entorno cloud y planificando el corte de tráfico sin interrumpir a los usuarios.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Migración a Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: SMC, DTS, OSSImport, Cloud Migration Hub, CADT.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Migración a Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Delimitar</strong> qué significa 'migrar una aplicación' frente a migrar solo un servidor o solo una base de datos.",
+    "<strong>Evaluar</strong> una aplicación existente para detectar dependencias que rompen al moverla a la nube (IPs fijas, sesión en memoria local, rutas de disco absolutas).",
+    "<strong>Migrar</strong> la capa de cómputo de la aplicación hacia ECS usando Server Migration Center (SMC).",
+    "<strong>Adaptar</strong> la aplicación al entorno cloud: externalizar configuración, sesión y logs a servicios gestionados.",
+    "<strong>Diseñar</strong> un plan de pruebas pre-cutover que valide la aplicación migrada bajo carga realista.",
+    "<strong>Ejecutar</strong> el corte de tráfico (cutover) con una estrategia de rollback probada.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre migración de aplicaciones."
   ],
-  "architecture": "Assess (CADT análisis) → Plan (6R por app) → SMC replica VMs → DTS sincroniza DBs → OSS import archivos → cutover (DNS switch) → optimize (right-sizing, reservas). Backup con HBR previo al cutover.",
+  "architecture": "Aplicación origen (on-premise o en otro cloud) → Assessment de código y configuración (detectar hardcoded IPs, sesión local, dependencias de SO) → SMC replica el servidor de aplicación como imagen ECS → se instancia en un entorno de staging dentro de una VPC de Alibaba Cloud → se externalizan las dependencias in-process: sesión HTTP a Redis (ApsaraDB for Redis), configuración a variables de entorno o un servicio de configuración centralizado, logs a SLS → pruebas de carga y smoke tests contra el staging detrás de un SLB de prueba → una vez validado, el cutover cambia el registro DNS (con TTL bajo) desde el entorno origen hacia el nuevo SLB de producción en Alibaba Cloud, con el entorno origen aún disponible para rollback inmediato.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Migración a Alibaba Cloud",
-      "title_en": "Introduction to Migración a Alibaba Cloud",
-      "intro": "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué significa 'migrar una aplicación'",
+      "title_en": "What 'migrating an application' actually means",
+      "intro": "Migrar una aplicación no es lo mismo que copiar un servidor ni que mover una base de datos: implica trasladar el código, su runtime, su configuración y —lo más delicado— todas las suposiciones implícitas que la aplicación hace sobre su entorno.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Migración a Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Alcance</strong>: código de la aplicación + runtime (JVM, Node, .NET, PHP) + librerías y dependencias + configuración + variables de entorno + certificados y credenciales que usa en tiempo de ejecución.",
+        "<strong>Lo que NO cubre este curso</strong>: la migración del motor de base de datos en sí (cubierta por Data Transmission Service en el curso de migración de bases de datos) ni la migración masiva de archivos no estructurados (cubierta por OSSImport).",
+        "<strong>Suposiciones implícitas peligrosas</strong>: una aplicación escrita para correr en un único servidor físico suele asumir que la IP no cambia, que el disco local persiste para siempre, y que solo hay una instancia corriendo — ninguna de esas suposiciones es segura en la nube.",
+        "<strong>Objetivo final</strong>: que la aplicación corra en ECS de forma equivalente o mejor que en el origen, y que además pueda beneficiarse de elasticidad, balanceo de carga y servicios gestionados una vez migrada."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Migración a Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Migrar una aplicación con éxito no es solo moverla — es hacer que deje de depender de suposiciones que solo eran ciertas en su servidor físico original."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Migración a Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Evaluación de la aplicación antes de migrar",
+      "title_en": "Assessing the application before migrating",
+      "intro": "Antes de mover una sola línea de código conviene auditar la aplicación en busca de patrones que funcionan perfectamente on-premise pero fallan silenciosamente en la nube.",
       "points": [
-        "<strong>Patrón canónico</strong>: Assess (CADT análisis) → Plan (6R por app) → SMC replica VMs → DTS sincroniza DBs → OSS import archivos → cutover (DNS switch) → optimize (right-sizing, reservas). Backup con HBR previo al cutover.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Migración a Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Server Migration Center</strong> <em>(SMC)</em>: Replica VMs on-prem → imágenes ECS.",
-        "<strong>Data Transmission Service</strong> <em>(DTS)</em>: Migración de bases.",
-        "<strong>OSSImport</strong> <em>(OSSImport)</em>: Herramienta para migrar archivos a OSS.",
-        "<strong>Migration Hub</strong> <em>(Cloud Migration Hub)</em>: Consola central de proyecto.",
-        "<strong>Cloud Architect Design Tool</strong> <em>(CADT)</em>: Herramienta de diseño y assessment.",
-        "<strong>6R Framework</strong> <em>(6R)</em>: Rehost, Replatform, Refactor, Repurchase, Retire, Retain.",
-        "<strong>Hybrid Backup Recovery</strong> <em>(HBR)</em>: Backup on-prem + cloud.",
-        "<strong>Cutover</strong> <em>(Cutover)</em>: Corte del tráfico al ambiente nuevo."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>IPs y hostnames hardcoded</strong>: referencias directas a la IP de la base de datos o de otro servicio interno rompen apenas cambia el entorno de red; deben resolverse por nombre de dominio interno o descubrimiento de servicio.",
+        "<strong>Sesión en memoria local</strong>: si la aplicación guarda el carrito de compras o el login del usuario en la memoria del propio proceso, un balanceador de carga con múltiples instancias rompe la experiencia — el usuario 'pierde' su sesión al caer en otra instancia.",
+        "<strong>Almacenamiento en disco local</strong>: archivos subidos por el usuario guardados en el disco del servidor no sobreviven a un reinicio de instancia ni son visibles desde otra réplica — deben moverse a OSS.",
+        "<strong>Configuración embebida en el código o en el paquete</strong>: credenciales o endpoints escritos directamente en el binario/JAR dificultan tener distintos entornos (dev/staging/prod) con el mismo artefacto.",
+        "<strong>Dependencias de sistema operativo</strong>: versión específica de una librería del SO, rutas absolutas, cron jobs del sistema — deben documentarse para reproducirlas en la imagen ECS destino."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe que 'los usuarios pierden su sesión al escalar horizontalmente', la causa casi siempre es sesión en memoria local — la solución es externalizarla a un almacén compartido como Redis."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Migrar la capa de cómputo con SMC",
+      "title_en": "Migrating the compute layer with SMC",
+      "intro": "Una vez identificados los riesgos, el primer paso físico es trasladar el servidor donde corre la aplicación hacia una instancia ECS equivalente.",
       "points": [
-        "<strong>Costo</strong>: Right-sizing post-migración",
-        "<strong>Buenas prácticas</strong>: Assessment antes de mover — no migrar todo por defecto",
-        "<strong>Buenas prácticas</strong>: Piloto con 1 app no crítica primero",
-        "<strong>Buenas prácticas</strong>: DTS 3-fase para bases",
-        "<strong>Buenas prácticas</strong>: Ventana de cutover corta con rollback"
+        "<strong>Server Migration Center (SMC)</strong>: instala un agente ligero en el servidor de aplicación origen, captura su disco y lo convierte en una imagen ECS lista para lanzar, preservando el sistema operativo y el software instalado.",
+        "<strong>P2V y V2V</strong>: SMC admite tanto physical-to-virtual (servidor físico origen) como virtual-to-virtual (VM en otro hipervisor u otro cloud), sin distinción relevante para el flujo del proyecto.",
+        "<strong>Validación de arranque</strong>: antes de dar por buena la imagen, se lanza una instancia de prueba desde ella y se valida que el sistema operativo arranca, los servicios necesarios inician, y la aplicación responde — nunca se asume que la réplica es correcta sin probarla.",
+        "<strong>Dimensionamiento del destino</strong>: el tipo de instancia ECS destino no tiene que ser un espejo exacto del servidor origen — es la oportunidad de ajustar CPU/memoria al uso real observado, en vez de replicar un sobredimensionamiento heredado."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "SMC resuelve el traslado del sistema operativo y el software instalado, pero no adapta automáticamente la aplicación a los servicios gestionados de la nube — esa adaptación es un paso posterior y manual."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Adaptar la aplicación al entorno cloud",
+      "title_en": "Adapting the application to the cloud environment",
+      "intro": "Con la aplicación ya corriendo sobre ECS, el siguiente paso es reemplazar las dependencias frágiles detectadas en el Assessment por equivalentes gestionados de Alibaba Cloud.",
       "points": [
-        "<strong>Antipattern</strong>: Migrar sin assessment",
-        "<strong>Antipattern</strong>: Lift-and-shift de todo sin refactorizar los quick wins",
-        "<strong>Antipattern</strong>: Cutover sin plan de rollback",
-        "<strong>Antipattern</strong>: No optimizar costo post-migración",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Sesión externalizada</strong>: mover el estado de sesión HTTP desde la memoria del proceso hacia ApsaraDB for Redis, permitiendo que cualquier instancia detrás del SLB atienda a cualquier usuario sin perder su estado.",
+        "<strong>Archivos de usuario a OSS</strong>: redirigir las subidas de archivos desde el disco local hacia un bucket OSS, para que sobrevivan a un reinicio o reemplazo de instancia y sean accesibles desde todas las réplicas.",
+        "<strong>Configuración por entorno</strong>: mover credenciales y endpoints desde el código o el paquete hacia variables de entorno inyectadas al arrancar la instancia, permitiendo usar el mismo artefacto en dev/staging/prod.",
+        "<strong>Descubrimiento de servicios internos</strong>: sustituir IPs hardcoded por nombres DNS internos o endpoints de servicio, para que la aplicación siga funcionando aunque las IPs de sus dependencias cambien.",
+        "<strong>Logs centralizados</strong>: redirigir la salida de logs de archivo local hacia SLS (Log Service), evitando perder trazabilidad cuando una instancia se reemplaza durante un evento de auto-escalado."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Una aplicación 'migrada' que aún guarda sesión en memoria local o archivos en disco local no está lista para escalar horizontalmente ni para sobrevivir al reemplazo de una instancia — el examen suele marcar esto como migración incompleta."
+      }
+    },
+    {
+      "title_es": "5 · Pruebas y validación pre-cutover",
+      "title_en": "Pre-cutover testing and validation",
+      "intro": "Antes de redirigir tráfico real hacia el nuevo entorno, hay que probarlo bajo condiciones lo más parecidas posible a producción — este paso es el que más frecuentemente se recorta bajo presión de tiempo, y el que más incidentes evita cuando no se recorta.",
+      "points": [
+        "<strong>Entorno de staging equivalente</strong>: replicar la topología de producción (misma cantidad de instancias, mismo Security Group, mismo SLB) en un entorno de pruebas antes del corte real.",
+        "<strong>Pruebas de carga</strong>: simular el volumen de tráfico esperado (o mayor) contra el staging para detectar cuellos de botella que no aparecen con tráfico bajo — CPU, memoria, conexiones a base de datos agotadas.",
+        "<strong>Smoke tests funcionales</strong>: un conjunto mínimo de flujos críticos (login, checkout, búsqueda) verificados automáticamente tras cada despliegue, antes de considerar el entorno listo para el corte.",
+        "<strong>Pruebas de resiliencia</strong>: apagar deliberadamente una instancia detrás del SLB durante las pruebas para confirmar que el tráfico se redistribuye sin errores visibles al usuario.",
+        "<strong>Comparación de paridad</strong>: contrastar respuestas del entorno nuevo contra el entorno origen para el mismo conjunto de peticiones, detectando diferencias de comportamiento antes de que las vea un usuario real."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Un entorno migrado que 'enciende' correctamente no es lo mismo que un entorno migrado que soporta la carga real de producción — solo las pruebas de carga lo confirman."
+      }
+    },
+    {
+      "title_es": "6 · Estrategia de cutover de la aplicación",
+      "title_en": "Application cutover strategy",
+      "intro": "El cutover es el momento de mayor riesgo de todo el proyecto: es cuando el tráfico de usuarios reales empieza a llegar al entorno migrado. Una buena estrategia reduce ese riesgo a algo reversible en minutos.",
+      "points": [
+        "<strong>TTL bajo antes del corte</strong>: reducir el Time-To-Live del registro DNS días antes del cutover, para que el cambio de destino se propague rápido a los resolutores de los usuarios cuando llegue el momento.",
+        "<strong>Corte gradual (canary)</strong>: enviar primero un pequeño porcentaje del tráfico real al entorno nuevo, monitorear métricas de error y latencia, e ir aumentando el porcentaje solo si todo se mantiene sano.",
+        "<strong>Blue-green</strong>: mantener el entorno origen ('blue') completamente activo mientras el nuevo ('green') recibe el 100% del tráfico tras el corte — si algo falla, revertir el DNS es inmediato porque 'blue' nunca se apagó.",
+        "<strong>Ventana de observación post-corte</strong>: mantener monitoreo reforzado (CloudMonitor + logs) durante las primeras horas tras el cutover, con el equipo listo para revertir ante cualquier anomalía.",
+        "<strong>Criterio de rollback definido de antemano</strong>: acordar explícitamente qué métrica dispara una reversión (p.ej. tasa de error > 1%) antes del corte, para no discutirlo bajo presión durante el incidente."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Un cutover directo (100% del tráfico de una sola vez, sin canary) sin plan de rollback es el antipatrón más señalado por el examen para preguntas sobre estrategia de corte."
+      }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de incidentes reales de migración de aplicaciones ocurren por omitir uno de los pasos anteriores bajo presión de fecha límite, no por desconocer las herramientas.",
+      "points": [
+        "<strong>Antipatrón</strong>: migrar el servidor con SMC y declarar terminada la migración sin externalizar sesión, archivos ni configuración.",
+        "<strong>Antipatrón</strong>: saltar las pruebas de carga por falta de tiempo, descubriendo los cuellos de botella ya en producción.",
+        "<strong>Antipatrón</strong>: hacer un cutover de 100% del tráfico sin fase canary ni criterio de rollback definido.",
+        "<strong>Antipatrón</strong>: apagar el entorno origen inmediatamente después del corte, eliminando la posibilidad de revertir rápido.",
+        "<strong>Antipatrón</strong>: dejar credenciales o endpoints hardcoded en el artefacto migrado en vez de externalizarlos por entorno.",
+        "<strong>Regla de oro</strong>: ante dos planes de cutover plausibles, elige siempre el que permite revertir en minutos sobre el que es más rápido pero irreversible."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Frente a un escenario del examen, verifica en orden: ¿se hizo el Assessment de dependencias frágiles? ¿se externalizaron sesión/archivos/config? ¿hubo pruebas de carga? ¿el cutover fue gradual con rollback definido? Un 'no' en cualquiera de estos puntos suele ser la respuesta correcta a 'qué salió mal'."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Lift-and-shift de data center on-premise"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Migración desde otro cloud (AWS/Azure)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración de bases con mínima downtime (DTS)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Migración de unstructured data (OSSImport)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Migración híbrida (algunas cargas quedan on-prem)"
-    }
+    { "title": "Escenario 1", "text": "Aplicación monolítica Java con sesión en memoria — requiere externalizar sesión a Redis antes de escalar horizontalmente" },
+    { "title": "Escenario 2", "text": "Aplicación con subida de archivos de usuario guardados en disco local — requiere migrar el almacenamiento a OSS" },
+    { "title": "Escenario 3", "text": "E-commerce con ventana de mantenimiento estricta — cutover canary con monitoreo reforzado" },
+    { "title": "Escenario 4", "text": "Aplicación con credenciales de base de datos hardcoded en el código — requiere externalizar configuración por entorno" },
+    { "title": "Escenario 5", "text": "Servicio interno con IPs fijas hacia otros microservicios — requiere descubrimiento de servicio antes de migrar" },
+    { "title": "Escenario 6", "text": "Migración de una aplicación crítica 24/7 — blue-green manteniendo el entorno origen activo como respaldo" }
   ],
   "mistakes": [
-    "Migrar sin assessment",
-    "Lift-and-shift de todo sin refactorizar los quick wins",
-    "Cutover sin plan de rollback",
-    "No optimizar costo post-migración"
+    "Declarar terminada la migración tras mover el servidor con SMC, sin externalizar sesión, archivos ni configuración",
+    "Saltar las pruebas de carga pre-cutover por falta de tiempo",
+    "Ejecutar un cutover de 100% del tráfico sin fase canary ni criterio de rollback definido",
+    "Apagar el entorno origen inmediatamente después del corte",
+    "Dejar credenciales o endpoints hardcoded en el artefacto migrado",
+    "No validar el arranque de la imagen ECS antes de asumir que la réplica del servidor es correcta"
   ],
   "cli": [
-    {
-      "cmd": "aliyun smc CreateReplicationJob",
-      "desc": "Migrar VM"
-    },
-    {
-      "cmd": "aliyun dts CreateMigrationJob",
-      "desc": "Migrar DB"
-    }
+    { "cmd": "aliyun smc CreateReplicationJob --SourceServerId ss-xxxxx --SourceType application-server", "desc": "Migrar el servidor de aplicación con SMC" },
+    { "cmd": "aliyun ecs RunInstances --ImageId <imagen-smc> --InstanceType ecs.g6.large", "desc": "Lanzar una instancia de validación desde la imagen migrada" },
+    { "cmd": "aliyun r-kvstore CreateInstance --InstanceClass redis.master.small.default", "desc": "Aprovisionar Redis para externalizar sesión HTTP" },
+    { "cmd": "aliyun oss cp ./uploads oss://mi-bucket/uploads/ --recursive", "desc": "Migrar archivos de usuario desde disco local hacia OSS" },
+    { "cmd": "aliyun alidns UpdateDomainRecord --RecordId <id> --TTL 60", "desc": "Reducir el TTL del registro DNS antes del cutover" },
+    { "cmd": "aliyun slb SetBackendServers --LoadBalancerId lb-xxxxx --BackendServers '[{\"ServerId\":\"i-nuevo\",\"Weight\":10}]'", "desc": "Enviar un porcentaje inicial de tráfico al entorno nuevo (canary)" }
   ],
   "glossary": [
-    {
-      "en": "SMC",
-      "es": "Server Migration Center",
-      "def": "Replica VMs on-prem → imágenes ECS."
-    },
-    {
-      "en": "DTS",
-      "es": "Data Transmission Service",
-      "def": "Migración de bases."
-    },
-    {
-      "en": "OSSImport",
-      "es": "OSSImport",
-      "def": "Herramienta para migrar archivos a OSS."
-    },
-    {
-      "en": "Cloud Migration Hub",
-      "es": "Migration Hub",
-      "def": "Consola central de proyecto."
-    },
-    {
-      "en": "CADT",
-      "es": "Cloud Architect Design Tool",
-      "def": "Herramienta de diseño y assessment."
-    },
-    {
-      "en": "6R",
-      "es": "6R Framework",
-      "def": "Rehost, Replatform, Refactor, Repurchase, Retire, Retain."
-    },
-    {
-      "en": "HBR",
-      "es": "Hybrid Backup Recovery",
-      "def": "Backup on-prem + cloud."
-    },
-    {
-      "en": "Cutover",
-      "es": "Cutover",
-      "def": "Corte del tráfico al ambiente nuevo."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Application Assessment", "es": "Evaluación de la aplicación", "def": "Auditoría de código y configuración para detectar dependencias frágiles antes de migrar." },
+    { "en": "Hardcoded IP/Config", "es": "IP/configuración fija en código", "def": "Referencias directas embebidas en el código o paquete que rompen al cambiar de entorno." },
+    { "en": "In-memory Session", "es": "Sesión en memoria local", "def": "Estado de usuario guardado en el proceso de la aplicación, incompatible con múltiples réplicas sin externalizarlo." },
+    { "en": "Session Externalization", "es": "Externalización de sesión", "def": "Mover el estado de sesión a un almacén compartido (p.ej. Redis) accesible desde cualquier instancia." },
+    { "en": "SMC (Server Migration Center)", "es": "SMC", "def": "Herramienta que replica un servidor origen como imagen ECS lista para lanzar." },
+    { "en": "P2V / V2V", "es": "P2V / V2V", "def": "Migración de servidor físico a virtual (P2V) o entre plataformas virtuales (V2V)." },
+    { "en": "Staging Environment", "es": "Entorno de staging", "def": "Réplica de producción usada para validar la aplicación migrada antes del cutover." },
+    { "en": "Load Testing", "es": "Prueba de carga", "def": "Simulación de tráfico esperado para detectar cuellos de botella antes de exponer el entorno a usuarios reales." },
+    { "en": "Smoke Test", "es": "Prueba de humo", "def": "Verificación automática de flujos críticos tras un despliegue, antes de considerarlo apto para tráfico real." },
+    { "en": "Canary Release", "es": "Lanzamiento canario", "def": "Enviar un pequeño porcentaje de tráfico real al entorno nuevo antes de aumentarlo gradualmente." },
+    { "en": "Blue-Green Deployment", "es": "Despliegue azul-verde", "def": "Mantener el entorno origen activo mientras el nuevo recibe todo el tráfico, permitiendo revertir de forma inmediata." },
+    { "en": "TTL (Time To Live)", "es": "TTL de DNS", "def": "Tiempo de caché de un registro DNS; reducirlo antes del cutover acelera la propagación del cambio." },
+    { "en": "Cutover", "es": "Corte", "def": "Momento en que el tráfico real se redirige del entorno origen al entorno migrado." },
+    { "en": "Rollback Criteria", "es": "Criterio de reversión", "def": "Umbral de métrica (p.ej. tasa de error) definido de antemano para decidir revertir el cutover." },
+    { "en": "SLS (Log Service)", "es": "SLS", "def": "Servicio de logs centralizado usado para no perder trazabilidad cuando las instancias se reemplazan." },
+    { "en": "OSS", "es": "OSS", "def": "Almacenamiento de objetos usado como destino para archivos de usuario que antes vivían en disco local." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Migración a Alibaba Cloud?",
-      "options": [
-        "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurcha",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia."
-    },
-    {
-      "q": "¿Qué es <strong>SMC</strong> (Server Migration Center) en Migración a Alibaba Cloud?",
-      "options": [
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "SMC (Server Migration Center): Replica VMs on-prem → imágenes ECS."
-    },
-    {
-      "q": "¿Qué es <strong>DTS</strong> (Data Transmission Service) en Migración a Alibaba Cloud?",
-      "options": [
-        "Migración de bases.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Herramienta para migrar archivos a OSS.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "DTS (Data Transmission Service): Migración de bases."
-    },
-    {
-      "q": "¿Qué es <strong>OSSImport</strong> (OSSImport) en Migración a Alibaba Cloud?",
-      "options": [
-        "Herramienta para migrar archivos a OSS.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "OSSImport (OSSImport): Herramienta para migrar archivos a OSS."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Migration Hub</strong> (Migration Hub) en Migración a Alibaba Cloud?",
-      "options": [
-        "Consola central de proyecto.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS."
-      ],
-      "answer": 0,
-      "explain": "Cloud Migration Hub (Migration Hub): Consola central de proyecto."
-    },
-    {
-      "q": "¿Qué es <strong>CADT</strong> (Cloud Architect Design Tool) en Migración a Alibaba Cloud?",
-      "options": [
-        "Herramienta de diseño y assessment.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS."
-      ],
-      "answer": 0,
-      "explain": "CADT (Cloud Architect Design Tool): Herramienta de diseño y assessment."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Migración a Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Migración a Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Migración a Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Migración a Alibaba Cloud es la elección típica:",
-      "options": [
-        "Lift-and-shift de data center on-premise",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Lift-and-shift de data center on-premise."
-    }
+    { "q": "¿Qué diferencia principal hay entre 'migrar un servidor' y 'migrar una aplicación' según este curso?", "options": ["Son exactamente lo mismo", "Migrar la aplicación incluye además adaptar sus dependencias frágiles (sesión, archivos, configuración) al entorno cloud, no solo trasladar el sistema operativo", "Migrar una aplicación nunca requiere SMC", "Migrar un servidor siempre incluye la base de datos"], "answer": 1, "explain": "El curso distingue el traslado físico del servidor (SMC) de la adaptación posterior de la aplicación a servicios gestionados." },
+    { "q": "Una aplicación guarda el carrito de compras del usuario en la memoria del propio proceso. Al ponerla detrás de un balanceador con varias instancias, los usuarios pierden su carrito aleatoriamente. ¿Cuál es la causa?", "options": ["Un Security Group mal configurado", "Sesión en memoria local no externalizada", "Falta de un certificado SSL", "Una imagen ECS corrupta"], "answer": 1, "explain": "Sin externalizar la sesión a un almacén compartido como Redis, cada instancia solo conoce las sesiones de los usuarios que le tocaron a ella." },
+    { "q": "¿Qué herramienta de Alibaba Cloud se usa para replicar el servidor de aplicación origen como una imagen ECS?", "options": ["Data Transmission Service (DTS)", "OSSImport", "Server Migration Center (SMC)", "Quick BI"], "answer": 2, "explain": "SMC captura el disco del servidor origen y genera una imagen ECS equivalente lista para lanzar." },
+    { "q": "¿Por qué no basta con validar que una instancia lanzada desde una imagen migrada simplemente 'enciende'?", "options": ["Porque las instancias ECS nunca arrancan correctamente a la primera", "Porque encender no garantiza que la aplicación soporte la carga real de producción, algo que solo confirman las pruebas de carga", "Porque SMC no permite lanzar instancias de prueba", "Porque encender consume créditos gratuitos"], "answer": 1, "explain": "Un arranque exitoso confirma que el sistema operativo funciona, pero no que la aplicación resista el tráfico real esperado." },
+    { "q": "¿Qué destino recomienda el curso para los archivos que los usuarios suben y que antes se guardaban en el disco local del servidor?", "options": ["Seguir guardándolos en disco local de la nueva instancia ECS", "Migrarlos a OSS, accesible desde cualquier réplica y persistente ante reemplazo de instancias", "Guardarlos únicamente en la memoria RAM de la instancia", "Eliminarlos durante la migración"], "answer": 1, "explain": "OSS sobrevive al reinicio o reemplazo de instancias y es accesible desde todas las réplicas detrás del balanceador." },
+    { "q": "¿Qué estrategia de cutover mantiene el entorno origen completamente activo como respaldo inmediato mientras el nuevo entorno recibe el 100% del tráfico?", "options": ["Canary release", "Blue-green deployment", "Rehost puro", "Sesión en memoria local"], "answer": 1, "explain": "En blue-green, el entorno 'blue' (origen) permanece activo, permitiendo una reversión de DNS inmediata si algo falla en 'green'." },
+    { "q": "¿Por qué se recomienda reducir el TTL del registro DNS antes del cutover, no durante?", "options": ["Porque reducirlo durante el cutover es más rápido", "Porque el cambio necesita tiempo para propagarse a los resolutores DNS de los usuarios antes de que se necesite el corte rápido", "Porque el TTL no afecta la velocidad de propagación", "Porque Alibaba Cloud no permite modificar el TTL"], "answer": 1, "explain": "Bajar el TTL con anticipación asegura que, llegado el momento del corte real, el cambio se propague rápido en vez de quedar cacheado durante horas." },
+    { "q": "¿Qué debe definirse ANTES de iniciar un cutover, según la estrategia recomendada por el curso?", "options": ["El nombre del bucket de OSS", "El criterio de rollback (p.ej. umbral de tasa de error) que dispara una reversión", "El tipo de instancia ECS únicamente", "El proveedor de DNS"], "answer": 1, "explain": "Definir el criterio de reversión de antemano evita decisiones improvisadas bajo presión durante un incidente real." },
+    { "q": "¿Qué antipatrón describe apagar el entorno origen inmediatamente después del cutover?", "options": ["Es la práctica recomendada para ahorrar costos de inmediato", "Elimina la posibilidad de revertir rápidamente si el entorno nuevo falla bajo carga real", "No tiene ningún riesgo asociado", "Es obligatorio hacerlo así según Alibaba Cloud"], "answer": 1, "explain": "Mantener el origen activo durante la ventana de observación post-corte es lo que permite un rollback inmediato ante problemas." },
+    { "q": "¿Qué tipo de prueba verifica un conjunto mínimo de flujos críticos (login, checkout, búsqueda) tras cada despliegue?", "options": ["Prueba de carga", "Smoke test", "P2V", "Canary release"], "answer": 1, "explain": "El smoke test es una verificación rápida y automatizada de que lo esencial de la aplicación funciona antes de considerarla lista." },
+    { "q": "Una aplicación tiene credenciales de base de datos escritas directamente en el código fuente. ¿Qué problema genera esto al migrar a distintos entornos (dev/staging/prod)?", "options": ["Ninguno, es una práctica recomendada", "Impide usar el mismo artefacto en distintos entornos sin recompilar o editar el código para cada uno", "Mejora el rendimiento de la aplicación", "Es un requisito de SMC"], "answer": 1, "explain": "Externalizar la configuración a variables de entorno permite reutilizar el mismo artefacto en cualquier entorno sin tocar el código." },
+    { "q": "¿Qué se recomienda hacer con las referencias a IPs fijas de servicios internos antes de migrar una aplicación?", "options": ["Dejarlas igual porque las IPs nunca cambian en la nube", "Sustituirlas por nombres DNS internos o descubrimiento de servicio", "Eliminarlas por completo sin reemplazo", "Convertirlas en variables de sesión"], "answer": 1, "explain": "Las IPs internas pueden cambiar en un entorno cloud; usar nombres DNS o descubrimiento de servicio hace la aplicación resiliente a ese cambio." },
+    { "q": "En un lanzamiento canario, ¿qué se hace antes de enviar el 100% del tráfico al entorno nuevo?", "options": ["Se apaga el entorno origen de inmediato", "Se envía un pequeño porcentaje de tráfico real y se monitorean métricas de error y latencia antes de aumentar gradualmente", "Se elimina el balanceador de carga", "Se reduce el TTL del DNS a 24 horas"], "answer": 1, "explain": "El canary valida el comportamiento con tráfico real limitado antes de comprometer el 100% del tráfico al entorno nuevo." },
+    { "q": "¿Qué mecanismo evita perder trazabilidad de logs cuando una instancia se reemplaza durante un evento de auto-escalado?", "options": ["Guardar los logs solo en el disco local de cada instancia", "Redirigir los logs hacia SLS (Log Service) centralizado", "No generar logs durante el auto-escalado", "Usar únicamente logs en memoria"], "answer": 1, "explain": "Centralizar los logs en SLS asegura que la información sobrevive aunque la instancia que la generó ya no exista." }
   ],
-  "exam_focus": "6R framework, DTS 3 fases, SMC, cutover strategy, OSSImport.",
+  "exam_focus": "El examen suele evaluar: (a) distinguir el alcance de 'migrar aplicación' de migrar servidor o base de datos, (b) identificar dependencias frágiles (sesión local, IPs fijas, disco local, config embebida) y su solución, (c) el rol de SMC en el traslado de la capa de cómputo, (d) diseño de pruebas pre-cutover (carga, smoke, resiliencia), (e) estrategias de cutover (canary, blue-green) y criterios de rollback.",
   "official_intro": "This course is designed to help traditional IT companies who want to move their business to the cloud and have a comprehensive understanding of Alibaba Cloud's recommendations and available tools for the migration of the application environment. So that you can choose the most appropriate way to complete the migration.",
   "recommended_for": "IT administrator, Cloud migration service provider",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_migrateapp",

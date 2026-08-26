@@ -2,433 +2,179 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-vector-machine",
   "title_en": "Support Vector Machine Implementation Through PAI",
-  "title_es": "Support Vector Machine Implementation Through PAI",
+  "title_es": "Implementación de Support Vector Machine mediante PAI",
+  "title_es_html": "Implementación de <em>Support Vector Machine</em> mediante PAI",
   "duration_es": "44 minutos",
   "level_es": "Intermedio",
   "category_es": "Inteligencia Artificial",
   "subcategory_es": "Artificial Intelligence",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-vector-machine",
-  "lead": "Guía completa en español para el curso «Support Vector Machine Implementation Through PAI» de Alibaba Cloud Academy. Cubre en profundidad Platform for AI (PAI). PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Support Vector Machine Implementation Through PAI» de Alibaba Cloud Academy. Cubre la idea geométrica central de SVM — encontrar el hiperplano que maximiza el margen entre clases —, el rol de los support vectors, el trade-off entre margen y tolerancia a error (parámetro C), el truco del kernel para separar datos no lineales, y su implementación tanto en PAI como en scikit-learn.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Platform for AI (PAI)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: PAI-DSW, PAI-DLC, PAI-EAS, PAI-Designer, QuickStart.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Platform for AI (PAI) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la idea del margen máximo: por qué SVM elige, entre todas las fronteras que separan las clases, la que maximiza la distancia a los puntos más cercanos de cada clase.",
+    "<strong>Distinguir</strong> margen duro (hard margin) de margen suave (soft margin) y el rol del hiperparámetro C en ese trade-off.",
+    "<strong>Explicar</strong> el truco del kernel (kernel trick) y por qué permite separar datos no linealmente separables sin transformarlos explícitamente a un espacio de mayor dimensión.",
+    "<strong>Elegir</strong> entre kernel lineal, polinomial, RBF/Gaussiano y sigmoide según la forma de los datos.",
+    "<strong>Ajustar</strong> C y gamma en conjunto, entendiendo su efecto combinado sobre overfitting/underfitting.",
+    "<strong>Extender</strong> SVM a problemas multiclase (One-vs-Rest, One-vs-One) y a regresión (SVR).",
+    "<strong>Implementar</strong> SVM en PAI-Designer y en scikit-learn, reconociendo cuándo es la elección apropiada y cuándo no."
   ],
-  "architecture": "Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
+  "architecture": "Flujo típico: datos etiquetados en OSS/MaxCompute → escalado obligatorio de features (SVM es sensible a la escala porque el margen se mide en distancia) → división train/test → selección del kernel según la separabilidad aparente de los datos (lineal si son linealmente separables, RBF si la frontera es compleja) → entrenamiento con el componente SVM de PAI-Designer o <code>SVC</code>/<code>SVR</code> de scikit-learn, ajustando C y gamma por validación cruzada (<code>GridSearchCV</code>) → si hay más de dos clases, extensión automática vía One-vs-Rest u One-vs-One → evaluación con matriz de confusión, F1 y AUC-ROC (requiere <code>probability=True</code> para probabilidades calibradas) → despliegue vía PAI-EAS, considerando el costo de inferencia si el dataset de soporte (support vectors) es grande.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Platform for AI (PAI)",
-      "title_en": "Introduction to Platform for AI (PAI)",
-      "intro": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · La idea central: maximizar el margen",
+      "title_en": "The Core Idea: Maximizing the Margin",
+      "intro": "Cuando dos clases son linealmente separables, existen infinitas líneas (o hiperplanos) que las separan correctamente — SVM resuelve la ambigüedad eligiendo, de entre todas ellas, la que deja el mayor espacio posible respecto a los puntos más cercanos de cada clase.",
       "points": [
-        "<strong>Problema que resuelve</strong>: PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Platform for AI (PAI) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Hiperplano separador</strong>: en un espacio de n dimensiones, un hiperplano es la generalización de una línea (2D) o un plano (3D) que divide el espacio en dos regiones, una por clase.",
+        "<strong>Margen</strong>: la distancia entre el hiperplano y los puntos de entrenamiento más cercanos de cada clase — SVM busca explícitamente el hiperplano que maximiza esa distancia, no cualquier hiperplano que simplemente separe las clases.",
+        "<strong>Support vectors</strong>: los puntos de entrenamiento más cercanos al hiperplano, los únicos que realmente determinan su posición — el resto de los puntos, más alejados, podrían eliminarse del dataset sin cambiar el hiperplano encontrado.",
+        "<strong>Por qué maximizar el margen generaliza mejor</strong>: un hiperplano con margen amplio es menos sensible a pequeñas variaciones o ruido en datos nuevos, porque hay más 'colchón' antes de cruzar hacia el lado equivocado.",
+        "<strong>Diferencia con la frontera de una regresión logística</strong>: mientras la regresión logística ajusta una frontera de probabilidad basada en verosimilitud, SVM ajusta una frontera puramente geométrica basada en distancia máxima — dos filosofías distintas para resolver el mismo problema de clasificación."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Platform for AI (PAI) es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "SVM no busca 'una' frontera que separe las clases — busca LA frontera que maximiza el margen, y esa frontera queda determinada únicamente por los support vectors, no por todos los puntos del dataset." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Platform for AI (PAI) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Margen duro vs. margen suave: el parámetro C",
+      "title_en": "Hard Margin vs. Soft Margin: the C Parameter",
+      "intro": "En datos reales casi nunca existe una separación perfecta entre clases — SVM necesita un mecanismo para tolerar cierto grado de error sin dejar de encontrar una frontera útil.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ciclo típico: datos en OSS/MaxCompute → PAI-DSW (notebook) para exploración → PAI-DLC entrena en GPUs distribuidas → modelo se registra en Model Gallery → PAI-EAS lo despliega con autoscaling → tráfico A/B split → CloudMonitor + ARMS monitorean latencia y drift.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Margen duro (hard margin)</strong>: exige que absolutamente todos los puntos estén correctamente clasificados y fuera del margen — solo es viable cuando los datos son perfectamente separables, algo raro en la práctica y muy sensible a outliers.",
+        "<strong>Margen suave (soft margin)</strong>: introduce variables de holgura (slack variables) que permiten que algunos puntos violen el margen o incluso queden del lado incorrecto, a cambio de una penalización — el enfoque estándar usado en la práctica.",
+        "<strong>El hiperparámetro C</strong>: controla el trade-off entre maximizar el margen y minimizar los errores de clasificación en el training set — C alto penaliza fuertemente cada violación (margen más estrecho, más ajustado a los datos); C bajo tolera más violaciones (margen más amplio, más generalización).",
+        "<strong>C muy alto → riesgo de overfitting</strong>: el modelo se ajusta agresivamente a cada punto del training set, incluyendo ruido y outliers, perdiendo capacidad de generalización.",
+        "<strong>C muy bajo → riesgo de underfitting</strong>: el modelo tolera tantas violaciones del margen que la frontera resultante puede ser demasiado simple para capturar el patrón real."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Platform for AI (PAI) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe un modelo SVM con accuracy perfecta en entrenamiento pero mala en test, la primera hipótesis a revisar es un valor de C demasiado alto — análogo al overfitting por profundidad excesiva en un árbol de decisión." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · El truco del kernel (Kernel Trick)",
+      "title_en": "The Kernel Trick",
+      "intro": "Muchos problemas reales no son linealmente separables en el espacio original de las features — el truco del kernel permite a SVM encontrar fronteras no lineales sin pagar el costo computacional de transformar explícitamente los datos a un espacio de mayor dimensión.",
       "points": [
-        "<strong>Data Science Workshop</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado con GPUs opcionales.",
-        "<strong>Deep Learning Containers</strong> <em>(PAI-DLC)</em>: Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "<strong>Elastic Algorithm Service</strong> <em>(PAI-EAS)</em>: Serving online con auto-scaling y A/B.",
-        "<strong>PAI Designer</strong> <em>(PAI-Designer)</em>: Pipelines ML drag&drop.",
-        "<strong>QuickStart</strong> <em>(QuickStart)</em>: Modelos preentrenados y fine-tuning con un click.",
-        "<strong>Model Gallery</strong> <em>(Model Gallery)</em>: Catálogo de modelos (Qwen, Llama, SD, etc).",
-        "<strong>AutoML</strong> <em>(AutoML)</em>: Búsqueda automática de arquitectura e hiperparámetros.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Framework de compute distribuido soportado."
+        "<strong>El problema de la no separabilidad lineal</strong>: si dos clases forman, por ejemplo, círculos concéntricos en 2D, ninguna línea recta las separa — pero proyectadas a una dimensión adicional (p.ej. la distancia al centro), sí podrían volverse linealmente separables.",
+        "<strong>Por qué transformar explícitamente es costoso</strong>: mapear los datos a un espacio de dimensión mucho mayor (a veces infinita) para luego buscar un hiperplano ahí sería computacionalmente prohibitivo si se calculara la transformación punto por punto.",
+        "<strong>El truco</strong>: el algoritmo de SVM solo necesita calcular productos punto entre pares de muestras, nunca las coordenadas transformadas explícitamente — una función kernel calcula ese producto punto directamente en el espacio transformado, sin construir la transformación completa.",
+        "<strong>Kernel lineal</strong>: equivale a no transformar los datos — apropiado cuando las clases ya son (casi) linealmente separables en el espacio original.",
+        "<strong>Kernel polinomial</strong>: introduce fronteras curvas de grado configurable, útil para relaciones moderadamente no lineales con interacciones entre features.",
+        "<strong>Kernel RBF (Radial Basis Function / Gaussiano)</strong>: el más usado en la práctica cuando no hay una intuición clara de la forma de la frontera — puede aproximar fronteras arbitrariamente complejas, a costa de más hiperparámetros que ajustar."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El kernel trick no 'engaña' a la matemática — calcula exactamente el mismo resultado que se obtendría transformando los datos y calculando el producto punto ahí, pero sin construir nunca esa transformación explícitamente, ahorrando cómputo." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · El kernel RBF y el hiperparámetro gamma",
+      "title_en": "The RBF Kernel and the Gamma Hyperparameter",
+      "intro": "El kernel RBF es el más flexible y el más usado por defecto cuando no hay evidencia de que los datos sean linealmente separables, pero introduce un segundo hiperparámetro crítico que interactúa directamente con C.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Qué controla gamma</strong>: define qué tan lejos se extiende la influencia de un único punto de entrenamiento — gamma alto significa que solo los puntos muy cercanos influyen en la forma de la frontera; gamma bajo permite que puntos más lejanos también influyan.",
+        "<strong>Gamma alto → frontera muy ajustada</strong>: la frontera de decisión se vuelve muy irregular, siguiendo de cerca cada punto individual del training set — alto riesgo de overfitting, especialmente con pocos datos.",
+        "<strong>Gamma bajo → frontera muy suave</strong>: la frontera se vuelve casi lineal o muy simple, pudiendo no capturar patrones reales de separación entre clases — riesgo de underfitting.",
+        "<strong>Interacción entre C y gamma</strong>: ambos hiperparámetros afectan la complejidad de la frontera resultante en direcciones parecidas — ajustarlos por separado sin considerar su interacción suele producir resultados subóptimos; se recomienda una búsqueda conjunta (grid search en 2D sobre C y gamma).",
+        "<strong>Visualización como diagnóstico</strong>: en problemas de baja dimensión, graficar la frontera de decisión resultante para distintas combinaciones de C/gamma es la forma más intuitiva de entender su efecto antes de confiar solo en métricas numéricas."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Memoriza", "text": "C controla la tolerancia a errores de clasificación; gamma controla el alcance de influencia de cada punto en el kernel RBF. Ambos, en combinación alta, producen el mayor riesgo de overfitting posible en SVM." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · SVM para regresión: SVR",
+      "title_en": "SVM for Regression: SVR",
+      "intro": "La misma idea geométrica de SVM se puede adaptar a un problema de regresión, con un objetivo distinto: en vez de maximizar el margen entre clases, se busca ajustar una función que mantenga la mayoría de los puntos dentro de una banda de tolerancia.",
       "points": [
-        "<strong>HA</strong>: EAS con autoscaling por QPS + provisioned min replicas",
-        "<strong>Costo</strong>: DLC con spot GPU para reducir costo de training",
-        "<strong>Buenas prácticas</strong>: Datos en OSS + versioning para reproducibilidad",
-        "<strong>Buenas prácticas</strong>: Model versioning y A/B antes de rollout completo",
-        "<strong>Buenas prácticas</strong>: Feature Store para evitar training-serving skew"
+        "<strong>Objetivo de SVR</strong>: en vez de predecir una clase, SVR ajusta una función continua, tolerando errores pequeños sin penalizarlos, y penalizando solo los errores que exceden un margen de tolerancia predefinido.",
+        "<strong>Tubo epsilon-insensitive</strong>: se define una banda de ancho <code>epsilon</code> alrededor de la función ajustada — cualquier punto que caiga dentro de esa banda no contribuye al costo del modelo, sin importar qué tan lejos esté exactamente de la línea central.",
+        "<strong>Support vectors en SVR</strong>: solo los puntos que caen fuera del tubo epsilon-insensitive se convierten en support vectors y determinan la forma final de la función — los puntos 'bien predichos' dentro del tubo son ignorados por el ajuste.",
+        "<strong>Kernels en SVR</strong>: al igual que en clasificación, se pueden usar kernels lineales, polinomiales o RBF para capturar relaciones no lineales entre las features y la variable objetivo continua.",
+        "<strong>Cuándo preferir SVR</strong>: es especialmente útil cuando se espera cierto ruido tolerable en las mediciones y se prefiere una función robusta a pequeñas desviaciones, en vez de minimizar cada error al detalle como haría OLS."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "SVR no minimiza el error de cada punto individualmente como la regresión lineal por mínimos cuadrados — ignora deliberadamente los errores pequeños (dentro del tubo epsilon) y solo penaliza los que exceden ese margen de tolerancia." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Extensión multiclase y consideraciones prácticas",
+      "title_en": "Multiclass Extension and Practical Considerations",
+      "intro": "SVM es, en su formulación original, un clasificador estrictamente binario — para problemas con más de dos clases se necesita una estrategia adicional, y hay decisiones prácticas de implementación que afectan directamente el desempeño.",
       "points": [
-        "<strong>Antipattern</strong>: Training en GPUs on-demand — 3-5x más caro que spot",
-        "<strong>Antipattern</strong>: EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-        "<strong>Antipattern</strong>: Modelos sin versionar — imposible rollback",
-        "<strong>Antipattern</strong>: Sin monitoreo de drift — modelo se degrada silente",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>One-vs-Rest (OvR)</strong>: se entrena un clasificador binario por cada clase, separándola de todas las demás combinadas — se necesitan tantos clasificadores como clases, y se elige la clase cuyo clasificador dé la mayor confianza.",
+        "<strong>One-vs-One (OvO)</strong>: se entrena un clasificador binario por cada par de clases posibles — con k clases se entrenan k(k-1)/2 clasificadores, y la clase final se decide por votación mayoritaria entre todos ellos.",
+        "<strong>Por qué escalar las features es obligatorio</strong>: como el margen se mide en distancia geométrica, una feature con escala mucho mayor que las demás dominaría el cálculo del margen sin relación real con su importancia — <code>StandardScaler</code> antes de SVM es casi siempre indispensable.",
+        "<strong>Costo computacional en datasets grandes</strong>: el entrenamiento de SVM escala mal con el número de muestras (peor que lineal en la implementación clásica), por lo que en datasets de millones de filas suele preferirse otro algoritmo o una variante lineal optimizada (<code>LinearSVC</code>).",
+        "<strong>Probabilidades no nativas</strong>: SVM produce naturalmente una distancia al hiperplano (decision function), no una probabilidad — obtener probabilidades calibradas requiere activar <code>probability=True</code>, lo cual añade un costo de calibración adicional (Platt scaling) durante el entrenamiento."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe un dataset de millones de filas donde el tiempo de entrenamiento es crítico, SVM con kernel no lineal rara vez es la respuesta esperada — el examen busca que reconozcas esa limitación de escalabilidad." }
+    },
+    {
+      "title_es": "7 · Implementación en PAI y scikit-learn",
+      "title_en": "Implementation in PAI and scikit-learn",
+      "intro": "El curso cierra conectando la teoría con la implementación real, y con el criterio para decidir cuándo SVM es la elección apropiada frente a otros algoritmos ya vistos en la serie de fundamentos.",
+      "points": [
+        "<strong>PAI-Designer</strong>: ofrece un componente visual de SVM donde se configuran el tipo de kernel, C y gamma sin escribir código, apto para pipelines reproducibles construidos por analistas sin experiencia extensa en Python.",
+        "<strong>PAI-DSW + scikit-learn</strong>: <code>SVC</code> para clasificación, <code>SVR</code> para regresión, y <code>LinearSVC</code> como alternativa optimizada cuando el kernel lineal es suficiente y el dataset es grande — todas comparten la API <code>fit</code>/<code>predict</code>.",
+        "<strong>Cuándo SVM es una buena elección</strong>: datasets de tamaño pequeño a mediano, alta dimensionalidad relativa al número de muestras (p.ej. clasificación de texto o bioinformática con miles de features y pocas muestras), y cuando se espera un margen de separación relativamente claro entre clases.",
+        "<strong>Cuándo evitar SVM</strong>: datasets masivos (millones de filas) donde el costo de entrenamiento es prohibitivo, o cuando se necesita interpretar directamente el modelo con reglas legibles (donde un árbol de decisión es preferible).",
+        "<strong>Comparación con otros algoritmos de la serie</strong>: a diferencia de la regresión logística (frontera lineal basada en probabilidad) o los árboles (splits basados en impureza), SVM aporta una perspectiva geométrica distinta — es común probarlo como una opción adicional en la etapa de comparación de modelos de un proyecto real."
+      ],
+      "keypoint": { "label": "Estrategia final", "text": "Ante un escenario con muchas features, pocas muestras y necesidad de una frontera de decisión robusta, SVM (con el kernel adecuado) suele ser una opción fuerte — pero si el dataset es masivo o se exige interpretabilidad directa, otros algoritmos de la serie son más apropiados." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Fine-tuning de Qwen y LLMs open-source"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Recomendación en tiempo real (CTR prediction)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Visión computacional (defectos, OCR, detección)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "NLP: clasificación, sentimiento, extracción"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "AutoML para equipos sin data scientists dedicados"
-    }
+    { "title": "Escenario 1", "text": "Clasificación de texto de alta dimensionalidad (miles de features dispersas) con relativamente pocas muestras" },
+    { "title": "Escenario 2", "text": "Clasificación de imágenes simples con un margen de separación claro entre categorías" },
+    { "title": "Escenario 3", "text": "Diagnóstico médico con un dataset pequeño y etiquetado costoso de obtener" },
+    { "title": "Escenario 4", "text": "Regresión de una medición de sensor continua tolerante a ruido pequeño — SVR con tubo epsilon" },
+    { "title": "Escenario 5", "text": "Clasificación de expresión génica en bioinformática (alta dimensionalidad, bajo número de muestras)" },
+    { "title": "Escenario 6", "text": "Detección de anomalías donde la frontera entre clases normales y atípicas debe maximizar el margen de seguridad" }
   ],
   "mistakes": [
-    "Training en GPUs on-demand — 3-5x más caro que spot",
-    "EAS sin autoscaling — o sobre-aprovisiona o cae bajo carga",
-    "Modelos sin versionar — imposible rollback",
-    "Sin monitoreo de drift — modelo se degrada silente"
+    "Entrenar SVM sin escalar las features, distorsionando el cálculo del margen basado en distancia",
+    "Usar los valores por defecto de C y gamma sin ajustarlos por validación cruzada",
+    "Elegir un kernel lineal para un problema claramente no separable linealmente en el espacio original",
+    "Usar un gamma muy alto en el kernel RBF, produciendo una frontera excesivamente ajustada al ruido (overfitting severo)",
+    "Aplicar SVM con kernel no lineal a un dataset de millones de filas, ignorando el costo computacional de entrenamiento",
+    "Confundir la decision_function (distancia al hiperplano) con una probabilidad calibrada sin activar probability=True"
   ],
   "cli": [
-    {
-      "cmd": "aliyun pai CreateJob",
-      "desc": "Lanzar training DLC"
-    },
-    {
-      "cmd": "aliyun eas CreateService",
-      "desc": "Desplegar modelo"
-    }
+    { "cmd": "from sklearn.preprocessing import StandardScaler\nscaler = StandardScaler()\nX_train_scaled = scaler.fit_transform(X_train)\nX_test_scaled = scaler.transform(X_test)", "desc": "Escalar features antes de entrenar SVM (obligatorio por la naturaleza geométrica del margen)" },
+    { "cmd": "from sklearn.svm import SVC\nmodel = SVC(kernel='rbf', C=1.0, gamma='scale', probability=True, random_state=42)\nmodel.fit(X_train_scaled, y_train)", "desc": "Entrenar un clasificador SVM con kernel RBF y probabilidades calibradas" },
+    { "cmd": "from sklearn.model_selection import GridSearchCV\nparams = {'C':[0.1,1,10,100], 'gamma':[0.001,0.01,0.1,1], 'kernel':['rbf']}\ngrid = GridSearchCV(SVC(), params, cv=5, scoring='f1')\ngrid.fit(X_train_scaled, y_train)", "desc": "Buscar la mejor combinación conjunta de C y gamma por validación cruzada" },
+    { "cmd": "from sklearn.svm import SVR\nsvr = SVR(kernel='rbf', C=10, epsilon=0.1)\nsvr.fit(X_train_scaled, y_train)", "desc": "Entrenar un modelo de regresión SVR con tubo epsilon-insensitive" },
+    { "cmd": "from sklearn.svm import LinearSVC\nfast_model = LinearSVC(C=1.0, max_iter=5000)\nfast_model.fit(X_train_scaled, y_train)", "desc": "Usar LinearSVC como alternativa optimizada cuando el kernel lineal basta y el dataset es grande" },
+    { "cmd": "n_sv = model.n_support_\nprint('Support vectors por clase:', n_sv)", "desc": "Inspeccionar cuántos support vectors determinó el modelo por clase, como diagnóstico de complejidad" }
   ],
   "glossary": [
-    {
-      "en": "PAI-DSW",
-      "es": "Data Science Workshop",
-      "def": "JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "en": "PAI-DLC",
-      "es": "Deep Learning Containers",
-      "def": "Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "en": "PAI-EAS",
-      "es": "Elastic Algorithm Service",
-      "def": "Serving online con auto-scaling y A/B."
-    },
-    {
-      "en": "PAI-Designer",
-      "es": "PAI Designer",
-      "def": "Pipelines ML drag&drop."
-    },
-    {
-      "en": "QuickStart",
-      "es": "QuickStart",
-      "def": "Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "en": "Model Gallery",
-      "es": "Model Gallery",
-      "def": "Catálogo de modelos (Qwen, Llama, SD, etc)."
-    },
-    {
-      "en": "AutoML",
-      "es": "AutoML",
-      "def": "Búsqueda automática de arquitectura e hiperparámetros."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Framework de compute distribuido soportado."
-    },
-    {
-      "en": "Blade",
-      "es": "Blade",
-      "def": "Compilador de optimización de inferencia."
-    },
-    {
-      "en": "Feature Store",
-      "es": "Feature Store",
-      "def": "Almacén centralizado de features online/offline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Hyperplane", "es": "Hiperplano", "def": "Frontera de decisión de SVM; una línea en 2D, un plano en 3D, generalizado a n dimensiones." },
+    { "en": "Margin", "es": "Margen", "def": "Distancia entre el hiperplano y los puntos de entrenamiento más cercanos de cada clase." },
+    { "en": "Support Vector", "es": "Vector de soporte", "def": "Puntos de entrenamiento más cercanos al hiperplano, los únicos que determinan su posición." },
+    { "en": "Hard Margin", "es": "Margen duro", "def": "Variante de SVM que exige separación perfecta entre clases, sin tolerancia a error." },
+    { "en": "Soft Margin", "es": "Margen suave", "def": "Variante de SVM que tolera cierto grado de error mediante variables de holgura." },
+    { "en": "Slack Variable", "es": "Variable de holgura", "def": "Variable que permite a un punto violar el margen o quedar mal clasificado, a cambio de una penalización." },
+    { "en": "C (Regularization Parameter)", "es": "C (parámetro de penalización)", "def": "Hiperparámetro que controla el trade-off entre margen amplio y tolerancia a errores de clasificación." },
+    { "en": "Kernel Trick", "es": "Truco del kernel", "def": "Técnica que calcula productos punto en un espacio transformado sin construir la transformación explícita." },
+    { "en": "Linear Kernel", "es": "Kernel lineal", "def": "Kernel que equivale a no transformar los datos; apropiado cuando las clases ya son linealmente separables." },
+    { "en": "Polynomial Kernel", "es": "Kernel polinomial", "def": "Kernel que introduce fronteras curvas de grado configurable." },
+    { "en": "RBF Kernel", "es": "Kernel RBF (Gaussiano)", "def": "Kernel flexible capaz de aproximar fronteras arbitrariamente complejas; el más usado por defecto." },
+    { "en": "Gamma", "es": "Gamma", "def": "Hiperparámetro del kernel RBF que controla el alcance de influencia de cada punto de entrenamiento." },
+    { "en": "SVR (Support Vector Regression)", "es": "SVR", "def": "Adaptación de SVM a problemas de regresión, tolerante a errores pequeños dentro de un margen." },
+    { "en": "Epsilon-insensitive Tube", "es": "Tubo epsilon-insensitive", "def": "Banda de tolerancia en SVR dentro de la cual los errores no se penalizan." },
+    { "en": "One-vs-Rest (OvR)", "es": "Uno contra el resto", "def": "Estrategia multiclase que entrena un clasificador binario por clase contra todas las demás." },
+    { "en": "One-vs-One (OvO)", "es": "Uno contra uno", "def": "Estrategia multiclase que entrena un clasificador binario por cada par de clases." },
+    { "en": "Feature Scaling", "es": "Escalado de features", "def": "Normalización obligatoria antes de SVM, ya que el margen se calcula como distancia geométrica." },
+    { "en": "Decision Function", "es": "Función de decisión", "def": "Distancia con signo de un punto al hiperplano, la salida nativa de SVM antes de calibrar probabilidades." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Platform for AI (PAI)?",
-      "options": [
-        "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y f",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "PAI es la plataforma end-to-end para ML/DL/GenAI de Alibaba Cloud. Cubre notebook interactivo (DSW), entrenamiento distribuido (DLC), inferencia online (EAS), pipelines visuales (Designer), AutoML y fine-tuning de LLMs (QuickStart)."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (Data Science Workshop) en Platform for AI (PAI)?",
-      "options": [
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (Data Science Workshop): JupyterLab gestionado con GPUs opcionales."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DLC</strong> (Deep Learning Containers) en Platform for AI (PAI)?",
-      "options": [
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Serving online con auto-scaling y A/B.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-DLC (Deep Learning Containers): Training jobs distribuidos con PyTorch/TF/Megatron."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-EAS</strong> (Elastic Algorithm Service) en Platform for AI (PAI)?",
-      "options": [
-        "Serving online con auto-scaling y A/B.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Pipelines ML drag&drop."
-      ],
-      "answer": 0,
-      "explain": "PAI-EAS (Elastic Algorithm Service): Serving online con auto-scaling y A/B."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-Designer</strong> (PAI Designer) en Platform for AI (PAI)?",
-      "options": [
-        "Pipelines ML drag&drop.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "PAI-Designer (PAI Designer): Pipelines ML drag&drop."
-    },
-    {
-      "q": "¿Qué es <strong>QuickStart</strong> (QuickStart) en Platform for AI (PAI)?",
-      "options": [
-        "Modelos preentrenados y fine-tuning con un click.",
-        "JupyterLab gestionado con GPUs opcionales.",
-        "Training jobs distribuidos con PyTorch/TF/Megatron.",
-        "Serving online con auto-scaling y A/B."
-      ],
-      "answer": 0,
-      "explain": "QuickStart (QuickStart): Modelos preentrenados y fine-tuning con un click."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Platform for AI (PAI), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Platform for AI (PAI) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Platform for AI (PAI), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Platform for AI (PAI) es la elección típica:",
-      "options": [
-        "Fine-tuning de Qwen y LLMs open-source",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Fine-tuning de Qwen y LLMs open-source."
-    }
+    { "q": "¿Qué busca maximizar SVM al elegir el hiperplano separador entre dos clases linealmente separables?", "options": ["El número de puntos mal clasificados", "El margen: la distancia entre el hiperplano y los puntos más cercanos de cada clase", "El número total de features del dataset", "La varianza total de los datos"], "answer": 1, "explain": "De entre todas las fronteras posibles que separan las clases, SVM elige la que maximiza la distancia mínima a los puntos de cada clase." },
+    { "q": "¿Qué son los support vectors?", "options": ["Todos los puntos del dataset de entrenamiento", "Los puntos más cercanos al hiperplano, los únicos que determinan su posición final", "Las features más importantes del modelo", "Los errores de clasificación del modelo"], "answer": 1, "explain": "Solo los puntos más cercanos a la frontera influyen en su posición; el resto del dataset podría eliminarse sin cambiar el resultado." },
+    { "q": "¿Qué diferencia al margen suave (soft margin) del margen duro (hard margin)?", "options": ["Son términos equivalentes", "El margen suave tolera cierto grado de error mediante variables de holgura; el margen duro exige separación perfecta", "El margen duro solo aplica a problemas de regresión", "El margen suave nunca se usa en la práctica"], "answer": 1, "explain": "El margen duro es poco práctico porque exige separabilidad perfecta; el margen suave, con variables de holgura, es el enfoque estándar en datos reales." },
+    { "q": "Un modelo SVM tiene accuracy casi perfecta en entrenamiento pero mucho más baja en test. ¿Qué hiperparámetro es el primer sospechoso?", "options": ["Un valor de C demasiado bajo", "Un valor de C demasiado alto, ajustando el modelo agresivamente al ruido del training set", "El número de features", "El tamaño del dataset de test"], "answer": 1, "explain": "Un C alto penaliza fuertemente cada violación del margen, generando una frontera muy ajustada al training set y propensa a overfitting." },
+    { "q": "¿Qué logra el truco del kernel (kernel trick) en SVM?", "options": ["Reduce el número de muestras necesarias para entrenar", "Permite calcular productos punto en un espacio transformado de mayor dimensión sin construir esa transformación explícitamente", "Elimina la necesidad de escalar las features", "Convierte automáticamente el problema en uno de regresión"], "answer": 1, "explain": "El kernel trick evita el costo computacional de transformar explícitamente los datos, calculando directamente el producto punto equivalente." },
+    { "q": "¿Qué kernel es apropiado cuando las clases ya son (casi) linealmente separables en el espacio original de features?", "options": ["Kernel RBF con gamma muy alto", "Kernel lineal", "Kernel polinomial de grado 10", "Ningún kernel es necesario en ese caso, se usa regresión lineal"], "answer": 1, "explain": "El kernel lineal equivale a no transformar los datos, apropiado cuando la separación lineal original ya es suficiente." },
+    { "q": "¿Qué controla el hiperparámetro gamma en el kernel RBF?", "options": ["El número de clases del problema", "El alcance de influencia de cada punto de entrenamiento sobre la forma de la frontera", "La cantidad de support vectors permitidos", "El tamaño del margen mínimo permitido"], "answer": 1, "explain": "Gamma alto restringe la influencia a puntos muy cercanos (frontera irregular); gamma bajo permite influencia de puntos más lejanos (frontera suave)." },
+    { "q": "¿Qué diferencia principal tiene SVR frente a la regresión lineal por mínimos cuadrados (OLS)?", "options": ["SVR minimiza cada error individual sin excepción, igual que OLS", "SVR ignora los errores dentro de un margen de tolerancia (tubo epsilon) y solo penaliza los que lo exceden", "SVR no puede usar kernels no lineales", "SVR y OLS son matemáticamente idénticos"], "answer": 1, "explain": "A diferencia de OLS, que penaliza todo error al cuadrado, SVR tolera errores pequeños dentro del tubo epsilon-insensitive sin penalizarlos." },
+    { "q": "SVM es un clasificador binario por diseño. ¿Qué estrategia entrena un clasificador por cada par de clases posibles?", "options": ["One-vs-Rest (OvR)", "One-vs-One (OvO)", "Bagging", "Boosting"], "answer": 1, "explain": "OvO entrena k(k-1)/2 clasificadores binarios, uno por cada par de clases, y decide por votación mayoritaria." },
+    { "q": "¿Por qué es prácticamente obligatorio escalar las features antes de entrenar un SVM?", "options": ["No es necesario, SVM es invariante a la escala", "Porque el margen se calcula como distancia geométrica, y una feature con escala mayor dominaría injustamente ese cálculo", "Porque scikit-learn lo exige por razones de sintaxis", "Porque el escalado mejora automáticamente la interpretabilidad del modelo"], "answer": 1, "explain": "Sin escalar, una feature con rango numérico mucho mayor distorsionaría el cálculo de distancias del margen, sin relación con su verdadera importancia." },
+    { "q": "¿Por qué SVM con kernel no lineal suele ser una mala elección para un dataset de varios millones de filas?", "options": ["Porque SVM no admite datasets grandes en absoluto", "Porque el costo computacional de entrenamiento escala mal con el número de muestras", "Porque solo funciona con datos categóricos", "Porque requiere GPU obligatoriamente"], "answer": 1, "explain": "El entrenamiento clásico de SVM con kernel no lineal tiene un costo que crece rápidamente con el número de muestras, volviéndose impráctico a gran escala." },
+    { "q": "¿Qué se necesita activar en scikit-learn para obtener probabilidades calibradas de un SVC, en vez de solo la distancia al hiperplano?", "options": ["kernel='linear'", "probability=True", "gamma='auto'", "No es posible obtener probabilidades con SVM"], "answer": 1, "explain": "Por defecto, SVC produce una decision_function (distancia al hiperplano); probability=True activa una calibración adicional (Platt scaling) para obtener probabilidades." },
+    { "q": "¿En qué tipo de escenario es SVM particularmente adecuado según el curso?", "options": ["Datasets masivos de streaming en tiempo real con millones de eventos por segundo", "Datasets de tamaño pequeño a mediano con alta dimensionalidad relativa al número de muestras, como clasificación de texto o bioinformática", "Solo problemas de series de tiempo", "Únicamente problemas con una sola feature"], "answer": 1, "explain": "SVM funciona especialmente bien cuando hay muchas features relativas al número de muestras y se espera un margen de separación razonablemente claro." }
   ],
-  "exam_focus": "Preguntas: (a) módulos PAI y cuándo usar cada uno, (b) training distribuido y spot GPUs, (c) EAS scaling, (d) Model Gallery + QuickStart para GenAI, (e) MLOps con PAI.",
+  "exam_focus": "El examen suele evaluar: (a) la intuición geométrica del margen máximo y los support vectors, (b) el trade-off de C entre margen y tolerancia a error, (c) el mecanismo y propósito del kernel trick, y la elección de kernel según los datos, (d) la interacción entre C y gamma en el kernel RBF, (e) cuándo SVM es apropiado frente a sus limitaciones de escalabilidad y necesidad de escalado de features.",
   "official_intro": "SVM (Support Vector Machine) is among the best “off-the-shelf” supervised learning algorithms which can be used for both regression and classification tasks. It is widely used in classification objectives. A Support Vector Machine (SVM) is a discriminative classifier formally defined by a separating hyperplane. In other words, given labeled training data (supervised learning), the algorithm outputs an optimal hyperplane which categorizes new examples. In two dimentional space this hyperplane is a line dividing a plane in two parts where in each class lay in either side. This course introduces the basic concepts of SVM as well as how to use Alibaba Cloud Machine Learning Platform for AI to apply SVM.",
   "recommended_for": "This training is for people who have machine learning and database experience.",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-vector-machine",

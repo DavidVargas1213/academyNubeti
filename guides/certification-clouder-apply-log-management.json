@@ -2,423 +2,162 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-apply-log-management",
   "title_en": "Use Log Service to Apply Log Management",
-  "title_es": "Usar Log Servicio to Apply Log Gestión",
+  "title_es": "Usar Log Service para Aplicar Gestión de Logs",
+  "title_es_html": "Usar Log Service para Aplicar <em>Gestión de Logs</em>",
   "duration_es": "39 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "DevOps",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-apply-log-management",
-  "lead": "Guía completa en español para el curso «Use Log Service to Apply Log Management» de Alibaba Cloud Academy. Cubre en profundidad Log Service (SLS). SLS es la plataforma centralizada de logs de Alibaba Cloud: ingesta a millones de eventos/s, storage económico, búsqueda tipo SQL, alertas, dashboards y export a MaxCompute/OSS/Kafka. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Use Log Service to Apply Log Management» de Alibaba Cloud Academy, centrado en Log Service (SLS): la plataforma de gestión centralizada de logs de Alibaba Cloud. Cubre desde por qué una aplicación distribuida necesita centralizar sus logs hasta la mecánica interna de ingesta, indexación, consulta SQL y alertas que evalúa el examen.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Log Service (SLS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Logstore, Shard, Logtail, Index.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Log Service (SLS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué centralizar logs es indispensable en una arquitectura de microservicios o multi-instancia.",
+    "<strong>Distinguir</strong> los conceptos fundamentales de SLS: Project, Logstore, Shard, Logtail e Índice.",
+    "<strong>Configurar</strong> la recolección de logs desde ECS/ACK con el agente Logtail.",
+    "<strong>Consultar</strong> logs con la sintaxis de búsqueda + SQL analítico de SLS.",
+    "<strong>Diseñar</strong> alertas y dashboards a partir de patrones en los logs.",
+    "<strong>Aplicar</strong> retención, exportación y control de acceso siguiendo buenas prácticas de costo y seguridad.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre Log Service."
   ],
-  "architecture": "Agents (Logtail) en ECS/ACK → SLS projects → logstores particionados → índices para búsqueda + storage. Consultas SQL → alertas → dashboards. Export a OSS para archive, MaxCompute para analytics profundo.",
+  "architecture": "Los agentes Logtail se instalan en instancias ECS o como DaemonSet en un clúster ACK y envían eventos al Logstore correspondiente dentro de un Project de SLS. Cada Logstore se divide en Shards, la unidad de throughput de escritura/lectura; el número de shards determina la capacidad de ingesta concurrente. Sobre los datos ingeridos se definen Índices para habilitar búsqueda de texto y consultas SQL analíticas. A partir de esas consultas se configuran Alertas (evaluadas periódicamente contra un umbral) y Dashboards para visualización. Para retención de largo plazo o análisis histórico masivo, los datos se exportan mediante Data Shipping hacia OSS (archivo frío) o MaxCompute (analítica batch); para consumo en streaming, un Consumer Group lee el Logstore de forma similar a un consumidor de Kafka.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Log Service (SLS)",
+      "title_es": "1 · Por qué centralizar la gestión de logs",
       "title_en": "Introduction to Log Service (SLS)",
-      "intro": "SLS es la plataforma centralizada de logs de Alibaba Cloud: ingesta a millones de eventos/s, storage económico, búsqueda tipo SQL, alertas, dashboards y export a MaxCompute/OSS/Kafka. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "intro": "Antes de aprender la mecánica de SLS, el curso plantea el problema que resuelve: en un sistema con decenas de instancias o Pods, los logs viven dispersos en cada máquina, y depurar un incidente implica conectarse una por una. Log Service centraliza ese flujo en un único punto de búsqueda.",
       "points": [
-        "<strong>Problema que resuelve</strong>: SLS es la plataforma centralizada de logs de Alibaba Cloud: ingesta a millones de eventos/s, storage económico, búsqueda tipo SQL, alertas, dashboards y export a MaxCompute/OSS/Kafka.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Log Service (SLS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema del log disperso</strong>: sin centralización, diagnosticar un error que atraviesa varios microservicios exige entrar por SSH a cada instancia y grepear archivos locales — inviable a partir de una docena de nodos.",
+        "<strong>Ingesta a escala</strong>: SLS está diseñado para recibir millones de eventos por segundo desde miles de fuentes simultáneas, sin que el equipo tenga que operar un clúster Elasticsearch propio.",
+        "<strong>Búsqueda casi en tiempo real</strong>: los eventos son consultables típicamente en segundos desde que se escriben, lo que permite depuración en vivo durante un incidente.",
+        "<strong>Más que almacenamiento</strong>: SLS no es solo un repositorio de texto — incluye indexación de campos, consultas tipo SQL, alertas automáticas y dashboards, cubriendo todo el ciclo de vida del log sin herramientas adicionales.",
+        "<strong>Integración nativa</strong>: servicios como ECS, ACK, SLB, Function Compute y RDS pueden enviar sus logs a SLS con configuración mínima, en vez de requerir un pipeline de recolección construido a mano."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Log Service (SLS) es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "SLS no reemplaza el logging de la aplicación — centraliza y hace consultable lo que la aplicación ya escribe. La pregunta de examen típica es «¿por qué usar SLS en vez de logs locales?», y la respuesta gira en torno a <em>búsqueda centralizada a escala</em>, no solo almacenamiento." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Log Service (SLS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Conceptos fundamentales: Project, Logstore, Shard",
+      "title_en": "Core Concepts: Project, Logstore, Shard",
+      "intro": "El examen distingue con precisión estos tres términos porque cada uno resuelve un problema distinto: aislamiento, organización y capacidad de throughput.",
       "points": [
-        "<strong>Patrón canónico</strong>: Agents (Logtail) en ECS/ACK → SLS projects → logstores particionados → índices para búsqueda + storage. Consultas SQL → alertas → dashboards. Export a OSS para archive, MaxCompute para analytics profundo.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Project</strong>: el contenedor de más alto nivel — agrupa Logstores, dashboards y reglas de alerta relacionados, y es también la unidad de facturación y permisos RAM. Un equipo o entorno (prod/staging) suele mapear a un Project distinto.",
+        "<strong>Logstore</strong>: dentro de un Project, el Logstore almacena los eventos de una fuente concreta (p.ej. logs de nginx, logs de aplicación, logs de auditoría), cada uno con su propia configuración de retención e índices.",
+        "<strong>Shard</strong>: la unidad real de capacidad dentro de un Logstore. Cada shard soporta un throughput fijo de escritura y lectura; si la ingesta supera la capacidad de los shards existentes, hay que dividirlos (split) para escalar horizontalmente.",
+        "<strong>Retención configurable</strong>: cada Logstore define cuántos días conserva los datos (de 1 día hasta permanente); logs de auditoría o compliance suelen requerir retención larga, logs de debug pueden ser efímeros.",
+        "<strong>Múltiples Logstores vs. uno gigante</strong>: separar por tipo de log (aplicación, acceso, auditoría) en Logstores distintos permite aplicar retención e índices distintos a cada uno, en vez de forzar una configuración única sobre todo el tráfico."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Log Service (SLS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta «qué unidad determina cuántos eventos por segundo puede recibir un Logstore», la respuesta es el Shard, no el Project ni el Logstore en sí." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Recolección de logs con Logtail",
+      "title_en": "Log Collection with Logtail",
+      "intro": "Logtail es el agente que Alibaba Cloud instala en el origen de los datos — la pieza que conecta el mundo real (archivos de log en disco, salida estándar de un contenedor) con un Logstore de SLS.",
       "points": [
-        "<strong>Project</strong> <em>(Project)</em>: Namespace top con quotas y permisos.",
-        "<strong>Logstore</strong> <em>(Logstore)</em>: Contenedor de logs con retention y shards.",
-        "<strong>Shard</strong> <em>(Shard)</em>: Unidad de throughput (5MB/s escritura).",
-        "<strong>Logtail</strong> <em>(Logtail)</em>: Agent recolector de logs.",
-        "<strong>Índice</strong> <em>(Index)</em>: Habilita búsqueda por campo.",
-        "<strong>SQL</strong> <em>(SQL Analytics)</em>: Query tipo SQL sobre logs.",
-        "<strong>Alert</strong> <em>(Alert)</em>: Regla que dispara notificación.",
-        "<strong>Consumer group</strong> <em>(Consumer Group)</em>: Consumo streaming tipo Kafka."
+        "<strong>Instalación</strong>: en ECS se instala como un proceso ligero que sigue (tail) archivos de log configurados; en ACK se despliega como DaemonSet para recolectar la salida de todos los contenedores del nodo automáticamente.",
+        "<strong>Modos de parseo</strong>: texto plano con expresión regular, JSON estructurado, delimitado (CSV-like) o formato nginx/Apache predefinido — elegir el modo correcto evita tener que reprocesar los datos después.",
+        "<strong>Checkpoint y resiliencia</strong>: Logtail recuerda la última posición leída de cada archivo, por lo que un reinicio del agente o de la instancia no duplica ni pierde eventos ya enviados.",
+        "<strong>Enriquecimiento en origen</strong>: se pueden añadir campos fijos (nombre de servicio, entorno, región) en la configuración del agente, para no depender de que cada línea de log los incluya.",
+        "<strong>Alternativas de ingesta</strong>: además de Logtail, SLS acepta ingesta directa por SDK/API (para aplicaciones que prefieren enviar logs programáticamente) y por protocolos estándar como Syslog."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Logtail como DaemonSet en Kubernetes es la respuesta correcta cuando el escenario pide «recolectar logs de todos los Pods de un clúster sin modificar cada aplicación»." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Búsqueda, SQL analítico y visualización",
+      "title_en": "Search, SQL Analytics and Dashboards",
+      "intro": "Una vez indexados, los logs dejan de ser texto plano: se convierten en datos consultables con una sintaxis de búsqueda de texto combinada con SQL agregado en la misma query.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Índice de campo</strong>: solo los campos indexados son buscables/filtrables eficientemente; indexar todos los campos por defecto aumenta el costo de almacenamiento sin necesidad real.",
+        "<strong>Sintaxis combinada</strong>: una consulta típica combina un filtro de texto/campo (p.ej. <code>status:500</code>) con una cláusula SQL de agregación (p.ej. <code>| SELECT count(*) GROUP BY service</code>) en la misma línea.",
+        "<strong>Scheduled SQL</strong>: consultas SQL que se ejecutan periódicamente y materializan su resultado en otro Logstore, útil para pre-agregar métricas costosas de recalcular en cada consulta ad-hoc.",
+        "<strong>Dashboards</strong>: paneles con gráficos (series de tiempo, tablas, mapas de calor) construidos directamente sobre las consultas guardadas, para monitoreo operativo sin exportar datos a otra herramienta.",
+        "<strong>Consumer Group</strong>: permite que aplicaciones externas consuman el Logstore como un stream (similar a un consumer de Kafka), útil para pipelines de procesamiento en tiempo real fuera de SLS."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Indexar «todos los campos por si acaso» es el antipatrón más citado en preguntas de costo — el examen espera que indiques indexar solo los campos que realmente se consultan." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Alertas, retención y exportación",
+      "title_en": "Alerting, Retention and Data Shipping",
+      "intro": "Un Logstore sin alertas configuradas solo sirve para investigación forense después del hecho — el curso enfatiza convertir patrones conocidos en notificaciones activas.",
       "points": [
-        "<strong>HA</strong>: Shards suficientes para throughput pico",
-        "<strong>Buenas prácticas</strong>: Retention adecuada por tipo de log",
-        "<strong>Buenas prácticas</strong>: Índices solo en campos consultados",
-        "<strong>Buenas prácticas</strong>: Alertas con dedup para no spammear",
-        "<strong>Buenas prácticas</strong>: Archive a OSS para logs >30 días"
+        "<strong>Reglas de alerta</strong>: se definen sobre el resultado de una consulta SQL evaluada en intervalos regulares (p.ej. cada 5 minutos); si el resultado cruza un umbral, se dispara una notificación (DingTalk, email, webhook, SMS).",
+        "<strong>Deduplicación</strong>: sin agrupar alertas repetidas del mismo problema, un incidente prolongado puede generar cientos de notificaciones idénticas — las reglas bien diseñadas incluyen ventanas de silencio o agrupación.",
+        "<strong>Retención por Logstore</strong>: cada tipo de log debe tener una retención acorde a su uso — logs operativos de corto plazo (7-30 días) frente a logs de auditoría con requisitos de compliance (meses o años).",
+        "<strong>Data Shipping a OSS</strong>: para retención económica de largo plazo, los datos se exportan automáticamente a OSS en formato Parquet/JSON, mucho más barato que mantenerlos indexados en SLS indefinidamente.",
+        "<strong>Data Shipping a MaxCompute</strong>: cuando el análisis requiere joins complejos con otras fuentes de datos (no solo los logs), exportar a MaxCompute permite usar SQL batch a gran escala sin sobrecargar el Logstore operativo."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Regla mnemotécnica", "text": "Corto plazo y operativo → se queda indexado en SLS con alertas activas. Largo plazo y económico → Data Shipping a OSS. Analítica cruzada con otras fuentes → Data Shipping a MaxCompute." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Seguridad, costo y estrategia de examen",
+      "title_en": "Security, Cost Optimization and Exam Strategy",
+      "intro": "El módulo final conecta control de acceso y optimización de costo con los antipatrones que el examen usa como distractores.",
       "points": [
-        "<strong>Antipattern</strong>: Todo en un logstore gigante",
-        "<strong>Antipattern</strong>: Sin shards suficientes → throttling",
-        "<strong>Antipattern</strong>: Todos los campos indexados (costo)",
-        "<strong>Antipattern</strong>: Sin alertas — logs solo forensic post-mortem",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>RAM y políticas por Project</strong>: el acceso a un Project o Logstore se controla con RAM, igual que cualquier otro recurso de Alibaba Cloud — nunca se comparten las credenciales de la cuenta raíz para automatizar la ingesta.",
+        "<strong>Costo dominado por indexación y retención</strong>: el precio de SLS depende principalmente de cuántos campos se indexan y cuántos días se retienen los datos indexados — reducir ambos es la primera palanca de ahorro.",
+        "<strong>Shards insuficientes</strong>: si la ingesta supera la capacidad de los shards actuales, SLS aplica throttling (rechaza o retrasa escrituras) — hay que dimensionar shards según el pico de tráfico esperado, no el promedio.",
+        "<strong>Un Logstore gigante para todo</strong>: mezclar logs de auditoría, debug y acceso en un mismo Logstore obliga a aplicar la misma retención e índices a datos con necesidades muy distintas.",
+        "<strong>Sin alertas activas</strong>: un Logstore que solo se consulta reactivamente, después de que el cliente reporta un problema, desaprovecha la ventaja principal de centralizar logs: detectar el problema antes que el usuario."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante una pregunta ambigua sobre diseño de logging, prioriza: separar por Logstore según tipo de dato → indexar solo lo necesario → definir retención acorde al uso → activar alertas sobre patrones conocidos." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Log aggregation cross-región"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Auditoría de aplicaciones y compliance"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Observabilidad centralizada"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Detección de anomalías con ML integrado"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Búsquedas forenses"
-    }
+    { "title": "Escenario 1", "text": "Recolección de logs de nginx y aplicación desde una flota de ECS con Logtail" },
+    { "title": "Escenario 2", "text": "Agregación de logs de todos los Pods de un clúster ACK con Logtail como DaemonSet" },
+    { "title": "Escenario 3", "text": "Auditoría de compliance con retención larga y acceso restringido por RAM" },
+    { "title": "Escenario 4", "text": "Alertas en tiempo real sobre tasa de errores 5xx de una API" },
+    { "title": "Escenario 5", "text": "Archivo de logs de bajo costo a largo plazo mediante Data Shipping a OSS" },
+    { "title": "Escenario 6", "text": "Pipeline de procesamiento en streaming leyendo un Logstore vía Consumer Group" }
   ],
   "mistakes": [
-    "Todo en un logstore gigante",
-    "Sin shards suficientes → throttling",
-    "Todos los campos indexados (costo)",
-    "Sin alertas — logs solo forensic post-mortem"
+    "Indexar todos los campos de cada log sin necesidad real, disparando el costo de almacenamiento",
+    "Mezclar logs de auditoría, debug y acceso en un único Logstore con una sola política de retención",
+    "No dimensionar shards para el pico de tráfico, causando throttling durante incidentes (justo cuando más se necesita el log)",
+    "Definir retención larga por defecto en logs de debug de corta vida útil",
+    "No configurar alertas y depender solo de búsquedas manuales reactivas tras un reporte de usuario",
+    "Compartir credenciales de cuenta raíz para automatizar la ingesta en vez de usar roles RAM con permisos mínimos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun log GetLogstore",
-      "desc": "Info logstore"
-    },
-    {
-      "cmd": "aliyun log GetLogs",
-      "desc": "Query"
-    }
+    { "cmd": "aliyun log CreateProject --projectName mi-proyecto --region cn-hangzhou", "desc": "Crear un Project de SLS" },
+    { "cmd": "aliyun log CreateLogStore --projectName mi-proyecto --logstoreName app-logs --shardCount 4 --ttl 30", "desc": "Crear un Logstore con 4 shards y 30 días de retención" },
+    { "cmd": "aliyun log GetLogs --projectName mi-proyecto --logstoreName app-logs --query \"status:500 | SELECT count(*)\"", "desc": "Ejecutar una consulta de búsqueda + SQL" },
+    { "cmd": "aliyun log CreateAlert --projectName mi-proyecto --alertName errores-altos", "desc": "Crear una regla de alerta" },
+    { "cmd": "aliyun log SplitShard --projectName mi-proyecto --logstoreName app-logs --shardId 0", "desc": "Dividir un shard para aumentar capacidad de ingesta" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Project",
-      "def": "Namespace top con quotas y permisos."
-    },
-    {
-      "en": "Logstore",
-      "es": "Logstore",
-      "def": "Contenedor de logs con retention y shards."
-    },
-    {
-      "en": "Shard",
-      "es": "Shard",
-      "def": "Unidad de throughput (5MB/s escritura)."
-    },
-    {
-      "en": "Logtail",
-      "es": "Logtail",
-      "def": "Agent recolector de logs."
-    },
-    {
-      "en": "Index",
-      "es": "Índice",
-      "def": "Habilita búsqueda por campo."
-    },
-    {
-      "en": "SQL Analytics",
-      "es": "SQL",
-      "def": "Query tipo SQL sobre logs."
-    },
-    {
-      "en": "Alert",
-      "es": "Alert",
-      "def": "Regla que dispara notificación."
-    },
-    {
-      "en": "Consumer Group",
-      "es": "Consumer group",
-      "def": "Consumo streaming tipo Kafka."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Project", "es": "Proyecto", "def": "Contenedor de más alto nivel en SLS; agrupa Logstores y es la unidad de facturación y permisos." },
+    { "en": "Logstore", "es": "Logstore", "def": "Almacén de eventos de una fuente concreta, con su propia retención e índices." },
+    { "en": "Shard", "es": "Shard", "def": "Unidad de throughput de un Logstore; determina cuántos eventos por segundo puede recibir." },
+    { "en": "Logtail", "es": "Logtail", "def": "Agente que recolecta logs desde ECS o Pods de ACK y los envía a un Logstore." },
+    { "en": "Index", "es": "Índice", "def": "Configuración que habilita búsqueda y consulta SQL sobre un campo específico del log." },
+    { "en": "SQL Analytics", "es": "SQL analítico", "def": "Sintaxis de agregación tipo SQL combinada con búsqueda de texto en la misma consulta." },
+    { "en": "Scheduled SQL", "es": "SQL programado", "def": "Consulta SQL que se ejecuta periódicamente y materializa su resultado en otro Logstore." },
+    { "en": "Alert Rule", "es": "Regla de alerta", "def": "Condición evaluada periódicamente sobre una consulta; dispara notificación si se cumple." },
+    { "en": "Consumer Group", "es": "Grupo consumidor", "def": "Mecanismo para consumir un Logstore como stream, similar a un consumer de Kafka." },
+    { "en": "Data Shipping", "es": "Exportación de datos", "def": "Exportación automática y periódica de un Logstore hacia OSS o MaxCompute." },
+    { "en": "Retention (TTL)", "es": "Retención", "def": "Número de días que un Logstore conserva los datos indexados antes de eliminarlos." },
+    { "en": "Throttling", "es": "Limitación de tasa", "def": "Rechazo o retraso de escrituras cuando la ingesta supera la capacidad de los shards disponibles." },
+    { "en": "DaemonSet collection", "es": "Recolección por DaemonSet", "def": "Despliegue de Logtail como DaemonSet en ACK para recolectar logs de todos los nodos automáticamente." },
+    { "en": "RAM Policy", "es": "Política RAM", "def": "Permisos por identidad que controlan el acceso a Projects y Logstores de SLS." },
+    { "en": "Checkpoint", "es": "Punto de control", "def": "Posición registrada por Logtail para no duplicar ni perder eventos tras un reinicio." },
+    { "en": "Log parsing mode", "es": "Modo de parseo", "def": "Formato con el que Logtail interpreta cada línea: texto plano, JSON, delimitado o predefinido." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Log Service (SLS)?",
-      "options": [
-        "SLS es la plataforma centralizada de logs de Alibaba Cloud: ingesta a millones de eventos/s, storage económico, búsqueda tipo SQL, alertas, dashboards y export a MaxCompute/OSS/Kafka.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "SLS es la plataforma centralizada de logs de Alibaba Cloud: ingesta a millones de eventos/s, storage económico, búsqueda tipo SQL, alertas, dashboards y export a MaxCompute/OSS/Kafka."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Project) en Log Service (SLS)?",
-      "options": [
-        "Namespace top con quotas y permisos.",
-        "Contenedor de logs con retention y shards.",
-        "Unidad de throughput (5MB/s escritura).",
-        "Agent recolector de logs."
-      ],
-      "answer": 0,
-      "explain": "Project (Project): Namespace top con quotas y permisos."
-    },
-    {
-      "q": "¿Qué es <strong>Logstore</strong> (Logstore) en Log Service (SLS)?",
-      "options": [
-        "Contenedor de logs con retention y shards.",
-        "Namespace top con quotas y permisos.",
-        "Unidad de throughput (5MB/s escritura).",
-        "Agent recolector de logs."
-      ],
-      "answer": 0,
-      "explain": "Logstore (Logstore): Contenedor de logs con retention y shards."
-    },
-    {
-      "q": "¿Qué es <strong>Shard</strong> (Shard) en Log Service (SLS)?",
-      "options": [
-        "Unidad de throughput (5MB/s escritura).",
-        "Namespace top con quotas y permisos.",
-        "Contenedor de logs con retention y shards.",
-        "Agent recolector de logs."
-      ],
-      "answer": 0,
-      "explain": "Shard (Shard): Unidad de throughput (5MB/s escritura)."
-    },
-    {
-      "q": "¿Qué es <strong>Logtail</strong> (Logtail) en Log Service (SLS)?",
-      "options": [
-        "Agent recolector de logs.",
-        "Namespace top con quotas y permisos.",
-        "Contenedor de logs con retention y shards.",
-        "Unidad de throughput (5MB/s escritura)."
-      ],
-      "answer": 0,
-      "explain": "Logtail (Logtail): Agent recolector de logs."
-    },
-    {
-      "q": "¿Qué es <strong>Index</strong> (Índice) en Log Service (SLS)?",
-      "options": [
-        "Habilita búsqueda por campo.",
-        "Namespace top con quotas y permisos.",
-        "Contenedor de logs con retention y shards.",
-        "Unidad de throughput (5MB/s escritura)."
-      ],
-      "answer": 0,
-      "explain": "Index (Índice): Habilita búsqueda por campo."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Log Service (SLS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Log Service (SLS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Log Service (SLS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Log Service (SLS) es la elección típica:",
-      "options": [
-        "Log aggregation cross-región",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Log aggregation cross-región."
-    }
+    { "q": "¿Cuál es el problema principal que resuelve Log Service (SLS) frente a revisar logs directamente en cada instancia?", "options": ["Reduce el tamaño de los archivos de log", "Centraliza la búsqueda de logs de muchas fuentes en un único punto consultable", "Elimina la necesidad de que las aplicaciones generen logs", "Convierte los logs en una base de datos relacional"], "answer": 1, "explain": "SLS centraliza la ingesta y búsqueda de logs dispersos en muchas instancias o Pods, evitando tener que revisar máquina por máquina." },
+    { "q": "¿Qué unidad determina el throughput máximo de escritura/lectura de un Logstore?", "options": ["El Project", "El Shard", "El Índice", "El Consumer Group"], "answer": 1, "explain": "Cada Shard soporta un throughput fijo; si la ingesta supera la capacidad de los shards existentes hay que dividirlos (split) para escalar." },
+    { "q": "Un clúster ACK necesita recolectar los logs de todos sus Pods sin modificar cada aplicación. ¿Qué mecanismo es el adecuado?", "options": ["Logtail desplegado como DaemonSet", "Un Consumer Group", "Data Shipping a OSS", "Scheduled SQL"], "answer": 0, "explain": "Logtail como DaemonSet corre en cada nodo del clúster y recolecta automáticamente la salida de todos los contenedores que ahí se ejecutan." },
+    { "q": "¿Por qué indexar todos los campos de cada log por defecto se considera un antipatrón?", "options": ["Porque SLS no permite indexar más de 3 campos", "Porque aumenta el costo de almacenamiento sin necesidad real si esos campos nunca se consultan", "Porque rompe la sintaxis de búsqueda", "Porque desactiva las alertas automáticamente"], "answer": 1, "explain": "El costo de SLS depende en buena medida de cuántos campos están indexados; indexar sin criterio dispara el gasto sin beneficio de consulta." },
+    { "q": "¿Qué ocurre si la tasa de ingesta de un Logstore supera la capacidad de sus shards actuales?", "options": ["SLS crea shards automáticamente sin límite", "Se aplica throttling: las escrituras se rechazan o retrasan", "Los datos se comprimen automáticamente", "El Logstore se convierte en solo lectura permanentemente"], "answer": 1, "explain": "Sin suficiente capacidad de shard, SLS aplica throttling — por eso hay que dimensionar shards según el pico esperado, no el promedio." },
+    { "q": "¿Cuál es la diferencia principal entre Data Shipping a OSS y Data Shipping a MaxCompute?", "options": ["Son exactamente lo mismo con nombres distintos", "OSS es para archivo económico de largo plazo; MaxCompute es para analítica batch con joins complejos", "OSS solo acepta logs de auditoría", "MaxCompute no puede recibir datos de SLS"], "answer": 1, "explain": "OSS ofrece almacenamiento barato para retención larga; MaxCompute permite cruzar los logs con otras fuentes de datos mediante SQL batch a escala." },
+    { "q": "Un equipo mezcla logs de auditoría, debug y acceso en un único Logstore. ¿Cuál es el problema principal de este diseño?", "options": ["SLS no permite más de un tipo de log por Logstore", "Obliga a aplicar la misma retención e índices a datos con necesidades muy distintas", "Los logs de auditoría se sobrescriben automáticamente", "No hay ningún problema, es la práctica recomendada"], "answer": 1, "explain": "Separar por Logstore según tipo de log permite retención e indexación específicas para cada necesidad (p.ej. auditoría con retención larga, debug efímero)." },
+    { "q": "¿Qué es una regla de alerta en SLS?", "options": ["Un tipo de índice especial", "Una condición evaluada periódicamente sobre una consulta que dispara notificación si se cumple", "Un mecanismo de backup de Logstores", "Un formato de exportación de datos"], "answer": 1, "explain": "Las alertas evalúan el resultado de una consulta SQL en intervalos regulares y notifican (email, DingTalk, webhook) cuando se cruza un umbral." },
+    { "q": "¿Por qué es importante deduplicar o agrupar alertas repetidas del mismo incidente?", "options": ["Porque SLS cobra por cada notificación enviada", "Porque un incidente prolongado sin deduplicación puede generar cientos de notificaciones idénticas, saturando al equipo", "Porque las alertas duplicadas rompen el dashboard", "No es necesario, SLS deduplica automáticamente sin configuración"], "answer": 1, "explain": "Sin ventanas de silencio o agrupación, un mismo problema activo genera una alerta cada vez que se evalúa la regla, saturando los canales de notificación." },
+    { "q": "¿Qué permite hacer un Consumer Group sobre un Logstore?", "options": ["Eliminar logs automáticamente tras 24 horas", "Consumir el Logstore como un stream continuo, similar a un consumer de Kafka", "Convertir el Logstore en una tabla de MaxCompute", "Indexar campos sin costo adicional"], "answer": 1, "explain": "El Consumer Group permite que aplicaciones externas procesen los eventos del Logstore en tiempo real, como si fuera un tópico de streaming." },
+    { "q": "¿Qué principio de identidad se recomienda para que un pipeline automatizado escriba logs en SLS?", "options": ["Usar la AccessKey de la cuenta raíz compartida por el equipo", "Usar un rol RAM con permisos mínimos necesarios sobre el Project/Logstore específico", "Desactivar la autenticación para simplificar la integración", "No es necesario ningún control de acceso para escribir logs"], "answer": 1, "explain": "RAM permite aplicar el principio de mínimo privilegio también a las integraciones automatizadas que escriben en SLS." },
+    { "q": "Un Logstore de logs de debug con vida útil de un día tiene configurada una retención de 365 días. ¿Cuál es el efecto de esta configuración?", "options": ["Es la práctica recomendada para todos los Logstores", "Genera costo de almacenamiento innecesario por datos que ya no aportan valor", "SLS ignora la retención configurada para logs de debug", "Mejora automáticamente la velocidad de las consultas"], "answer": 1, "explain": "La retención debe ajustarse al uso real del log; mantener datos efímeros durante un año solo incrementa el costo sin beneficio." },
+    { "q": "¿Qué campo agrega Logtail típicamente en origen para facilitar la identificación de la fuente de un log?", "options": ["Nombre de servicio, entorno o región configurados en el agente", "La contraseña de la base de datos", "El código fuente completo de la aplicación", "El historial de commits de git"], "answer": 0, "explain": "Enriquecer los eventos con metadatos fijos (servicio, entorno, región) en el propio agente evita depender de que cada línea de log los incluya manualmente." }
   ],
-  "exam_focus": "Project/logstore/shard, SQL analytics, alerting, integración con ActionTrail/CloudMonitor.",
+  "exam_focus": "El examen evalúa: (a) diferenciar Project, Logstore y Shard, (b) cuándo usar Logtail como proceso en ECS vs. DaemonSet en ACK, (c) diseño de índices y retención para controlar costo, (d) alertas y deduplicación, (e) elegir entre Data Shipping a OSS vs. MaxCompute según el objetivo de la exportación.",
   "official_intro": "This course is designed to assist users who want to get knowledge of log management technology, and who like to use cloud product to apply log management. In this course, users can understand what is Log Service, the advantage of Log Service on Alibaba Cloud, and can apply Log Service on Alibaba Cloud to manage log data.",
   "recommended_for": "Cloud users who require Log management, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-apply-log-management",

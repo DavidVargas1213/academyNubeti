@@ -2,415 +2,183 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-hadooparcpri",
   "title_en": "Hadoop Architecture and Principles",
-  "title_es": "Hadoop Architecture y Principles",
+  "title_es": "Arquitectura y Principios de Hadoop",
+  "title_es_html": "Arquitectura y Principios de <em>Hadoop</em>",
   "duration_es": "53 minutos",
   "level_es": "Intermedio",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_hadooparcpri",
-  "lead": "Guía completa en español para el curso «Hadoop Architecture and Principles» de Alibaba Cloud Academy. Cubre en profundidad E-MapReduce (EMR). E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Hadoop Architecture and Principles» de Alibaba Cloud Academy. A diferencia de los cursos orientados a operar E-MapReduce (EMR) como servicio gestionado, este curso profundiza en los mecanismos internos de Hadoop: cómo HDFS almacena y replica bloques, cómo se ejecuta un job MapReduce paso a paso, y cómo YARN reparte los recursos del clúster entre aplicaciones. Es la base teórica que el examen exige antes de tocar cualquier consola.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>E-MapReduce (EMR)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Master Node, Core Node, Task Node, JindoFS, YARN.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con E-MapReduce (EMR) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la arquitectura de HDFS: NameNode, DataNode, Secondary NameNode y su rol en la metadata del clúster.",
+    "<strong>Describir</strong> cómo HDFS divide archivos en bloques, los replica y decide dónde colocarlos (rack awareness).",
+    "<strong>Trazar</strong> el pipeline de escritura y lectura de un archivo en HDFS, incluyendo el papel del cliente.",
+    "<strong>Explicar</strong> el paradigma MapReduce: fase map, shuffle & sort, combiner opcional y fase reduce.",
+    "<strong>Describir</strong> la arquitectura de YARN: ResourceManager, NodeManager, ApplicationMaster y Container.",
+    "<strong>Comparar</strong> los schedulers de YARN (FIFO, Capacity, Fair) y cuándo conviene cada uno.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen sobre mecanismos internos de Hadoop, no solo su uso operativo."
   ],
-  "architecture": "Cluster EMR con master HA + core nodes (HDFS) + task nodes (compute). Datos en OSS (JindoFS acelera acceso). Jobs Spark/Hive/Presto lanzados desde DataWorks. Auto-scaling task por cola/carga. Cluster efímero por job para cargas batch aisladas.",
+  "architecture": "Un clúster Hadoop clásico separa almacenamiento (HDFS) de gestión de recursos y ejecución (YARN). Un cliente sube un archivo: HDFS lo divide en bloques (128 MB por defecto), el NameNode decide en qué DataNodes se replica cada bloque (factor 3 típico, con al menos una réplica en otro rack) y el cliente escribe directamente a los DataNodes en pipeline. Para procesar esos datos, el cliente envía un job MapReduce al ResourceManager de YARN; este negocia con un NodeManager la creación de un ApplicationMaster, que a su vez solicita Containers a los NodeManagers para ejecutar las tareas map (idealmente en el mismo nodo donde vive el bloque, principio de data locality) y luego las tareas reduce tras el shuffle & sort. El NameNode nunca almacena datos, solo metadata (fsimage + edit log); si cae sin alta disponibilidad, el clúster queda ciego aunque los datos sigan intactos en los DataNodes.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a E-MapReduce (EMR)",
-      "title_en": "Introduction to E-MapReduce (EMR)",
-      "intro": "E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · HDFS: filosofía y componentes",
+      "title_en": "HDFS Overview and Components",
+      "intro": "HDFS (Hadoop Distributed File System) no es un disco de red genérico: está diseñado desde cero para archivos enormes, escritura única y lectura secuencial masiva, sacrificando deliberadamente la edición aleatoria de archivos que sí ofrece un sistema de archivos tradicional.",
       "points": [
-        "<strong>Problema que resuelve</strong>: E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo E-MapReduce (EMR) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>NameNode</strong>: el único punto que conoce la estructura de directorios y qué bloques componen cada archivo (metadata) — nunca almacena el contenido real de los archivos, solo referencias.",
+        "<strong>DataNode</strong>: proceso que corre en cada nodo worker y almacena físicamente los bloques, reportando periódicamente su estado (heartbeat) y la lista de bloques que posee (block report) al NameNode.",
+        "<strong>Secondary NameNode</strong>: pese al nombre, NO es un standby del NameNode — su función real es fusionar periódicamente el <em>edit log</em> (cambios recientes) con el <em>fsimage</em> (snapshot de metadata) para evitar que el edit log crezca sin control.",
+        "<strong>fsimage y edit log</strong>: el fsimage es la foto completa del árbol de directorios y bloques en un momento dado; el edit log registra cada cambio posterior. Al reiniciar, el NameNode reconstruye el estado actual aplicando el edit log sobre el fsimage.",
+        "<strong>HA real (High Availability)</strong>: en un clúster de producción moderno, un Standby NameNode sincronizado (vía JournalNodes) sustituye al patrón clásico de Secondary NameNode como plan de continuidad — el Secondary NameNode por sí solo NO ofrece failover automático."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "E-MapReduce (EMR) es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El error de examen más común es asumir que el Secondary NameNode es un backup en caliente del NameNode. No lo es: solo compacta metadata. La alta disponibilidad real requiere un Standby NameNode y JournalNodes."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando E-MapReduce (EMR) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Bloques y replicación",
+      "title_en": "Blocks and Replication",
+      "intro": "HDFS no guarda archivos completos en un solo lugar: los trocea en bloques de tamaño fijo y distribuye copias de cada bloque por el clúster. Esta decisión de diseño es la que permite tanto la escala horizontal como la tolerancia a fallos.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster EMR con master HA + core nodes (HDFS) + task nodes (compute). Datos en OSS (JindoFS acelera acceso). Jobs Spark/Hive/Presto lanzados desde DataWorks. Auto-scaling task por cola/carga. Cluster efímero por job para cargas batch aisladas.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → E-MapReduce (EMR) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Nodo maestro</strong> <em>(Master Node)</em>: Ejecuta NameNode, ResourceManager, HiveServer.",
-        "<strong>Nodo core</strong> <em>(Core Node)</em>: DataNode + NodeManager: storage + compute.",
-        "<strong>Nodo task</strong> <em>(Task Node)</em>: Solo compute; ideal para spot.",
-        "<strong>JindoFS</strong> <em>(JindoFS)</em>: FS acelerado sobre OSS (cache).",
-        "<strong>YARN</strong> <em>(YARN)</em>: Gestor de recursos.",
-        "<strong>Cluster Templates</strong> <em>(Cluster Templates)</em>: Plantillas reproducibles.",
-        "<strong>EMR on ACK</strong> <em>(EMR on ACK)</em>: Spark/Flink corriendo dentro de ACK."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Tamaño de bloque</strong>: 128 MB por defecto en versiones modernas de Hadoop (64 MB en versiones antiguas) — un archivo de 300 MB ocupa 3 bloques (128+128+44 MB), cada uno tratado como una unidad independiente de almacenamiento y replicación.",
+        "<strong>¿Por qué bloques tan grandes?</strong>: minimizar el overhead de buscar el inicio de cada bloque (seek time) frente al tiempo de transferencia — bloques pequeños como en un disco tradicional (4 KB) serían absurdamente ineficientes a escala petabyte.",
+        "<strong>Factor de replicación</strong>: 3 por defecto — cada bloque tiene 3 copias en DataNodes distintos, lo que tolera hasta 2 fallos simultáneos de nodo sin perder el dato.",
+        "<strong>Rack awareness</strong>: el NameNode coloca las réplicas siguiendo una política de topología de rack — típicamente 2 réplicas en el mismo rack (para minimizar tráfico entre racks) y 1 en un rack distinto (para sobrevivir a la caída de un rack completo, no solo de un nodo).",
+        "<strong>Re-replicación automática</strong>: si un DataNode deja de enviar heartbeat, el NameNode marca sus bloques como bajo-replicados y ordena copiarlos a otros nodos para restaurar el factor de replicación configurado, sin intervención humana."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta por qué HDFS usa bloques grandes en vez de bloques pequeños como un disco convencional, la respuesta es minimizar el overhead de seek relativo al tiempo de transferencia en archivos masivos — no 'para ahorrar espacio'."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Pipeline de escritura y lectura",
+      "title_en": "Write and Read Pipeline",
+      "intro": "El cliente HDFS nunca envía los datos a través del NameNode — este solo coordina metadata. Entender el pipeline real de escritura y lectura es una de las preguntas de arquitectura más frecuentes del examen.",
       "points": [
-        "<strong>Costo</strong>: Task nodes spot para batch — 70% ahorro",
-        "<strong>Buenas prácticas</strong>: OSS como storage principal, HDFS solo scratch",
-        "<strong>Buenas prácticas</strong>: JindoFS para caché caliente",
-        "<strong>Buenas prácticas</strong>: Cluster efímero por job",
-        "<strong>Buenas prácticas</strong>: Metastore compartido (DLF) entre clusters"
+        "<strong>Escritura</strong>: el cliente pide al NameNode la lista de DataNodes donde escribir el primer bloque; luego envía los datos directamente al primer DataNode, que los reenvía en pipeline al segundo, y este al tercero — la confirmación (ACK) viaja de vuelta por la misma cadena.",
+        "<strong>El NameNode no toca los bytes</strong>: solo decide la colocación (placement) y registra en el edit log que el bloque fue creado exitosamente una vez confirmado por el pipeline.",
+        "<strong>Lectura</strong>: el cliente pregunta al NameNode en qué DataNodes vive cada bloque del archivo solicitado, y luego lee directamente de la réplica más cercana (normalmente la del mismo rack o nodo, por criterio de proximidad de red).",
+        "<strong>Fallo durante la escritura</strong>: si un DataNode del pipeline falla, se lo excluye, se completa la escritura con los DataNodes restantes y el NameNode programa una réplica adicional después para restaurar el factor configurado.",
+        "<strong>Applies write-once</strong>: HDFS soporta añadir datos al final de un archivo (append) pero no editar bytes en medio de un archivo existente — es un modelo write-once-read-many (WORM), coherente con su caso de uso analítico batch."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "El NameNode es puro plano de control (metadata); los DataNodes son puro plano de datos. Ningún byte de un archivo pasa nunca por el NameNode — esa separación es la que permite escalar el throughput agregando DataNodes."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · MapReduce: el paradigma map-shuffle-reduce",
+      "title_en": "The MapReduce Paradigm",
+      "intro": "MapReduce es el modelo de programación original de Hadoop para procesar datos distribuidos: descompone cualquier cálculo en dos funciones simples que el framework paraleliza automáticamente sobre miles de bloques.",
       "points": [
-        "<strong>Antipattern</strong>: Todo en HDFS del cluster → dato atado al cluster",
-        "<strong>Antipattern</strong>: Sin autoscaling de task nodes",
-        "<strong>Antipattern</strong>: Sin metastore externo — pierdes schemas al borrar cluster",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Fase Map</strong>: se ejecuta una función map sobre cada registro de entrada de forma independiente y en paralelo, típicamente una tarea map por bloque de entrada (aprovechando data locality: la tarea se agenda en el nodo donde ya vive el bloque, evitando mover datos por red).",
+        "<strong>Shuffle & Sort</strong>: la fase intermedia — más costosa en I/O y red — que agrupa y ordena por clave todos los pares (key, value) emitidos por los mappers, entregando a cada reducer solo las claves que le corresponden.",
+        "<strong>Combiner (opcional)</strong>: una mini-reducción local ejecutada en el propio nodo mapper antes del shuffle, que reduce drásticamente el volumen de datos transferidos por red cuando la operación es asociativa (p.ej. sumar conteos).",
+        "<strong>Fase Reduce</strong>: procesa cada grupo de valores asociados a una misma clave y produce la salida final, normalmente escrita de vuelta a HDFS.",
+        "<strong>Partitioner</strong>: decide a qué reducer va cada clave (por defecto, hash de la clave módulo número de reducers) — controla el paralelismo de la fase reduce y puede ajustarse para evitar sesgo (skew) cuando unas claves son mucho más frecuentes que otras."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe una operación asociativa (suma, conteo, máximo) que genera mucho tráfico de red en el shuffle, la optimización correcta es añadir un Combiner — no aumentar el número de reducers."
+      }
+    },
+    {
+      "title_es": "5 · YARN: arquitectura y gestión de recursos",
+      "title_en": "YARN Architecture and Resource Management",
+      "intro": "YARN (Yet Another Resource Negotiator) separó, a partir de Hadoop 2, la gestión de recursos de la lógica de ejecución de MapReduce — permitiendo que el mismo clúster ejecute Spark, Hive, Flink u otros motores además de MapReduce puro.",
+      "points": [
+        "<strong>ResourceManager (RM)</strong>: proceso maestro único por clúster que decide cuánta capacidad (CPU/memoria) recibe cada aplicación, sin conocer los detalles internos de cómo cada aplicación ejecuta sus tareas.",
+        "<strong>NodeManager (NM)</strong>: agente que corre en cada nodo worker, reporta su capacidad disponible al RM y lanza/supervisa los Containers que se le asignan.",
+        "<strong>ApplicationMaster (AM)</strong>: proceso específico de cada aplicación (uno por job) que negocia Containers con el RM y coordina la ejecución de las tareas de esa aplicación en particular — es el 'jefe de proyecto' de un job individual.",
+        "<strong>Container</strong>: unidad de asignación de recursos (una cantidad concreta de vCPU y memoria en un nodo) donde efectivamente corre una tarea map, reduce, o el propio ApplicationMaster.",
+        "<strong>Independencia del motor</strong>: gracias a esta separación, YARN no sabe ni le importa si el Container ejecuta una tarea MapReduce, un executor de Spark o un TaskManager de Flink — solo administra CPU y memoria."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El ResourceManager NUNCA ejecuta código de la aplicación — solo asigna Containers. La ejecución y coordinación específica del job la hace el ApplicationMaster, que corre dentro de su propio Container como cualquier otra tarea."
+      }
+    },
+    {
+      "title_es": "6 · Schedulers de YARN y estrategia de examen",
+      "title_en": "YARN Schedulers and Exam Strategy",
+      "intro": "Cuando varios jobs compiten por los mismos recursos del clúster, el scheduler de YARN decide el orden y la proporción en que se atienden — la elección del scheduler es una pregunta de diseño recurrente en el examen.",
+      "points": [
+        "<strong>FIFO Scheduler</strong>: el más simple — atiende los jobs en el orden en que llegaron, uno detrás de otro. Funciona en clústeres pequeños de un solo usuario, pero un job largo bloquea a todos los que llegaron después.",
+        "<strong>Capacity Scheduler</strong>: divide el clúster en colas con una capacidad garantizada (por ejemplo, 60% para el equipo de datos, 40% para el equipo de ML) — cada cola puede usar más de su cuota si hay capacidad libre, pero se le garantiza su mínimo.",
+        "<strong>Fair Scheduler</strong>: intenta que todos los jobs activos reciban, con el tiempo, una parte equitativa de los recursos — un job nuevo obtiene recursos casi de inmediato quitándoselos gradualmente a los jobs largos en ejecución, en vez de esperar en cola.",
+        "<strong>Cuándo elegir cada uno</strong>: FIFO para clústeres de prueba o single-tenant; Capacity cuando varios equipos con SLA distintos comparten el clúster y se necesita aislamiento de cuota; Fair cuando conviven muchos jobs cortos interactivos con jobs batch largos y se prioriza que ninguno muera de inanición.",
+        "<strong>Antipatrón de examen</strong>: usar FIFO en un clúster compartido por varios equipos — un job pesado de un equipo puede monopolizar el clúster y dejar en espera indefinida al resto."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Multi-tenant con SLA por equipo → Capacity Scheduler. Mezcla de jobs cortos y largos sin colas fijas → Fair Scheduler. Clúster single-tenant simple → FIFO. El examen rara vez acepta FIFO como respuesta correcta en un escenario multi-equipo."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data lake con Spark sobre OSS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Migración Hadoop on-premise → cloud"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "ML con PySpark distribuido"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Presto para queries interactivas"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Real-time con Flink en EMR"
-    }
+    { "title": "Escenario 1", "text": "Diseñar el factor de replicación y la topología de racks para tolerar la caída de un rack completo" },
+    { "title": "Escenario 2", "text": "Diagnosticar por qué un job MapReduce genera tráfico de red excesivo en el shuffle sin Combiner" },
+    { "title": "Escenario 3", "text": "Explicar por qué el NameNode es un punto único de fallo sin Standby NameNode configurado" },
+    { "title": "Escenario 4", "text": "Elegir el scheduler de YARN correcto para un clúster compartido por equipos de datos y de ML con SLA distintos" },
+    { "title": "Escenario 5", "text": "Justificar el tamaño de bloque de 128 MB frente a un tamaño de bloque de disco tradicional" }
   ],
   "mistakes": [
-    "Todo en HDFS del cluster → dato atado al cluster",
-    "Sin autoscaling de task nodes",
-    "Sin metastore externo — pierdes schemas al borrar cluster"
+    "Confundir el Secondary NameNode con un backup en caliente del NameNode",
+    "Asumir que los datos pasan por el NameNode durante la escritura o lectura",
+    "No usar Combiner en operaciones asociativas, saturando el shuffle de red",
+    "Usar FIFO Scheduler en un clúster compartido por múltiples equipos con SLA distintos",
+    "Ignorar el rack awareness al diseñar la topología física del clúster",
+    "Suponer que HDFS permite editar bytes en medio de un archivo existente"
   ],
   "cli": [
-    {
-      "cmd": "aliyun emr CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "spark-submit --master yarn ...",
-      "desc": "Enviar job"
-    }
+    { "cmd": "hdfs dfsadmin -report", "desc": "Ver el estado de los DataNodes y la capacidad del clúster" },
+    { "cmd": "hdfs fsck / -files -blocks", "desc": "Verificar la integridad de bloques y replicación de HDFS" },
+    { "cmd": "hadoop fs -put archivo.csv /datos/", "desc": "Subir un archivo a HDFS (activa el pipeline de escritura)" },
+    { "cmd": "yarn application -list", "desc": "Listar aplicaciones activas gestionadas por YARN" },
+    { "cmd": "yarn node -list", "desc": "Listar los NodeManagers registrados y su capacidad" }
   ],
   "glossary": [
-    {
-      "en": "Master Node",
-      "es": "Nodo maestro",
-      "def": "Ejecuta NameNode, ResourceManager, HiveServer."
-    },
-    {
-      "en": "Core Node",
-      "es": "Nodo core",
-      "def": "DataNode + NodeManager: storage + compute."
-    },
-    {
-      "en": "Task Node",
-      "es": "Nodo task",
-      "def": "Solo compute; ideal para spot."
-    },
-    {
-      "en": "JindoFS",
-      "es": "JindoFS",
-      "def": "FS acelerado sobre OSS (cache)."
-    },
-    {
-      "en": "YARN",
-      "es": "YARN",
-      "def": "Gestor de recursos."
-    },
-    {
-      "en": "Cluster Templates",
-      "es": "Cluster Templates",
-      "def": "Plantillas reproducibles."
-    },
-    {
-      "en": "EMR on ACK",
-      "es": "EMR on ACK",
-      "def": "Spark/Flink corriendo dentro de ACK."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "NameNode", "es": "NameNode", "def": "Proceso maestro que almacena la metadata (estructura de directorios y ubicación de bloques) de HDFS; nunca almacena datos." },
+    { "en": "DataNode", "es": "DataNode", "def": "Proceso worker que almacena físicamente los bloques y reporta su estado al NameNode." },
+    { "en": "Secondary NameNode", "es": "Secondary NameNode", "def": "Proceso que fusiona periódicamente fsimage y edit log; no es un backup en caliente del NameNode." },
+    { "en": "fsimage", "es": "fsimage", "def": "Snapshot completo de la metadata de HDFS en un momento dado." },
+    { "en": "Edit Log", "es": "Edit log", "def": "Registro secuencial de cada cambio de metadata desde el último fsimage." },
+    { "en": "Block", "es": "Bloque", "def": "Unidad de almacenamiento en la que HDFS divide los archivos, típicamente 128 MB." },
+    { "en": "Replication Factor", "es": "Factor de replicación", "def": "Número de copias de cada bloque distribuidas en el clúster; 3 por defecto." },
+    { "en": "Rack Awareness", "es": "Conciencia de rack", "def": "Política de colocación de réplicas que considera la topología física de racks del clúster." },
+    { "en": "Write Pipeline", "es": "Pipeline de escritura", "def": "Cadena de DataNodes por la que fluyen los datos al escribir un bloque, con confirmación en cascada." },
+    { "en": "MapReduce", "es": "MapReduce", "def": "Paradigma de programación distribuida basado en las fases map, shuffle/sort y reduce." },
+    { "en": "Mapper", "es": "Mapper", "def": "Tarea que ejecuta la función map sobre una porción de los datos de entrada, típicamente un bloque." },
+    { "en": "Shuffle & Sort", "es": "Shuffle & sort", "def": "Fase intermedia que agrupa y ordena por clave los datos emitidos por los mappers antes de entregarlos a los reducers." },
+    { "en": "Combiner", "es": "Combiner", "def": "Mini-reducción local en el nodo mapper que reduce el volumen de datos transferidos en el shuffle." },
+    { "en": "Reducer", "es": "Reducer", "def": "Tarea que procesa cada grupo de valores asociados a una clave y produce la salida final." },
+    { "en": "Partitioner", "es": "Partitioner", "def": "Componente que decide a qué reducer se envía cada clave." },
+    { "en": "ResourceManager (RM)", "es": "ResourceManager", "def": "Proceso maestro de YARN que asigna recursos del clúster entre aplicaciones." },
+    { "en": "NodeManager (NM)", "es": "NodeManager", "def": "Agente de YARN en cada nodo worker que lanza y supervisa Containers." },
+    { "en": "ApplicationMaster (AM)", "es": "ApplicationMaster", "def": "Proceso específico de cada job que negocia Containers y coordina su ejecución." },
+    { "en": "Container", "es": "Container", "def": "Unidad de asignación de CPU y memoria en un nodo, donde corre una tarea concreta." },
+    { "en": "Data Locality", "es": "Localidad de datos", "def": "Principio de agendar una tarea en el mismo nodo donde ya vive el bloque de datos que necesita." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a E-MapReduce (EMR)?",
-      "options": [
-        "E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación."
-    },
-    {
-      "q": "¿Qué es <strong>Master Node</strong> (Nodo maestro) en E-MapReduce (EMR)?",
-      "options": [
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "Solo compute; ideal para spot.",
-        "FS acelerado sobre OSS (cache)."
-      ],
-      "answer": 0,
-      "explain": "Master Node (Nodo maestro): Ejecuta NameNode, ResourceManager, HiveServer."
-    },
-    {
-      "q": "¿Qué es <strong>Core Node</strong> (Nodo core) en E-MapReduce (EMR)?",
-      "options": [
-        "DataNode + NodeManager: storage + compute.",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "Solo compute; ideal para spot.",
-        "FS acelerado sobre OSS (cache)."
-      ],
-      "answer": 0,
-      "explain": "Core Node (Nodo core): DataNode + NodeManager: storage + compute."
-    },
-    {
-      "q": "¿Qué es <strong>Task Node</strong> (Nodo task) en E-MapReduce (EMR)?",
-      "options": [
-        "Solo compute; ideal para spot.",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "FS acelerado sobre OSS (cache)."
-      ],
-      "answer": 0,
-      "explain": "Task Node (Nodo task): Solo compute; ideal para spot."
-    },
-    {
-      "q": "¿Qué es <strong>JindoFS</strong> (JindoFS) en E-MapReduce (EMR)?",
-      "options": [
-        "FS acelerado sobre OSS (cache).",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "Solo compute; ideal para spot."
-      ],
-      "answer": 0,
-      "explain": "JindoFS (JindoFS): FS acelerado sobre OSS (cache)."
-    },
-    {
-      "q": "¿Qué es <strong>YARN</strong> (YARN) en E-MapReduce (EMR)?",
-      "options": [
-        "Gestor de recursos.",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "Solo compute; ideal para spot."
-      ],
-      "answer": 0,
-      "explain": "YARN (YARN): Gestor de recursos."
-    },
-    {
-      "q": "Para maximizar disponibilidad con E-MapReduce (EMR), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar E-MapReduce (EMR) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con E-MapReduce (EMR), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde E-MapReduce (EMR) es la elección típica:",
-      "options": [
-        "Data lake con Spark sobre OSS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data lake con Spark sobre OSS."
-    }
+    { "q": "¿Cuál es el rol real del Secondary NameNode en HDFS?", "options": ["Es un backup en caliente que asume el control si el NameNode falla", "Fusiona periódicamente el fsimage y el edit log para evitar que este último crezca sin control", "Almacena una copia completa de todos los bloques de datos", "Reemplaza al NameNode automáticamente durante el mantenimiento"], "answer": 1, "explain": "Pese a su nombre, el Secondary NameNode no ofrece failover — solo compacta la metadata combinando fsimage y edit log." },
+    { "q": "¿Por qué HDFS usa un tamaño de bloque grande (128 MB) en vez de bloques pequeños como un disco convencional?", "options": ["Para ahorrar espacio en disco", "Para minimizar el overhead de seek relativo al tiempo de transferencia en archivos masivos", "Porque el protocolo HTTP lo exige", "Para permitir editar bytes en medio del archivo"], "answer": 1, "explain": "Bloques grandes reducen la proporción de tiempo dedicado a buscar el inicio de cada bloque frente al tiempo de transferir datos secuenciales." },
+    { "q": "¿Qué determina la política de rack awareness en HDFS?", "options": ["El orden alfabético de los nombres de los DataNodes", "Dónde se colocan las réplicas de un bloque, considerando la topología física de racks", "El factor de compresión de los datos", "El tamaño máximo de un archivo"], "answer": 1, "explain": "Rack awareness distribuye las réplicas entre racks distintos para sobrevivir a la caída de un rack completo, no solo de un nodo." },
+    { "q": "Durante la escritura de un bloque en HDFS, ¿por dónde fluyen los datos?", "options": ["Del cliente al NameNode, que los redistribuye a los DataNodes", "Del cliente directamente a los DataNodes en pipeline, con el NameNode solo coordinando metadata", "Del cliente a un servidor intermedio de caché antes de llegar a los DataNodes", "Los datos se dividen automáticamente entre NameNode y DataNode"], "answer": 1, "explain": "El NameNode nunca transporta bytes de datos; solo indica qué DataNodes usar. Los datos viajan directamente en pipeline entre DataNodes." },
+    { "q": "¿Qué función cumple el Combiner en un job MapReduce?", "options": ["Ordena las claves alfabéticamente antes del shuffle", "Realiza una mini-reducción local en el nodo mapper para reducir el tráfico de red del shuffle", "Reemplaza completamente a la fase reduce", "Divide los archivos de entrada en bloques"], "answer": 1, "explain": "El Combiner ejecuta una reducción parcial en el propio mapper, útil en operaciones asociativas como sumas o conteos, disminuyendo datos transferidos." },
+    { "q": "¿Qué componente de YARN decide a qué aplicación se le asigna cada Container del clúster?", "options": ["El NodeManager", "El ApplicationMaster", "El ResourceManager", "El DataNode"], "answer": 2, "explain": "El ResourceManager es el árbitro central que asigna recursos (Containers) entre las distintas aplicaciones que compiten por el clúster." },
+    { "q": "¿Qué proceso coordina específicamente la ejecución de un job individual dentro de YARN?", "options": ["El ResourceManager", "El ApplicationMaster de ese job", "El Secondary NameNode", "El Partitioner"], "answer": 1, "explain": "Cada aplicación tiene su propio ApplicationMaster, que negocia Containers con el ResourceManager y coordina sus tareas específicas." },
+    { "q": "Un clúster Hadoop es compartido por el equipo de datos y el equipo de ML, cada uno con un SLA de capacidad garantizada. ¿Qué scheduler de YARN es el más adecuado?", "options": ["FIFO Scheduler", "Capacity Scheduler", "Ningún scheduler soporta este caso", "Round Robin Scheduler"], "answer": 1, "explain": "Capacity Scheduler permite definir colas con una capacidad mínima garantizada por equipo, cumpliendo SLAs distintos dentro del mismo clúster." },
+    { "q": "¿Qué ocurre si un DataNode deja de enviar heartbeat al NameNode?", "options": ["El clúster se detiene por completo", "El NameNode marca sus bloques como bajo-replicados y ordena copiarlos a otros DataNodes", "Los datos de ese DataNode se pierden permanentemente sin acción del sistema", "El NameNode ignora el evento hasta que un administrador intervenga"], "answer": 1, "explain": "HDFS re-replica automáticamente los bloques que quedaron bajo el factor de replicación configurado, sin intervención manual." },
+    { "q": "¿Cuál es la diferencia principal entre el modelo de escritura de HDFS y un sistema de archivos tradicional?", "options": ["HDFS permite editar bytes en cualquier posición de un archivo existente", "HDFS sigue un modelo write-once-read-many, sin edición aleatoria de bytes en medio de un archivo", "HDFS no permite añadir datos al final de un archivo", "No hay ninguna diferencia relevante"], "answer": 1, "explain": "HDFS está optimizado para escritura secuencial única y lectura masiva repetida (WORM), no para edición aleatoria como un sistema de archivos POSIX tradicional." },
+    { "q": "¿Qué es 'data locality' en el contexto de MapReduce y YARN?", "options": ["Cifrar los datos según la ubicación geográfica del usuario", "Agendar una tarea map en el mismo nodo donde ya reside el bloque de datos que procesará", "Replicar todos los datos en todas las zonas de disponibilidad", "Un tipo de política de retención de logs"], "answer": 1, "explain": "Data locality minimiza el movimiento de datos por red al ejecutar el cómputo cerca de donde ya están almacenados los bloques." },
+    { "q": "¿Qué scheduler de YARN es más apropiado cuando conviven muchos jobs cortos interactivos con jobs batch largos, y se quiere evitar que los cortos esperen indefinidamente?", "options": ["FIFO Scheduler", "Fair Scheduler", "Ningún scheduler puede resolver esta mezcla", "Capacity Scheduler exclusivamente"], "answer": 1, "explain": "Fair Scheduler redistribuye recursos dinámicamente para que los jobs nuevos obtengan capacidad rápido, sin esperar a que terminen los jobs largos." },
+    { "q": "¿Cuál es el principal riesgo de usar FIFO Scheduler en un clúster compartido por varios equipos?", "options": ["Consume más memoria que los demás schedulers", "Un job pesado de un equipo puede monopolizar el clúster y dejar en espera indefinida a los demás", "No es compatible con MapReduce", "Duplica automáticamente los datos"], "answer": 1, "explain": "FIFO procesa los jobs estrictamente en orden de llegada, sin garantizar cuota mínima a otros equipos que lleguen después de un job largo." }
   ],
-  "exam_focus": "Master/Core/Task nodes, JindoFS y OSS, cluster efímero, EMR on ACK.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar el rol del NameNode, DataNode y Secondary NameNode, (b) el pipeline real de lectura/escritura de HDFS y por qué el NameNode no transporta datos, (c) las fases de MapReduce y cuándo usar un Combiner, (d) la arquitectura de YARN (RM/NM/AM/Container) y quién ejecuta qué, (e) elegir el scheduler de YARN correcto según el escenario multi-tenant descrito.",
   "official_intro": "This course aims to help users who want to understand Big Data technology and data processing through cloud products. Through learning, users can fully understand the storage mechanism of HDFS, the advanced application of HDFS, the reading and writing process of HDFS, and master the thought of MapReduce and the task execution process of Yarn, so as to better use Hadoop.",
   "recommended_for": "Cloud server users, Big data technology enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_hadooparcpri",

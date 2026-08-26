@@ -3,484 +3,161 @@
   "course_id": "Curso Nº certification-clouder-dynamicweb",
   "title_en": "Using ECS to Construct a Dynamic Website",
   "title_es": "Usar ECS para Construir un Sitio Web Dinámico",
+  "title_es_html": "Usar ECS para Construir un <em>Sitio Web Dinámico</em>",
   "duration_es": "27 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_dynamicweb",
-  "lead": "Guía completa en español para el curso «Using ECS to Construct a Dynamic Website» de Alibaba Cloud Academy. Cubre en profundidad Elastic Compute Service (ECS). ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Using ECS to Construct a Dynamic Website» de Alibaba Cloud Academy: el proyecto práctico de instalar WordPress sobre una instancia ECS desde cero. A diferencia de la guía general de ECS, aquí el foco está en el stack de aplicación (servidor web, PHP, base de datos), el dominio y DNS, y las decisiones que separan un sitio de práctica de un sitio dinámico listo para producción.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Elastic Compute Service (ECS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Instance type, Region, Zone (AZ), Image, Snapshot.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Elastic Compute Service (ECS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Aprovisionar</strong> una instancia ECS con el tipo, imagen y almacenamiento adecuados para alojar un sitio dinámico tipo WordPress.",
+    "<strong>Instalar</strong> un stack LAMP/LNMP (Linux + Apache o Nginx + MySQL/MariaDB + PHP) o usar una imagen del Marketplace preconfigurada.",
+    "<strong>Configurar</strong> WordPress apuntando a una base de datos, ya sea local en la misma instancia o gestionada en RDS.",
+    "<strong>Enlazar</strong> un dominio propio a la instancia mediante registros DNS y asegurar el sitio con un certificado TLS.",
+    "<strong>Proteger</strong> el sitio con Security Groups, actualizaciones del CMS y backups periódicos del contenido y la base de datos.",
+    "<strong>Distinguir</strong> cuándo un sitio dinámico simple en una sola instancia deja de ser suficiente y requiere separar capas (SLB, RDS, OSS, CDN)."
   ],
-  "architecture": "Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
+  "architecture": "El patrón mínimo para práctica es una sola instancia ECS con Nginx o Apache, PHP-FPM y MySQL corriendo en el mismo servidor (LNMP/LAMP monolítico), con WordPress como capa de aplicación. Este diseño es adecuado para aprendizaje y sitios de bajo tráfico, pero mezcla capas: cómputo, base de datos y archivos estáticos compiten por los mismos recursos. El patrón de producción separa esas capas: ECS (o varias detrás de un SLB) sirve solo la aplicación, RDS aloja la base de datos de forma gestionada y redundante, OSS almacena medios subidos (imágenes, adjuntos) y un CDN los distribuye cerca del usuario final; un registro DNS con TTL bajo apunta el dominio a la IP pública o al SLB, con TLS terminado ahí mismo.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Elastic Compute Service (ECS)",
-      "title_en": "Introduction to Elastic Compute Service (ECS)",
-      "intro": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Elegir la instancia y la imagen de partida",
+      "title_en": "Provisioning the ECS instance",
+      "intro": "Antes de instalar WordPress hay que decidir sobre qué corre: el tamaño de instancia, el sistema operativo y si se parte de una imagen limpia o de una imagen del Marketplace ya configurada con el stack completo.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Elastic Compute Service (ECS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Tamaño de instancia</strong>: para un sitio de práctica o bajo tráfico, una instancia <code>ecs.t6</code> o <code>ecs.g6.small/medium</code> (familia general purpose, burstable) es más que suficiente; escalar solo cuando el tráfico real lo exija.",
+        "<strong>Sistema operativo</strong>: una distribución Linux (Ubuntu, CentOS/Alibaba Cloud Linux) es la opción habitual para un stack LAMP/LNMP por su ecosistema de paquetes y menor costo de licencia.",
+        "<strong>Imagen desde cero vs. Marketplace</strong>: instalar manualmente Nginx/Apache + PHP + MySQL da control total y valor de aprendizaje; una imagen de Marketplace con WordPress preinstalado ahorra tiempo pero añade una dependencia del mantenedor de esa imagen.",
+        "<strong>Disco</strong>: el disco de sistema por defecto suele bastar para WordPress y sus plugins; si el sitio subirá muchos archivos multimedia, conviene planificar desde el inicio mover esos archivos a OSS en vez de crecer el disco de la instancia indefinidamente."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Elastic Compute Service (ECS) es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen puede presentar la opción «imagen de Marketplace con WordPress preinstalado» como atajo válido — no es un antipatrón, es una forma legítima de acelerar el aprovisionamiento cuando no se necesita personalización del stack."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Elastic Compute Service (ECS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Instalar y configurar el stack de aplicación",
+      "title_en": "Installing the LAMP/LNMP stack",
+      "intro": "WordPress es una aplicación PHP que necesita un servidor web, un intérprete PHP y una base de datos relacional. Este bloque cubre cómo se ensamblan esas tres piezas sobre la instancia.",
       "points": [
-        "<strong>Patrón canónico</strong>: Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Elastic Compute Service (ECS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Tipo de instancia</strong> <em>(Instance type)</em>: Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "<strong>Región</strong> <em>(Region)</em>: Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "<strong>Zona de disponibilidad</strong> <em>(Zone (AZ))</em>: Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "<strong>Imagen</strong> <em>(Image)</em>: Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "<strong>Snapshot</strong> <em>(Snapshot)</em>: Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "<strong>Grupo de seguridad</strong> <em>(Security Group)</em>: Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG.",
-        "<strong>VPC / VSwitch</strong> <em>(VPC / VSwitch)</em>: Red virtual privada + subredes por zona donde se despliega la ENI.",
-        "<strong>Elastic Network Interface</strong> <em>(ENI)</em>: Tarjeta de red virtual. Una instancia puede tener varias."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Servidor web</strong>: Nginx (más ligero, orientado a eventos) o Apache (más simple de configurar con <code>.htaccess</code>) sirven las peticiones HTTP y delegan la ejecución de PHP.",
+        "<strong>PHP-FPM</strong>: procesa las peticiones PHP de forma independiente del servidor web, permitiendo ajustar el número de workers según la carga esperada.",
+        "<strong>Base de datos</strong>: MySQL o MariaDB almacena posts, usuarios, configuración y metadatos de WordPress; puede vivir en la misma instancia (más simple, sin resiliencia propia) o en una instancia RDS gestionada (con backups automáticos y alta disponibilidad).",
+        "<strong>Instalador de WordPress</strong>: tras descargar el núcleo de WordPress y apuntar <code>wp-config.php</code> a las credenciales de la base de datos, el asistente web de 5 minutos completa la instalación (idioma, título del sitio, usuario administrador).",
+        "<strong>Permisos de archivos</strong>: los directorios de WordPress (especialmente <code>wp-content/uploads</code>) necesitan permisos de escritura para el usuario del servidor web, pero nunca permisos abiertos a todo el sistema."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona «separar la base de datos del servidor de aplicación por resiliencia», la respuesta apunta a RDS, no a MySQL instalado localmente en la misma instancia ECS."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Dominio, DNS y certificado TLS",
+      "title_en": "Domain, DNS and TLS",
+      "intro": "Un sitio dinámico funcional en una IP no es un sitio publicado: falta el dominio, la resolución DNS y el cifrado en tránsito, tres piezas que el curso trata como parte integral del proyecto.",
       "points": [
-        "<strong>HA</strong>: Usar instancias en al menos 2 zonas detrás de un SLB para HA",
-        "<strong>HA</strong>: Habilitar snapshots automáticos diarios de discos críticos",
-        "<strong>HA</strong>: Usar imágenes custom con hardening pre-aplicado en vez de configurar cada instancia manualmente",
-        "<strong>Seguridad</strong>: Nunca usar la cuenta raíz para operar ECS — crear usuarios RAM con roles específicos",
-        "<strong>Costo</strong>: Combinar Reserved Instances (baseline) + pay-as-you-go (picos) + spot (batch) para minimizar costo",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups siguiendo mínimo privilegio (denegar todo por defecto)",
-        "<strong>Buenas prácticas</strong>: Instrumentar con CloudMonitor + alertas para CPU/memoria/disco antes de que falle"
+        "<strong>Registro DNS tipo A</strong>: apunta el dominio (o subdominio) a la IP pública o Elastic IP de la instancia ECS; si se usa un SLB delante, el registro suele ser CNAME hacia el dominio del balanceador.",
+        "<strong>Elastic IP vs. IP pública efímera</strong>: una IP pública asignada al crear la instancia puede cambiar si se libera y recrea la instancia; una EIP es estable y se puede reasociar a otra instancia sin tocar el DNS.",
+        "<strong>Certificado TLS/SSL</strong>: sin HTTPS, el navegador marca el sitio como no seguro y WordPress puede tener problemas con contenido mixto; el certificado se puede emitir gratis (Let's Encrypt) o gestionar vía SSL Certificates Service de Alibaba Cloud.",
+        "<strong>Propagación DNS</strong>: los cambios de registros DNS tardan en propagarse según el TTL configurado — reducir el TTL antes de una migración planeada acelera el corte."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Una IP pública efímera es la causa más común de que un sitio funcione en pruebas y luego «se caiga» tras reiniciar la instancia — siempre usar EIP para un sitio en producción."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Seguridad, mantenimiento y backups",
+      "title_en": "Security, maintenance and backups",
+      "intro": "WordPress es de los CMS más atacados del mundo precisamente por su popularidad; mantener el sitio seguro es una responsabilidad continua, no una tarea de un solo día.",
       "points": [
-        "<strong>Antipattern</strong>: Poner instancias productivas en una sola zona → caída total si la zona falla",
-        "<strong>Antipattern</strong>: Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-        "<strong>Antipattern</strong>: Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-        "<strong>Antipattern</strong>: No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-        "<strong>Antipattern</strong>: Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-        "<strong>Antipattern</strong>: Preemptible en producción crítica sin plan de reintento",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Security Group</strong>: solo deben estar abiertos los puertos 80/443 (HTTP/HTTPS) al público y el puerto de administración (22/3389) restringido a IPs conocidas — nunca exponer el puerto de MySQL (3306) a internet.",
+        "<strong>Actualizaciones</strong>: el núcleo de WordPress, los temas y los plugins deben actualizarse regularmente; una versión desactualizada es el vector de ataque más común contra sitios WordPress.",
+        "<strong>Usuario administrador</strong>: nunca dejar el usuario <code>admin</code> por defecto con contraseñas débiles; usar un nombre de usuario propio y una contraseña fuerte, idealmente con autenticación de dos factores en el plugin de login.",
+        "<strong>Backups</strong>: respaldar tanto los archivos (tema, plugins, uploads) como la base de datos por separado; un snapshot de disco ECS respalda los archivos pero no sustituye un export de la base de datos si esta vive en RDS.",
+        "<strong>Caché</strong>: un plugin de caché de página o un CDN delante del sitio reduce la carga de PHP/MySQL en cada visita, mejorando tiempos de respuesta sin cambiar la arquitectura de fondo."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe un sitio WordPress comprometido por un plugin desactualizado, la causa raíz que el examen espera identificar es la falta de mantenimiento del CMS, no un fallo de la infraestructura ECS."
+      }
+    },
+    {
+      "title_es": "5 · De un sitio de práctica a una arquitectura de producción",
+      "title_en": "Scaling beyond a single instance",
+      "intro": "El proyecto del curso cabe en una sola instancia, pero el examen espera que sepas identificar cuándo ese diseño deja de ser suficiente y qué componentes se añaden primero.",
+      "points": [
+        "<strong>Primer cuello de botella típico</strong>: la base de datos local compite por CPU/memoria con el servidor web bajo tráfico creciente — migrarla a RDS es habitualmente el primer paso de escalado.",
+        "<strong>Archivos multimedia</strong>: mover <code>wp-content/uploads</code> a un bucket OSS (con un plugin de offload) libera al disco de la instancia y permite servir esos archivos desde un CDN.",
+        "<strong>Múltiples instancias</strong>: una vez que una sola instancia no basta, se replican detrás de un SLB; esto exige que la sesión de administración y los archivos subidos ya no dependan del disco local de una instancia específica.",
+        "<strong>Auto Scaling</strong>: para tráfico variable (picos de campaña, lanzamientos), un Auto Scaling Group añade y retira instancias de aplicación automáticamente, siempre que la base de datos y los medios ya estén desacoplados."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El orden natural de escalado de un sitio WordPress es: 1) mover la base de datos a RDS, 2) mover medios a OSS+CDN, 3) replicar instancias de aplicación detrás de un SLB, 4) automatizar con Auto Scaling. Saltarse el orden suele generar inconsistencias de sesión o de archivos."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Sitios web y APIs con tráfico variable (auto-escalado)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Renderizado de video / cargas GPU-intensivas (familia gn)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis batch nocturno (spot instances con hasta 90% descuento)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "SAP y aplicaciones enterprise (familia re con memoria alta)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Entornos de desarrollo/pruebas (pay-as-you-go, apagado nocturno)"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Escritorios virtuales y bastion hosts"
-    }
+    { "title": "Escenario 1", "text": "Blog personal o sitio de práctica — instancia única con LNMP y MySQL local" },
+    { "title": "Escenario 2", "text": "Sitio corporativo con tráfico moderado — ECS + RDS separado + backups automáticos" },
+    { "title": "Escenario 3", "text": "Campaña de marketing con picos de tráfico previstos — ECS detrás de SLB + Auto Scaling Group" },
+    { "title": "Escenario 4", "text": "Sitio con mucho contenido multimedia — medios servidos desde OSS + CDN en vez del disco local" },
+    { "title": "Escenario 5", "text": "Migración de un WordPress on-premise a Alibaba Cloud — exportar base de datos y archivos, reapuntar DNS con TTL bajo" }
   ],
   "mistakes": [
-    "Poner instancias productivas en una sola zona → caída total si la zona falla",
-    "Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-    "Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-    "No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-    "Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-    "Preemptible en producción crítica sin plan de reintento"
+    "Dejar el puerto 3306 (MySQL) abierto a internet en vez de restringirlo a localhost o a la red interna",
+    "Usar una IP pública efímera en vez de una Elastic IP para el registro DNS de producción",
+    "No actualizar el núcleo, temas y plugins de WordPress de forma regular",
+    "Guardar todo el contenido multimedia en el disco de la instancia sin plan de crecimiento",
+    "Respaldar solo los archivos y olvidar el export de la base de datos (o viceversa)",
+    "Escalar añadiendo instancias antes de desacoplar la base de datos y los medios compartidos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs DescribeInstances",
-      "desc": "Listar instancias ECS en la región actual"
-    },
-    {
-      "cmd": "aliyun ecs RunInstances --ImageId ... --InstanceType ecs.g6.large",
-      "desc": "Crear instancia"
-    },
-    {
-      "cmd": "aliyun ecs StopInstance --InstanceId i-xxxxx --StoppedMode StopCharging",
-      "desc": "Detener sin cobrar"
-    },
-    {
-      "cmd": "aliyun ecs CreateSnapshot --DiskId d-xxxxx",
-      "desc": "Crear snapshot de disco"
-    },
-    {
-      "cmd": "aliyun ecs ModifyInstanceAttribute --InstanceId ... --Password ...",
-      "desc": "Cambiar credenciales"
-    }
+    { "cmd": "aliyun ecs RunInstances --ImageId centos_7_9_x64_20G_alibase --InstanceType ecs.t6-c1m2.large", "desc": "Crear la instancia base para el sitio" },
+    { "cmd": "aliyun ecs AllocateEipAddress --Bandwidth 5", "desc": "Reservar una Elastic IP estable para el dominio" },
+    { "cmd": "aliyun ecs AssociateEipAddress --InstanceId i-xxxxx --AllocationId eip-xxxxx", "desc": "Asociar la EIP a la instancia del sitio" },
+    { "cmd": "aliyun rds CreateDBInstance --Engine MySQL --EngineVersion 8.0 --DBInstanceClass rds.mysql.s1.small", "desc": "Crear una base de datos RDS separada de la instancia web" },
+    { "cmd": "aliyun ecs CreateSnapshot --DiskId d-xxxxx", "desc": "Respaldar el disco con archivos del sitio antes de una actualización" }
   ],
   "glossary": [
-    {
-      "en": "Instance type",
-      "es": "Tipo de instancia",
-      "def": "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "en": "Zone (AZ)",
-      "es": "Zona de disponibilidad",
-      "def": "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "en": "Image",
-      "es": "Imagen",
-      "def": "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "en": "Snapshot",
-      "es": "Snapshot",
-      "def": "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG."
-    },
-    {
-      "en": "VPC / VSwitch",
-      "es": "VPC / VSwitch",
-      "def": "Red virtual privada + subredes por zona donde se despliega la ENI."
-    },
-    {
-      "en": "ENI",
-      "es": "Elastic Network Interface",
-      "def": "Tarjeta de red virtual. Una instancia puede tener varias."
-    },
-    {
-      "en": "Elastic IP (EIP)",
-      "es": "IP elástica",
-      "def": "IP pública estática, se puede desasociar y reasociar."
-    },
-    {
-      "en": "Pay-as-you-go",
-      "es": "Pago por uso",
-      "def": "Facturación por segundo/hora sin compromiso. Ideal para cargas variables."
-    },
-    {
-      "en": "Subscription",
-      "es": "Suscripción",
-      "def": "Compra anticipada mensual/anual con 15-40% descuento."
-    },
-    {
-      "en": "Reserved Instance",
-      "es": "Instancia reservada",
-      "def": "Descuento adicional a cambio de compromiso 1-3 años."
-    },
-    {
-      "en": "Preemptible / Spot",
-      "es": "Preemptible",
-      "def": "Hasta 90% descuento; puede terminarse con 5 min de aviso."
-    },
-    {
-      "en": "Savings Plan",
-      "es": "Plan de ahorro",
-      "def": "Compromiso de $/hora aplicable a cualquier familia."
-    },
-    {
-      "en": "Auto Scaling Group",
-      "es": "Grupo de auto-escalado",
-      "def": "Ajusta capacidad según políticas de CPU/tiempo/eventos."
-    },
-    {
-      "en": "Cloud-init / User Data",
-      "es": "User Data",
-      "def": "Script que se ejecuta al arrancar la instancia (bootstrap)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "LAMP / LNMP stack", "es": "Pila LAMP/LNMP", "def": "Linux + Apache o Nginx + MySQL/MariaDB + PHP: el conjunto de software para servir WordPress u otras apps dinámicas." },
+    { "en": "PHP-FPM", "es": "PHP-FPM", "def": "Gestor de procesos PHP que atiende las peticiones delegadas por el servidor web." },
+    { "en": "wp-config.php", "es": "wp-config.php", "def": "Archivo de configuración de WordPress con las credenciales de conexión a la base de datos." },
+    { "en": "Elastic IP (EIP)", "es": "IP elástica", "def": "IP pública estable, independiente del ciclo de vida de la instancia; recomendada para el registro DNS de producción." },
+    { "en": "A Record", "es": "Registro A", "def": "Registro DNS que apunta un dominio directamente a una dirección IP." },
+    { "en": "CNAME Record", "es": "Registro CNAME", "def": "Registro DNS que apunta un dominio a otro nombre de dominio, típico al usar un SLB o CDN delante del sitio." },
+    { "en": "TTL (Time To Live)", "es": "TTL", "def": "Tiempo que un registro DNS se mantiene en caché antes de volver a consultarse." },
+    { "en": "RDS", "es": "Base de datos relacional gestionada", "def": "Servicio de base de datos administrado por Alibaba Cloud, con backups y alta disponibilidad integrados." },
+    { "en": "OSS Offload", "es": "Descarga de medios a OSS", "def": "Técnica de mover archivos subidos por el CMS a un bucket OSS en vez del disco local de la instancia." },
+    { "en": "TLS/SSL Certificate", "es": "Certificado TLS/SSL", "def": "Certificado que habilita HTTPS y cifra el tráfico entre el navegador y el servidor." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful que controla qué puertos están expuestos a internet." },
+    { "en": "Auto Scaling Group", "es": "Grupo de auto-escalado", "def": "Conjunto de reglas que añade o retira instancias de aplicación según la carga." },
+    { "en": "SLB (Server Load Balancer)", "es": "Balanceador de carga", "def": "Distribuye tráfico entrante entre varias instancias de aplicación." },
+    { "en": "CDN", "es": "Red de distribución de contenido", "def": "Cachea y sirve contenido estático (imágenes, CSS, JS) cerca del usuario final." },
+    { "en": "wp-content/uploads", "es": "Directorio de medios de WordPress", "def": "Carpeta donde WordPress guarda por defecto los archivos multimedia subidos." },
+    { "en": "Snapshot", "es": "Instantánea de disco", "def": "Copia puntual del disco de la instancia, útil para respaldar archivos antes de una actualización." },
+    { "en": "Marketplace Image", "es": "Imagen del Marketplace", "def": "Imagen preconfigurada por un tercero (p.ej. con WordPress ya instalado) disponible para lanzar directamente." },
+    { "en": "Content mixed warning", "es": "Advertencia de contenido mixto", "def": "Alerta del navegador cuando un sitio HTTPS carga recursos por HTTP sin cifrar." },
+    { "en": "Two-factor authentication (2FA)", "es": "Autenticación de dos factores", "def": "Capa adicional de seguridad para el login de administrador del CMS." },
+    { "en": "Database export/import", "es": "Exportación/importación de base de datos", "def": "Volcado de la base de datos (p.ej. vía mysqldump) usado para backups o migraciones." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Elastic Compute Service (ECS)?",
-      "options": [
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud."
-    },
-    {
-      "q": "¿Qué es <strong>Instance type</strong> (Tipo de instancia) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Instance type (Tipo de instancia): Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "q": "¿Qué es <strong>Region</strong> (Región) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Region (Región): Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "q": "¿Qué es <strong>Zone (AZ)</strong> (Zona de disponibilidad) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Zone (AZ) (Zona de disponibilidad): Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "q": "¿Qué es <strong>Image</strong> (Imagen) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Image (Imagen): Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "q": "¿Qué es <strong>Snapshot</strong> (Snapshot) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Snapshot (Snapshot): Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Elastic Compute Service (ECS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Elastic Compute Service (ECS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Elastic Compute Service (ECS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Elastic Compute Service (ECS) es la elección típica:",
-      "options": [
-        "Sitios web y APIs con tráfico variable (auto-escalado)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Sitios web y APIs con tráfico variable (auto-escalado)."
-    }
+    { "q": "¿Qué componentes forman el stack típico para alojar WordPress sobre ECS?", "options": ["Solo un servidor web sin base de datos", "Servidor web + PHP-FPM + base de datos relacional (MySQL/MariaDB)", "Solo una base de datos NoSQL", "Un balanceador de carga sin servidor de aplicación"], "answer": 1, "explain": "WordPress necesita un servidor web, un intérprete PHP y una base de datos relacional para funcionar." },
+    { "q": "¿Por qué se recomienda usar una Elastic IP en vez de la IP pública asignada automáticamente para un sitio en producción?", "options": ["La EIP es más barata siempre", "La EIP es estable y no cambia si la instancia se reinicia o recrea, evitando romper el DNS", "La IP pública automática no permite tráfico HTTPS", "No hay ninguna diferencia práctica"], "answer": 1, "explain": "Una IP pública efímera puede cambiar; la EIP permanece estable y se puede reasociar sin tocar los registros DNS." },
+    { "q": "Un sitio necesita resiliencia y backups automáticos para su base de datos. ¿Qué opción es más adecuada que instalar MySQL en la misma instancia ECS?", "options": ["Instalar MySQL en modo standalone en la misma instancia", "Usar una instancia RDS gestionada", "No usar base de datos", "Guardar los datos solo en archivos de texto"], "answer": 1, "explain": "RDS ofrece backups automáticos y alta disponibilidad que una instalación local de MySQL no tiene por defecto." },
+    { "q": "¿Qué puerto NUNCA debería estar abierto a internet (0.0.0.0/0) en el Security Group de un sitio WordPress típico?", "options": ["80 (HTTP)", "443 (HTTPS)", "3306 (MySQL)", "Ninguno debería restringirse"], "answer": 2, "explain": "El puerto de la base de datos debe restringirse a localhost o a la red interna, nunca exponerse públicamente." },
+    { "q": "¿Cuál es la causa más común de que un sitio WordPress sea comprometido según el curso?", "options": ["El proveedor de nube tiene una falla", "Plugins, temas o el núcleo de WordPress desactualizados", "El dominio expiró", "El certificado TLS es demasiado nuevo"], "answer": 1, "explain": "El software desactualizado es el vector de ataque más común contra sitios basados en CMS como WordPress." },
+    { "q": "¿Qué registro DNS se usa típicamente cuando hay un Server Load Balancer delante del sitio, en vez de apuntar directo a una IP?", "options": ["Registro MX", "Registro A", "Registro CNAME hacia el dominio del balanceador", "Registro TXT"], "answer": 2, "explain": "Cuando el tráfico pasa por un SLB, el dominio suele apuntar mediante CNAME al nombre del balanceador, no a una IP fija." },
+    { "q": "¿Cuál es el primer paso recomendado al escalar un WordPress de instancia única hacia una arquitectura de mayor tráfico?", "options": ["Añadir más instancias de aplicación de inmediato", "Migrar la base de datos a RDS antes de replicar instancias", "Eliminar el Security Group", "Desactivar HTTPS para mejorar rendimiento"], "answer": 1, "explain": "Desacoplar la base de datos es el paso natural antes de replicar instancias de aplicación, evitando inconsistencias." },
+    { "q": "¿Qué logra mover los archivos de wp-content/uploads a un bucket OSS?", "options": ["Aumenta el riesgo de pérdida de datos", "Libera al disco de la instancia y permite servir medios desde un CDN", "Elimina la necesidad de un servidor web", "Hace innecesario el certificado TLS"], "answer": 1, "explain": "Desacoplar los medios del disco local es clave antes de escalar horizontalmente el sitio con varias instancias." },
+    { "q": "¿Qué combinación de backups es correcta para un sitio WordPress con base de datos en RDS?", "options": ["Solo snapshot de disco de la instancia web", "Solo export de la base de datos", "Snapshot de los archivos de la instancia y backup/export separado de la base de datos en RDS", "No es necesario respaldar nada si el sitio funciona"], "answer": 2, "explain": "Archivos y base de datos son componentes independientes; ambos deben respaldarse por separado." },
+    { "q": "¿Qué ventaja ofrece usar una imagen de Marketplace con WordPress preinstalado frente a instalar el stack manualmente?", "options": ["Es la única forma soportada de instalar WordPress en ECS", "Ahorra tiempo de configuración, aunque añade dependencia del mantenedor de la imagen", "Elimina la necesidad de un Security Group", "Hace innecesaria la base de datos"], "answer": 1, "explain": "Es un atajo legítimo de aprovisionamiento, con la contrapartida de depender del mantenimiento de esa imagen de terceros." },
+    { "q": "¿Qué problema provoca típicamente cargar recursos por HTTP en un sitio servido por HTTPS?", "options": ["Ninguno, es una práctica recomendada", "Una advertencia de contenido mixto en el navegador", "El sitio deja de resolver por DNS", "La base de datos se corrompe"], "answer": 1, "explain": "El navegador marca como contenido mixto los recursos no cifrados cargados dentro de una página HTTPS." },
+    { "q": "Para tráfico con picos previstos (campaña de marketing), ¿qué combinación de componentes es la más adecuada una vez desacoplada la base de datos?", "options": ["Una sola instancia sin balanceador", "SLB + Auto Scaling Group de instancias de aplicación", "Eliminar el CDN para reducir costos", "Aumentar el TTL del DNS a varios días"], "answer": 1, "explain": "Un SLB junto con un Auto Scaling Group permite absorber picos de tráfico añadiendo instancias automáticamente." }
   ],
-  "exam_focus": "Preguntas típicas: (a) qué familia elegir para X carga, (b) diferencias entre región/zona, (c) modelos de facturación óptimos según patrón de uso, (d) diseño HA multi-AZ, (e) permisos con RAM roles.",
+  "exam_focus": "El examen evalúa el flujo completo de publicar un sitio dinámico en ECS: elegir instancia e imagen, ensamblar el stack de aplicación, enlazar dominio con DNS y TLS, aplicar buenas prácticas de seguridad y backups, y reconocer el orden correcto de escalado cuando una sola instancia deja de ser suficiente.",
   "official_intro": "Want to learn how to construct a dynamic website that can actively update its content? In this Clouder lesson, you will learn how to build a WordPress website on Alibaba Cloud.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_dynamicweb",

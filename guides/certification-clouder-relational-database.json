@@ -2,465 +2,180 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-relational-database",
   "title_en": "Alibaba Cloud Relational Database Service Technical Operations",
-  "title_es": "Alibaba Cloud Relational Base de Datos Servicio Technical Operations",
+  "title_es": "Operaciones Técnicas de Alibaba Cloud Relational Database Service",
+  "title_es_html": "Operaciones Técnicas de Alibaba Cloud <em>Relational Database Service</em>",
   "duration_es": "128 minutos",
   "level_es": "Intermedio",
   "category_es": "Bases de Datos",
   "subcategory_es": "Relational Database",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-relational-database",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Relational Database Service Technical Operations» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB RDS. RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español de nivel intermedio sobre la operación técnica avanzada de ApsaraDB RDS, más allá de crear una primera instancia. El eje de este curso es la caja de herramientas que un operador usa día a día en producción: migración con DTS, proxy de lectura/escritura, diagnóstico de consultas lentas, auditoría de SQL y diseño de recuperación ante desastres multi-región — el conjunto de habilidades que separa a quien administra una instancia de quien opera una flota de bases de datos en producción.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB RDS</em>.",
-    "<strong>Dominar</strong> los conceptos clave: HA Edition, Basic Edition, Enterprise Edition, Read-only Replica, Parameter Group.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB RDS y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Planificar</strong> una migración hacia RDS con Data Transmission Service (DTS), minimizando el tiempo de corte (downtime).",
+    "<strong>Configurar</strong> un proxy de lectura/escritura para distribuir tráfico entre la instancia primaria y sus réplicas de forma transparente a la aplicación.",
+    "<strong>Diagnosticar</strong> consultas lentas usando el log de queries lentas y las herramientas de análisis de plan de ejecución.",
+    "<strong>Aplicar</strong> auditoría de SQL para cumplimiento normativo y detección de comportamiento anómalo.",
+    "<strong>Diseñar</strong> una arquitectura de recuperación ante desastres (DR) que sobreviva a la pérdida de una región completa.",
+    "<strong>Ajustar</strong> parámetros de motor mediante Parameter Groups sin comprometer la estabilidad de producción.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre operación técnica avanzada de RDS."
   ],
-  "architecture": "Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
+  "architecture": "Una operación de RDS madura combina varias capas: DTS gestiona tanto la migración inicial (full + incremental) como la replicación continua hacia otros destinos (otra región, un data warehouse); un proxy de base de datos se coloca entre la aplicación y las instancias RDS para enrutar automáticamente escrituras a la primaria y lecturas a las réplicas, sin que la aplicación necesite conocer las IPs de cada nodo; SQL Audit registra cada sentencia ejecutada para cumplimiento y forense; el log de queries lentas alimenta un ciclo de optimización continuo de índices y consultas; y para recuperación ante desastres, una réplica cross-región combinada con backups replicados permite reconstruir el servicio en una región distinta si la región primaria completa deja de estar disponible.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ApsaraDB RDS",
-      "title_en": "Introduction to ApsaraDB RDS",
-      "intro": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Migración a RDS con Data Transmission Service (DTS)",
+      "title_en": "Migrating to RDS with Data Transmission Service (DTS)",
+      "intro": "Mover una base de datos productiva hacia RDS sin detener el negocio durante horas es uno de los proyectos técnicos más delicados que un operador enfrenta — DTS es la herramienta diseñada específicamente para minimizar esa ventana de corte.",
       "points": [
-        "<strong>Problema que resuelve</strong>: RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ApsaraDB RDS se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Migración full + incremental</strong>: DTS primero copia el estado completo de los datos (full) y luego sincroniza de forma continua los cambios ocurridos desde entonces (incremental), manteniendo el destino al día mientras el origen sigue recibiendo tráfico productivo.",
+        "<strong>Ventana de corte mínima</strong>: gracias a la sincronización incremental continua, el corte real hacia el nuevo destino se reduce al tiempo necesario para redirigir el tráfico de la aplicación una vez que origen y destino están prácticamente sincronizados, en vez de detener el sistema durante toda la copia completa.",
+        "<strong>Migración heterogénea</strong>: DTS no solo migra entre instancias del mismo motor — también soporta migraciones entre motores compatibles y replicación continua hacia destinos analíticos (por ejemplo, de RDS hacia AnalyticDB) para separar cargas transaccionales de analíticas.",
+        "<strong>Validación pre-migración</strong>: antes de iniciar, DTS ejecuta una verificación de prerequisitos (privilegios, configuración del motor origen, esquema) que evita descubrir un bloqueante a mitad de una migración ya en curso.",
+        "<strong>Rollback</strong>: mantener el sistema origen intacto y funcionando durante la sincronización incremental permite revertir el corte hacia el destino nuevo si algo falla, sin haber comprometido la disponibilidad del sistema original."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ApsaraDB RDS es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen más común sobre DTS no es «¿qué hace?» sino «¿cómo logra downtime mínimo?» — la respuesta siempre es la combinación de copia full inicial más sincronización incremental continua hasta el momento del corte."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ApsaraDB RDS no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Proxy de lectura/escritura: escalar sin cambiar la aplicación",
+      "title_en": "Read/Write Proxy: Scaling Without Changing the Application",
+      "intro": "Tener réplicas de lectura no sirve de mucho si cada desarrollador debe recordar manualmente a qué endpoint conectar cada consulta — el proxy resuelve ese enrutamiento de forma transparente.",
       "points": [
-        "<strong>Patrón canónico</strong>: Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ApsaraDB RDS (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Edición HA</strong> <em>(HA Edition)</em>: Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "<strong>Edición básica</strong> <em>(Basic Edition)</em>: Instancia única sin HA — solo dev/test.",
-        "<strong>Edición enterprise</strong> <em>(Enterprise Edition)</em>: Múltiples nodos, mayor SLA.",
-        "<strong>Réplica de lectura</strong> <em>(Read-only Replica)</em>: Hasta 5 réplicas asíncronas para escalar SELECT.",
-        "<strong>Parameter Group</strong> <em>(Parameter Group)</em>: Configuración reutilizable del engine.",
-        "<strong>Backup automático</strong> <em>(Automated Backup)</em>: Full diario + binlogs incrementales. Retención 7-730 días.",
-        "<strong>Point-in-Time Recovery</strong> <em>(PITR)</em>: Restaura al segundo exacto dentro del rango de retención.",
-        "<strong>Whitelist</strong> <em>(Whitelist)</em>: Lista de IPs/SG autorizados. Sin esto, nadie conecta."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Un solo endpoint para la aplicación</strong>: en vez de que el código de la aplicación distinga entre el endpoint de la primaria y el de cada réplica, se conecta a un único endpoint de proxy que decide internamente hacia dónde enrutar cada sentencia.",
+        "<strong>Enrutamiento automático por tipo de sentencia</strong>: el proxy identifica si una sentencia es de escritura (dirigida siempre a la primaria) o de lectura (distribuida entre las réplicas disponibles según su carga), sin requerir anotaciones especiales en el código en el caso general.",
+        "<strong>Balanceo entre réplicas</strong>: con múltiples réplicas de lectura, el proxy distribuye el tráfico entre ellas, evitando que toda la carga de lectura recaiga sobre una sola réplica mientras las demás permanecen subutilizadas.",
+        "<strong>Consideración de consistencia</strong>: como la replicación hacia las réplicas es asíncrona, una lectura enrutada a una réplica justo después de una escritura reciente puede no reflejar todavía ese cambio — para flujos que exigen leer su propia escritura de inmediato, es necesario forzar esa lectura específica hacia la primaria.",
+        "<strong>Transparencia ante cambios de topología</strong>: si se añade o retira una réplica, el proxy absorbe ese cambio sin que la aplicación necesite modificar su configuración de conexión."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe 'la aplicación necesita leer inmediatamente el dato que acaba de escribir', la respuesta es forzar esa lectura hacia la primaria, no confiar en el enrutamiento por defecto del proxy hacia las réplicas."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Diagnóstico de rendimiento: el log de queries lentas",
+      "title_en": "Performance Diagnostics: The Slow Query Log",
+      "intro": "Antes de escalar verticalmente una instancia o añadir más réplicas, un operador experimentado revisa primero si el problema real es una consulta mal escrita o un índice faltante — el log de queries lentas es la primera herramienta de diagnóstico.",
       "points": [
-        "<strong>HA</strong>: HA Edition en producción — siempre",
-        "<strong>HA</strong>: PITR probado — hacer un drill de restauración trimestral",
-        "<strong>Seguridad</strong>: TDE + KMS para datos regulados (PCI, HIPAA)",
-        "<strong>Buenas prácticas</strong>: Whitelist con IPs privadas o Security Groups, no 0.0.0.0/0",
-        "<strong>Buenas prácticas</strong>: SSL obligatorio para conexiones desde fuera de la VPC",
-        "<strong>Buenas prácticas</strong>: Réplicas de lectura para BI/reportes — no golpear la primaria"
+        "<strong>Qué registra</strong>: toda sentencia cuyo tiempo de ejecución supera un umbral configurable queda registrada con su duración, filas examinadas y filas devueltas, permitiendo identificar rápidamente las consultas más costosas del sistema.",
+        "<strong>Filas examinadas vs. filas devueltas</strong>: una consulta que examina millones de filas para devolver solo unas pocas es la señal clásica de un índice faltante o mal diseñado, distinta de una consulta que legítimamente necesita procesar un volumen grande.",
+        "<strong>Plan de ejecución</strong>: complementando el log de queries lentas, analizar el plan de ejecución de una consulta específica revela si el motor está usando un índice, haciendo un escaneo completo de tabla, o aplicando una conversión de tipo implícita que invalida un índice existente.",
+        "<strong>Ciclo de optimización</strong>: identificar la consulta costosa en el log, analizar su plan de ejecución, ajustar el índice o reescribir la consulta, y volver a medir — un proceso iterativo más que una acción única.",
+        "<strong>Cuándo el problema NO es la consulta</strong>: si múltiples consultas distintas y bien indexadas se vuelven lentas simultáneamente, la causa probable no es una consulta puntual sino saturación de recursos (CPU, IOPS, conexiones) de la instancia completa, visible en las métricas de CloudMonitor."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "El orden de diagnóstico correcto es: (1) log de queries lentas para identificar la consulta problemática, (2) plan de ejecución para entender por qué es lenta, (3) solo después considerar escalar la instancia si el problema es de recursos generales, no de una consulta específica."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Auditoría de SQL y cumplimiento",
+      "title_en": "SQL Audit and Compliance",
+      "intro": "Más allá del rendimiento, un operador en un entorno regulado necesita poder responder con certeza quién ejecutó qué sentencia, cuándo, y sobre qué datos — SQL Audit existe exactamente para esa necesidad.",
       "points": [
-        "<strong>Antipattern</strong>: Basic Edition en producción — sin failover ni SLA",
-        "<strong>Antipattern</strong>: Whitelist 0.0.0.0/0 — DB expuesta a internet",
-        "<strong>Antipattern</strong>: Reportes pesados en la primaria — degradan transacciones",
-        "<strong>Antipattern</strong>: No monitorear IOPS/CPU — el motor se satura sin alerta",
-        "<strong>Antipattern</strong>: Retención de backup demasiado corta (default 7 días)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Registro completo de sentencias</strong>: SQL Audit conserva un historial de las sentencias ejecutadas contra la instancia, incluyendo el usuario, el origen de la conexión y el timestamp, sin depender de que la aplicación implemente su propio logging.",
+        "<strong>Diferencia con el log de queries lentas</strong>: el log de queries lentas existe para diagnóstico de rendimiento y solo registra sentencias por encima de un umbral de tiempo; SQL Audit existe para cumplimiento y trazabilidad, y puede configurarse para registrar todo el tráfico, no solo lo lento.",
+        "<strong>Casos de uso típicos</strong>: auditorías de cumplimiento normativo (financiero, salud), investigación forense tras un incidente de seguridad, y detección de patrones de acceso anómalos (por ejemplo, un volumen de lecturas inusual desde una cuenta específica).",
+        "<strong>Retención</strong>: el historial de auditoría se conserva por un período configurable, independiente de la retención de backups de datos, ya que responde a un requisito distinto (trazabilidad de acceso, no recuperación de datos).",
+        "<strong>Integración con el resto del ecosistema</strong>: SQL Audit complementa —no reemplaza— a ActionTrail (que audita llamadas a la API de gestión de Alibaba Cloud, no las sentencias SQL ejecutadas dentro del motor) y a las reglas de Data Masking de DMS si el acceso se realiza a través de esa plataforma."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Si el enunciado pregunta por 'auditar sentencias SQL ejecutadas dentro de la base de datos' la respuesta es SQL Audit, no ActionTrail — ActionTrail audita llamadas a la API de gestión de la cuenta, un nivel distinto."
+      }
+    },
+    {
+      "title_es": "5 · Recuperación ante desastres multi-región",
+      "title_en": "Multi-Region Disaster Recovery",
+      "intro": "La alta disponibilidad multi-zona protege contra la falla de un data center; sobrevivir a la pérdida de una región completa requiere un diseño explícito adicional, y el examen distingue con claridad estos dos niveles de protección.",
+      "points": [
+        "<strong>HA multi-zona vs. DR multi-región</strong>: la edición de alta disponibilidad con standby en otra zona protege contra la falla de un data center dentro de la misma región; sobrevivir a la pérdida de la región completa requiere una estrategia separada de recuperación ante desastres (DR).",
+        "<strong>Réplica de lectura cross-región</strong>: mantener una réplica en otra región permite, ante la pérdida de la región primaria, promoverla para asumir el rol de instancia principal en una región distinta, aunque con una ventana de posible pérdida de datos no replicados aún (RPO).",
+        "<strong>Backup replicado cross-región</strong>: como complemento o alternativa más económica a una réplica activa, replicar los backups hacia otra región permite reconstruir la instancia allí en caso de necesidad, con un tiempo de recuperación (RTO) mayor que el de una réplica ya activa.",
+        "<strong>RTO y RPO como criterios de diseño</strong>: el objetivo de tiempo de recuperación (RTO, cuánto tarda en restaurarse el servicio) y el objetivo de punto de recuperación (RPO, cuántos datos como máximo se pueden perder) determinan si conviene una réplica activa cross-región (RTO/RPO bajos, mayor costo) o solo backups replicados (RTO/RPO más altos, menor costo).",
+        "<strong>Prueba del plan de DR</strong>: al igual que con cualquier backup, un plan de recuperación ante desastres que nunca se ha ejecutado en un simulacro es una promesa no verificada — la buena práctica exige ensayar el failover cross-región periódicamente, no solo documentarlo."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El examen distingue con precisión HA (protege contra falla de zona, automática, RTO de segundos) de DR (protege contra falla de región, requiere diseño explícito, RTO típicamente mayor según la estrategia elegida)."
+      }
+    },
+    {
+      "title_es": "6 · Parameter Groups y ajuste seguro de motor",
+      "title_en": "Parameter Groups and Safe Engine Tuning",
+      "intro": "Ajustar la configuración interna del motor (buffer pool, timeouts, modo de aislamiento) puede mejorar significativamente el rendimiento, pero un cambio mal aplicado directamente en producción es un riesgo operativo evitable — Parameter Groups existen para gestionar ese riesgo.",
+      "points": [
+        "<strong>Parameter Group como configuración reutilizable</strong>: un conjunto de parámetros del motor se define una vez como grupo y se asocia a una o varias instancias, en vez de modificar cada instancia individualmente y perder consistencia entre ellas.",
+        "<strong>Parámetros dinámicos vs. estáticos</strong>: algunos parámetros se aplican de inmediato sin reiniciar la instancia; otros requieren un reinicio para tomar efecto — planificar cuáles se van a modificar determina si el cambio puede aplicarse en horario productivo o necesita una ventana de mantenimiento.",
+        "<strong>Validar en un entorno no productivo primero</strong>: la práctica recomendada es aplicar un cambio de parámetros en una instancia de prueba con carga representativa antes de aplicarlo en producción, evitando descubrir un efecto no deseado directamente con usuarios reales afectados.",
+        "<strong>Versionado y rollback</strong>: mantener el Parameter Group anterior disponible permite revertir rápidamente un cambio que resultó contraproducente, en vez de reconstruir la configuración de memoria.",
+        "<strong>Ejemplo de trade-off</strong>: aumentar el tamaño del buffer pool mejora el hit rate de caché de datos en memoria, pero reduce la memoria disponible para otras operaciones del sistema operativo y del propio motor — cada ajuste de parámetro es un trade-off, no una mejora universal sin costo."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe 'aplicar un cambio de configuración de forma consistente a 20 instancias sin editar cada una manualmente', la respuesta es un Parameter Group compartido, no modificar instancia por instancia."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Backend transaccional de aplicaciones web/móviles"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ERP/CRM con requisitos de HA y PITR"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración lift-and-shift desde MySQL/PG on-premise"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Read scaling con read-only replicas para reportes"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Test/dev con clones rápidos a partir de snapshots"
-    }
+    { "title": "Escenario 1", "text": "Migración de una base MySQL on-premise a RDS con downtime menor a 5 minutos — DTS con sincronización incremental" },
+    { "title": "Escenario 2", "text": "Aplicación con reportes pesados degradando la instancia primaria — proxy de lectura/escritura enrutando reportes a réplicas" },
+    { "title": "Escenario 3", "text": "Consultas que se han vuelto progresivamente más lentas en el último mes — diagnóstico con log de queries lentas y plan de ejecución" },
+    { "title": "Escenario 4", "text": "Auditoría financiera que exige trazabilidad completa de quién accedió a qué datos — SQL Audit" },
+    { "title": "Escenario 5", "text": "Plan de continuidad de negocio ante la pérdida completa de una región — réplica cross-región o backup replicado según RTO/RPO objetivo" },
+    { "title": "Escenario 6", "text": "Aplicar el mismo ajuste de timeout de conexión a toda una flota de instancias RDS — Parameter Group compartido" }
   ],
   "mistakes": [
-    "Basic Edition en producción — sin failover ni SLA",
-    "Whitelist 0.0.0.0/0 — DB expuesta a internet",
-    "Reportes pesados en la primaria — degradan transacciones",
-    "No monitorear IOPS/CPU — el motor se satura sin alerta",
-    "Retención de backup demasiado corta (default 7 días)"
+    "Migrar con un corte completo sin usar sincronización incremental, generando horas de downtime evitable",
+    "No forzar hacia la primaria las lecturas que exigen consistencia inmediata tras una escritura reciente",
+    "Escalar verticalmente una instancia antes de diagnosticar si el problema real es una consulta sin índice",
+    "Confundir SQL Audit (sentencias dentro del motor) con ActionTrail (llamadas a la API de gestión)",
+    "Confiar solo en alta disponibilidad multi-zona sin una estrategia explícita de recuperación ante desastres multi-región",
+    "Aplicar cambios de Parameter Group directamente en producción sin validar primero en un entorno de prueba"
   ],
   "cli": [
-    {
-      "cmd": "aliyun rds CreateDBInstance",
-      "desc": "Crear instancia RDS"
-    },
-    {
-      "cmd": "aliyun rds ModifySecurityIps --SecurityIps 10.0.0.0/24",
-      "desc": "Whitelist"
-    },
-    {
-      "cmd": "aliyun rds CreateBackup",
-      "desc": "Backup on-demand"
-    },
-    {
-      "cmd": "aliyun rds RestoreDBInstance --RestoreTime ...",
-      "desc": "Restauración PITR"
-    }
+    { "cmd": "aliyun dts CreateMigrationJob --SourceEndpoint '{...}' --DestinationEndpoint '{...}'", "desc": "Crear un job de migración con DTS" },
+    { "cmd": "aliyun rds DescribeSlowLogRecords --DBInstanceId rm-xxxxx --StartTime ... --EndTime ...", "desc": "Consultar el log de queries lentas de una instancia" },
+    { "cmd": "aliyun rds DescribeSQLLogRecords --DBInstanceId rm-xxxxx", "desc": "Consultar el registro de auditoría SQL" },
+    { "cmd": "aliyun rds ModifyParameter --DBInstanceId rm-xxxxx --Parameters '{\"innodb_buffer_pool_size\":\"75%\"}'", "desc": "Modificar un parámetro del motor vía Parameter Group" },
+    { "cmd": "aliyun rds CreateReadOnlyDBInstance --DBInstanceId rm-xxxxx --RegionId cn-shanghai", "desc": "Crear una réplica de lectura en otra región para DR" }
   ],
   "glossary": [
-    {
-      "en": "HA Edition",
-      "es": "Edición HA",
-      "def": "Primaria + standby síncrono en zona distinta con failover <60 s."
-    },
-    {
-      "en": "Basic Edition",
-      "es": "Edición básica",
-      "def": "Instancia única sin HA — solo dev/test."
-    },
-    {
-      "en": "Enterprise Edition",
-      "es": "Edición enterprise",
-      "def": "Múltiples nodos, mayor SLA."
-    },
-    {
-      "en": "Read-only Replica",
-      "es": "Réplica de lectura",
-      "def": "Hasta 5 réplicas asíncronas para escalar SELECT."
-    },
-    {
-      "en": "Parameter Group",
-      "es": "Parameter Group",
-      "def": "Configuración reutilizable del engine."
-    },
-    {
-      "en": "Automated Backup",
-      "es": "Backup automático",
-      "def": "Full diario + binlogs incrementales. Retención 7-730 días."
-    },
-    {
-      "en": "PITR",
-      "es": "Point-in-Time Recovery",
-      "def": "Restaura al segundo exacto dentro del rango de retención."
-    },
-    {
-      "en": "Whitelist",
-      "es": "Whitelist",
-      "def": "Lista de IPs/SG autorizados. Sin esto, nadie conecta."
-    },
-    {
-      "en": "Account Privilege",
-      "es": "Privilegios de cuenta",
-      "def": "Roles: read/write/DDL/DML granulares."
-    },
-    {
-      "en": "SSL",
-      "es": "SSL",
-      "def": "Cifrado en tránsito; certificado descargable."
-    },
-    {
-      "en": "TDE",
-      "es": "Transparent Data Encryption",
-      "def": "Cifrado en reposo integrado con KMS."
-    },
-    {
-      "en": "Slow Query Log",
-      "es": "Log de queries lentas",
-      "def": "Diagnóstico automático de rendimiento."
-    },
-    {
-      "en": "DTS",
-      "es": "Data Transmission Service",
-      "def": "Migración y replicación entre motores."
-    },
-    {
-      "en": "Auto Scaling Storage",
-      "es": "Storage auto-scaling",
-      "def": "Aumenta disco automáticamente si se llena."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DTS (Data Transmission Service)", "es": "Servicio de transmisión de datos", "def": "Servicio de migración y replicación continua entre bases de datos, combinando copia full e incremental." },
+    { "en": "Cutover", "es": "Corte de migración", "def": "Momento en que el tráfico de producción se redirige del sistema origen al destino tras la sincronización incremental." },
+    { "en": "Read/Write Proxy", "es": "Proxy de lectura/escritura", "def": "Componente que enruta automáticamente escrituras a la primaria y lecturas entre las réplicas, tras un único endpoint." },
+    { "en": "Slow Query Log", "es": "Log de queries lentas", "def": "Registro de sentencias cuyo tiempo de ejecución supera un umbral configurable, base del diagnóstico de rendimiento." },
+    { "en": "Execution Plan", "es": "Plan de ejecución", "def": "Descripción de cómo el motor resuelve una consulta específica, revelando uso de índices o escaneos completos." },
+    { "en": "SQL Audit", "es": "Auditoría SQL", "def": "Registro de las sentencias ejecutadas dentro del motor, con usuario, origen y timestamp, para cumplimiento y forense." },
+    { "en": "ActionTrail", "es": "ActionTrail", "def": "Servicio de auditoría de llamadas a la API de gestión de Alibaba Cloud, distinto de SQL Audit." },
+    { "en": "Cross-Region Replica", "es": "Réplica cross-región", "def": "Réplica de lectura ubicada en una región distinta a la primaria, base de una estrategia de recuperación ante desastres." },
+    { "en": "RTO (Recovery Time Objective)", "es": "Objetivo de tiempo de recuperación", "def": "Tiempo máximo aceptable para restaurar el servicio tras un desastre." },
+    { "en": "RPO (Recovery Point Objective)", "es": "Objetivo de punto de recuperación", "def": "Cantidad máxima aceptable de datos que se pueden perder, medida en tiempo desde el último punto recuperable." },
+    { "en": "Parameter Group", "es": "Grupo de parámetros", "def": "Configuración reutilizable de parámetros del motor, aplicable a una o varias instancias de forma consistente." },
+    { "en": "Dynamic Parameter", "es": "Parámetro dinámico", "def": "Parámetro del motor que se aplica de inmediato sin requerir reinicio de la instancia." },
+    { "en": "Static Parameter", "es": "Parámetro estático", "def": "Parámetro del motor que requiere un reinicio de la instancia para tomar efecto." },
+    { "en": "Buffer Pool", "es": "Buffer pool", "def": "Área de memoria del motor usada para cachear páginas de datos, cuyo tamaño es uno de los parámetros más comúnmente ajustados." },
+    { "en": "Heterogeneous Migration", "es": "Migración heterogénea", "def": "Migración entre motores distintos pero compatibles, o replicación continua hacia un destino analítico separado." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ApsaraDB RDS?",
-      "options": [
-        "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability editio",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático."
-    },
-    {
-      "q": "¿Qué es <strong>HA Edition</strong> (Edición HA) en ApsaraDB RDS?",
-      "options": [
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "HA Edition (Edición HA): Primaria + standby síncrono en zona distinta con failover <60 s."
-    },
-    {
-      "q": "¿Qué es <strong>Basic Edition</strong> (Edición básica) en ApsaraDB RDS?",
-      "options": [
-        "Instancia única sin HA — solo dev/test.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Múltiples nodos, mayor SLA.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "Basic Edition (Edición básica): Instancia única sin HA — solo dev/test."
-    },
-    {
-      "q": "¿Qué es <strong>Enterprise Edition</strong> (Edición enterprise) en ApsaraDB RDS?",
-      "options": [
-        "Múltiples nodos, mayor SLA.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "Enterprise Edition (Edición enterprise): Múltiples nodos, mayor SLA."
-    },
-    {
-      "q": "¿Qué es <strong>Read-only Replica</strong> (Réplica de lectura) en ApsaraDB RDS?",
-      "options": [
-        "Hasta 5 réplicas asíncronas para escalar SELECT.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA."
-      ],
-      "answer": 0,
-      "explain": "Read-only Replica (Réplica de lectura): Hasta 5 réplicas asíncronas para escalar SELECT."
-    },
-    {
-      "q": "¿Qué es <strong>Parameter Group</strong> (Parameter Group) en ApsaraDB RDS?",
-      "options": [
-        "Configuración reutilizable del engine.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA."
-      ],
-      "answer": 0,
-      "explain": "Parameter Group (Parameter Group): Configuración reutilizable del engine."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ApsaraDB RDS, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ApsaraDB RDS en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB RDS, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ApsaraDB RDS es la elección típica:",
-      "options": [
-        "Backend transaccional de aplicaciones web/móviles",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Backend transaccional de aplicaciones web/móviles."
-    }
+    { "q": "¿Cómo logra DTS minimizar la ventana de corte (downtime) al migrar hacia RDS?", "options": ["Copiando los datos una sola vez y deteniendo el origen inmediatamente", "Combinando una copia full inicial con sincronización incremental continua hasta el momento del corte", "Migrando únicamente el esquema, sin los datos", "No es posible minimizar el downtime con DTS"], "answer": 1, "explain": "La sincronización incremental mantiene el destino al día mientras el origen sigue en producción, reduciendo el corte real al tiempo de redirigir el tráfico." },
+    { "q": "¿Qué ventaja aporta un proxy de lectura/escritura frente a que la aplicación se conecte directamente a cada endpoint de instancia?", "options": ["Elimina la necesidad de réplicas", "Permite que la aplicación use un único endpoint mientras el proxy enruta automáticamente escrituras a la primaria y lecturas entre las réplicas", "Aumenta el costo sin ningún beneficio real", "Solo funciona con instancias de una sola zona"], "answer": 1, "explain": "El proxy centraliza el enrutamiento, evitando que la aplicación deba conocer y gestionar manualmente cada endpoint." },
+    { "q": "Una aplicación necesita leer de inmediato un dato que acaba de escribir, sin tolerar ningún lag de replicación. ¿Qué se debe hacer con esa lectura específica al usar un proxy de lectura/escritura?", "options": ["Dejar que el proxy la enrute normalmente hacia una réplica", "Forzar esa lectura específica hacia la instancia primaria", "Desactivar por completo el proxy para toda la aplicación", "No es posible resolver este caso con RDS"], "answer": 1, "explain": "Como la replicación hacia las réplicas es asíncrona, forzar la lectura hacia la primaria garantiza ver la escritura más reciente." },
+    { "q": "¿Cuál es el primer paso recomendado al diagnosticar consultas que se han vuelto lentas, antes de escalar la instancia?", "options": ["Aumentar inmediatamente la especificación de cómputo", "Revisar el log de queries lentas para identificar la consulta problemática y su plan de ejecución", "Eliminar la instancia y crear una nueva", "Deshabilitar el motor de base de datos"], "answer": 1, "explain": "El diagnóstico correcto empieza por identificar la causa específica (consulta/índice) antes de asumir que el problema requiere más recursos." },
+    { "q": "¿Qué diferencia principal existe entre el log de queries lentas y SQL Audit?", "options": ["Son exactamente el mismo mecanismo", "El log de queries lentas existe para diagnóstico de rendimiento y solo registra sentencias lentas; SQL Audit existe para cumplimiento y puede registrar todo el tráfico", "SQL Audit solo registra llamadas a la API de gestión, no sentencias SQL", "El log de queries lentas es exclusivo de PostgreSQL"], "answer": 1, "explain": "Cada herramienta responde a un propósito distinto: rendimiento vs. trazabilidad y cumplimiento normativo." },
+    { "q": "¿Qué servicio se debe usar para auditar sentencias SQL ejecutadas directamente dentro del motor de base de datos, a diferencia de llamadas a la API de gestión de la cuenta?", "options": ["ActionTrail", "SQL Audit", "CloudMonitor", "RAM"], "answer": 1, "explain": "ActionTrail audita la API de gestión de Alibaba Cloud; SQL Audit audita específicamente las sentencias ejecutadas dentro del motor." },
+    { "q": "¿Qué diferencia a la alta disponibilidad (HA) multi-zona de la recuperación ante desastres (DR) multi-región?", "options": ["Son el mismo concepto con nombre distinto", "HA protege contra la falla de una zona dentro de la misma región de forma automática; DR protege contra la pérdida de la región completa y requiere diseño explícito adicional", "DR es automática y no requiere ninguna configuración", "HA solo aplica a instancias Basic Edition"], "answer": 1, "explain": "Son niveles de protección distintos: HA cubre fallas de zona con failover automático; DR cubre la pérdida de toda una región y exige una estrategia separada." },
+    { "q": "¿Qué determina si conviene una réplica cross-región activa frente a solo backups replicados cross-región para una estrategia de DR?", "options": ["El color de la consola de administración", "Los objetivos de RTO (tiempo de recuperación) y RPO (punto de recuperación) requeridos por el negocio", "El número de whitelist configuradas", "El nombre del motor de base de datos"], "answer": 1, "explain": "Una réplica activa ofrece RTO/RPO más bajos a mayor costo; los backups replicados ofrecen RTO/RPO más altos a menor costo." },
+    { "q": "¿Qué logra usar un Parameter Group compartido en vez de modificar cada instancia individualmente?", "options": ["Reduce automáticamente el costo de las instancias", "Permite aplicar la misma configuración de motor de forma consistente a múltiples instancias, evitando editar cada una manualmente", "Elimina la necesidad de reiniciar instancias para cualquier cambio", "Solo puede aplicarse a una instancia a la vez"], "answer": 1, "explain": "El Parameter Group centraliza la configuración, garantizando consistencia entre instancias que comparten el mismo perfil." },
+    { "q": "¿Qué diferencia a un parámetro dinámico de uno estático en un Parameter Group?", "options": ["No existe ninguna diferencia práctica", "El parámetro dinámico se aplica de inmediato sin reiniciar la instancia; el estático requiere un reinicio para tomar efecto", "Los parámetros estáticos siempre son más seguros que los dinámicos", "Solo los parámetros dinámicos pueden revertirse"], "answer": 1, "explain": "Esta distinción determina si un cambio puede aplicarse en horario productivo o necesita programarse en una ventana de mantenimiento." },
+    { "q": "¿Por qué se recomienda validar un cambio de Parameter Group en un entorno no productivo antes de aplicarlo en producción?", "options": ["Porque los cambios de parámetros nunca tienen efectos secundarios", "Porque un cambio mal aplicado directamente en producción representa un riesgo operativo evitable", "Porque es obligatorio por ley en todos los países", "Porque los entornos de prueba son más baratos de operar"], "answer": 1, "explain": "Probar primero en un entorno representativo permite detectar efectos no deseados sin exponer a los usuarios reales al riesgo." },
+    { "q": "¿Qué debería hacerse periódicamente con un plan de recuperación ante desastres multi-región, según este curso?", "options": ["Nada, basta con documentarlo una vez", "Ensayar el failover cross-región en simulacros periódicos para validar que realmente funciona", "Eliminarlo si no se ha usado en un año", "Aplicarlo únicamente cuando ocurre un desastre real"], "answer": 1, "explain": "Un plan de DR nunca probado es una promesa no verificada; los simulacros periódicos confirman que el proceso funciona bajo presión real." }
   ],
-  "exam_focus": "Preguntas: (a) ediciones y cuándo usar cada una, (b) PITR y ventana de retención, (c) whitelist + VPC + SSL, (d) escalado lectura vs escritura, (e) DTS para migración.",
+  "exam_focus": "El examen evalúa: (a) cómo DTS minimiza el downtime de migración con full + incremental, (b) enrutamiento de un proxy de lectura/escritura y sus límites de consistencia, (c) el orden correcto de diagnóstico de rendimiento (log lento → plan de ejecución → recursos), (d) SQL Audit vs. ActionTrail, (e) HA multi-zona vs. DR multi-región según RTO/RPO, (f) uso seguro de Parameter Groups.",
   "official_intro": "Alibaba Cloud Relational Database Service is our cloud database offering. Through this course, you will not only learn about Alibaba Cloud Relational Database Service design architect and applicable scenarios, but also by watching product console demos, you will be familiar with Relational Database Service major functions and operation details. For Whom Cloud Database Administrator, Cloud Database Operator",
+  "recommended_for": "Cloud Database Administrator, Cloud Database Operator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-relational-database",
   "exam_meta": {
     "duration_min": 30,

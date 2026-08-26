@@ -2,414 +2,159 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-edas",
   "title_en": "How to Manage Ultra Large Application with EDAS",
-  "title_es": "Cómo Gestionar Ultra Large Aplicación con EDAS",
+  "title_es": "Cómo Gestionar una Aplicación de Gran Escala con EDAS",
+  "title_es_html": "Cómo Gestionar una Aplicación de <em>Gran Escala</em> con EDAS",
   "duration_es": "55 minutos",
   "level_es": "Avanzado",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Micro Services",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_edas",
-  "lead": "Guía completa en español para el curso «How to Manage Ultra Large Application with EDAS» de Alibaba Cloud Academy. Cubre en profundidad EDAS / SAE. EDAS gestiona aplicaciones enterprise (Spring Cloud, Dubbo) sobre ECS o Kubernetes con service discovery, config center, canary, y observabilidad. SAE es la versión serverless: pagas por instancia+tiempo sin operar cluster. Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «How to Manage Ultra Large Application with EDAS» de Alibaba Cloud Academy, centrado en Enterprise Distributed Application Service (EDAS): la plataforma de Alibaba Cloud para gestionar aplicaciones empresariales Java (Spring Cloud, Dubbo) a gran escala sin construir desde cero un registro de servicios, un centro de configuración y un sistema de despliegue gradual. Cubre EDAS clásico sobre ECS/ACK y su variante serverless, SAE.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>EDAS / SAE</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Application, Namespace, Nacos, MSE, Canary.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con EDAS / SAE y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema de gestión aparece al operar cientos de aplicaciones Java en producción, más allá de lo que resuelve Kubernetes por sí solo.",
+    "<strong>Distinguir</strong> los conceptos de Application, Namespace y Group dentro de EDAS.",
+    "<strong>Desplegar</strong> una aplicación Java empaquetada (JAR/WAR) en EDAS sin gestionar manualmente el registro de servicios ni el balanceo interno.",
+    "<strong>Aplicar</strong> versiones canary y batch release para desplegar cambios de forma gradual y controlada.",
+    "<strong>Comparar</strong> EDAS (sobre ECS/ACK, gestionas capacidad) frente a SAE (serverless, pagas por instancia y tiempo).",
+    "<strong>Integrar</strong> EDAS con el resto del stack de microservicios de Alibaba Cloud: Nacos/MSE, ARMS, AHAS.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre gestión de aplicaciones a gran escala con EDAS."
   ],
-  "architecture": "Deploy: JAR/WAR/imagen → EDAS crea deployment en ACK/ECS/SAE → registro en Nacos → API Gateway o microservicios llaman via nombre → tracing con ARMS → gray release con canary rules.",
+  "architecture": "Un artefacto (JAR, WAR o imagen de contenedor) se sube a EDAS, que lo empaqueta como Application dentro de un Namespace (equivalente a un ambiente: dev/test/prod, aislado a nivel de registro y configuración). Al desplegar, EDAS registra automáticamente cada instancia en Nacos (vía MSE) sin que el desarrollador escriba código de integración con el registro; las llamadas entre aplicaciones se resuelven por nombre de servicio, balanceadas entre instancias sanas. Un despliegue nuevo se libera por batches o como versión canary, con AHAS aplicando circuit breaking/degradación si la nueva versión falla, y ARMS instrumentando trazas para comparar el comportamiento de la versión nueva frente a la anterior antes de completar el rollout. Sobre esta misma base, SAE ofrece el mismo modelo de gestión de aplicaciones pero sin que el cliente aprovisione ni administre instancias ECS o nodos ACK subyacentes — se paga por instancia de aplicación y tiempo de ejecución.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a EDAS / SAE",
-      "title_en": "Introduction to EDAS / SAE",
-      "intro": "EDAS gestiona aplicaciones enterprise (Spring Cloud, Dubbo) sobre ECS o Kubernetes con service discovery, config center, canary, y observabilidad. SAE es la versión serverless: pagas por instancia+tiempo sin operar cluster. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema de gestionar cientos de aplicaciones Java",
+      "title_en": "The Challenge of Managing Hundreds of Java Applications",
+      "intro": "Kubernetes orquesta contenedores, pero no resuelve por sí solo los problemas específicos de un ecosistema de microservicios Java con Spring Cloud o Dubbo — ahí es donde EDAS se posiciona.",
       "points": [
-        "<strong>Problema que resuelve</strong>: EDAS gestiona aplicaciones enterprise (Spring Cloud, Dubbo) sobre ECS o Kubernetes con service discovery, config center, canary, y observabilidad.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo EDAS / SAE se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Más allá de 'programar Pods'</strong>: cuando una organización tiene cientos de aplicaciones Java interdependientes, el reto no es solo ejecutarlas — es descubrimiento de servicios, gestión de configuración compartida, despliegues graduales y observabilidad consistente entre todas ellas.",
+        "<strong>Construirlo desde cero es costoso</strong>: montar y operar un Nacos propio, integrar circuit breaking en cada servicio, construir un sistema de canary release — cada pieza es un proyecto de infraestructura en sí mismo si se hace desde cero.",
+        "<strong>Lo que aporta EDAS</strong>: una plataforma de gestión de aplicaciones que integra registro de servicios, configuración, despliegue gradual y observabilidad de forma unificada, específicamente afinada para el ecosistema Java (Spring Cloud Alibaba, Dubbo, HSF).",
+        "<strong>Quién usa EDAS típicamente</strong>: organizaciones con aplicaciones Java empresariales ya existentes que migran a microservicios gestionados, no necesariamente startups construyendo sobre Kubernetes desde el día uno.",
+        "<strong>EDAS no reemplaza a ACK</strong>: EDAS puede desplegar sobre instancias ECS o sobre un clúster ACK existente — es una capa de gestión de aplicaciones encima de la infraestructura de cómputo, no un sustituto del orquestador."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "EDAS / SAE es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "EDAS resuelve el problema de gestionar el ciclo de vida de la aplicación (registro, config, despliegue gradual) a gran escala — Kubernetes/ACK resuelve el problema de dónde y cómo corre el contenedor. Son capas complementarias, no competidoras." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando EDAS / SAE no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Application, Namespace y Group",
+      "title_en": "Application, Namespace and Group",
+      "intro": "EDAS organiza el trabajo con tres conceptos propios que hay que dominar antes de desplegar la primera aplicación real.",
       "points": [
-        "<strong>Patrón canónico</strong>: Deploy: JAR/WAR/imagen → EDAS crea deployment en ACK/ECS/SAE → registro en Nacos → API Gateway o microservicios llaman via nombre → tracing con ARMS → gray release con canary rules.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Application</strong>: la unidad desplegable en EDAS — corresponde a un servicio o microservicio concreto, empaquetado como JAR/WAR o imagen, con su propio ciclo de vida de versiones.",
+        "<strong>Namespace</strong>: aislamiento a nivel de ambiente (dev, test, prod) — aplicaciones en distintos Namespaces no se descubren entre sí por defecto, evitando que una llamada de prueba golpee accidentalmente producción.",
+        "<strong>Group (grupo)</strong>: subconjunto de instancias de una misma Application, usado típicamente para separar tráfico de distintas versiones durante un despliegue gradual o para aislar cargas por región/zona.",
+        "<strong>Jerarquía práctica</strong>: una organización suele tener varios Namespaces (por ambiente), y dentro de cada uno, decenas o cientos de Applications, cada una potencialmente con varios Groups activos durante un despliegue.",
+        "<strong>Por qué importa para el examen</strong>: confundir Namespace (aislamiento de ambiente) con Group (subconjunto de instancias de una misma app) es un distractor común — resuelven problemas distintos en capas distintas."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → EDAS / SAE (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Namespace aísla ambientes completos (dev/test/prod); Group divide instancias dentro de una misma Application y ambiente, típicamente para desplegar versiones en paralelo." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Desplegar sin gestionar el registro de servicios manualmente",
+      "title_en": "Deploying Without Managing Service Discovery Manually",
+      "intro": "El valor operativo inmediato de EDAS es que el desarrollador sube un artefacto y la plataforma se encarga del resto de la integración con el ecosistema de microservicios.",
       "points": [
-        "<strong>Application</strong> <em>(Application)</em>: Unidad desplegable.",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Ambiente: dev/test/prod.",
-        "<strong>Nacos</strong> <em>(Nacos)</em>: Service registry + config center.",
-        "<strong>MSE</strong> <em>(MSE)</em>: Microservice Engine — Nacos gestionado.",
-        "<strong>Canary release</strong> <em>(Canary)</em>: % de tráfico a nueva versión.",
-        "<strong>SAE Instance</strong> <em>(SAE Instance)</em>: Contenedor efímero facturado por segundo.",
-        "<strong>AHAS</strong> <em>(Ahas)</em>: Chaos engineering + circuit breaker."
+        "<strong>Registro automático</strong>: al desplegar una Application, cada instancia se registra automáticamente en Nacos (gestionado vía MSE) sin que el código de la aplicación necesite implementar esa integración manualmente más allá de incluir el SDK correspondiente.",
+        "<strong>Descubrimiento transparente</strong>: cuando la Application A necesita llamar a la Application B, resuelve el nombre de servicio contra el registro y EDAS balancea automáticamente entre las instancias sanas de B — sin IPs fijas ni configuración manual de balanceador.",
+        "<strong>Configuración centralizada</strong>: parámetros compartidos entre instancias de una Application (o entre varias Applications) se gestionan en el Config Center integrado, distribuidos en caliente sin reiniciar procesos.",
+        "<strong>Health check integrado</strong>: EDAS monitorea la salud de cada instancia y la retira automáticamente del balanceo si deja de responder, de forma análoga a un readiness probe de Kubernetes pero integrada en la plataforma de aplicación.",
+        "<strong>Runtime soportado</strong>: EDAS está optimizado para el ecosistema Java (Spring Cloud Alibaba, Dubbo/HSF), aunque también admite desplegar imágenes de contenedor genéricas sobre ACK para casos que no siguen ese stack."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El valor central de EDAS es eliminar el código de integración repetitivo (registro, descubrimiento, config) que cada equipo tendría que reescribir si construyera esto por su cuenta sobre Kubernetes puro." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Despliegue gradual: canary y batch release",
+      "title_en": "Gradual Rollout: Canary and Batch Release",
+      "intro": "En una aplicación de gran escala, desplegar una versión nueva a todas las instancias de golpe es un riesgo innecesario — EDAS incluye mecanismos nativos de rollout controlado.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Batch release (liberación por lotes)</strong>: las instancias se actualizan en grupos sucesivos (p.ej. 25% → 50% → 100%), verificando la salud de cada lote antes de continuar con el siguiente — similar en espíritu a un rolling update de Kubernetes, pero gestionado desde la consola de EDAS.",
+        "<strong>Canary release</strong>: un pequeño porcentaje del tráfico real se dirige a la versión nueva mientras la mayoría sigue en la versión estable, permitiendo detectar problemas con exposición limitada antes de un rollout completo.",
+        "<strong>Reglas de canary por criterio</strong>: el tráfico de canary puede dirigirse no solo por porcentaje aleatorio, sino por criterios específicos (un header, un usuario de prueba interno), útil para validar con tráfico controlado en vez de aleatorio.",
+        "<strong>Pausa y rollback</strong>: si las métricas de la versión nueva empeoran durante un batch o canary, el despliegue se puede pausar o revertir sin completar el rollout hacia el resto de las instancias.",
+        "<strong>AHAS como red de seguridad</strong>: durante un despliegue gradual, AHAS (chaos engineering + circuit breaker de Alibaba) puede degradar automáticamente el tráfico hacia una versión nueva que muestra señales de fallo, limitando el radio de impacto."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario describe minimizar el riesgo de un cambio en una aplicación crítica de gran escala, la respuesta apunta a batch release o canary release gestionados por EDAS, no a un despliegue directo al 100%." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · EDAS frente a SAE: gestionar capacidad vs. serverless",
+      "title_en": "EDAS vs SAE: Managing Capacity vs Serverless",
+      "intro": "EDAS y SAE resuelven el mismo problema de gestión de aplicaciones, pero con un modelo de infraestructura subyacente completamente distinto — el examen espera que sepas cuándo elegir cada uno.",
       "points": [
-        "<strong>Buenas prácticas</strong>: SAE para cargas variables — sin gestionar cluster",
-        "<strong>Buenas prácticas</strong>: EDAS canary antes de rollout completo",
-        "<strong>Buenas prácticas</strong>: Nacos config central versionado",
-        "<strong>Buenas prácticas</strong>: MSE gestionado en vez de self-hosted"
+        "<strong>EDAS clásico</strong>: despliega sobre instancias ECS o un clúster ACK que el cliente aprovisiona y paga como infraestructura — se tiene control total sobre el dimensionamiento, a cambio de administrar esa capacidad.",
+        "<strong>SAE (Serverless App Engine)</strong>: la misma experiencia de gestión de aplicaciones (Namespace, despliegue gradual, registro automático) pero sin que el cliente aprovisione instancias ni nodos — se factura por instancia de aplicación y tiempo de ejecución real, similar en filosofía a Function Compute pero para aplicaciones Java/PHP completas, no funciones individuales.",
+        "<strong>Cuándo elegir EDAS clásico</strong>: cargas estables y predecibles donde ya se tiene experiencia operando ECS/ACK, o donde se necesita control fino sobre el tipo de instancia y su configuración de red.",
+        "<strong>Cuándo elegir SAE</strong>: cargas variables, equipos que quieren minimizar la operación de infraestructura, o migraciones donde se busca reducir la carga operativa de gestionar servidores sin reescribir la aplicación como funciones serverless.",
+        "<strong>Ambos comparten el mismo ecosistema</strong>: Nacos/MSE para registro, ARMS para observabilidad y AHAS para resiliencia funcionan de la misma forma en EDAS y SAE — la diferencia está en quién administra la capa de cómputo debajo."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "La pregunta que distingue EDAS de SAE en el examen es «¿quién aprovisiona la capacidad de cómputo?» — el cliente (EDAS) o la plataforma de forma transparente (SAE), no una diferencia en cómo se gestionan las aplicaciones en sí." }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas más difíciles del examen sobre EDAS reflejan errores reales de operación en plataformas de gestión de aplicaciones a gran escala.",
       "points": [
-        "<strong>Antipattern</strong>: Self-hosted Nacos sin backup",
-        "<strong>Antipattern</strong>: Canary sin métricas de success",
-        "<strong>Antipattern</strong>: App single-instance en SAE crítico",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: operar un Nacos self-hosted sin backup ni alta disponibilidad cuando ya existe MSE gestionado como alternativa — reintroduce el problema operativo que EDAS busca eliminar.",
+        "<strong>Antipatrón</strong>: ejecutar un canary release sin definir de antemano qué métrica de éxito determina si se continúa o se revierte — sin criterio claro, el canary no protege realmente contra un despliegue defectuoso.",
+        "<strong>Antipatrón</strong>: desplegar una aplicación crítica con una sola instancia en SAE, sin redundancia, asumiendo que 'serverless' implica alta disponibilidad automática sin configurarla.",
+        "<strong>Antipatrón</strong>: mezclar Applications de distintos ambientes (dev/prod) en el mismo Namespace, exponiendo tráfico de prueba a servicios productivos por accidente.",
+        "<strong>Regla de oro</strong>: ante un escenario de examen sobre EDAS, identifica primero si el foco es organización (Namespace/Group), despliegue (batch/canary) o modelo de infraestructura (EDAS vs. SAE) — cada categoría tiene su propio patrón de respuesta."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "El examen premia reconocer que EDAS es una capa de gestión de aplicaciones sobre infraestructura existente, mientras SAE elimina esa infraestructura de la ecuación — no confundir eso con diferencias en cómo se despliega o se hace canary." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Modernización de apps Java (Spring Cloud/Dubbo)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Microservicios sin operar cluster (SAE)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Blue-green y canary automatizados"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Migración lift-and-shift con service mesh"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "App engine para equipos sin skills K8s"
-    }
+    { "title": "Escenario 1", "text": "Modernizar cientos de aplicaciones Java (Spring Cloud/Dubbo) sin construir un registro de servicios propio" },
+    { "title": "Escenario 2", "text": "Desplegar un cambio crítico con batch release del 25% al 100%, verificando salud entre lotes" },
+    { "title": "Escenario 3", "text": "Canary release dirigido solo a usuarios internos mediante un header específico" },
+    { "title": "Escenario 4", "text": "Equipo pequeño que quiere minimizar la operación de servidores — migración a SAE" },
+    { "title": "Escenario 5", "text": "Separar tráfico de dev, test y prod en distintos Namespaces dentro de la misma cuenta" }
   ],
   "mistakes": [
-    "Self-hosted Nacos sin backup",
-    "Canary sin métricas de success",
-    "App single-instance en SAE crítico"
+    "Operar un Nacos self-hosted sin backup en vez de usar MSE gestionado",
+    "Ejecutar canary release sin definir de antemano el criterio de éxito o fallo",
+    "Desplegar una aplicación crítica en una sola instancia sin redundancia, incluso en SAE",
+    "Mezclar Applications de distintos ambientes en el mismo Namespace",
+    "Asumir que EDAS reemplaza a ACK en vez de operar como capa de gestión encima de la infraestructura",
+    "Elegir EDAS clásico para una carga muy variable sin evaluar antes si SAE reduciría la carga operativa"
   ],
   "cli": [
-    {
-      "cmd": "aliyun edas ListApplications",
-      "desc": "Listar apps"
-    },
-    {
-      "cmd": "aliyun sae DeployApplication",
-      "desc": "Deploy SAE"
-    }
+    { "cmd": "aliyun edas ListApplication --NamespaceId cn-hangzhou:prod", "desc": "Listar aplicaciones desplegadas en un Namespace" },
+    { "cmd": "aliyun edas InsertK8sApplication --AppName miapp --ImageUrl <acr-url>", "desc": "Desplegar una aplicación como imagen de contenedor en EDAS sobre ACK" },
+    { "cmd": "aliyun edas DeployApplication --AppId <id> --GroupId <group>", "desc": "Desplegar una nueva versión sobre un Group específico (batch/canary)" },
+    { "cmd": "aliyun sae DeployApplication --AppId <id> --ImageUrl <acr-url>", "desc": "Desplegar una aplicación en SAE (serverless)" },
+    { "cmd": "aliyun edas RollbackK8sApplication --AppId <id>", "desc": "Revertir un despliegue a la versión anterior" }
   ],
   "glossary": [
-    {
-      "en": "Application",
-      "es": "Application",
-      "def": "Unidad desplegable."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Ambiente: dev/test/prod."
-    },
-    {
-      "en": "Nacos",
-      "es": "Nacos",
-      "def": "Service registry + config center."
-    },
-    {
-      "en": "MSE",
-      "es": "MSE",
-      "def": "Microservice Engine — Nacos gestionado."
-    },
-    {
-      "en": "Canary",
-      "es": "Canary release",
-      "def": "% de tráfico a nueva versión."
-    },
-    {
-      "en": "SAE Instance",
-      "es": "SAE Instance",
-      "def": "Contenedor efímero facturado por segundo."
-    },
-    {
-      "en": "Ahas",
-      "es": "AHAS",
-      "def": "Chaos engineering + circuit breaker."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Application (EDAS)", "es": "Application", "def": "Unidad desplegable en EDAS: un servicio empaquetado como JAR/WAR o imagen con ciclo de vida propio." },
+    { "en": "Namespace (EDAS)", "es": "Namespace", "def": "Aislamiento a nivel de ambiente (dev/test/prod); las aplicaciones no se descubren entre Namespaces distintos." },
+    { "en": "Group (EDAS)", "es": "Group", "def": "Subconjunto de instancias de una misma Application, usado para separar tráfico durante un despliegue gradual." },
+    { "en": "Nacos", "es": "Nacos", "def": "Registro de servicios y centro de configuración del ecosistema Alibaba, integrado automáticamente en EDAS." },
+    { "en": "MSE (Microservice Engine)", "es": "MSE", "def": "Versión gestionada de Nacos/ZooKeeper/Sentinel consumida por EDAS sin operarla manualmente." },
+    { "en": "Batch Release", "es": "Liberación por lotes", "def": "Actualización de instancias en grupos sucesivos, verificando salud entre cada lote." },
+    { "en": "Canary Release", "es": "Liberación canario", "def": "Exposición de la versión nueva a un porcentaje o criterio limitado de tráfico antes del rollout completo." },
+    { "en": "AHAS", "es": "AHAS", "def": "Servicio de Alibaba para chaos engineering y circuit breaking, usado como red de seguridad en despliegues." },
+    { "en": "SAE (Serverless App Engine)", "es": "SAE", "def": "Variante serverless de EDAS: misma gestión de aplicaciones sin aprovisionar instancias ni nodos." },
+    { "en": "ARMS", "es": "ARMS", "def": "Servicio de trazas distribuidas y métricas de aplicación usado para observar despliegues en EDAS/SAE." },
+    { "en": "Spring Cloud Alibaba", "es": "Spring Cloud Alibaba", "def": "Conjunto de integraciones de Spring Cloud con el ecosistema Alibaba (Nacos, Sentinel, Seata)." },
+    { "en": "Dubbo / HSF", "es": "Dubbo / HSF", "def": "Frameworks de RPC de alto rendimiento del ecosistema Alibaba, soportados nativamente por EDAS." },
+    { "en": "Health check", "es": "Chequeo de salud", "def": "Verificación continua de instancias que determina si siguen siendo elegibles para recibir tráfico." },
+    { "en": "Config Center", "es": "Centro de configuración", "def": "Almacén centralizado de parámetros compartidos, distribuidos en caliente entre instancias." },
+    { "en": "Rollback (EDAS)", "es": "Reversión de despliegue", "def": "Volver a la versión anterior de una Application tras detectar un problema durante el rollout." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a EDAS / SAE?",
-      "options": [
-        "EDAS gestiona aplicaciones enterprise (Spring Cloud, Dubbo) sobre ECS o Kubernetes con service discovery, config center, canary, y observabilidad. SAE es la versión serverless: pagas por instancia+tie",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "EDAS gestiona aplicaciones enterprise (Spring Cloud, Dubbo) sobre ECS o Kubernetes con service discovery, config center, canary, y observabilidad. SAE es la versión serverless: pagas por instancia+tiempo sin operar cluster."
-    },
-    {
-      "q": "¿Qué es <strong>Application</strong> (Application) en EDAS / SAE?",
-      "options": [
-        "Unidad desplegable.",
-        "Ambiente: dev/test/prod.",
-        "Service registry + config center.",
-        "Microservice Engine — Nacos gestionado."
-      ],
-      "answer": 0,
-      "explain": "Application (Application): Unidad desplegable."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en EDAS / SAE?",
-      "options": [
-        "Ambiente: dev/test/prod.",
-        "Unidad desplegable.",
-        "Service registry + config center.",
-        "Microservice Engine — Nacos gestionado."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Ambiente: dev/test/prod."
-    },
-    {
-      "q": "¿Qué es <strong>Nacos</strong> (Nacos) en EDAS / SAE?",
-      "options": [
-        "Service registry + config center.",
-        "Unidad desplegable.",
-        "Ambiente: dev/test/prod.",
-        "Microservice Engine — Nacos gestionado."
-      ],
-      "answer": 0,
-      "explain": "Nacos (Nacos): Service registry + config center."
-    },
-    {
-      "q": "¿Qué es <strong>MSE</strong> (MSE) en EDAS / SAE?",
-      "options": [
-        "Microservice Engine — Nacos gestionado.",
-        "Unidad desplegable.",
-        "Ambiente: dev/test/prod.",
-        "Service registry + config center."
-      ],
-      "answer": 0,
-      "explain": "MSE (MSE): Microservice Engine — Nacos gestionado."
-    },
-    {
-      "q": "¿Qué es <strong>Canary</strong> (Canary release) en EDAS / SAE?",
-      "options": [
-        "% de tráfico a nueva versión.",
-        "Unidad desplegable.",
-        "Ambiente: dev/test/prod.",
-        "Service registry + config center."
-      ],
-      "answer": 0,
-      "explain": "Canary (Canary release): % de tráfico a nueva versión."
-    },
-    {
-      "q": "Para maximizar disponibilidad con EDAS / SAE, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar EDAS / SAE en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con EDAS / SAE, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde EDAS / SAE es la elección típica:",
-      "options": [
-        "Modernización de apps Java (Spring Cloud/Dubbo)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Modernización de apps Java (Spring Cloud/Dubbo)."
-    }
+    { "q": "¿Qué problema resuelve principalmente EDAS que Kubernetes/ACK por sí solo no cubre de forma nativa?", "options": ["El aislamiento de red entre Pods", "El registro de servicios, configuración compartida y despliegue gradual específico del ecosistema Java", "La creación de instancias ECS", "El almacenamiento de imágenes de contenedor"], "answer": 1, "explain": "EDAS añade una capa de gestión de aplicaciones (registro, config, rollout gradual) afinada para Spring Cloud/Dubbo, encima de la infraestructura de cómputo." },
+    { "q": "¿Qué distingue a un Namespace de un Group dentro de EDAS?", "options": ["Son sinónimos exactos", "Namespace aísla ambientes completos (dev/test/prod); Group divide instancias dentro de una misma Application y ambiente", "Group aísla ambientes y Namespace divide instancias", "Ninguno de los dos tiene efecto sobre el descubrimiento de servicios"], "answer": 1, "explain": "Namespace opera a nivel de ambiente completo; Group opera dentro de una Application para separar tráfico entre versiones." },
+    { "q": "Al desplegar una Application en EDAS, ¿qué ocurre automáticamente con cada instancia?", "options": ["Debe registrarse manualmente en un balanceador externo", "Se registra automáticamente en Nacos (vía MSE), quedando disponible para descubrimiento por nombre", "Se elimina cualquier instancia previa de forma inmediata sin control", "No hay integración automática con ningún registro de servicios"], "answer": 1, "explain": "El registro automático en Nacos es una de las principales ventajas operativas de desplegar a través de EDAS." },
+    { "q": "Un despliegue expone la nueva versión solo a usuarios internos identificados por un header HTTP específico. ¿Qué técnica es esta?", "options": ["Batch release estándar", "Canary release dirigido por criterio específico", "Rollback automático", "Namespace aislado"], "answer": 1, "explain": "El canary release puede dirigirse por criterios específicos, no solo por un porcentaje aleatorio de tráfico." },
+    { "q": "¿Cuál es la diferencia principal entre EDAS clásico y SAE?", "options": ["No existe ninguna diferencia real entre ambos", "En EDAS clásico el cliente aprovisiona la infraestructura (ECS/ACK); en SAE la plataforma gestiona la capacidad de forma serverless", "SAE solo admite aplicaciones escritas en Python", "EDAS clásico no admite despliegue gradual"], "answer": 1, "explain": "La diferencia central es quién administra la capa de cómputo subyacente: el cliente en EDAS clásico, la plataforma en SAE." },
+    { "q": "¿Qué componente de Alibaba actúa como red de seguridad degradando tráfico automáticamente hacia una versión nueva con señales de fallo?", "options": ["OSS", "AHAS", "VPC", "RAM"], "answer": 1, "explain": "AHAS aplica chaos engineering y circuit breaking, pudiendo degradar automáticamente una versión nueva problemática durante un rollout." },
+    { "q": "¿Por qué es un antipatrón ejecutar un canary release sin definir de antemano un criterio claro de éxito o fallo?", "options": ["No es un antipatrón, es la práctica estándar", "Sin un criterio claro, el canary no protege realmente contra un despliegue defectuoso porque nadie sabe cuándo pausar o revertir", "Los criterios de éxito solo aplican a batch release, no a canary", "EDAS no permite definir criterios de éxito"], "answer": 1, "explain": "Un canary sin métrica de decisión clara pierde su propósito: detectar y contener un problema antes del rollout completo." },
+    { "q": "¿Cuándo es más apropiado elegir SAE sobre EDAS clásico según el curso?", "options": ["Siempre, SAE es superior en todos los escenarios sin excepción", "Cuando la carga es variable y el equipo quiere minimizar la operación de infraestructura de cómputo", "Solo si la aplicación no usa Java", "Nunca, EDAS clásico siempre es preferible"], "answer": 1, "explain": "SAE reduce la carga operativa de gestionar instancias, siendo más apropiado para cargas variables o equipos que priorizan minimizar esa operación." },
+    { "q": "¿Qué riesgo tiene mezclar Applications de dev y producción en el mismo Namespace de EDAS?", "options": ["Ningún riesgo, es la configuración recomendada", "Tráfico de prueba puede llegar accidentalmente a servicios productivos, al no existir el aislamiento de ambiente", "Namespace no tiene ningún efecto sobre el descubrimiento de servicios", "Reduce automáticamente el costo de la cuenta"], "answer": 1, "explain": "El aislamiento por Namespace evita justamente que servicios de distintos ambientes se descubran y se llamen entre sí por error." },
+    { "q": "¿Qué framework de RPC del ecosistema Alibaba está soportado nativamente por EDAS junto a Spring Cloud Alibaba?", "options": ["gRPC exclusivamente", "Dubbo / HSF", "GraphQL", "SOAP"], "answer": 1, "explain": "Dubbo (y su variante interna HSF) es uno de los frameworks RPC nativos del ecosistema que EDAS integra directamente." },
+    { "q": "¿Qué ocurre si las métricas de una versión nueva empeoran durante un batch release en curso?", "options": ["El despliegue continúa automáticamente sin posibilidad de intervención", "El despliegue se puede pausar o revertir antes de completar el rollout hacia el resto de instancias", "Se elimina la aplicación completa de forma permanente", "No existe forma de detener un batch release una vez iniciado"], "answer": 1, "explain": "El batch release permite pausar o revertir entre lotes si se detectan problemas, limitando el radio de impacto." },
+    { "q": "¿Por qué asumir que una aplicación en SAE tiene alta disponibilidad automática sin configurarla es un error?", "options": ["SAE nunca requiere ninguna configuración de disponibilidad", "El modelo serverless reduce la gestión de infraestructura, pero la redundancia de instancias sigue debiendo configurarse explícitamente", "SAE no admite ejecutar más de una instancia de una aplicación", "No es un error, es el comportamiento garantizado por defecto"], "answer": 1, "explain": "'Serverless' elimina la gestión de servidores, no la necesidad de configurar redundancia para alta disponibilidad real." }
   ],
-  "exam_focus": "EDAS vs SAE vs ACK, Nacos/MSE, canary strategy, service mesh integration.",
+  "exam_focus": "El examen suele evaluar: (a) qué problema de gestión de aplicaciones resuelve EDAS más allá de Kubernetes puro, (b) Namespace vs. Group, (c) batch release y canary release como mecanismos de despliegue gradual, (d) EDAS clásico frente a SAE según quién administra la capacidad de cómputo, (e) el rol de AHAS y Nacos/MSE en el ecosistema.",
   "official_intro": "Manage Ultra-Large-Scale application has many challenges, such as application management and monitoring, high availability, performance optimization, and system expansion .etc. This course will show you how to manage the large applications on Alibaba Cloud using EDAS which is the core product supports 99 percent of Alibaba Cloud's large-scale application systems.",
   "recommended_for": "System architect, Developer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_edas",

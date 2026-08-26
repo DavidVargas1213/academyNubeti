@@ -2,423 +2,178 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-database-double11",
   "title_en": "Understanding the Database Technology that Powers Double 11",
-  "title_es": "Understanding Base de Datos Technology that Powers Double 11",
+  "title_es": "Cómo la Tecnología de Bases de Datos Sostiene el Double 11",
+  "title_es_html": "Cómo la Tecnología de <em>Bases de Datos</em> Sostiene el Double 11",
   "duration_es": "41 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-database-double11",
-  "lead": "Guía completa en español para el curso «Understanding the Database Technology that Powers Double 11» de Alibaba Cloud Academy. Cubre en profundidad Arquitectura Alibaba Cloud. Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Understanding the Database Technology that Powers Double 11» de Alibaba Cloud Academy. No es un curso de un producto concreto: cuenta la historia de cómo Alibaba abandonó Oracle y el hardware propietario (el movimiento «de-IOE») y construyó su propia pila de bases de datos distribuidas —OceanBase, PolarDB, PolarDB-X y AnalyticDB— para sobrevivir al pico de tráfico transaccional más grande del comercio electrónico mundial: la medianoche del 11 de noviembre.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Arquitectura Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Well-Architected, Multi-region, Multi-AZ, Elastic, Fault Tolerance.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Arquitectura Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué Alibaba abandonó la pila Oracle + hardware propietario (movimiento de-IOE) y qué riesgos resolvía.",
+    "<strong>Distinguir</strong> OceanBase, PolarDB, PolarDB-X y AnalyticDB por su propósito, arquitectura y modelo de consistencia.",
+    "<strong>Explicar</strong> cómo el sharding horizontal y la separación de cómputo/almacenamiento permiten escalar escrituras.",
+    "<strong>Describir</strong> las técnicas que protegen a la base de datos durante un pico extremo de tráfico: caché, colas, deducción de inventario segmentada.",
+    "<strong>Reconocer</strong> el rol de AnalyticDB en el tablero de GMV (Gross Merchandise Volume) en tiempo real del Double 11.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre esta arquitectura de base de datos a escala."
   ],
-  "architecture": "Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+  "architecture": "Las escrituras transaccionales (pedidos, pagos) entran a través de una capa de sharding (PolarDB-X actuando como enrutador SQL) que reparte cada tabla lógica entre docenas de nodos PolarDB/OceanBase físicos, evitando que un solo nodo se convierta en cuello de botella. Delante de esa capa, Tair/Redis absorbe la mayoría de las lecturas repetidas (detalle de producto, saldo de cupón) para que no lleguen a la base de datos. Las operaciones de altísima contención —como descontar una unidad de un producto viral— se enrutan a través de colas de mensajes (RocketMQ) que serializan la deducción en vez de dejar que miles de transacciones compitan por la misma fila. En paralelo, un flujo de eventos alimenta AnalyticDB, que recalcula el contador de GMV y los dashboards operativos casi en tiempo real sin tocar la base transaccional. Para continuidad de negocio, los datos críticos se replican entre centros de datos en modo «multi-activo geográfico» (异地多活), de forma que la caída de una región no significa la caída del sitio completo.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Arquitectura Alibaba Cloud",
-      "title_en": "Introduction to Arquitectura Alibaba Cloud",
-      "intro": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · De-IOE: por qué Alibaba abandonó Oracle",
+      "title_en": "De-IOE: Why Alibaba Moved Off Oracle",
+      "intro": "A comienzos de la década de 2010, la infraestructura de Alibaba corría sobre la pila «IOE»: bases de datos Oracle, minicomputadores IBM y almacenamiento EMC. El curso arranca explicando por qué ese modelo, perfectamente válido para una empresa mediana, se volvió insostenible a la escala de Alibaba.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Arquitectura Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de escala</strong>: Oracle y el hardware propietario escalan verticalmente (servidores más grandes); a partir de cierto volumen de transacciones simultáneas, ya no existe un servidor lo bastante grande, o su costo se vuelve prohibitivo.",
+        "<strong>Riesgo de proveedor único</strong>: depender de licencias, hardware y soporte de un puñado de proveedores externos deja a la empresa expuesta a decisiones de precio y roadmap que no controla.",
+        "<strong>El movimiento de-IOE (去IOE)</strong>: la decisión estratégica de reemplazar progresivamente Oracle, los minicomputadores IBM y el almacenamiento EMC por software distribuido construido internamente, corriendo sobre hardware genérico (commodity).",
+        "<strong>No fue instantáneo</strong>: la migración tomó años y se hizo sistema por sistema, empezando por los menos críticos, validando cada reemplazo antes de tocar los sistemas de pago y pedidos.",
+        "<strong>El resultado</strong>: de ese esfuerzo nacieron los productos que hoy Alibaba Cloud vende como servicios gestionados — OceanBase, PolarDB, PolarDB-X y AnalyticDB no son productos diseñados en un laboratorio, sino la solución a un problema real de escala que Alibaba vivió primero internamente."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Arquitectura Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El examen no pregunta solo «qué es de-IOE» sino «por qué»: la respuesta combina límites de escalado vertical + riesgo de proveedor único, no simplemente «para ahorrar dinero»." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Arquitectura Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · OceanBase: base de datos distribuida nativa",
+      "title_en": "OceanBase: A Natively Distributed Database",
+      "intro": "OceanBase es la base de datos que Alibaba construyó para reemplazar a Oracle en los sistemas más críticos —pagos, saldos, pedidos— donde la consistencia no es negociable.",
       "points": [
-        "<strong>Patrón canónico</strong>: Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Distribuida desde el diseño</strong>: a diferencia de una base de datos tradicional a la que se le añade sharding después, OceanBase se diseñó desde cero para repartir los datos entre múltiples nodos sin un único punto de coordinación central.",
+        "<strong>Consenso basado en Paxos</strong>: cada partición de datos se replica en varios nodos (típicamente tres) usando un protocolo de consenso tipo Paxos, de modo que la pérdida de un nodo no implica pérdida de datos ni interrupción del servicio.",
+        "<strong>Multi-activo geográfico</strong>: OceanBase puede desplegarse con réplicas activas en distintos centros de datos o ciudades, sirviendo tráfico simultáneamente desde varias ubicaciones en vez del modelo tradicional maestro-en-una-ciudad/réplica-pasiva-en-otra.",
+        "<strong>Compatible con MySQL/Oracle</strong>: expone una interfaz SQL compatible con MySQL u Oracle, permitiendo migrar aplicaciones existentes sin reescribir toda la capa de acceso a datos.",
+        "<strong>Caso de uso típico</strong>: sistemas financieros y de pago (Alipay), donde una inconsistencia en el saldo de una cuenta es inaceptable, incluso durante una falla de centro de datos."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Arquitectura Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado menciona «consistencia fuerte + tolerancia a la caída de un centro de datos completo + sistema financiero», la respuesta apunta a OceanBase, no a una base de datos con réplica asíncrona simple." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · PolarDB: separar cómputo y almacenamiento",
+      "title_en": "PolarDB: Separating Compute from Storage",
+      "intro": "PolarDB ataca un problema distinto: cómo hacer que una base de datos relacional clásica (compatible con MySQL, PostgreSQL u Oracle) escale lecturas y se recupere de fallas mucho más rápido que una arquitectura tradicional con disco local.",
       "points": [
-        "<strong>Well-Architected</strong> <em>(Well-Architected)</em>: 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "<strong>Multi-región</strong> <em>(Multi-region)</em>: Despliegue en varias regiones para DR/latencia.",
-        "<strong>Multi-AZ</strong> <em>(Multi-AZ)</em>: Múltiples zonas dentro de región.",
-        "<strong>Elástico</strong> <em>(Elastic)</em>: Auto-scale según demanda.",
-        "<strong>Tolerancia a fallos</strong> <em>(Fault Tolerance)</em>: Diseño que sobrevive a fallos parciales.",
-        "<strong>Blast radius</strong> <em>(Blast Radius)</em>: Alcance de una falla.",
-        "<strong>Chaos engineering</strong> <em>(Chaos Engineering)</em>: Introducir fallos controlados para validar resiliencia.",
-        "<strong>Landing zone</strong> <em>(Landing Zone)</em>: Baseline de cuenta lista para cargas."
+        "<strong>Arquitectura de almacenamiento compartido</strong>: en vez de que cada nodo de base de datos tenga su propio disco, todos los nodos (uno de lectura-escritura y varios de solo lectura) comparten la misma capa de almacenamiento distribuido de baja latencia.",
+        "<strong>Réplicas de lectura casi instantáneas</strong>: como los nodos de lectura no copian los datos, sino que apuntan al mismo almacenamiento compartido, agregar una réplica nueva toma segundos en vez de las horas que tomaría clonar un disco completo.",
+        "<strong>Recuperación ante fallas más rápida</strong>: si el nodo de escritura falla, un nodo de lectura puede promoverse a escritura sin tener que re-sincronizar datos, porque ya comparte el mismo almacenamiento.",
+        "<strong>Compatibilidad como ventaja de migración</strong>: al ser compatible con el protocolo de MySQL/PostgreSQL, aplicaciones existentes migran con cambios mínimos, a diferencia de mover todo el sistema a un motor completamente nuevo.",
+        "<strong>Rol en Double 11</strong>: PolarDB sostiene cargas transaccionales de tamaño medio-alto donde se necesita compatibilidad SQL estándar y capacidad de escalar lecturas rápidamente ante un pico anunciado con antelación."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "PolarDB resuelve la velocidad de escalar <em>lecturas</em> y recuperación ante fallas separando cómputo de almacenamiento; no resuelve por sí solo el problema de escalar <em>escrituras</em> masivas — para eso existe PolarDB-X." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · PolarDB-X: sharding horizontal de escrituras",
+      "title_en": "PolarDB-X: Horizontal Sharding for Writes",
+      "intro": "Cuando ni siquiera separar cómputo de almacenamiento basta —porque el volumen de escrituras supera lo que un solo nodo puede procesar—, la solución es partir los datos en muchos nodos más pequeños: eso es PolarDB-X (evolución de lo que internamente se conocía como DRDS/TDDL).",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Sharding horizontal</strong>: una tabla lógica (p.ej. «pedidos») se divide en cientos de tablas físicas repartidas entre muchos nodos de base de datos, típicamente por una clave de partición como el ID de usuario.",
+        "<strong>Capa de enrutamiento SQL</strong>: la aplicación sigue escribiendo SQL como si hablara con una sola base de datos; una capa intermedia (el enrutador) traduce cada consulta a la tabla física correcta de forma transparente.",
+        "<strong>Elegir bien la clave de partición es crítico</strong>: una clave mal elegida concentra el tráfico en unas pocas particiones («hotspot»), anulando el beneficio del sharding — el examen suele presentar este error como distractor.",
+        "<strong>Costo de las consultas cross-shard</strong>: un JOIN o una agregación que necesita datos de múltiples particiones es más costoso que en una base de datos única; el diseño del esquema debe minimizar estas consultas.",
+        "<strong>Complemento, no reemplazo</strong>: PolarDB-X típicamente enruta hacia nodos PolarDB/MySQL por debajo — combina el sharding horizontal con los beneficios de almacenamiento de PolarDB en cada partición."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "«Escalar horizontalmente las escrituras de una tabla de pedidos con miles de millones de filas» describe PolarDB-X (sharding); «acelerar réplicas de lectura de una base ya existente» describe PolarDB (almacenamiento compartido)." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Absorbiendo el pico: caché, colas y deducción de inventario",
+      "title_en": "Absorbing the Spike: Cache, Queues and Inventory Deduction",
+      "intro": "Ninguna base de datos, por bien diseñada que esté, debería recibir directamente millones de solicitudes simultáneas por el mismo producto en el mismo segundo. El curso dedica un módulo completo a las capas que protegen a la base de datos del tráfico más agresivo del año.",
       "points": [
-        "<strong>HA</strong>: Multi-AZ default, multi-región para tier-1",
-        "<strong>HA</strong>: Chaos engineering en pre-prod",
-        "<strong>Buenas prácticas</strong>: Elasticidad automática (HPA + Cluster Autoscaler + Auto Scaling ECS)",
-        "<strong>Buenas prácticas</strong>: Blast radius pequeño (celdas independientes)",
-        "<strong>Buenas prácticas</strong>: Landing zone estándar antes de cargar"
+        "<strong>Tair / ApsaraDB para Redis como escudo de lectura</strong>: el detalle de producto, el precio y el stock aproximado se sirven desde caché en memoria; solo una fracción mínima del tráfico de lectura llega realmente a la base de datos.",
+        "<strong>El problema del «hot row»</strong>: cuando miles de compradores intentan comprar la última unidad de un producto viral al mismo segundo, todos compiten por bloquear la misma fila de inventario, generando contención severa incluso con sharding.",
+        "<strong>Colas de mensajes para serializar</strong>: en vez de dejar que todas las solicitudes de compra golpeen la base de datos a la vez, se encolan (RocketMQ) y se procesan de forma controlada, evitando que la base de datos colapse bajo contención.",
+        "<strong>Deducción de inventario segmentada</strong>: en vez de un único contador de stock por producto, el inventario se divide en segmentos (p.ej. 100 sub-contadores de 1 unidad cada uno) repartidos entre particiones, reduciendo la contención sobre una sola fila.",
+        "<strong>Rate limiting y colas de espera virtuales</strong>: ante una demanda que supera la capacidad real del sistema, se prefiere mostrarle al usuario una «sala de espera» controlada antes que dejar que la base de datos se sature y falle para todos."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "La estrategia general es: cachear lo que se pueda, encolar lo que genere contención, y nunca dejar que el tráfico bruto de un evento como Double 11 golpee la base de datos sin ningún amortiguador delante." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "6 · AnalyticDB: el tablero de GMV en tiempo real",
+      "title_en": "AnalyticDB: The Real-Time GMV Dashboard",
+      "intro": "Mientras la capa transaccional procesa pedidos, un sistema completamente separado recalcula en segundos las cifras que se muestran en las pantallas gigantes del evento — sin competir por los mismos recursos que las compras.",
+      "points": [
+        "<strong>HTAP (Hybrid Transactional/Analytical Processing)</strong>: AnalyticDB está diseñado para ingerir eventos a alta velocidad y responder consultas analíticas agregadas casi en tiempo real, un punto intermedio entre una base OLTP y un data warehouse batch como MaxCompute.",
+        "<strong>Aislamiento de cargas</strong>: el conteo de GMV, la evolución de ventas por categoría o región y los dashboards operativos se calculan sobre AnalyticDB, no consultando directamente las bases transaccionales — así un dashboard pesado nunca compite por recursos con un pago real.",
+        "<strong>Ingesta por streaming</strong>: los eventos de pedido fluyen hacia AnalyticDB casi al instante de ocurrir, en vez de esperar un proceso batch nocturno como en un data warehouse tradicional.",
+        "<strong>Complemento de MaxCompute</strong>: AnalyticDB cubre el análisis casi en tiempo real durante el evento; MaxCompute sigue siendo el motor para el análisis histórico profundo después del Double 11 (qué categorías crecieron año a año, patrones de comportamiento)."
+      ],
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «panel de ventas actualizado cada pocos segundos durante un evento en vivo», la respuesta es una base HTAP como AnalyticDB, no un data warehouse batch." }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas más difíciles del examen sobre esta arquitectura presentan un componente con nombre parecido a otro y piden identificar cuál resuelve realmente el problema descrito.",
       "points": [
-        "<strong>Antipattern</strong>: Single-AZ en producción tier-1",
-        "<strong>Antipattern</strong>: Sin auto-scale — capacity planning manual",
-        "<strong>Antipattern</strong>: Blast radius global (un servicio caído cae todo)",
-        "<strong>Antipattern</strong>: Sin ejercicios DR",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: elegir una clave de sharding en PolarDB-X que concentra el tráfico en pocas particiones (p.ej. la fecha del pedido durante un evento de un solo día) en vez de una clave bien distribuida (p.ej. ID de usuario).",
+        "<strong>Antipatrón</strong>: dejar que un dashboard de GMV consulte directamente la base transaccional en vez de una base HTAP separada como AnalyticDB, degradando el rendimiento de los pagos reales.",
+        "<strong>Antipatrón</strong>: usar un único contador de inventario sin segmentar para un producto de altísima demanda, generando un cuello de botella de contención.",
+        "<strong>Antipatrón</strong>: confundir PolarDB (separación de cómputo/almacenamiento, escalado de lecturas) con PolarDB-X (sharding horizontal, escalado de escrituras) — resuelven problemas distintos.",
+        "<strong>Antipatrón</strong>: no cachear lecturas repetitivas de alta frecuencia, saturando la base de datos con tráfico que Tair/Redis podría haber absorbido.",
+        "<strong>Estrategia</strong>: identifica primero si la pregunta habla de lecturas, escrituras o analítica — cada una apunta a un componente distinto de esta arquitectura."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante dos servicios con nombres parecidos (PolarDB vs. PolarDB-X, OceanBase vs. PolarDB), pregunta: ¿el problema es de lecturas, de escrituras masivas, de consistencia geográfica, o de analítica en vivo? La respuesta correcta se deduce de ahí." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "E-commerce con picos estacionales (Double 11 pattern)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "SaaS multi-tenant global"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Fintech con requerimientos compliance"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "IoT + real-time analytics"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Media con content delivery global"
-    }
+    { "title": "Escenario 1", "text": "Sistema de pagos donde ninguna inconsistencia de saldo es aceptable, ni ante la caída de un centro de datos — OceanBase" },
+    { "title": "Escenario 2", "text": "Aplicación MySQL existente que necesita réplicas de lectura casi instantáneas — PolarDB" },
+    { "title": "Escenario 3", "text": "Tabla de pedidos con miles de millones de filas que satura las escrituras de un solo nodo — PolarDB-X (sharding)" },
+    { "title": "Escenario 4", "text": "Producto viral con stock limitado y millones de intentos de compra simultáneos — colas + deducción de inventario segmentada" },
+    { "title": "Escenario 5", "text": "Dashboard de ventas que se actualiza cada pocos segundos durante el evento en vivo — AnalyticDB (HTAP)" },
+    { "title": "Escenario 6", "text": "Reducir la carga de lectura sobre la base de datos durante el pico de tráfico — Tair/Redis como caché" }
   ],
   "mistakes": [
-    "Single-AZ en producción tier-1",
-    "Sin auto-scale — capacity planning manual",
-    "Blast radius global (un servicio caído cae todo)",
-    "Sin ejercicios DR"
+    "Elegir una clave de sharding que concentra el tráfico en pocas particiones en vez de distribuirlo uniformemente",
+    "Dejar que dashboards analíticos consulten directamente la base transaccional en producción",
+    "Usar un único contador de inventario sin segmentar para productos de altísima demanda",
+    "Confundir PolarDB (escalado de lecturas) con PolarDB-X (escalado de escrituras vía sharding)",
+    "No colocar una capa de caché delante de lecturas repetitivas de alta frecuencia",
+    "Diseñar el esquema con demasiadas consultas cross-shard que anulan el beneficio del sharding horizontal"
   ],
   "cli": [
-    {
-      "cmd": "Consulta Well-Architected Review",
-      "desc": "Framework"
-    },
-    {
-      "cmd": "aliyun sae CreateApplication",
-      "desc": "App SAE"
-    }
+    { "cmd": "aliyun polardb DescribeDBClusters --RegionId cn-hangzhou", "desc": "Listar clústeres PolarDB de una región" },
+    { "cmd": "aliyun polardb CreateDBCluster --DBType MySQL --DBVersion 8.0 --DBNodeClass polar.mysql.x4.large", "desc": "Crear un clúster PolarDB compatible con MySQL" },
+    { "cmd": "aliyun r-kvstore DescribeInstances --RegionId cn-hangzhou", "desc": "Listar instancias de Tair/ApsaraDB para Redis" },
+    { "cmd": "aliyun r-kvstore AllocateInstance --InstanceClass redis.master.small.default", "desc": "Aprovisionar una instancia Redis como capa de caché" },
+    { "cmd": "aliyun ads DescribeDBClusters --RegionId cn-hangzhou", "desc": "Listar clústeres de AnalyticDB" },
+    { "cmd": "aliyun polardb DescribeDBClusterPerformance --DBClusterId pc-xxxxx --Key PolarDBDiskUsage", "desc": "Consultar métricas de rendimiento de un clúster PolarDB" }
   ],
   "glossary": [
-    {
-      "en": "Well-Architected",
-      "es": "Well-Architected",
-      "def": "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "en": "Multi-region",
-      "es": "Multi-región",
-      "def": "Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "en": "Multi-AZ",
-      "es": "Multi-AZ",
-      "def": "Múltiples zonas dentro de región."
-    },
-    {
-      "en": "Elastic",
-      "es": "Elástico",
-      "def": "Auto-scale según demanda."
-    },
-    {
-      "en": "Fault Tolerance",
-      "es": "Tolerancia a fallos",
-      "def": "Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "en": "Blast Radius",
-      "es": "Blast radius",
-      "def": "Alcance de una falla."
-    },
-    {
-      "en": "Chaos Engineering",
-      "es": "Chaos engineering",
-      "def": "Introducir fallos controlados para validar resiliencia."
-    },
-    {
-      "en": "Landing Zone",
-      "es": "Landing zone",
-      "def": "Baseline de cuenta lista para cargas."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "De-IOE (去IOE)", "es": "De-IOE", "def": "Movimiento estratégico de Alibaba para reemplazar Oracle, minicomputadores IBM y almacenamiento EMC por software distribuido propio sobre hardware genérico." },
+    { "en": "OceanBase", "es": "OceanBase", "def": "Base de datos distribuida nativamente por Alibaba, con consenso tipo Paxos y capacidad de operar en modo multi-activo geográfico." },
+    { "en": "Paxos", "es": "Paxos", "def": "Familia de protocolos de consenso distribuido que permite a varias réplicas acordar un estado consistente incluso ante fallas." },
+    { "en": "PolarDB", "es": "PolarDB", "def": "Base de datos relacional en la nube compatible con MySQL/PostgreSQL/Oracle, con separación de cómputo y almacenamiento." },
+    { "en": "Compute-storage separation", "es": "Separación de cómputo y almacenamiento", "def": "Arquitectura donde los nodos de cómputo comparten una misma capa de almacenamiento distribuido, acelerando réplicas y recuperación." },
+    { "en": "PolarDB-X", "es": "PolarDB-X", "def": "Capa de base de datos distribuida con sharding horizontal automático para escalar escrituras masivas; evolución de DRDS/TDDL." },
+    { "en": "Sharding", "es": "Particionado horizontal", "def": "División de una tabla lógica en múltiples tablas físicas repartidas entre nodos, según una clave de partición." },
+    { "en": "Shard key / Partition key", "es": "Clave de partición", "def": "Columna usada para decidir en qué partición física vive cada fila; una mala elección concentra el tráfico (hotspot)." },
+    { "en": "Hotspot / Hot row", "es": "Punto caliente", "def": "Fila o partición que recibe tráfico desproporcionado, generando contención incluso en un sistema shardeado." },
+    { "en": "Cross-shard query", "es": "Consulta cross-shard", "def": "Consulta que necesita combinar datos de varias particiones físicas; más costosa que una consulta local a una sola partición." },
+    { "en": "AnalyticDB (ADB)", "es": "AnalyticDB", "def": "Base de datos HTAP de Alibaba Cloud para analítica casi en tiempo real sobre datos que llegan por streaming." },
+    { "en": "HTAP", "es": "HTAP", "def": "Procesamiento híbrido transaccional/analítico: combina ingesta rápida con consultas analíticas de baja latencia." },
+    { "en": "Tair / ApsaraDB for Redis", "es": "Tair / Redis", "def": "Servicio de caché en memoria compatible con Redis; absorbe lecturas repetitivas para proteger la base de datos." },
+    { "en": "GMV (Gross Merchandise Volume)", "es": "GMV", "def": "Valor total de las transacciones procesadas en una plataforma durante un período; la métrica emblemática del Double 11." },
+    { "en": "Message Queue (RocketMQ)", "es": "Cola de mensajes", "def": "Sistema de mensajería que serializa operaciones de alta contención, evitando que lleguen simultáneamente a la base de datos." },
+    { "en": "Inventory deduction (segmented)", "es": "Deducción de inventario segmentada", "def": "Técnica de dividir un contador de stock en sub-contadores para reducir la contención sobre una sola fila." },
+    { "en": "Geo-redundancy / Multi-active", "es": "Multi-activo geográfico", "def": "Arquitectura donde varios centros de datos en distintas ubicaciones sirven tráfico simultáneamente, sin un único punto de falla regional." },
+    { "en": "Rate limiting", "es": "Limitación de tasa", "def": "Técnica para restringir el volumen de solicitudes que llegan a un sistema, protegiéndolo de saturación." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Arquitectura Alibaba Cloud?",
-      "options": [
-        "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga."
-    },
-    {
-      "q": "¿Qué es <strong>Well-Architected</strong> (Well-Architected) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Well-Architected (Well-Architected): 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-region</strong> (Multi-región) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Despliegue en varias regiones para DR/latencia.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-region (Multi-región): Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-AZ</strong> (Multi-AZ) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Múltiples zonas dentro de región.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-AZ (Multi-AZ): Múltiples zonas dentro de región."
-    },
-    {
-      "q": "¿Qué es <strong>Elastic</strong> (Elástico) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Auto-scale según demanda.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Elastic (Elástico): Auto-scale según demanda."
-    },
-    {
-      "q": "¿Qué es <strong>Fault Tolerance</strong> (Tolerancia a fallos) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Diseño que sobrevive a fallos parciales.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Fault Tolerance (Tolerancia a fallos): Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Arquitectura Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Arquitectura Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Arquitectura Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Arquitectura Alibaba Cloud es la elección típica:",
-      "options": [
-        "E-commerce con picos estacionales (Double 11 pattern)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: E-commerce con picos estacionales (Double 11 pattern)."
-    }
+    { "q": "¿Cuál fue la motivación principal detrás del movimiento de-IOE (去IOE) de Alibaba?", "options": ["Reducir el número de empleados de TI", "Superar los límites de escalado vertical y el riesgo de depender de un proveedor único de hardware/software", "Cumplir con una regulación gubernamental específica", "Eliminar por completo el uso de bases de datos relacionales"], "answer": 1, "explain": "A la escala de Alibaba, escalar verticalmente con Oracle y hardware propietario dejó de ser viable técnica y económicamente, además del riesgo de depender de pocos proveedores externos." },
+    { "q": "¿Qué caracteriza a OceanBase frente a una base de datos relacional tradicional con réplica asíncrona?", "options": ["No admite SQL", "Usa un protocolo de consenso tipo Paxos y puede operar en modo multi-activo geográfico con consistencia fuerte", "Solo puede desplegarse en un único centro de datos", "Es exclusivamente una base de datos de solo lectura"], "answer": 1, "explain": "OceanBase fue diseñada desde cero como distribuida, usando consenso tipo Paxos entre réplicas, lo que permite operar en varias ubicaciones simultáneamente sin perder consistencia." },
+    { "q": "¿Qué problema resuelve principalmente la arquitectura de separación de cómputo y almacenamiento de PolarDB?", "options": ["Elimina la necesidad de hacer backups", "Permite crear réplicas de lectura casi instantáneas y recuperar más rápido ante fallas", "Convierte automáticamente la base en NoSQL", "Elimina el uso de SQL"], "answer": 1, "explain": "Al compartir la misma capa de almacenamiento, los nodos de lectura no necesitan copiar datos, lo que acelera drásticamente la creación de réplicas y la recuperación ante fallas." },
+    { "q": "Una tabla de pedidos con miles de millones de filas satura las escrituras de un solo nodo de base de datos. ¿Qué solución de la arquitectura de Alibaba aborda directamente este problema?", "options": ["Aumentar el tamaño de una única instancia PolarDB", "PolarDB-X con sharding horizontal", "Agregar más réplicas de lectura únicamente", "Migrar a un data warehouse batch como MaxCompute"], "answer": 1, "explain": "PolarDB-X reparte una tabla lógica entre muchos nodos físicos mediante sharding horizontal, escalando la capacidad de escritura más allá de lo que soporta un solo nodo." },
+    { "q": "¿Por qué una mala elección de la clave de partición (shard key) es un antipatrón grave en PolarDB-X?", "options": ["Porque PolarDB-X no permite definir una clave de partición", "Porque puede concentrar el tráfico en pocas particiones, anulando el beneficio del sharding", "Porque obliga a usar NoSQL en vez de SQL", "Porque incrementa automáticamente el costo de almacenamiento sin afectar el rendimiento"], "answer": 1, "explain": "Una clave mal elegida (p.ej. la fecha durante un evento de un solo día) hace que la mayoría del tráfico caiga en las mismas particiones, replicando el cuello de botella que el sharding buscaba evitar." },
+    { "q": "¿Qué rol cumple Tair/Redis en la arquitectura descrita durante el Double 11?", "options": ["Reemplaza completamente a la base de datos transaccional", "Absorbe la mayoría de las lecturas repetitivas para que no lleguen a la base de datos", "Solo se usa para almacenar logs de auditoría", "Sustituye a AnalyticDB para el análisis histórico"], "answer": 1, "explain": "El caché en memoria sirve el detalle de producto, precios y stock aproximado, reduciendo drásticamente la carga de lectura real sobre las bases de datos transaccionales." },
+    { "q": "¿Qué es el problema del 'hot row' (fila caliente) durante un evento de tráfico extremo?", "options": ["Un error de hardware en el disco de la base de datos", "Contención severa cuando miles de solicitudes intentan modificar la misma fila (p.ej. el stock de un producto viral) simultáneamente", "Un tipo de ataque de denegación de servicio externo", "Una fila de la base de datos que se sobrecalienta físicamente"], "answer": 1, "explain": "Incluso con sharding, si todos los compradores intentan comprar el mismo producto al mismo tiempo, siguen compitiendo por la misma fila de inventario, generando un cuello de botella localizado." },
+    { "q": "¿Qué técnica se usa para reducir la contención sobre el contador de stock de un producto de altísima demanda?", "options": ["Eliminar el control de inventario durante el evento", "Dividir el contador en sub-contadores segmentados repartidos entre particiones", "Aumentar el precio del producto automáticamente", "Bloquear la tabla completa durante todo el evento"], "answer": 1, "explain": "Segmentar el inventario en múltiples sub-contadores distribuye la contención en vez de concentrarla en una sola fila." },
+    { "q": "¿Por qué se usan colas de mensajes (como RocketMQ) para operaciones de compra de alta contención?", "options": ["Para eliminar la necesidad de una base de datos", "Para serializar las solicitudes y procesarlas de forma controlada en vez de dejarlas golpear la base de datos simultáneamente", "Para almacenar permanentemente los datos de pedidos en lugar de la base de datos", "Porque son obligatorias por la certificación sin ningún beneficio técnico"], "answer": 1, "explain": "Encolar las solicitudes evita que miles de transacciones compitan simultáneamente por la misma fila, protegiendo la estabilidad de la base de datos." },
+    { "q": "¿Qué es AnalyticDB en el contexto de esta arquitectura?", "options": ["Una base de datos NoSQL para sesiones de usuario", "Una base de datos HTAP que permite analítica casi en tiempo real sobre datos ingeridos por streaming", "Un servicio de backup de bases de datos", "Un reemplazo directo de PolarDB para cargas transaccionales"], "answer": 1, "explain": "AnalyticDB combina ingesta rápida con consultas analíticas de baja latencia, ideal para dashboards que se actualizan en segundos durante el evento." },
+    { "q": "¿Por qué es un antipatrón dejar que un dashboard de GMV consulte directamente la base transaccional de pedidos?", "options": ["Porque los dashboards no pueden mostrar números en tiempo real", "Porque compite por recursos con las transacciones reales de compra, degradando su rendimiento", "Porque la base transaccional no tiene ningún dato de ventas", "Porque es obligatorio usar Excel para reportes"], "answer": 1, "explain": "Separar la carga analítica (AnalyticDB) de la carga transaccional evita que un dashboard pesado afecte el procesamiento de pagos reales." },
+    { "q": "¿Qué significa que un sistema opere en modo 'multi-activo geográfico' (异地多活)?", "options": ["Que solo existe una copia de los datos en un único centro de datos", "Que varios centros de datos en distintas ubicaciones sirven tráfico simultáneamente, sin un único punto de falla regional", "Que los datos se borran automáticamente cada 24 horas", "Que el sistema solo funciona durante el horario laboral"], "answer": 1, "explain": "A diferencia del modelo maestro-en-una-ciudad/réplica-pasiva, el modo multi-activo permite que varias ubicaciones atiendan tráfico real simultáneamente, mejorando la resiliencia." },
+    { "q": "¿Cuál es la diferencia principal entre PolarDB y PolarDB-X?", "options": ["Son exactamente el mismo producto con nombres distintos", "PolarDB separa cómputo de almacenamiento para acelerar lecturas; PolarDB-X aplica sharding horizontal para escalar escrituras", "PolarDB-X es solo para analítica, nunca para transacciones", "PolarDB no admite SQL, PolarDB-X sí"], "answer": 1, "explain": "Resuelven problemas distintos: PolarDB acelera réplicas de lectura y recuperación; PolarDB-X reparte escrituras entre múltiples nodos mediante particionado horizontal." },
+    { "q": "Después del Double 11, ¿qué servicio sigue siendo el más adecuado para el análisis histórico profundo de varios años de datos de ventas?", "options": ["Tair/Redis", "MaxCompute", "RocketMQ", "Security Group"], "answer": 1, "explain": "AnalyticDB cubre la analítica casi en tiempo real durante el evento; el análisis histórico batch de gran volumen sigue siendo el dominio de MaxCompute." }
   ],
-  "exam_focus": "5 pilares Well-Architected, Multi-AZ vs Multi-Region, Elastic patterns, Double 11 lessons.",
+  "exam_focus": "El examen evalúa: (a) por qué Alibaba ejecutó el movimiento de-IOE, (b) diferenciar OceanBase, PolarDB, PolarDB-X y AnalyticDB por el problema que resuelve cada uno, (c) técnicas de mitigación de picos de tráfico (caché, colas, deducción segmentada de inventario), (d) el rol de AnalyticDB como HTAP para dashboards en tiempo real, (e) reconocer antipatrones de sharding y de acoplar analítica con transacciones.",
   "official_intro": "Through this course, you will not only learn about the history of Alibaba's database technology development and architecture evolvement, but also the specific database products used behind Alibaba's Double Eleven Shopping Festival.",
   "recommended_for": "Solution Architecture, Database Administrator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-database-double11",

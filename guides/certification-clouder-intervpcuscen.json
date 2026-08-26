@@ -2,469 +2,215 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-intervpcuscen",
   "title_en": "Interconnecting VPC Using Cloud Enterprise Network",
-  "title_es": "Interconnecting VPC Usar Cloud Empresarial Red",
+  "title_es": "Interconectar VPC Usando Cloud Enterprise Network",
+  "title_es_html": "Interconectar VPC Usando <em>Cloud Enterprise Network</em>",
   "duration_es": "61 minutos",
   "level_es": "Intermedio",
   "category_es": "Redes y CDN",
   "subcategory_es": "Red en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_Intervpcuscen",
-  "lead": "Guía completa en español para el curso «Interconnecting VPC Using Cloud Enterprise Network» de Alibaba Cloud Academy. Cubre en profundidad Virtual Private Cloud (VPC). VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Interconnecting VPC Using Cloud Enterprise Network» de Alibaba Cloud Academy, centrada en Cloud Enterprise Network (CEN): el servicio que actúa como hub central para interconectar decenas de VPC, VBR e incluso redes locales entre regiones y cuentas, sin las limitaciones del modelo punto a punto de VPC Peering. A diferencia de un curso centrado en rutas y Peering básico, aquí el eje es el Transit Router y su modelo de aprendizaje automático de rutas — la pieza que hace que CEN escale donde Peering no puede.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Virtual Private Cloud (VPC)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: VPC, VSwitch, Route Table, Custom Route, NAT Gateway.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Virtual Private Cloud (VPC) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué el modelo punto a punto de VPC Peering deja de ser sostenible al crecer el número de VPC, y cómo CEN resuelve ese problema con un hub central.",
+    "<strong>Distinguir</strong> el Transit Router como el componente central de CEN y los tipos de adjuntos (VPC, VBR, CCN) que puede aceptar.",
+    "<strong>Configurar</strong> la interconexión entre regiones usando un Bandwidth Package sobre el backbone privado de Alibaba Cloud.",
+    "<strong>Diferenciar</strong> el aprendizaje automático de rutas del uso de route maps personalizados para filtrar o priorizar tráfico entre redes adjuntas.",
+    "<strong>Diseñar</strong> una topología CEN de alta disponibilidad respetando los límites por defecto de la cuenta.",
+    "<strong>Aplicar</strong> control de acceso entre redes adjuntas mediante políticas de ruteo, sin depender únicamente de Security Groups.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre Cloud Enterprise Network."
   ],
-  "architecture": "Diseño típico: VPC con CIDR 10.0.0.0/16 → dos VSwitch (10.0.1.0/24 zona A, 10.0.2.0/24 zona B). Un NAT Gateway proporciona salida a internet para instancias sin EIP. Un SLB público en front. Peering o CEN conecta con VPCs de otras cuentas/regiones. VPN Gateway une la oficina.",
+  "architecture": "En el centro de cada instancia CEN vive un Transit Router (TR): un router virtual altamente disponible que actúa como punto de intercambio de rutas entre todas las redes que se le adjuntan. Cada VPC se conecta al TR mediante un VPC Attachment, cada circuito Express Connect mediante un VBR Attachment, y cada red local (oficina/data center con VPN) mediante un CCN Attachment. Dentro de una misma región, el TR aprende automáticamente las rutas de cada red adjunta y las propaga al resto sin configuración manual. Para interconectar Transit Routers de distintas regiones, se contrata un Bandwidth Package que reserva capacidad sobre el backbone privado de fibra de Alibaba Cloud, evitando que ese tráfico entre regiones cruce el internet público. Cuando el aprendizaje automático de rutas no es suficiente —por ejemplo, para aislar una VPC de otra pese a estar ambas adjuntas al mismo TR— se aplican Route Maps: reglas explícitas que filtran, modifican prioridad o bloquean rutas específicas entre adjuntos concretos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Virtual Private Cloud (VPC)",
-      "title_en": "Introduction to Virtual Private Cloud (VPC)",
-      "intro": "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El límite de VPC Peering y la necesidad de un hub",
+      "title_en": "The Limit of VPC Peering and the Need for a Hub",
+      "intro": "Antes de estudiar CEN hay que entender exactamente qué problema resuelve — no es un reemplazo cosmético de Peering, sino la respuesta a una limitación estructural que aparece inevitablemente al crecer.",
       "points": [
-        "<strong>Problema que resuelve</strong>: VPC es la red lógica privada donde vive todo recurso Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Virtual Private Cloud (VPC) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>VPC Peering es 1:1 y no transitivo</strong>: cada par de VPC que necesita comunicarse requiere su propia conexión explícita; A-B y B-C conectados no dan a A acceso a C.",
+        "<strong>Crecimiento cuadrático de conexiones</strong>: interconectar N VPC con Peering exige hasta N×(N-1)/2 conexiones — con 10 VPC ya son 45 conexiones que administrar, cada una con su propia tabla de rutas que mantener sincronizada.",
+        "<strong>Peering no cruza fácilmente cuentas y regiones a escala</strong>: es técnicamente posible pero cada conexión sigue siendo administrada de forma independiente, sin una vista centralizada de la topología completa.",
+        "<strong>La respuesta de CEN</strong>: un único hub (Transit Router) al que cada VPC, VBR o red local se adjunta una sola vez; el hub se encarga de propagar las rutas entre todos los adjuntos, reduciendo el problema de N×(N-1)/2 conexiones a N adjuntos simples."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Virtual Private Cloud (VPC) es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "CEN no compite con Peering en el caso de 2-3 VPC —ahí Peering sigue siendo más simple—; su valor aparece exactamente cuando el número de redes a interconectar crece lo suficiente como para que administrar conexiones punto a punto se vuelva inviable."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Virtual Private Cloud (VPC) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · El Transit Router: núcleo de la arquitectura CEN",
+      "title_en": "The Transit Router: Core of the CEN Architecture",
+      "intro": "El Transit Router es el componente que reemplaza por completo el modelo de conexiones individuales — entender sus capacidades es el primer paso para cualquier diseño con CEN.",
       "points": [
-        "<strong>Patrón canónico</strong>: Diseño típico: VPC con CIDR 10.0.0.0/16 → dos VSwitch (10.0.1.0/24 zona A, 10.0.2.0/24 zona B). Un NAT Gateway proporciona salida a internet para instancias sin EIP. Un SLB público en front. Peering o CEN conecta con VPCs de otras cuentas/regiones. VPN Gateway une la oficina.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Virtual Private Cloud (VPC) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>VPC</strong> <em>(VPC)</em>: Red privada lógica con rango CIDR RFC1918 propio.",
-        "<strong>VSwitch</strong> <em>(VSwitch)</em>: Subred atada a una zona; los recursos toman IP de aquí.",
-        "<strong>Tabla de rutas</strong> <em>(Route Table)</em>: Define dónde va el tráfico. Se asocia a VSwitches.",
-        "<strong>Ruta personalizada</strong> <em>(Custom Route)</em>: Entrada manual (destino → next-hop) para NAT/VPN/peering.",
-        "<strong>NAT Gateway</strong> <em>(NAT Gateway)</em>: Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto).",
-        "<strong>EIP</strong> <em>(Elastic IP)</em>: IP pública portable, asignable a ECS, NAT o SLB.",
-        "<strong>VPN Gateway</strong> <em>(VPN Gateway)</em>: Túnel IPsec o SSL con redes remotas.",
-        "<strong>Express Connect</strong> <em>(Express Connect)</em>: Circuito físico dedicado (10/40/100 Gbps) con on-premise."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Transit Router (TR)</strong>: router virtual altamente disponible desplegado automáticamente en cada región donde se activa CEN; es el punto donde convergen todas las redes adjuntas de esa región.",
+        "<strong>Un TR por región</strong>: una instancia CEN puede desplegar un Transit Router en cada región donde el cliente opera, y esos TR se interconectan entre sí para formar la red global.",
+        "<strong>Tabla de rutas del Transit Router</strong>: cada TR mantiene su propia tabla de rutas, distinta de las tablas de rutas de las VPC individuales — es aquí donde se aplican los Route Maps cuando se necesita control fino.",
+        "<strong>Alta disponibilidad nativa</strong>: el TR está diseñado para tolerar fallas sin intervención del cliente, a diferencia de una VPN o un Express Connect donde la redundancia (túneles duales, circuitos activo/activo) debe diseñarse explícitamente.",
+        "<strong>Multi-cuenta</strong>: un TR puede aceptar adjuntos de VPC que pertenecen a cuentas distintas dentro de la misma organización (RAM), útil en estructuras corporativas con cuentas separadas por unidad de negocio."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona «punto central que interconecta múltiples VPC de distintas cuentas y regiones», la respuesta apunta al Transit Router de CEN — no a una VPN Gateway ni a una conexión de Peering individual."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Adjuntar redes: VPC, VBR y CCN Attachments",
+      "title_en": "Attaching Networks: VPC, VBR and CCN Attachments",
+      "intro": "Cualquier red que deba unirse al hub de CEN lo hace mediante un tipo de adjunto (attachment) específico según su naturaleza — la operación es simple, pero elegir el tipo correcto de adjunto es lo que el examen suele preguntar.",
       "points": [
-        "<strong>HA</strong>: Planificar CIDR sin solapes desde el inicio (evita rehacer red al conectar)",
-        "<strong>HA</strong>: Usar VSwitch por zona (mínimo 2) para HA",
-        "<strong>HA</strong>: Habilitar Flow Logs en subredes sensibles",
-        "<strong>Buenas prácticas</strong>: NAT Gateway compartido para todas las subredes privadas — más barato que EIPs individuales",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups + Network ACL en capas defense-in-depth",
-        "<strong>Buenas prácticas</strong>: Nunca dar EIP directa a bases de datos — usarlas solo tras un bastion o SLB privado"
+        "<strong>VPC Attachment</strong>: adjunta una VPC completa al Transit Router; a partir de ese momento, sus rutas se propagan automáticamente hacia el resto de la red CEN según la configuración de aprendizaje activada.",
+        "<strong>VBR Attachment</strong>: adjunta un Virtual Border Router existente (el punto de peering de un circuito Express Connect) al Transit Router, extendiendo la red CEN hasta el data center físico conectado por ese circuito.",
+        "<strong>CCN Attachment (Cloud Connect Network)</strong>: adjunta una red construida sobre túneles IPsec (por ejemplo, oficinas conectadas vía VPN) a la malla CEN, integrando sitios que no cuentan con un circuito físico dedicado.",
+        "<strong>Un mismo TR puede combinar los tres tipos</strong>: es habitual que una sola instancia CEN tenga VPC de varias regiones, un VBR hacia el data center principal y una CCN hacia oficinas remotas, todo intercambiando rutas a través del mismo hub.",
+        "<strong>El adjunto no implica full-mesh automático sin control</strong>: aunque las rutas se propagan por defecto, cada adjunto puede excluirse explícitamente de recibir o anunciar rutas específicas si el diseño lo requiere."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Adjuntar una red al Transit Router es la operación que reemplaza, en términos de esfuerzo, la creación manual de una conexión de Peering por cada par de redes — un adjunto es suficiente sin importar cuántas otras redes ya estén conectadas al mismo hub."
+      }
+    },
+    {
+      "title_es": "4 · Interconexión entre regiones: Bandwidth Package",
+      "title_en": "Cross-Region Interconnection: Bandwidth Package",
+      "intro": "Cuando las VPC a interconectar viven en regiones distintas, el tráfico entre los Transit Routers de cada región necesita capacidad reservada explícitamente — no es automático ni gratuito por defecto.",
+      "points": [
+        "<strong>Bandwidth Package</strong>: capacidad de ancho de banda contratada específicamente para el tráfico entre Transit Routers de dos regiones, viajando sobre el backbone privado de fibra de Alibaba Cloud en vez de cruzar el internet público.",
+        "<strong>Por qué hace falta contratarlo aparte</strong>: sin un Bandwidth Package asignado a un par de regiones, el TR de una región no puede intercambiar rutas ni tráfico con el TR de otra — la interconexión inter-región es un recurso explícito, no implícito.",
+        "<strong>Nivel de servicio del Bandwidth Package</strong>: se puede elegir entre distintos niveles según la prioridad del tráfico (por ejemplo, Platinum para tráfico crítico con SLA más estricto frente a Gold para tráfico estándar).",
+        "<strong>Ventaja frente a una VPN o Express Connect propios entre regiones</strong>: el tráfico nunca sale de la red privada de Alibaba Cloud, evitando la latencia variable de internet público y sin necesidad de gestionar túneles o circuitos manualmente entre cada par de regiones.",
+        "<strong>Dimensionamiento</strong>: el Bandwidth Package limita el throughput agregado entre esa pareja de regiones — subdimensionarlo genera cuellos de botella silenciosos que solo aparecen bajo carga real entre regiones."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario describe VPC en regiones distintas que deben comunicarse por la red privada de Alibaba Cloud (no por internet), la pieza que falta mencionar casi siempre es el Bandwidth Package — sin él, el Transit Router de una región no tiene forma de alcanzar al de otra."
+      }
+    },
+    {
+      "title_es": "5 · Aprendizaje de rutas: automático vs. Route Maps",
+      "title_en": "Route Learning: Automatic vs. Route Maps",
+      "intro": "Por defecto, CEN simplifica la vida propagando rutas automáticamente entre todos los adjuntos — pero un diseño real casi siempre necesita algo de control fino sobre quién ve las rutas de quién.",
+      "points": [
+        "<strong>Aprendizaje automático de rutas</strong>: comportamiento por defecto — el Transit Router aprende las rutas de cada VPC/VBR/CCN adjunta y las anuncia automáticamente a los demás adjuntos, sin configuración manual.",
+        "<strong>Route Map</strong>: conjunto de reglas explícitas (condición + acción) que se aplican a las rutas entrantes o salientes de un adjunto específico — permite permitir, denegar, o modificar la prioridad de rutas concretas en vez de aceptar todo el aprendizaje automático tal cual.",
+        "<strong>Caso de uso: aislar una VPC pese a estar en el mismo TR</strong>: dos VPC pueden estar adjuntas al mismo Transit Router sin poder comunicarse entre sí, si un Route Map bloquea explícitamente el intercambio de rutas entre esos dos adjuntos concretos — útil para VPC de distintos clientes o entornos que comparten hub pero deben permanecer aisladas.",
+        "<strong>Prioridad de rutas</strong>: cuando dos adjuntos anuncian una ruta hacia el mismo destino (por ejemplo, dos salidas redundantes hacia on-premise), un Route Map puede declarar cuál se prefiere y cuál actúa solo como respaldo.",
+        "<strong>Blackhole routes</strong>: rutas que descartan silenciosamente el tráfico hacia un destino específico — se usan para bloquear deliberadamente un rango de IP sin que el emisor reciba ningún mensaje de rechazo explícito."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Estar adjunto al mismo Transit Router NO garantiza conectividad total automática si existen Route Maps restrictivos — el examen suele plantear escenarios donde dos VPC en el mismo CEN no pueden comunicarse precisamente por una regla de ruteo deliberada, no por un error de configuración."
+      }
+    },
+    {
+      "title_es": "6 · Alta disponibilidad y límites de CEN",
+      "title_en": "High Availability and CEN Limits",
+      "intro": "Diseñar con CEN a escala empresarial exige conocer tanto la resiliencia nativa del servicio como los límites por defecto de la cuenta, que pueden requerir ampliación por ticket antes de un despliegue grande.",
+      "points": [
+        "<strong>Redundancia nativa del Transit Router</strong>: a diferencia de un VPN Gateway o un circuito Express Connect, el TR no requiere que el cliente diseñe manualmente túneles duales — la alta disponibilidad es parte del servicio gestionado.",
+        "<strong>Límites por defecto de adjuntos</strong>: cada cuenta tiene un número máximo de VPC/VBR/CCN Attachments por instancia CEN y de instancias CEN por cuenta, ampliable mediante ticket de soporte si el diseño lo requiere.",
+        "<strong>Límite de rutas aprendidas</strong>: existe un tope de rutas que un Transit Router puede aprender y propagar; diseños con miles de subredes pequeñas deben planificar la agregación de CIDR para no acercarse a ese límite.",
+        "<strong>Redundancia de Bandwidth Package</strong>: para tráfico inter-región crítico, se recomienda contratar capacidad con margen y monitorear su utilización, ya que un Bandwidth Package saturado degrada el tráfico entre regiones sin que el Transit Router en sí falle."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "La disponibilidad del Transit Router es responsabilidad de Alibaba Cloud; la disponibilidad de la topología completa (suficientes adjuntos, rutas agregadas, Bandwidth Package con margen) sigue siendo responsabilidad del diseño del cliente."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "7 · Seguridad: controlando el tráfico entre redes adjuntas",
+      "title_en": "Security: Controlling Traffic Between Attached Networks",
+      "intro": "Que dos VPC compartan el mismo Transit Router no significa que deban confiar ciegamente una en la otra — CEN ofrece control a nivel de ruteo, complementario (no sustituto) del control a nivel de Security Group.",
       "points": [
-        "<strong>Antipattern</strong>: CIDR 10.0.0.0/8 completo — imposible peerar con otros que usen mismo rango",
-        "<strong>Antipattern</strong>: Todo en una sola VPC/zona — sin HA ni segmentación",
-        "<strong>Antipattern</strong>: Reglas de SG 0.0.0.0/0 → cualquier puerto → ataques triviales",
-        "<strong>Antipattern</strong>: Confundir SG (stateful, por instancia) con NACL (stateless, por subred)",
-        "<strong>Antipattern</strong>: Olvidar que NAT Gateway tiene cargo por hora + por GB procesado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Route Maps como control de acceso de red</strong>: bloquear o filtrar rutas entre adjuntos específicos es la primera línea de defensa a nivel de topología, antes incluso de que el tráfico llegue a evaluarse contra un Security Group.",
+        "<strong>Security Group sigue aplicando igual</strong>: el tráfico que sí logra enrutarse entre dos VPC adjuntas a un mismo CEN continúa sujeto al Security Group de cada instancia de destino, exactamente igual que con cualquier otro origen.",
+        "<strong>RAM para gobernar quién administra CEN</strong>: crear o modificar adjuntos, Route Maps o Bandwidth Packages son operaciones sensibles a nivel de toda la organización — deben restringirse mediante políticas RAM a roles específicos de red, no dejarse abiertas a cualquier administrador de una VPC individual.",
+        "<strong>Segmentación por entorno</strong>: un patrón común es usar Route Maps para que las VPC de producción se comuniquen entre sí y con on-premise, mientras las VPC de desarrollo/pruebas permanecen aisladas pese a compartir la misma instancia CEN."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "En CEN, la seguridad se decide en dos capas independientes: el ruteo (Route Maps, qué red puede alcanzar a cuál) y el firewall (Security Group, qué tráfico específico se permite una vez que la ruta existe). Ambas deben configurarse — una ruta abierta sin Security Group restrictivo, o un Security Group abierto sin control de ruteo, dejan huecos de seguridad distintos."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de preguntas difíciles sobre CEN están inspiradas en confusiones reales entre CEN y los mecanismos de interconexión más simples (Peering, VPN, Express Connect) vistos en otros cursos.",
+      "points": [
+        "<strong>Antipatrón</strong>: seguir usando decenas de conexiones VPC Peering cuando el número de VPC ya justifica claramente migrar a CEN.",
+        "<strong>Antipatrón</strong>: adjuntar VPC de dos regiones distintas a sus respectivos Transit Routers y esperar que se comuniquen sin haber contratado un Bandwidth Package entre esas regiones.",
+        "<strong>Antipatrón</strong>: asumir que todas las VPC adjuntas a un mismo CEN pueden comunicarse automáticamente, ignorando que un Route Map puede estar bloqueando deliberadamente ese tráfico.",
+        "<strong>Antipatrón</strong>: dimensionar un Bandwidth Package sin margen de crecimiento, generando cuellos de botella silenciosos entre regiones bajo carga real.",
+        "<strong>Antipatrón</strong>: confiar únicamente en el aislamiento por Route Maps sin reforzar también los Security Groups de cada instancia — ambas capas son necesarias, no intercambiables.",
+        "<strong>Regla de oro</strong>: ante un escenario con más de un puñado de VPC, múltiples regiones o múltiples cuentas, la respuesta casi siempre girará en torno a CEN y su Transit Router — no a extender Peering manualmente."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee cada pregunta identificando si el problema es de <em>escala</em> (¿cuántas redes hay que unir?), de <em>alcance geográfico</em> (¿cruza regiones, necesita Bandwidth Package?) o de <em>control de tráfico</em> (¿todas las redes deben verse entre sí, o algunas deben permanecer aisladas vía Route Maps?)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Aislamiento de entornos dev/staging/prod en VPCs separadas"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Extensión híbrida: on-premise ↔ Alibaba Cloud vía Express Connect"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-región con CEN para replicación y failover"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Zero-trust: cada microservicio en su propia subred con SG restrictivos"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Segmentación PCI-DSS: red de tarjetas aislada"
-    }
+    { "title": "Escenario 1", "text": "Corporación con 20 VPC en 5 regiones que migra de Peering punto a punto a un hub CEN centralizado" },
+    { "title": "Escenario 2", "text": "Red empresarial global que combina VPC, un VBR hacia el data center principal y una CCN hacia oficinas remotas en el mismo Transit Router" },
+    { "title": "Escenario 3", "text": "Aplicación multi-región que necesita replicación de base de datos entre TR de distintas regiones vía Bandwidth Package" },
+    { "title": "Escenario 4", "text": "Proveedor SaaS que aísla las VPC de clientes distintos compartiendo el mismo CEN mediante Route Maps restrictivos" },
+    { "title": "Escenario 5", "text": "Grupo empresarial con VPC de subsidiarias en cuentas RAM separadas, unificadas bajo un mismo Transit Router" },
+    { "title": "Escenario 6", "text": "Entorno de producción y desarrollo compartiendo instancia CEN pero deliberadamente aislados entre sí" }
   ],
   "mistakes": [
-    "CIDR 10.0.0.0/8 completo — imposible peerar con otros que usen mismo rango",
-    "Todo en una sola VPC/zona — sin HA ni segmentación",
-    "Reglas de SG 0.0.0.0/0 → cualquier puerto → ataques triviales",
-    "Confundir SG (stateful, por instancia) con NACL (stateless, por subred)",
-    "Olvidar que NAT Gateway tiene cargo por hora + por GB procesado"
+    "Mantener decenas de conexiones VPC Peering cuando el número de VPC ya justifica migrar a CEN",
+    "Adjuntar VPC de regiones distintas sin contratar el Bandwidth Package que permite su interconexión",
+    "Asumir conectividad automática total entre todas las VPC de un mismo CEN, ignorando Route Maps restrictivos",
+    "Dimensionar un Bandwidth Package sin margen, generando cuellos de botella entre regiones bajo carga real",
+    "Confiar solo en Route Maps para aislamiento sin reforzar también los Security Groups de cada instancia",
+    "No planificar la agregación de CIDR en diseños con miles de subredes, acercándose al límite de rutas del Transit Router"
   ],
   "cli": [
-    {
-      "cmd": "aliyun vpc CreateVpc --CidrBlock 10.0.0.0/16",
-      "desc": "Crear VPC"
-    },
-    {
-      "cmd": "aliyun vpc CreateVSwitch --VpcId ... --ZoneId ... --CidrBlock 10.0.1.0/24",
-      "desc": "Crear subred"
-    },
-    {
-      "cmd": "aliyun vpc CreateNatGateway --VpcId ... --NatType Enhanced",
-      "desc": "NAT Gateway"
-    },
-    {
-      "cmd": "aliyun vpc AllocateEipAddress --Bandwidth 5",
-      "desc": "Reservar EIP"
-    }
+    { "cmd": "aliyun cbn CreateCenInstance --Name red-empresarial --Description hub-corporativo", "desc": "Crear una instancia de Cloud Enterprise Network" },
+    { "cmd": "aliyun cbn CreateTransitRouterVpcAttachment --CenId cen-xxxxx --TransitRouterId tr-xxxxx --VpcId vpc-xxxxx", "desc": "Adjuntar una VPC al Transit Router" },
+    { "cmd": "aliyun cbn CreateTransitRouterVbrAttachment --CenId cen-xxxxx --TransitRouterId tr-xxxxx --VbrId vbr-xxxxx", "desc": "Adjuntar un VBR de Express Connect al Transit Router" },
+    { "cmd": "aliyun cbn CreateCenBandwidthPackage --Bandwidth 100 --GeographicRegionAId China --GeographicRegionBId Asia-Pacific", "desc": "Contratar un Bandwidth Package entre dos áreas geográficas" },
+    { "cmd": "aliyun cbn CreateCenRouteMap --CenId cen-xxxxx --TransmitDirection RegionIn --CidrMatchMode Include --SourceRegionIds cn-hangzhou --DestinationRegionIds cn-beijing", "desc": "Crear un Route Map para filtrar rutas entre regiones" },
+    { "cmd": "aliyun cbn DescribeCenAttachedChildInstances --CenId cen-xxxxx", "desc": "Listar todas las redes adjuntas a una instancia CEN" }
   ],
   "glossary": [
-    {
-      "en": "VPC",
-      "es": "VPC",
-      "def": "Red privada lógica con rango CIDR RFC1918 propio."
-    },
-    {
-      "en": "VSwitch",
-      "es": "VSwitch",
-      "def": "Subred atada a una zona; los recursos toman IP de aquí."
-    },
-    {
-      "en": "Route Table",
-      "es": "Tabla de rutas",
-      "def": "Define dónde va el tráfico. Se asocia a VSwitches."
-    },
-    {
-      "en": "Custom Route",
-      "es": "Ruta personalizada",
-      "def": "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-    },
-    {
-      "en": "NAT Gateway",
-      "es": "NAT Gateway",
-      "def": "Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto)."
-    },
-    {
-      "en": "Elastic IP",
-      "es": "EIP",
-      "def": "IP pública portable, asignable a ECS, NAT o SLB."
-    },
-    {
-      "en": "VPN Gateway",
-      "es": "VPN Gateway",
-      "def": "Túnel IPsec o SSL con redes remotas."
-    },
-    {
-      "en": "Express Connect",
-      "es": "Express Connect",
-      "def": "Circuito físico dedicado (10/40/100 Gbps) con on-premise."
-    },
-    {
-      "en": "VBR",
-      "es": "Virtual Border Router",
-      "def": "Punto de peering entre red física y VPC vía Express Connect."
-    },
-    {
-      "en": "CEN",
-      "es": "Cloud Enterprise Network",
-      "def": "Malla global que interconecta múltiples VPCs y VBRs."
-    },
-    {
-      "en": "VPC Peering",
-      "es": "Peering",
-      "def": "Conexión directa 1:1 entre dos VPCs en la misma región."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de instancia."
-    },
-    {
-      "en": "Network ACL",
-      "es": "ACL de red",
-      "def": "Reglas stateless a nivel de VSwitch."
-    },
-    {
-      "en": "PrivateLink",
-      "es": "PrivateLink",
-      "def": "Acceso privado a servicios sin exponer a internet."
-    },
-    {
-      "en": "Flow Log",
-      "es": "Flow Log",
-      "def": "Captura metadatos de tráfico para forensia."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Cloud Enterprise Network (CEN)", "es": "CEN", "def": "Servicio que actúa como hub central para interconectar múltiples VPC, VBR y CCN entre regiones y cuentas." },
+    { "en": "Transit Router (TR)", "es": "Transit Router", "def": "Router virtual altamente disponible en el núcleo de CEN; punto donde convergen todas las redes adjuntas." },
+    { "en": "VPC Attachment", "es": "Adjunto de VPC", "def": "Operación que conecta una VPC completa al Transit Router para intercambiar rutas." },
+    { "en": "VBR Attachment", "es": "Adjunto de VBR", "def": "Operación que conecta un Virtual Border Router (Express Connect) al Transit Router." },
+    { "en": "CCN Attachment (Cloud Connect Network)", "es": "Adjunto CCN", "def": "Operación que conecta una red basada en túneles IPsec (oficinas remotas) a la malla CEN." },
+    { "en": "Bandwidth Package", "es": "Paquete de ancho de banda", "def": "Capacidad contratada para el tráfico entre Transit Routers de dos regiones distintas, sobre el backbone privado." },
+    { "en": "Backbone privado", "es": "Backbone privado", "def": "Red de fibra propia de Alibaba Cloud que evita que el tráfico inter-región cruce internet público." },
+    { "en": "Route Map", "es": "Route Map", "def": "Conjunto de reglas explícitas que filtran, modifican o priorizan rutas entre adjuntos de un Transit Router." },
+    { "en": "Aprendizaje automático de rutas", "es": "Aprendizaje automático de rutas", "def": "Comportamiento por defecto: el TR propaga las rutas de cada adjunto al resto sin configuración manual." },
+    { "en": "Blackhole Route", "es": "Ruta de agujero negro", "def": "Ruta que descarta silenciosamente el tráfico hacia un destino específico, sin notificar al emisor." },
+    { "en": "Route Priority", "es": "Prioridad de ruta", "def": "Preferencia declarada entre rutas redundantes hacia el mismo destino anunciadas por distintos adjuntos." },
+    { "en": "VPC Peering", "es": "Peering de VPC", "def": "Conexión directa 1:1 entre dos VPC; modelo que CEN reemplaza cuando la escala crece." },
+    { "en": "Express Connect", "es": "Express Connect", "def": "Circuito físico dedicado hacia on-premise; su VBR puede adjuntarse a un Transit Router." },
+    { "en": "Multi-account (RAM)", "es": "Multi-cuenta", "def": "Capacidad de CEN de aceptar adjuntos de VPC pertenecientes a distintas cuentas de una misma organización." },
+    { "en": "CIDR Aggregation", "es": "Agregación de CIDR", "def": "Práctica de resumir subredes en bloques más amplios para no acercarse al límite de rutas del TR." },
+    { "en": "Full-mesh", "es": "Malla completa", "def": "Topología donde todas las redes adjuntas se alcanzan entre sí; comportamiento por defecto de CEN sin Route Maps restrictivos." },
+    { "en": "SLA (Bandwidth Package)", "es": "Nivel de servicio del paquete", "def": "Nivel contratado (p.ej. Platinum/Gold) que determina la prioridad del tráfico inter-región." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful a nivel de instancia; sigue aplicando al tráfico que ya logró enrutarse vía CEN." },
+    { "en": "RAM (Resource Access Management)", "es": "RAM", "def": "Servicio de identidad usado para restringir quién puede administrar adjuntos, Route Maps o Bandwidth Packages." },
+    { "en": "VBR (Virtual Border Router)", "es": "VBR", "def": "Punto de peering lógico de un circuito Express Connect, adjuntable a un Transit Router." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Virtual Private Cloud (VPC)?",
-      "options": [
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN."
-    },
-    {
-      "q": "¿Qué es <strong>VPC</strong> (VPC) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "VPC (VPC): Red privada lógica con rango CIDR RFC1918 propio."
-    },
-    {
-      "q": "¿Qué es <strong>VSwitch</strong> (VSwitch) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "VSwitch (VSwitch): Subred atada a una zona; los recursos toman IP de aquí."
-    },
-    {
-      "q": "¿Qué es <strong>Route Table</strong> (Tabla de rutas) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "Route Table (Tabla de rutas): Define dónde va el tráfico. Se asocia a VSwitches."
-    },
-    {
-      "q": "¿Qué es <strong>Custom Route</strong> (Ruta personalizada) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches."
-      ],
-      "answer": 0,
-      "explain": "Custom Route (Ruta personalizada): Entrada manual (destino → next-hop) para NAT/VPN/peering."
-    },
-    {
-      "q": "¿Qué es <strong>NAT Gateway</strong> (NAT Gateway) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto).",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches."
-      ],
-      "answer": 0,
-      "explain": "NAT Gateway (NAT Gateway): Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Virtual Private Cloud (VPC), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Virtual Private Cloud (VPC) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Virtual Private Cloud (VPC), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Virtual Private Cloud (VPC) es la elección típica:",
-      "options": [
-        "Aislamiento de entornos dev/staging/prod en VPCs separadas",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Aislamiento de entornos dev/staging/prod en VPCs separadas."
-    }
+    { "q": "¿Qué problema estructural de VPC Peering resuelve principalmente Cloud Enterprise Network?", "options": ["El costo de las instancias ECS", "El crecimiento cuadrático de conexiones punto a punto necesarias para interconectar muchas VPC", "La necesidad de cifrar el tráfico interno de una VPC", "La falta de soporte para IPv6"], "answer": 1, "explain": "Peering exige hasta N×(N-1)/2 conexiones para N VPC; CEN reduce esto a un adjunto por red gracias a su hub central, el Transit Router." },
+    { "q": "¿Cuál es el componente central de la arquitectura de Cloud Enterprise Network?", "options": ["El VPN Gateway", "El Transit Router (TR)", "El Security Group", "El NAT Gateway"], "answer": 1, "explain": "El Transit Router es el router virtual altamente disponible donde convergen todas las redes adjuntas a una instancia CEN." },
+    { "q": "Una empresa quiere adjuntar su circuito Express Connect existente a su instancia CEN. ¿Qué tipo de adjunto usa?", "options": ["VPC Attachment", "CCN Attachment", "VBR Attachment", "Bandwidth Package"], "answer": 2, "explain": "El VBR (Virtual Border Router) de un circuito Express Connect se conecta al Transit Router mediante un VBR Attachment." },
+    { "q": "Dos VPC están en regiones distintas, ambas adjuntas correctamente a sus respectivos Transit Routers, pero no logran comunicarse. ¿Cuál es la causa más probable?", "options": ["Un Security Group mal configurado en ambas VPC simultáneamente", "No se ha contratado un Bandwidth Package entre esas dos regiones", "El CIDR de ambas VPC es idéntico", "El VBR no está adjunto"], "answer": 1, "explain": "La interconexión entre Transit Routers de regiones distintas requiere un Bandwidth Package explícito; sin él, no hay intercambio de rutas ni tráfico entre regiones." },
+    { "q": "¿Qué ventaja ofrece el Bandwidth Package de CEN frente a establecer una VPN o Express Connect propios entre dos regiones?", "options": ["Es gratuito en todos los casos", "El tráfico viaja por el backbone privado de fibra de Alibaba Cloud en vez de cruzar internet público, sin gestionar túneles manualmente", "Elimina la necesidad de un Transit Router", "Solo funciona dentro de una misma región"], "answer": 1, "explain": "El Bandwidth Package aprovecha la red privada de Alibaba Cloud entre regiones, evitando la latencia variable del internet público y la gestión manual de túneles." },
+    { "q": "Dos VPC están adjuntas al mismo Transit Router pero un ingeniero descubre que no pueden verse entre sí. ¿Qué mecanismo de CEN explica mejor este comportamiento deliberado?", "options": ["Un Bandwidth Package insuficiente", "Un Route Map que bloquea explícitamente el intercambio de rutas entre esos dos adjuntos", "Un límite de instancias CEN por cuenta", "La ausencia de un VBR Attachment"], "answer": 1, "explain": "Compartir el mismo Transit Router no garantiza conectividad automática si un Route Map filtra o bloquea deliberadamente rutas entre adjuntos específicos." },
+    { "q": "¿Qué es una 'blackhole route' en el contexto de un Transit Router?", "options": ["Una ruta que prioriza automáticamente el tráfico crítico", "Una ruta que descarta silenciosamente el tráfico hacia un destino específico, sin notificar al emisor", "El nombre técnico del Bandwidth Package", "Una ruta que solo funciona con IPv6"], "answer": 1, "explain": "Una blackhole route bloquea deliberadamente el tráfico hacia un destino sin generar ningún mensaje de rechazo visible para el origen." },
+    { "q": "¿Cuál es el comportamiento por defecto del Transit Router respecto a las rutas de las redes que se le adjuntan?", "options": ["Nunca propaga ninguna ruta sin configuración manual explícita", "Aprende automáticamente las rutas de cada adjunto y las propaga al resto, salvo que un Route Map indique lo contrario", "Solo propaga rutas entre VPC de la misma cuenta", "Requiere que cada VPC anuncie sus rutas por BGP manualmente"], "answer": 1, "explain": "El aprendizaje automático de rutas es el comportamiento por defecto de CEN; los Route Maps se usan para modificar ese comportamiento cuando se necesita control fino." },
+    { "q": "¿Qué diferencia principal existe entre la alta disponibilidad de un Transit Router y la de una conexión VPN Gateway tradicional?", "options": ["Son idénticas en todos los aspectos", "El Transit Router ofrece redundancia nativa gestionada por Alibaba Cloud, mientras que una VPN Gateway requiere diseñar explícitamente túneles duales", "El Transit Router no admite ningún tipo de redundancia", "VPN Gateway siempre es más disponible que un Transit Router"], "answer": 1, "explain": "El TR está diseñado como servicio gestionado con alta disponibilidad nativa, a diferencia de una VPN donde el cliente debe diseñar la redundancia manualmente." },
+    { "q": "Un proveedor SaaS aloja las VPC de distintos clientes en la misma instancia CEN pero necesita mantenerlas completamente aisladas entre sí. ¿Qué mecanismo de CEN usa para lograrlo?", "options": ["Bandwidth Package con nivel Platinum", "Route Maps restrictivos entre los adjuntos de cada cliente", "Aumentar el límite de adjuntos por cuenta", "Desactivar el Transit Router de cada cliente"], "answer": 1, "explain": "Los Route Maps permiten bloquear el intercambio de rutas entre adjuntos específicos, aislando VPC de distintos clientes pese a compartir el mismo hub CEN." },
+    { "q": "¿Qué combinación de adjuntos podría coexistir en un mismo Transit Router según el curso?", "options": ["Solo VPC de la misma región", "VPC de varias regiones, un VBR hacia un data center y una CCN hacia oficinas remotas, todos simultáneamente", "Únicamente instancias ECS individuales", "Solo Bandwidth Packages sin ningún adjunto de red"], "answer": 1, "explain": "Un mismo Transit Router puede combinar VPC Attachments, VBR Attachments y CCN Attachments a la vez, formando una red híbrida completa." },
+    { "q": "¿Por qué NO es correcto asumir que un Security Group se vuelve innecesario una vez que dos VPC están interconectadas vía CEN?", "options": ["Porque CEN cifra automáticamente todo el tráfico y elimina la necesidad de firewall", "Porque el ruteo (CEN/Route Maps) y el filtrado de tráfico (Security Group) son capas independientes; una ruta permitida no implica que el firewall autorice el tráfico", "Porque los Security Groups solo aplican a tráfico proveniente de internet", "Porque CEN reemplaza completamente la función de los Security Groups"], "answer": 1, "explain": "El tráfico que logra enrutarse entre VPC vía CEN sigue estando sujeto al Security Group de cada instancia de destino, exactamente igual que con cualquier otro origen." },
+    { "q": "Una empresa diseña una topología CEN con miles de subredes pequeñas sin agregar sus CIDR. ¿Qué riesgo técnico corre?", "options": ["Ninguno, CEN no tiene límites de rutas", "Acercarse al límite de rutas que el Transit Router puede aprender y propagar", "El Bandwidth Package se duplica automáticamente", "Las VPC dejan de poder usar Security Groups"], "answer": 1, "explain": "Existe un límite de rutas aprendidas por Transit Router; diseños con demasiadas subredes pequeñas sin agregación de CIDR pueden acercarse a ese límite." }
   ],
-  "exam_focus": "Preguntas: (a) diferencia SG vs NACL, (b) cuándo usar CEN vs Peering vs VPN, (c) diseño CIDR sin solapes, (d) NAT Gateway vs EIP individuales, (e) Express Connect vs VPN.",
+  "exam_focus": "El examen suele evaluar: (a) por qué CEN resuelve un problema de escala que VPC Peering no puede, (b) el rol del Transit Router y los tres tipos de adjunto (VPC/VBR/CCN), (c) la necesidad de un Bandwidth Package para interconexión entre regiones, (d) aprendizaje automático de rutas frente a Route Maps para aislar o priorizar tráfico, (e) por qué Security Group y control de ruteo (CEN) son capas de seguridad independientes.",
   "official_intro": "The Interconnecting VPC using Cloud Enterprise Network(CEN) course is designed to provide you with the fundamental knowledge to plan, configure and administer VPC connections in Enterprise enviroment. In this course we will discuss deployment best practices and use cases of Cloud Enterprise Network (CEN).",
   "recommended_for": "Enterprise Architect, Cloud Administrator, Solution Architect",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_Intervpcuscen",

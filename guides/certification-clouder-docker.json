@@ -2,485 +2,200 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-docker",
   "title_en": "Introduction To Docker Container",
-  "title_es": "Introducción To Docker Contenedor",
+  "title_es": "Introducción a Docker Container",
+  "title_es_html": "Introducción a <em>Docker Container</em>",
   "duration_es": "60 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Container",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_docker",
-  "lead": "Guía completa en español para el curso «Introduction To Docker Container» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Introduction To Docker Container» de Alibaba Cloud Academy, centrado en Docker: el motor de contenedores que popularizó la contenerización de aplicaciones. Cubre la arquitectura cliente-servidor de Docker, el modelo de capas de las imágenes, el ciclo de vida de un contenedor y cómo ese conocimiento se traslada a Container Service en Alibaba Cloud.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia entre un contenedor y una máquina virtual, y por qué esa diferencia importa para el rendimiento y la densidad de despliegue.",
+    "<strong>Describir</strong> la arquitectura de Docker: daemon (dockerd), cliente CLI, y la API REST que los conecta.",
+    "<strong>Construir</strong> imágenes con Dockerfile entendiendo el modelo de capas y el cacheo de build.",
+    "<strong>Gestionar</strong> el ciclo de vida de un contenedor: crear, iniciar, detener, inspeccionar, eliminar.",
+    "<strong>Configurar</strong> redes y volúmenes para que los contenedores se comuniquen y persistan datos.",
+    "<strong>Levantar</strong> aplicaciones multi-contenedor con Docker Compose.",
+    "<strong>Ubicar</strong> a Docker dentro del ecosistema de contenedores de Alibaba Cloud (ACR, ACK) para el examen."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Docker sigue un modelo cliente-servidor: el cliente docker envía comandos a un daemon (dockerd) que corre en el host, ya sea vía socket Unix local o remoto sobre TCP. El daemon construye imágenes a partir de un Dockerfile leyendo un contexto de build, almacena las capas resultantes en un registry (Docker Hub o, en Alibaba Cloud, Container Registry / ACR), y a partir de esas imágenes crea contenedores: procesos aislados con su propio namespace de red, de sistema de archivos (vía una imagen + capa de escritura efímera) y de procesos, pero compartiendo el kernel del host. Para persistir datos más allá del ciclo de vida del contenedor se usan volúmenes; para que contenedores se descubran entre sí se usan redes definidas por el usuario (bridge, overlay).",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Contenedores frente a máquinas virtuales",
+      "title_en": "Containers vs Virtual Machines",
+      "intro": "Antes de tocar el comando docker hay que entender qué problema resuelve un contenedor frente a la virtualización tradicional, porque el examen suele plantear preguntas comparativas entre ambos modelos.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Virtualización de hardware</strong>: un hipervisor (KVM, Xen) crea máquinas virtuales completas, cada una con su propio kernel de sistema operativo — pesadas (GBs), arrancan en minutos, pero con aislamiento fuerte a nivel de hardware.",
+        "<strong>Virtualización a nivel de sistema operativo</strong>: un contenedor comparte el kernel del host y usa <strong>namespaces</strong> (aislamiento de vista: red, PID, mount, UTS) y <strong>cgroups</strong> (límites de recursos: CPU, memoria) del kernel Linux para aislar procesos — ligero (MBs), arranca en milisegundos.",
+        "<strong>Densidad</strong>: en el mismo host físico caben muchos más contenedores que máquinas virtuales, porque no se duplica el sistema operativo completo por cada unidad.",
+        "<strong>Portabilidad</strong>: una imagen de contenedor empaqueta la aplicación y sus dependencias exactas, garantizando el mismo comportamiento en el portátil del desarrollador, en CI y en producción.",
+        "<strong>Aislamiento</strong>: el contenedor ofrece menos aislamiento que una VM (comparte kernel), por lo que en escenarios multi-tenant estrictos a veces se combina con VMs ligeras o sandboxes adicionales."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Un contenedor NO es una «VM ligera»: es un proceso del sistema operativo host, aislado con namespaces y cgroups, que comparte el kernel. Esa es la diferencia técnica exacta que el examen suele pedir."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Arquitectura de Docker",
+      "title_en": "Docker Architecture",
+      "intro": "Docker no es un solo binario: es un conjunto de componentes que se comunican por una API REST, y entender esa separación explica comportamientos como por qué docker funciona igual en local y contra un host remoto.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Docker daemon (dockerd)</strong>: proceso en background que gestiona objetos Docker (imágenes, contenedores, redes, volúmenes); escucha en un socket Unix (<code>/var/run/docker.sock</code>) o TCP.",
+        "<strong>Docker client (docker)</strong>: la CLI que el usuario ejecuta; traduce comandos como <code>docker run</code> en llamadas a la API REST del daemon — puede apuntar a un daemon local o remoto.",
+        "<strong>Docker Registry</strong>: repositorio de imágenes (Docker Hub público, o privado como Alibaba Cloud Container Registry / ACR); <code>docker pull</code>/<code>docker push</code> mueven imágenes hacia y desde el registry.",
+        "<strong>containerd y runc</strong>: por debajo del daemon, containerd gestiona el ciclo de vida del contenedor y delega la creación del proceso aislado a runc, que implementa el estándar OCI (Open Container Initiative).",
+        "<strong>Objetos Docker</strong>: Imagen (plantilla de solo lectura), Contenedor (instancia ejecutable de una imagen + capa de escritura), Red, Volumen — los cuatro tipos de recursos que administra el daemon."
       ],
       "keypoint": {
         "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+        "text": "docker CLI → API REST → dockerd → containerd → runc → proceso contenedor aislado por namespaces/cgroups. Las imágenes se resuelven contra un Registry (Docker Hub o ACR)."
       }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Imágenes, capas y Dockerfile",
+      "title_en": "Images, Layers and the Dockerfile",
+      "intro": "El Dockerfile es el código fuente de una imagen. Entender cómo cada instrucción genera una capa es la base para escribir imágenes eficientes y para razonar sobre el cacheo de build, un tema recurrente en el examen.",
       "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Capa (layer)</strong>: cada instrucción del Dockerfile que modifica el sistema de archivos (<code>RUN</code>, <code>COPY</code>, <code>ADD</code>) genera una capa inmutable de solo lectura; las capas se apilan y se comparten entre imágenes que las tienen en común, ahorrando espacio en disco.",
+        "<strong>Cache de build</strong>: Docker reutiliza capas ya construidas si la instrucción y su contexto no cambiaron; por eso conviene copiar primero los archivos de dependencias (p.ej. <code>package.json</code>) e instalar dependencias antes de copiar el resto del código fuente, que cambia con más frecuencia.",
+        "<strong>Instrucciones clave</strong>: <code>FROM</code> (imagen base), <code>RUN</code> (ejecuta comando y confirma capa), <code>COPY</code>/<code>ADD</code> (copia archivos del contexto de build), <code>WORKDIR</code>, <code>ENV</code>, <code>EXPOSE</code> (documenta puerto, no lo publica), <code>CMD</code> vs <code>ENTRYPOINT</code> (comando por defecto al arrancar el contenedor).",
+        "<strong>Multi-stage build</strong>: usar varias secciones <code>FROM</code> en un mismo Dockerfile para compilar en una etapa (con todo el toolchain) y copiar solo el artefacto final a una imagen base mínima, reduciendo drásticamente el tamaño de la imagen de producción.",
+        "<strong>Imagen inmutable</strong>: una imagen construida no cambia; para actualizar una aplicación se construye una imagen nueva con un tag nuevo — nunca se modifica un contenedor en ejecución y se espera que el cambio sobreviva."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta cómo reducir el tamaño de una imagen de producción, la respuesta casi siempre es <em>multi-stage build</em> combinado con una imagen base mínima (alpine o distroless)."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Ciclo de vida de un contenedor",
+      "title_en": "Container Lifecycle",
+      "intro": "Un contenedor pasa por estados bien definidos, y saber qué comando corresponde a cada transición es la base operativa que el examen evalúa con preguntas de comandos.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Created → Running → Paused/Stopped → Removed</strong>: <code>docker create</code> prepara el contenedor sin iniciarlo, <code>docker start</code> lo pone en ejecución, <code>docker stop</code> envía SIGTERM (con margen antes de SIGKILL), <code>docker rm</code> lo elimina definitivamente.",
+        "<strong>docker run</strong>: combina <code>create</code> + <code>start</code> en un solo comando; con <code>-d</code> corre en background (detached), sin ella el proceso queda atado a la terminal.",
+        "<strong>Capa de escritura efímera</strong>: todo lo que un contenedor escribe en su sistema de archivos vive en una capa de escritura temporal que se pierde al eliminar el contenedor — de ahí la necesidad de volúmenes para datos que deben persistir.",
+        "<strong>docker exec</strong>: ejecuta un comando adicional dentro de un contenedor ya corriendo, útil para depuración sin reiniciarlo.",
+        "<strong>docker logs / docker inspect</strong>: acceso a la salida estándar del proceso principal y a los metadatos completos (IP, montajes, variables de entorno, estado) del contenedor."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Un contenedor vive mientras vive su proceso principal (PID 1 dentro del contenedor). Si ese proceso termina, el contenedor se detiene — no es una máquina persistente en segundo plano por defecto."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Redes y volúmenes",
+      "title_en": "Networking and Volumes",
+      "intro": "Un contenedor aislado sin red ni almacenamiento persistente sirve de poco en la práctica; este módulo cubre cómo Docker resuelve la comunicación entre contenedores y la persistencia de datos.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Bridge network (por defecto)</strong>: red virtual privada en el host donde los contenedores reciben una IP interna y pueden comunicarse entre sí por nombre si están en la misma red definida por el usuario (no en la red bridge por defecto, que solo resuelve por IP).",
+        "<strong>Publicación de puertos</strong>: <code>-p host:contenedor</code> mapea un puerto del host a un puerto del contenedor para exponerlo fuera del host; sin publicar, el puerto solo es accesible dentro de la red Docker.",
+        "<strong>Volúmenes gestionados por Docker</strong>: almacenamiento persistente gestionado por el daemon (<code>docker volume create</code>), independiente del ciclo de vida del contenedor — la opción recomendada para bases de datos y datos que deben sobrevivir a la eliminación del contenedor.",
+        "<strong>Bind mounts</strong>: montan una ruta específica del host dentro del contenedor; útiles en desarrollo (montar el código fuente en vivo) pero acoplan el contenedor a la estructura de archivos del host.",
+        "<strong>Redes overlay</strong>: extienden la red privada entre múltiples hosts Docker (usadas en Swarm o en clústeres); no aplican en un solo host con Docker standalone."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Volumen gestionado por Docker = la opción recomendada para persistencia en producción. Bind mount = conveniente en desarrollo, pero acopla el contenedor a rutas específicas del host."
+      }
+    },
+    {
+      "title_es": "6 · Aplicaciones multi-contenedor con Docker Compose",
+      "title_en": "Multi-container Apps with Docker Compose",
+      "intro": "Una aplicación real casi nunca es un solo contenedor: suele combinar backend, base de datos y cache. Docker Compose describe ese conjunto de servicios en un único archivo declarativo.",
+      "points": [
+        "<strong>docker-compose.yml</strong>: archivo YAML que declara servicios (cada uno con su imagen o build), redes y volúmenes; <code>docker compose up</code> crea y conecta todo el stack en un solo comando.",
+        "<strong>Un servicio, uno o más contenedores</strong>: por defecto cada servicio corre como un único contenedor; Compose puede escalar réplicas de un servicio en un solo host (sin distribuirlas entre varios hosts, eso ya es orquestación).",
+        "<strong>Red compartida automática</strong>: Compose crea una red bridge dedicada al proyecto, permitiendo que los servicios se resuelvan entre sí por el nombre declarado en el YAML.",
+        "<strong>Diferencia con orquestación real</strong>: Compose gestiona contenedores en un único host — no reprograma contenedores si un host falla, no hace rolling updates multi-nodo ni auto-scaling; para eso se necesita un orquestador como Kubernetes o Swarm."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Docker Compose es la herramienta correcta para desarrollo local y demos multi-contenedor en un solo host. Para producción distribuida y alta disponibilidad, el paso siguiente es un orquestador (ACK/Kubernetes)."
+      }
+    },
+    {
+      "title_es": "7 · De Docker a Container Service en Alibaba Cloud",
+      "title_en": "From Docker to Alibaba Cloud Container Service",
+      "intro": "El curso cierra conectando los fundamentos de Docker con los servicios gestionados de contenedores de Alibaba Cloud, la base sobre la que se construyen otros cursos de certificación de esta categoría.",
+      "points": [
+        "<strong>Container Registry (ACR)</strong>: registry privado gestionado por Alibaba Cloud, con escaneo de vulnerabilidades integrado — el destino natural de <code>docker push</code> en un flujo productivo en la nube.",
+        "<strong>Container Service for Kubernetes (ACK)</strong>: el orquestador gestionado de Alibaba Cloud; toma las mismas imágenes Docker construidas localmente y las programa a escala en un clúster.",
+        "<strong>El Dockerfile no cambia</strong>: la imagen que se construye y prueba en un portátil es exactamente la misma que se despliega en ACK — esa es la garantía de portabilidad que justifica todo el modelo de contenedores.",
+        "<strong>De standalone a orquestado</strong>: los comandos <code>docker run</code>/<code>docker stop</code> que se aprenden en este curso se traducen conceptualmente en un clúster a un <code>Deployment</code> y un <code>Service</code> de Kubernetes, gestionados de forma declarativa en vez de imperativa."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Docker resuelve «cómo empaquetar y ejecutar un contenedor»; ACK/Kubernetes resuelve «dónde y cómo mantener cientos de esos contenedores corriendo de forma confiable». No son competidores, son capas distintas del mismo problema."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Empaquetar una app y sus dependencias exactas para que corra igual en dev, CI y producción" },
+    { "title": "Escenario 2", "text": "Entorno de desarrollo local reproducible con Docker Compose (app + base de datos + cache)" },
+    { "title": "Escenario 3", "text": "Reducir el tamaño de una imagen productiva con multi-stage build" },
+    { "title": "Escenario 4", "text": "Publicar una imagen versionada en Container Registry (ACR) como paso previo a un pipeline CI/CD" },
+    { "title": "Escenario 5", "text": "Depurar un contenedor en producción con docker exec y docker logs sin reiniciarlo" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Usar el tag 'latest' en producción → imposible saber qué versión exacta está corriendo",
+    "Guardar datos importantes solo en la capa de escritura del contenedor, sin volumen → se pierden al eliminarlo",
+    "Correr procesos como root dentro del contenedor sin necesidad → superficie de ataque innecesaria",
+    "Construir imágenes de varios GB por no usar multi-stage build ni una base mínima",
+    "Meter credenciales o API keys directamente en el Dockerfile → quedan grabadas en el historial de capas",
+    "Confundir EXPOSE con publicar realmente el puerto — EXPOSE solo documenta, no abre el puerto al host"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "docker build -t miapp:1.0 .", "desc": "Construir una imagen a partir del Dockerfile del directorio actual" },
+    { "cmd": "docker run -d -p 8080:80 --name web miapp:1.0", "desc": "Ejecutar un contenedor en background publicando el puerto 80 como 8080" },
+    { "cmd": "docker ps -a", "desc": "Listar todos los contenedores, incluidos los detenidos" },
+    { "cmd": "docker exec -it web sh", "desc": "Abrir una shell interactiva dentro de un contenedor en ejecución" },
+    { "cmd": "docker logs -f web", "desc": "Seguir en tiempo real la salida estándar de un contenedor" },
+    { "cmd": "docker push registry.cn-hangzhou.aliyuncs.com/miapp/web:1.0", "desc": "Subir una imagen a Container Registry (ACR)" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Container", "es": "Contenedor", "def": "Proceso aislado con namespaces y cgroups que comparte el kernel del host; instancia en ejecución de una imagen." },
+    { "en": "Image", "es": "Imagen", "def": "Plantilla inmutable de solo lectura compuesta por capas apiladas, a partir de la cual se crean contenedores." },
+    { "en": "Layer", "es": "Capa", "def": "Cambio inmutable en el sistema de archivos generado por una instrucción del Dockerfile; se cachea y comparte entre imágenes." },
+    { "en": "Dockerfile", "es": "Dockerfile", "def": "Archivo de texto con instrucciones que definen cómo construir una imagen paso a paso." },
+    { "en": "Docker daemon (dockerd)", "es": "Daemon de Docker", "def": "Proceso en background que gestiona imágenes, contenedores, redes y volúmenes, expuesto vía API REST." },
+    { "en": "Docker client", "es": "Cliente Docker", "def": "CLI que traduce comandos del usuario en llamadas a la API REST del daemon." },
+    { "en": "Registry", "es": "Registry", "def": "Repositorio de imágenes versionadas; Docker Hub es público, ACR es el registry privado de Alibaba Cloud." },
+    { "en": "Namespace (kernel)", "es": "Namespace de kernel", "def": "Mecanismo del kernel Linux que aísla la vista de red, procesos, montajes, etc. de un contenedor." },
+    { "en": "cgroups", "es": "cgroups", "def": "Mecanismo del kernel Linux que limita y contabiliza el uso de CPU, memoria y otros recursos por contenedor." },
+    { "en": "Volume", "es": "Volumen", "def": "Almacenamiento persistente gestionado por Docker, independiente del ciclo de vida de un contenedor." },
+    { "en": "Bind mount", "es": "Montaje directo", "def": "Monta una ruta específica del host dentro del contenedor; útil en desarrollo, acopla el contenedor al host." },
+    { "en": "Bridge network", "es": "Red bridge", "def": "Red virtual privada por defecto en un host Docker que conecta contenedores entre sí." },
+    { "en": "Multi-stage build", "es": "Build multi-etapa", "def": "Técnica de Dockerfile con varias secciones FROM para separar la compilación de la imagen final, reduciendo su tamaño." },
+    { "en": "Docker Compose", "es": "Docker Compose", "def": "Herramienta declarativa para definir y levantar aplicaciones multi-contenedor en un único host." },
+    { "en": "Tag", "es": "Etiqueta de imagen", "def": "Identificador de versión de una imagen (p.ej. 1.0, latest); latest no implica la versión más reciente de forma fiable." },
+    { "en": "CMD / ENTRYPOINT", "es": "CMD / ENTRYPOINT", "def": "Instrucciones del Dockerfile que definen el comando por defecto al arrancar un contenedor." },
+    { "en": "OCI (Open Container Initiative)", "es": "OCI", "def": "Estándar abierto que define el formato de imágenes y el runtime de contenedores, implementado por runc." },
+    { "en": "containerd", "es": "containerd", "def": "Runtime de contenedores de alto nivel que gestiona el ciclo de vida y delega la ejecución a runc." },
+    { "en": "Container Registry (ACR)", "es": "Container Registry", "def": "Registry privado gestionado de Alibaba Cloud con escaneo de vulnerabilidades integrado." },
+    { "en": "Container Service for Kubernetes (ACK)", "es": "ACK", "def": "Servicio gestionado de Kubernetes de Alibaba Cloud que orquesta contenedores a escala en un clúster." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Cuál es la diferencia técnica principal entre un contenedor y una máquina virtual?", "options": ["No hay diferencia técnica real, solo de marketing", "El contenedor comparte el kernel del host usando namespaces y cgroups; la VM virtualiza hardware completo con su propio kernel", "Las VMs son siempre más rápidas que los contenedores", "Los contenedores solo pueden correr en Linux y las VMs en cualquier sistema"], "answer": 1, "explain": "El contenedor es un proceso aislado del sistema operativo host; la VM ejecuta un kernel completo separado sobre un hipervisor." },
+    { "q": "¿Qué componente de Docker recibe los comandos del cliente CLI y gestiona imágenes y contenedores?", "options": ["El registry", "El daemon (dockerd)", "El Dockerfile", "El volumen"], "answer": 1, "explain": "El daemon expone una API REST que el cliente docker consume; es el componente que realmente gestiona los objetos Docker." },
+    { "q": "En un Dockerfile, ¿por qué conviene copiar primero los archivos de dependencias (p.ej. package.json) e instalarlas antes de copiar el resto del código fuente?", "options": ["Es un requisito obligatorio de la sintaxis de Dockerfile", "Para aprovechar el cache de capas: si el código cambia pero las dependencias no, esa capa se reutiliza", "Porque Docker no permite copiar código fuente después de instalar dependencias", "No tiene ningún efecto en el build"], "answer": 1, "explain": "Docker cachea capas; si una capa y su contexto no cambian, se reutiliza sin reejecutar la instrucción, acelerando builds sucesivos." },
+    { "q": "¿Qué técnica reduce más eficazmente el tamaño final de una imagen de producción que requiere un toolchain de compilación pesado?", "options": ["Usar siempre la imagen base 'latest'", "Multi-stage build: compilar en una etapa y copiar solo el artefacto a una imagen base mínima", "Aumentar el número de capas del Dockerfile", "Ejecutar 'docker system prune' antes de cada build"], "answer": 1, "explain": "El multi-stage build separa el entorno de compilación del entorno de ejecución final, dejando fuera herramientas y dependencias de build innecesarias en producción." },
+    { "q": "Un contenedor escribe datos importantes solo en su capa de escritura efímera, sin volumen. ¿Qué ocurre al eliminar el contenedor?", "options": ["Los datos se migran automáticamente a un volumen", "Los datos se pierden de forma permanente", "Los datos se respaldan automáticamente en el registry", "No es posible eliminar un contenedor con datos sin exportarlos antes"], "answer": 1, "explain": "La capa de escritura vive solo mientras existe el contenedor; sin un volumen, cualquier dato ahí escrito se pierde al eliminarlo." },
+    { "q": "¿Cuál es la diferencia entre un volumen gestionado por Docker y un bind mount?", "options": ["Son exactamente lo mismo con nombres distintos", "El volumen es gestionado por Docker y recomendado para producción; el bind mount monta una ruta específica del host, típico en desarrollo", "El bind mount es siempre más seguro que un volumen", "Los volúmenes no pueden usarse con bases de datos"], "answer": 1, "explain": "Los volúmenes gestionados por Docker son la opción recomendada para persistencia productiva; los bind mounts acoplan el contenedor a la estructura de archivos del host." },
+    { "q": "¿Qué instrucción del Dockerfile documenta un puerto pero NO lo publica automáticamente hacia el host?", "options": ["PUBLISH", "EXPOSE", "PORT", "OPEN"], "answer": 1, "explain": "EXPOSE es documentación para quien lea el Dockerfile; la publicación real ocurre con la opción -p al ejecutar docker run." },
+    { "q": "¿Qué ocurre si el proceso principal (PID 1) dentro de un contenedor termina?", "options": ["El contenedor sigue corriendo indefinidamente en segundo plano", "El contenedor se detiene, porque su ciclo de vida está atado al de ese proceso", "Docker reinicia automáticamente el proceso sin configuración adicional", "El host completo se reinicia"], "answer": 1, "explain": "Un contenedor vive mientras vive su proceso principal; sin una política de reinicio explícita, cuando ese proceso termina el contenedor se detiene." },
+    { "q": "¿Para qué se usa principalmente Docker Compose?", "options": ["Para orquestar contenedores en un clúster de múltiples hosts con auto-scaling", "Para definir y levantar aplicaciones multi-contenedor de forma declarativa en un único host", "Para reemplazar completamente a Kubernetes en producción a gran escala", "Para escanear vulnerabilidades de imágenes"], "answer": 1, "explain": "Compose gestiona un stack de servicios en un solo host; no reprograma contenedores entre hosts ni hace rolling updates distribuidos como un orquestador real." },
+    { "q": "¿Cuál es el destino natural de 'docker push' en un flujo de trabajo con Alibaba Cloud?", "options": ["Directamente a una instancia ECS", "A Container Registry (ACR)", "A Object Storage Service (OSS)", "A Resource Access Management (RAM)"], "answer": 1, "explain": "ACR es el registry privado gestionado de Alibaba Cloud, con escaneo de vulnerabilidades integrado, pensado para recibir imágenes vía push." },
+    { "q": "¿Por qué usar el tag 'latest' en producción es un antipatrón?", "options": ["Docker no permite usar ese tag en producción", "Porque no identifica de forma fiable qué versión exacta del código está corriendo", "Porque 'latest' siempre apunta a una imagen corrupta", "Porque consume más espacio en disco que otros tags"], "answer": 1, "explain": "'latest' es solo un nombre de tag como cualquier otro; no garantiza que sea la versión más reciente ni permite rastrear qué código exacto está desplegado." },
+    { "q": "¿Qué mecanismos del kernel Linux hacen posible el aislamiento y la limitación de recursos de un contenedor?", "options": ["Hipervisores tipo 1", "Namespaces (aislamiento de vista) y cgroups (límite de recursos)", "Máquinas virtuales anidadas", "Solo el sistema de archivos overlay"], "answer": 1, "explain": "Los namespaces aíslan la vista de red, procesos y montajes; los cgroups limitan y contabilizan CPU, memoria y otros recursos por contenedor." },
+    { "q": "En una red bridge definida por el usuario en Docker, ¿cómo se resuelven entre sí los contenedores conectados?", "options": ["Solo por dirección IP, nunca por nombre", "Por el nombre del contenedor o servicio, gracias a DNS interno de Docker", "Requieren siempre un balanceador externo", "No pueden comunicarse entre sí bajo ninguna circunstancia"], "answer": 1, "explain": "En redes definidas por el usuario, Docker provee resolución DNS interna por nombre de contenedor, a diferencia de la red bridge por defecto." },
+    { "q": "¿Qué relación existe entre Docker y Container Service for Kubernetes (ACK) en Alibaba Cloud?", "options": ["Son tecnologías competidoras que no pueden usarse juntas", "La misma imagen Docker construida localmente se despliega y orquesta a escala en un clúster ACK", "ACK reemplaza la necesidad de construir imágenes Docker", "Docker solo funciona fuera de la nube"], "answer": 1, "explain": "Docker resuelve el empaquetado y ejecución de un contenedor; ACK orquesta esas mismas imágenes a gran escala en un clúster gestionado." },
+    { "q": "¿Qué comando permite ejecutar un comando adicional dentro de un contenedor que ya está corriendo, sin reiniciarlo?", "options": ["docker run", "docker exec", "docker build", "docker rm"], "answer": 1, "explain": "docker exec abre una nueva sesión de ejecución dentro de un contenedor activo, útil para depuración sin afectar el proceso principal." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen suele evaluar: (a) contenedor vs VM a nivel de kernel, (b) capas de imagen y cacheo de build, (c) diferencia entre volumen y bind mount, (d) ciclo de vida del contenedor y comandos básicos, (e) el rol de Docker frente a un orquestador como ACK.",
   "official_intro": "This course introduces the basic concepts and features of docker container technology, then showes the steps of basic installation and some frequently used commands. At the same time introduces the basic concepts and architecture of container service on alibaba cloud, and then shows the steps of container based application creation procedure from scratch.",
   "recommended_for": "docker, container, devops, virtualization",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_docker",

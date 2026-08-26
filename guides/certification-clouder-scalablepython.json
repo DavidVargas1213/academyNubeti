@@ -2,414 +2,169 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-scalablepython",
   "title_en": "Scale Python on Cloud",
-  "title_es": "Scale Python en Cloud",
+  "title_es": "Escalar Python en la Nube",
+  "title_es_html": "Escalar Python en <em>la Nube</em>",
   "duration_es": "38 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_scalablepython",
-  "lead": "Guía completa en español para el curso «Scale Python on Cloud» de Alibaba Cloud Academy. Cubre en profundidad Python en Alibaba Cloud (Data & Cloud). Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Scale Python on Cloud» de Alibaba Cloud Academy. Es la continuación directa de A Quick Guide to Process Structured Data with Python: parte del límite explícito de pandas sobre una sola máquina y presenta la estrategia de Alibaba Cloud para escalar ese mismo análisis usando motores de procesamiento distribuido, con PyODPS DataFrame (sobre MaxCompute) como protagonista y PySpark (sobre EMR) como alternativa comparada.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Python en Alibaba Cloud (Data & Cloud)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: aliyunsdk, PyODPS, PySpark, PAI-DSW, Poetry/pip.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Python en Alibaba Cloud (Data & Cloud) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué las herramientas del ecosistema Python de un solo proceso dejan de escalar más allá de una máquina.",
+    "<strong>Describir</strong> la estrategia de Alibaba Cloud de «llevar el código a los datos» en vez de mover los datos a una máquina.",
+    "<strong>Usar</strong> la sintaxis de PyODPS DataFrame, similar a pandas, ejecutando sobre MaxCompute.",
+    "<strong>Distinguir</strong> la ejecución local (pull) de la ejecución remota (push) al trabajar con PyODPS.",
+    "<strong>Comparar</strong> PyODPS sobre MaxCompute frente a PySpark sobre EMR como alternativas de escalado.",
+    "<strong>Migrar</strong> conscientemente un notebook local hacia un flujo de análisis escalable en la nube."
   ],
-  "architecture": "Notebook PAI-DSW → pandas/polars local → escalado con PyODPS/pyspark → modelos con scikit-learn/PyTorch → deploy en EAS. Automatización: aliyunsdk + boto3-like para infra.",
+  "architecture": "Cuando el código de análisis se ejecuta a través de PyODPS DataFrame, las operaciones (filtros, agrupaciones, agregaciones) no se ejecutan en el proceso Python local: se traducen a un plan que se somete como una tarea de MaxCompute, se ejecuta sobre el motor distribuido del Project, y solo el resultado final —normalmente ya reducido de tamaño— se trae de vuelta al proceso local si el análisis lo requiere. El proceso Python local actúa como cliente ligero que construye la consulta y recibe resultados, no como el motor que hace el trabajo pesado. La misma idea aplica, con una arquitectura distinta, a PySpark sobre EMR: el código Python define la lógica, pero la ejecución real ocurre distribuida entre los Executors del clúster.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Python en Alibaba Cloud (Data & Cloud)",
-      "title_en": "Introduction to Python en Alibaba Cloud (Data & Cloud)",
-      "intro": "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué pandas deja de alcanzar",
+      "title_en": "Why pandas Stops Being Enough",
+      "intro": "Este curso retoma exactamente el límite reconocido en el curso anterior: qué pasa concretamente cuando un análisis crece más allá de lo que una sola máquina puede manejar cómodamente.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Python es el lenguaje canónico para data engineering, ML y automatización cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Python en Alibaba Cloud (Data & Cloud) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Límite de memoria concreto</strong>: pandas requiere que el DataFrame completo (y a menudo varias copias intermedias durante las transformaciones) quepan en la memoria RAM del proceso — un dataset de decenas de gigabytes agota rápidamente incluso una instancia ECS generosa.",
+        "<strong>Límite de un solo hilo de ejecución conceptual</strong>: aunque algunas operaciones de pandas pueden aprovechar cierto paralelismo interno, el modelo fundamental no reparte el trabajo entre múltiples máquinas — todo el cómputo compite por los mismos núcleos de un único proceso.",
+        "<strong>Herramientas fiables, pero no diseñadas para esto</strong>: pandas, NumPy y el resto del ecosistema científico de Python son extremadamente eficientes y confiables en su dominio — el problema no es su calidad, sino que fueron diseñados asumiendo que los datos caben en una máquina.",
+        "<strong>Momento típico de fricción</strong>: un analista que empieza con un dataset pequeño y ve que crece mes a mes (más usuarios, más eventos, más historial) eventualmente cruza el punto donde pandas empieza a fallar por memoria o a tardar minutos en operaciones que antes tardaban segundos.",
+        "<strong>La pregunta que responde este curso</strong>: cuando ese punto llega, ¿hay que reescribir todo el análisis desde cero en un lenguaje o paradigma distinto, o existe un camino que preserve la mayor parte del conocimiento y sintaxis ya adquiridos?"
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Python en Alibaba Cloud (Data & Cloud) es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El problema de escalar no es que pandas esté mal diseñado — es que resuelve un problema distinto (análisis en una máquina) del que aparece cuando el volumen de datos crece más allá de esa máquina."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Python en Alibaba Cloud (Data & Cloud) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · La estrategia de Alibaba Cloud: llevar el código a los datos",
+      "title_en": "Alibaba Cloud's Strategy: Bring the Code to the Data",
+      "intro": "Antes de ver sintaxis concreta, este módulo presenta el principio arquitectónico central que Alibaba Cloud aplica para escalar Python: invertir la relación tradicional entre dónde vive el dato y dónde se ejecuta el cómputo.",
       "points": [
-        "<strong>Patrón canónico</strong>: Notebook PAI-DSW → pandas/polars local → escalado con PyODPS/pyspark → modelos con scikit-learn/PyTorch → deploy en EAS. Automatización: aliyunsdk + boto3-like para infra.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>El enfoque tradicional (y su límite)</strong>: en el flujo de pandas, los datos se mueven hacia la máquina donde corre el código Python (se descargan, se cargan en memoria) — funciona mientras el volumen es manejable, pero se rompe cuando el dato es mayor que la máquina.",
+        "<strong>El enfoque invertido</strong>: en vez de traer los datos hacia el código, el código (o una representación de las operaciones que describe) se envía hacia donde ya viven los datos y donde existe cómputo distribuido disponible — el patrón central detrás de PyODPS y de PySpark por igual.",
+        "<strong>Cómputo prácticamente ilimitado bajo demanda</strong>: al ejecutar sobre MaxCompute o un clúster EMR, el análisis deja de estar limitado por los recursos de una sola instancia y pasa a beneficiarse de la capacidad de cómputo distribuido de la plataforma, escalando según la necesidad del job.",
+        "<strong>Costo de este cambio</strong>: el código ya no se ejecuta de forma inmediata en el proceso local — hay latencia de red, de planificación de la tarea remota, y a veces restricciones sobre qué operaciones exactas se pueden expresar de forma distribuida.",
+        "<strong>No es todo o nada</strong>: un flujo real combina ambos mundos — exploración inicial y prototipado rápido en pandas local sobre una muestra, y ejecución del análisis completo sobre el motor distribuido cuando el volumen lo exige."
       ],
       "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Python en Alibaba Cloud (Data & Cloud) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+        "label": "Concepto clave",
+        "text": "«Escalar Python en la nube» no significa reescribir el análisis en otro lenguaje — significa cambiar dónde se ejecuta el cómputo, preservando en la mayor medida posible la forma de pensar y la sintaxis ya familiar."
       }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · PyODPS DataFrame: sintaxis tipo pandas que se ejecuta en MaxCompute",
+      "title_en": "PyODPS DataFrame: pandas-like Syntax Running on MaxCompute",
+      "intro": "PyODPS es la implementación concreta de Alibaba Cloud de la estrategia anterior para MaxCompute: una API deliberadamente parecida a pandas, pero cuyo motor de ejecución real es el Project de MaxCompute.",
       "points": [
-        "<strong>aliyunsdk</strong> <em>(aliyunsdk)</em>: SDK oficial Python.",
-        "<strong>PyODPS</strong> <em>(PyODPS)</em>: Cliente Python para MaxCompute.",
-        "<strong>PySpark</strong> <em>(PySpark)</em>: Spark API en Python.",
-        "<strong>PAI-DSW</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado.",
-        "<strong>Gestión deps</strong> <em>(Poetry/pip)</em>: Poetry/pip para paquetes.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Compute distribuido tipo Spark en Python.",
-        "<strong>Wheels</strong> <em>(Wheels)</em>: Formato de distribución binario."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>API familiar</strong>: operaciones como filtrar filas, seleccionar columnas, agrupar y agregar se escriben con una sintaxis muy cercana a pandas, reduciendo la curva de aprendizaje para quien ya domina el curso anterior de esta serie.",
+        "<strong>DataFrame de PyODPS como referencia a una tabla</strong>: a diferencia de un DataFrame de pandas (que contiene los datos en memoria), un DataFrame de PyODPS es una referencia a una tabla de MaxCompute — las operaciones que se le aplican se van acumulando como pasos de un plan, no como cómputo inmediato.",
+        "<strong>Conexión al Project</strong>: antes de operar sobre cualquier tabla, PyODPS necesita autenticarse contra un Project de MaxCompute concreto (endpoint, credenciales) — el mismo modelo de identidad y permisos cubierto en el módulo de seguridad de MaxCompute aplica aquí también.",
+        "<strong>Interoperabilidad con pandas</strong>: PyODPS permite convertir el resultado final de un análisis (ya reducido de tamaño tras filtrar y agregar) hacia un DataFrame de pandas real para seguir trabajando localmente, por ejemplo para graficar con matplotlib.",
+        "<strong>Cuándo usar PyODPS frente a SQL directo</strong>: para quien piensa naturalmente en términos de DataFrame y encadenamiento de operaciones Python, PyODPS ofrece una alternativa más cómoda a escribir SQL directo contra MaxCompute, sin perder el motor de ejecución distribuido subyacente."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Un DataFrame de PyODPS no contiene datos en memoria local hasta que se fuerza explícitamente su materialización — confundirlo con un DataFrame de pandas normal es el error conceptual más citado en este módulo."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Ejecución local (pull) frente a ejecución remota (push)",
+      "title_en": "Local Execution (Pull) vs. Remote Execution (Push)",
+      "intro": "Este módulo formaliza la diferencia de comportamiento entre operar sobre un DataFrame de pandas y operar sobre un DataFrame de PyODPS — un matiz que el examen distingue con precisión.",
       "points": [
-        "<strong>Seguridad</strong>: aliyunsdk con RAM roles, no AccessKey embebida",
-        "<strong>Buenas prácticas</strong>: Virtual envs por proyecto (poetry/venv)",
-        "<strong>Buenas prácticas</strong>: Types con mypy en proyectos grandes",
-        "<strong>Buenas prácticas</strong>: PyODPS para MaxCompute a escala"
+        "<strong>Modelo pull (pandas)</strong>: cuando se define una operación sobre un DataFrame de pandas, generalmente se ejecuta de inmediato sobre los datos ya presentes en memoria local — el resultado está disponible tan pronto como la línea de código termina de correr.",
+        "<strong>Modelo push (PyODPS)</strong>: las operaciones sobre un DataFrame de PyODPS se acumulan como un plan; solo al invocar una operación que fuerza la ejecución (como <code>execute()</code> o pedir explícitamente el resultado) el plan se somete y se ejecuta contra el Project de MaxCompute.",
+        "<strong>to_pandas()</strong>: método explícito para traer el resultado de una expresión de PyODPS de vuelta a un DataFrame de pandas local — debe usarse solo sobre resultados ya reducidos (agregados, filtrados), nunca sobre una tabla completa de gran tamaño.",
+        "<strong>Riesgo del hábito heredado de pandas</strong>: un desarrollador acostumbrado a que cada línea de pandas se ejecute de inmediato puede asumir erróneamente lo mismo con PyODPS, sin darse cuenta de que el trabajo real (y su costo de cómputo) solo ocurre al forzar la ejecución.",
+        "<strong>Paralelo con la evaluación perezosa de Spark</strong>: este comportamiento push/diferido es conceptualmente el mismo principio de evaluación perezosa (lazy evaluation) que las transformaciones sobre RDD/DataFrame de PySpark — reconocer el patrón común ayuda a razonar sobre ambos motores."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "En pandas, escribir la operación es ejecutarla. En PyODPS, escribir la operación es solo construir el plan — la ejecución real ocurre al forzarla explícitamente contra MaxCompute."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Alternativas de escalado: PySpark en EMR vs. PyODPS en MaxCompute",
+      "title_en": "Scaling Alternatives: PySpark on EMR vs. PyODPS on MaxCompute",
+      "intro": "PyODPS no es la única forma de escalar Python en Alibaba Cloud — este módulo compara la alternativa presentada en este curso con la ruta de PySpark ya cubierta en la serie Spark on Cloud.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey hardcoded",
-        "<strong>Antipattern</strong>: Sin virtual env — dependency hell",
-        "<strong>Antipattern</strong>: Python for-loops donde debería ser vectorizado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>PyODPS sobre MaxCompute</strong>: apropiado cuando el análisis es principalmente tabular/SQL-like, el equipo ya opera Projects de MaxCompute como su data warehouse, y se prioriza la simplicidad serverless sobre el control fino del motor de ejecución.",
+        "<strong>PySpark sobre EMR</strong>: apropiado cuando el problema requiere lógica más compleja que una transformación tabular estándar (procesamiento con estado, streaming, algoritmos que no se expresan bien en SQL), o cuando ya existe un clúster EMR compartido con otros motores.",
+        "<strong>Modelo de infraestructura</strong>: MaxCompute es serverless (no hay clúster que dimensionar ni administrar); un clúster EMR sí requiere decisiones de dimensionamiento de nodos, aunque de forma gestionada — una diferencia operativa relevante al elegir.",
+        "<strong>Curva de aprendizaje relativa</strong>: quien ya domina pandas encuentra en PyODPS DataFrame una transición más suave por su similitud sintáctica directa; PySpark introduce conceptos adicionales (RDD, evaluación perezosa explícita, Cluster Manager) con una curva algo más pronunciada.",
+        "<strong>No son mutuamente excluyentes</strong>: una arquitectura de datos real puede usar MaxCompute para el grueso del data warehouse y EMR/Spark para cargas específicas que lo requieran (streaming, algoritmos iterativos), sin que la elección de una excluya a la otra."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe «transformaciones tabulares tipo SQL sobre un data warehouse ya en MaxCompute», la respuesta apunta a PyODPS; si describe «lógica compleja, streaming o un clúster ya compartido con otros motores», apunta a PySpark sobre EMR."
+      }
+    },
+    {
+      "title_es": "6 · Buenas prácticas al migrar un notebook local a un flujo escalable",
+      "title_en": "Best Practices When Migrating a Local Notebook to a Scalable Flow",
+      "intro": "Cerramos el curso con recomendaciones prácticas para dar el salto real de un análisis prototipado en pandas hacia un flujo que se ejecuta sobre MaxCompute o EMR.",
+      "points": [
+        "<strong>Prototipar sobre una muestra</strong>: seguir usando pandas localmente sobre un subconjunto pequeño de los datos para iterar rápido en la lógica del análisis, antes de trasladar esa misma lógica al motor distribuido con el volumen completo.",
+        "<strong>Minimizar los to_pandas()/collect()</strong>: traer resultados intermedios grandes de vuelta al proceso local anula el beneficio de haber escalado — el patrón correcto es filtrar y agregar lo más posible de forma remota, y solo materializar localmente un resultado ya reducido.",
+        "<strong>Reutilizar el vocabulario, no copiar el código literalmente</strong>: los verbos (filtrar, agrupar, agregar, ordenar) se trasladan conceptualmente entre pandas, PyODPS y PySpark, pero la sintaxis exacta de cada API tiene matices que exigen adaptación, no un copiar-pegar directo.",
+        "<strong>Vigilar el costo de cómputo</strong>: a diferencia de pandas local (donde el único costo es el tiempo), ejecutar sobre MaxCompute o EMR consume cuota de cómputo facturable — una consulta ineficiente migrada sin optimizar puede ser sorprendentemente cara a escala.",
+        "<strong>Documentar el cambio de comportamiento</strong>: cualquier equipo que migre notebooks de pandas a PyODPS/PySpark debe dejar explícito el cambio de modelo pull a push, para evitar que otros desarrolladores asuman ejecución inmediata donde ahora hay un plan diferido."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Migrar a escala no es solo un cambio de herramienta — es un cambio de modelo mental: de «ejecuto y veo el resultado de inmediato» a «construyo un plan y decido conscientemente cuándo y cuánto materializar»."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data engineering con pandas → PyODPS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ML end-to-end con PAI"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Automatización de infra con SDK"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Web scraping y APIs"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Análisis exploratorio en notebooks"
-    }
+    { "title": "Escenario 1", "text": "Análisis mensual sobre un dataset que ha crecido de cientos de MB a decenas de GB — migrar de pandas a PyODPS DataFrame" },
+    { "title": "Escenario 2", "text": "Equipo que ya opera su data warehouse en MaxCompute y quiere programar sus análisis con sintaxis tipo pandas — PyODPS DataFrame" },
+    { "title": "Escenario 3", "text": "Análisis que requiere lógica de streaming o algoritmos iterativos complejos — PySpark sobre EMR en vez de PyODPS" },
+    { "title": "Escenario 4", "text": "Desarrollador que llama to_pandas() sobre una tabla completa de mil millones de filas — antipatrón, debería filtrar/agregar primero de forma remota" },
+    { "title": "Escenario 5", "text": "Prototipar rápidamente la lógica de un análisis antes de correrlo a escala completa — usar pandas local sobre una muestra pequeña" },
+    { "title": "Escenario 6", "text": "Confusión de un desarrollador que espera ver resultados inmediatos al definir una operación de PyODPS — explicar el modelo push/diferido" }
   ],
   "mistakes": [
-    "AccessKey hardcoded",
-    "Sin virtual env — dependency hell",
-    "Python for-loops donde debería ser vectorizado"
+    "Asumir que las operaciones de PyODPS se ejecutan de inmediato como en pandas, sin forzar explícitamente su ejecución",
+    "Llamar a to_pandas() sobre una tabla completa de gran tamaño en vez de filtrar y agregar primero de forma remota",
+    "Reescribir todo el análisis desde cero al escalar, en vez de reutilizar el vocabulario de filtrar/agrupar/agregar ya conocido de pandas",
+    "Elegir PySpark sobre EMR para un problema puramente tabular que PyODPS sobre MaxCompute resolvería de forma más simple y serverless",
+    "Migrar una consulta ineficiente de pandas a PyODPS/PySpark sin optimizarla, generando un costo de cómputo facturable sorprendentemente alto",
+    "No documentar el cambio de modelo pull a push al migrar un equipo completo hacia PyODPS, causando confusión sobre cuándo se ejecuta realmente el trabajo"
   ],
   "cli": [
-    {
-      "cmd": "pip install aliyunsdk-core",
-      "desc": "Instalar SDK"
-    },
-    {
-      "cmd": "python -m venv .venv",
-      "desc": "Virtual env"
-    }
+    { "cmd": "pip install pyodps", "desc": "Instalar el SDK de PyODPS" },
+    { "cmd": "python -c \"from odps import ODPS; o = ODPS('AK', 'SK', project='mi_proyecto', endpoint='...'); print(o.exist_table('ventas'))\"", "desc": "Verificar la conexión a un Project de MaxCompute desde Python" },
+    { "cmd": "python -c \"df = o.get_table('ventas').to_df(); print(df.groupby('region').agg(total=df.monto.sum()).execute())\"", "desc": "Agrupar y agregar con PyODPS DataFrame, forzando la ejecución remota" },
+    { "cmd": "pip install pyspark", "desc": "Instalar PySpark como alternativa de escalado sobre EMR" }
   ],
   "glossary": [
-    {
-      "en": "aliyunsdk",
-      "es": "aliyunsdk",
-      "def": "SDK oficial Python."
-    },
-    {
-      "en": "PyODPS",
-      "es": "PyODPS",
-      "def": "Cliente Python para MaxCompute."
-    },
-    {
-      "en": "PySpark",
-      "es": "PySpark",
-      "def": "Spark API en Python."
-    },
-    {
-      "en": "PAI-DSW",
-      "es": "PAI-DSW",
-      "def": "JupyterLab gestionado."
-    },
-    {
-      "en": "Poetry/pip",
-      "es": "Gestión deps",
-      "def": "Poetry/pip para paquetes."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Compute distribuido tipo Spark en Python."
-    },
-    {
-      "en": "Wheels",
-      "es": "Wheels",
-      "def": "Formato de distribución binario."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "PyODPS", "es": "PyODPS", "def": "SDK de Python para MaxCompute con una API tipo pandas cuyo motor de ejecución real es el Project de MaxCompute." },
+    { "en": "PyODPS DataFrame", "es": "PyODPS DataFrame", "def": "Referencia a una tabla de MaxCompute sobre la que se acumulan operaciones como un plan, no como cómputo inmediato." },
+    { "en": "Pull Model", "es": "Modelo pull", "def": "Comportamiento en el que cada operación se ejecuta de inmediato sobre datos ya presentes en memoria local, típico de pandas." },
+    { "en": "Push Model", "es": "Modelo push", "def": "Comportamiento en el que las operaciones se acumulan como un plan y se ejecutan de forma remota al forzarlas explícitamente." },
+    { "en": "execute()", "es": "execute()", "def": "Método de PyODPS que fuerza la ejecución remota de un plan acumulado contra MaxCompute." },
+    { "en": "to_pandas()", "es": "to_pandas()", "def": "Método que trae el resultado de una expresión de PyODPS de vuelta a un DataFrame de pandas local." },
+    { "en": "Serverless (MaxCompute)", "es": "Serverless", "def": "Modelo en el que no hay clúster que dimensionar ni administrar; la plataforma asigna cómputo bajo demanda." },
+    { "en": "PySpark", "es": "PySpark", "def": "API de Python sobre el motor distribuido de Spark, alternativa de escalado sobre un clúster EMR." },
+    { "en": "Lazy Evaluation", "es": "Evaluación perezosa", "def": "Principio compartido por PyODPS y Spark en el que las operaciones no se ejecutan hasta que se fuerza explícitamente su materialización." },
+    { "en": "Bring Code to Data", "es": "Llevar el código a los datos", "def": "Principio arquitectónico de enviar el cómputo hacia donde viven los datos, en vez de mover los datos hacia el código." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRa",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados."
-    },
-    {
-      "q": "¿Qué es <strong>aliyunsdk</strong> (aliyunsdk) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "aliyunsdk (aliyunsdk): SDK oficial Python."
-    },
-    {
-      "q": "¿Qué es <strong>PyODPS</strong> (PyODPS) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Cliente Python para MaxCompute.",
-        "SDK oficial Python.",
-        "Spark API en Python.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "PyODPS (PyODPS): Cliente Python para MaxCompute."
-    },
-    {
-      "q": "¿Qué es <strong>PySpark</strong> (PySpark) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Spark API en Python.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "PySpark (PySpark): Spark API en Python."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (PAI-DSW) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "JupyterLab gestionado.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (PAI-DSW): JupyterLab gestionado."
-    },
-    {
-      "q": "¿Qué es <strong>Poetry/pip</strong> (Gestión deps) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Poetry/pip para paquetes.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python."
-      ],
-      "answer": 0,
-      "explain": "Poetry/pip (Gestión deps): Poetry/pip para paquetes."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Python en Alibaba Cloud (Data & Cloud), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Python en Alibaba Cloud (Data & Cloud) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Python en Alibaba Cloud (Data & Cloud), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Python en Alibaba Cloud (Data & Cloud) es la elección típica:",
-      "options": [
-        "Data engineering con pandas → PyODPS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data engineering con pandas → PyODPS."
-    }
+    { "q": "¿Cuál es el principio arquitectónico central detrás de escalar Python con PyODPS o PySpark en vez de pandas local?", "options": ["Mover siempre los datos hacia la máquina local antes de procesarlos", "Llevar el código (o su plan de ejecución) hacia donde ya viven los datos y existe cómputo distribuido", "Reescribir el análisis completo en un lenguaje distinto a Python", "Reducir siempre el dataset antes de cualquier análisis"], "answer": 1, "explain": "El principio central es invertir la relación tradicional: en vez de traer los datos a una máquina, se envía el cómputo hacia donde residen los datos y hay capacidad distribuida disponible." },
+    { "q": "¿Qué diferencia principal hay entre un DataFrame de pandas y un DataFrame de PyODPS?", "options": ["Son exactamente iguales en comportamiento", "El de pandas contiene los datos en memoria local; el de PyODPS es una referencia a una tabla de MaxCompute cuyas operaciones se acumulan como un plan", "PyODPS no soporta groupby", "pandas siempre es más rápido que PyODPS en cualquier volumen de datos"], "answer": 1, "explain": "Un DataFrame de PyODPS no contiene los datos localmente hasta que se materializa explícitamente; representa un plan de operaciones sobre una tabla remota." },
+    { "q": "¿Qué modelo de ejecución describe mejor el comportamiento de pandas frente al de PyODPS?", "options": ["Ambos usan el mismo modelo pull con ejecución inmediata", "pandas usa un modelo pull (ejecución inmediata); PyODPS usa un modelo push (plan diferido hasta forzar la ejecución)", "pandas usa un modelo push y PyODPS un modelo pull", "Ninguno de los dos ejecuta código hasta el final del script"], "answer": 1, "explain": "pandas ejecuta cada operación de inmediato sobre datos en memoria; PyODPS acumula operaciones como plan y solo ejecuta al forzarlo explícitamente." },
+    { "q": "¿Qué método de PyODPS se usa para traer el resultado de una expresión de vuelta a un DataFrame de pandas local?", "options": ["execute()", "to_pandas()", "read_csv()", "collect_local()"], "answer": 1, "explain": "to_pandas() materializa el resultado de una expresión de PyODPS como un DataFrame de pandas en el proceso local." },
+    { "q": "¿Por qué llamar a to_pandas() sobre una tabla completa de mil millones de filas es un antipatrón?", "options": ["Porque PyODPS no permite esa operación", "Porque anula el beneficio de haber escalado, arriesgando agotar la memoria local con un volumen que debería procesarse de forma remota", "Porque MaxCompute no soporta tablas tan grandes", "Porque solo funciona con columnas numéricas"], "answer": 1, "explain": "Traer un volumen tan grande de vuelta al proceso local reproduce exactamente el problema de memoria que motivó escalar en primer lugar." },
+    { "q": "¿En qué escenario PySpark sobre EMR es preferible frente a PyODPS sobre MaxCompute según el curso?", "options": ["Cuando el análisis es puramente tabular tipo SQL sobre un data warehouse ya en MaxCompute", "Cuando el problema requiere lógica compleja, streaming o algoritmos que no se expresan bien en SQL", "Siempre, PySpark es preferible en cualquier escenario", "Nunca, PyODPS siempre es superior a PySpark"], "answer": 1, "explain": "PySpark es preferible cuando la lógica excede transformaciones tabulares estándar, como procesamiento con estado, streaming o algoritmos iterativos complejos." },
+    { "q": "¿Qué ventaja operativa tiene MaxCompute (usado por PyODPS) frente a un clúster EMR (usado por PySpark)?", "options": ["MaxCompute requiere dimensionar y administrar nodos manualmente", "MaxCompute es serverless: no hay clúster que dimensionar ni administrar", "EMR no soporta Python", "MaxCompute no tiene modelo de costo por uso"], "answer": 1, "explain": "MaxCompute es serverless, mientras que un clúster EMR, aunque gestionado, sigue requiriendo decisiones de dimensionamiento de nodos." },
+    { "q": "¿Qué práctica recomienda el curso para prototipar la lógica de un análisis antes de correrlo a escala completa?", "options": ["Ejecutar directamente contra el volumen completo de datos en producción desde el primer intento", "Seguir usando pandas localmente sobre una muestra pequeña antes de trasladar la lógica al motor distribuido", "Evitar pandas por completo desde el inicio del proyecto", "Escribir siempre el análisis primero en PySpark, nunca en pandas"], "answer": 1, "explain": "Prototipar con pandas sobre una muestra permite iterar rápido en la lógica antes de pagar el costo de ejecutar contra el volumen completo en un motor distribuido." },
+    { "q": "¿Qué riesgo de costo introduce migrar una consulta ineficiente de pandas hacia PyODPS o PySpark sin optimizarla primero?", "options": ["Ninguno, el costo de cómputo remoto siempre es menor que el local", "Puede generar un costo de cómputo facturable sorprendentemente alto, a diferencia del costo puramente de tiempo en pandas local", "PyODPS rechaza automáticamente consultas ineficientes", "El costo de cómputo remoto es siempre fijo independientemente de la eficiencia de la consulta"], "answer": 1, "explain": "A diferencia de pandas local donde el único costo es el tiempo, ejecutar sobre MaxCompute o EMR consume cuota de cómputo facturable, penalizando consultas ineficientes." },
+    { "q": "¿Qué principio comparten conceptualmente el comportamiento push de PyODPS y la evaluación perezosa de las transformaciones en PySpark?", "options": ["Ninguno, son conceptos completamente distintos", "Ambos difieren la ejecución real hasta que se fuerza explícitamente, en vez de ejecutar cada operación de inmediato", "Ambos ejecutan siempre de forma inmediata sin ningún plan diferido", "Solo aplica a operaciones de escritura, nunca de lectura"], "answer": 1, "explain": "Tanto PyODPS (modelo push) como Spark (evaluación perezosa) construyen un plan de operaciones que solo se ejecuta al forzarlo explícitamente con una acción o materialización." }
   ],
-  "exam_focus": "aliyunsdk, PyODPS, PySpark, PAI-DSW, gestión de dependencias.",
+  "exam_focus": "El examen suele evaluar: (a) el principio de llevar el código a los datos frente al modelo tradicional de pandas, (b) la diferencia entre el modelo pull de pandas y el modelo push de PyODPS, (c) cuándo materializar con to_pandas()/execute() y sus riesgos, (d) cuándo elegir PyODPS sobre MaxCompute frente a PySpark sobre EMR.",
   "official_intro": "Analysts often use libraries, tools in the Python ecosystem to analyze data on their personal computer. They like these tools because they are efficient, intuitive, and widely trusted. However when they choose to apply their analyses to larger datasets they find that these tools were not designed to scale beyond a single machine. In this course we will introduce how Alibaba Cloud scales Python based on its offline data processing engine,taking advantage of the unlimited computing resource on cloud.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_scalablepython",

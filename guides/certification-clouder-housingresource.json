@@ -2,415 +2,184 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-housingresource",
   "title_en": "Persona Building of Housing Resource",
-  "title_es": "Persona Construir of Housing Resource",
+  "title_es": "Construcción de Perfiles de Recursos de Vivienda",
+  "title_es_html": "Construcción de <em>Perfiles de Recursos de Vivienda</em>",
   "duration_es": "63 minutos",
   "level_es": "Intermedio",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Analytics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_housingresource",
-  "lead": "Guía completa en español para el curso «Persona Building of Housing Resource» de Alibaba Cloud Academy. Cubre en profundidad Analytics Case Studies. Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Persona Building of Housing Resource» de Alibaba Cloud Academy. El curso trabaja sobre el caso de «IHouse», una intermediaria ficticia de compraventa de vivienda de segunda mano cuyos datos de propiedades, propietarios y corredores (brokers) viven dispersos en distintos sistemas. El objetivo es construir, con MaxCompute y DataWorks, un perfil unificado de recurso de vivienda (housing persona) que soporte iteración de producto, reportes operativos y análisis por dimensiones comunes.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Analytics Case Studies</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Data Model, Feature, KPI, Cohort, Funnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Analytics Case Studies y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una intermediaria inmobiliaria necesita unificar datos de propiedad, propietario y corredor antes de poder analizarlos.",
+    "<strong>Diseñar</strong> un modelo dimensional con hechos de publicación/transacción y dimensiones de propiedad, propietario, corredor y ubicación.",
+    "<strong>Construir</strong> un perfil de recurso de vivienda (housing persona) combinando atributos físicos, de precio y de actividad del listado.",
+    "<strong>Calcular</strong> métricas de desempeño de corredor a partir del histórico de operaciones gestionadas.",
+    "<strong>Definir</strong> dimensiones comunes reutilizables para reportes operativos diarios entre distintas áreas de negocio.",
+    "<strong>Orquestar</strong> el pipeline con DataWorks y exponer los resultados en reportes de autoservicio.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre este caso de analítica inmobiliaria."
   ],
-  "architecture": "Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
+  "architecture": "Fuentes operacionales de IHouse (base de propiedades publicadas, base de propietarios, registro de actividad de corredores, historial de visitas y transacciones) → DataWorks integra y sincroniza hacia MaxCompute → capa ODS (réplica cruda) → capa DWD (hechos de publicación y transacción a nivel de detalle, limpios) → capa DWS (agregados por propiedad, por corredor, por zona) → mart de housing persona (perfil unificado de cada propiedad/recurso) → reportes de autoservicio sobre dimensiones comunes para producto, operación y análisis.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Analytics Case Studies",
-      "title_en": "Introduction to Analytics Case Studies",
-      "intro": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema de IHouse: vivienda, propietarios y corredores dispersos",
+      "title_en": "The IHouse Case",
+      "intro": "El curso arranca con el escenario de negocio: una intermediaria de vivienda de segunda mano cuyos datos de propiedad, propietario y corredor están repartidos en sistemas distintos, dificultando construir una imagen completa de cada recurso habitacional.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Analytics Case Studies se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El síntoma</strong>: producto quiere iterar sobre qué información mostrar en cada listado, operaciones quiere medir el desempeño de cada corredor, y análisis quiere reportes por zona — pero cada uno consulta fuentes distintas sin una definición común de 'propiedad activa' o 'corredor responsable'.",
+        "<strong>La meta del proyecto</strong>: integrar los datos dispersos de propiedad, propietario y actividad del corredor en un modelo único, formando lo que el curso llama el 'housing persona' o perfil del recurso de vivienda.",
+        "<strong>Por qué 'persona' y no solo 'ficha de propiedad'</strong>: el perfil no es solo un listado de atributos físicos (metros cuadrados, habitaciones), sino que incorpora también señales de comportamiento del mercado — cuánto tiempo lleva publicada, cuántas visitas ha tenido, cómo ha evolucionado su precio.",
+        "<strong>Por qué MaxCompute</strong>: el volumen de eventos de actividad (visitas, contactos, cambios de precio) sobre miles de propiedades crece rápido y conviene analizarlo en un almacén de datos separado de la base operacional de producción, sin afectar su rendimiento."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Analytics Case Studies es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El housing persona combina <em>atributos estáticos</em> de la propiedad con <em>señales dinámicas de actividad de mercado</em> — no es solo una ficha descriptiva, es un perfil que evoluciona con el comportamiento del listado."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Analytics Case Studies no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Modelo de datos: hechos y dimensiones del recurso de vivienda",
+      "title_en": "Dimensional Model for Housing Resource",
+      "intro": "Antes de construir cualquier perfil hay que decidir el modelo. El curso aplica un esquema estrella adaptado al dominio de intermediación inmobiliaria.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Analytics Case Studies (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Data model</strong> <em>(Data Model)</em>: Estrella/copo de nieve con hechos y dimensiones.",
-        "<strong>Feature</strong> <em>(Feature)</em>: Variable derivada usada por modelo/reporte.",
-        "<strong>KPI</strong> <em>(KPI)</em>: Métrica clave del negocio.",
-        "<strong>Cohort</strong> <em>(Cohort)</em>: Grupo definido por atributo común (fecha registro).",
-        "<strong>Funnel</strong> <em>(Funnel)</em>: Secuencia de pasos con conversión.",
-        "<strong>Retention</strong> <em>(Retention)</em>: % de usuarios activos tras N días.",
-        "<strong>A/B test</strong> <em>(A/B Test)</em>: Comparación estadística de variantes."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Tabla de hechos de publicación/actividad</strong>: un registro por evento relevante del ciclo de vida del listado (publicación, cambio de precio, visita agendada, transacción cerrada), con claves foráneas a propiedad, propietario y corredor, y medidas como precio, días en el mercado o número de visitas.",
+        "<strong>Dimensión Propiedad</strong>: atributos físicos relativamente estables (tipo, superficie, número de habitaciones, año de construcción, ubicación) que rara vez cambian tras la publicación inicial.",
+        "<strong>Dimensión Propietario</strong>: información del propietario asociado a la propiedad, relevante para entender patrones de negociación y disponibilidad para visitas.",
+        "<strong>Dimensión Corredor (Broker)</strong>: atributos del corredor responsable de gestionar la propiedad — zona asignada, antigüedad, cartera de propiedades activas — necesaria para medir su desempeño.",
+        "<strong>Dimensión Zona/Ubicación</strong>: distrito o zona geográfica de la propiedad, clave para cualquier comparación de precio o actividad que deba ajustarse por mercado local en vez de compararse globalmente.",
+        "<strong>Capas ODS → DWD → DWS</strong>: los datos crudos replicados (ODS) se limpian y deduplican a nivel de evento (DWD), y luego se agregan por propiedad, corredor o zona (DWS) — el housing persona final se construye sobre esta capa agregada."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta «dónde vive el número de visitas registradas a una propiedad», la respuesta es la tabla de hechos de actividad; si pregunta «dónde vive la superficie construida», la respuesta es la dimensión Propiedad."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Construir el perfil de recurso de vivienda (housing persona)",
+      "title_en": "Building the Housing Persona",
+      "intro": "El caso de uso central del curso: convertir el historial de actividad de cada propiedad en un conjunto de atributos accionables para producto y operación.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Data model documentado con owner",
-        "<strong>Buenas prácticas</strong>: Features versionadas + testadas",
-        "<strong>Buenas prácticas</strong>: KPIs con definición única cross-empresa",
-        "<strong>Buenas prácticas</strong>: Cohort analysis mensual",
-        "<strong>Buenas prácticas</strong>: A/B tests con significancia estadística"
+        "<strong>Atributos estáticos base</strong>: tipo de propiedad, superficie, ubicación, año de construcción — la parte descriptiva heredada directamente de la dimensión Propiedad.",
+        "<strong>Señales de actividad de mercado</strong>: días acumulados en el mercado, número de visitas agendadas, número de cambios de precio y su dirección (ajustes a la baja suelen indicar sobrevaloración inicial), tasa de contacto por cada vista del listado.",
+        "<strong>Etiquetas derivadas</strong>: a partir de las señales anteriores se generan etiquetas de negocio como 'listado de alta rotación', 'posible sobrevaloración' (muchos días activo con ajustes de precio a la baja) o 'alta demanda' (muchas visitas en poco tiempo).",
+        "<strong>Actualización periódica</strong>: el perfil se recalcula con una tarea programada en DataWorks (diaria o semanal) para reflejar la actividad reciente del listado, no solo su estado en el momento de publicación.",
+        "<strong>Consumo del perfil</strong>: el housing persona alimenta tanto reportes de autoservicio para el equipo de producto (qué tipo de propiedad se mueve más rápido en cada zona) como el trabajo del equipo de análisis y algoritmos (features de entrada para futuros modelos de valoración o recomendación)."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "El housing persona es una <em>tabla de features reutilizable</em>, igual que un perfil de cliente en e-commerce — se diseña para que múltiples consumidores (producto, operación, análisis) lean la misma definición del recurso."
+      }
+    },
+    {
+      "title_es": "4 · Desempeño de corredores y dimensiones comunes",
+      "title_en": "Broker Performance and Common Dimensions",
+      "intro": "Más allá del perfil de la propiedad, el curso cubre cómo medir el desempeño de los corredores y cómo definir dimensiones que distintas áreas puedan compartir sin reinterpretar.",
+      "points": [
+        "<strong>Métricas de desempeño de corredor</strong>: número de propiedades activas gestionadas, tiempo promedio hasta el cierre de una transacción, tasa de conversión de visita a oferta — calculadas sobre la capa DWS de hechos de actividad agregados por corredor.",
+        "<strong>Ajuste por contexto</strong>: comparar corredores directamente por número bruto de cierres sesga a favor de quienes trabajan zonas de alta rotación — comparar dentro de la misma zona o segmento de precio da una medida más justa.",
+        "<strong>Dimensiones comunes</strong>: definir de forma única y documentada conceptos como 'propiedad activa', 'transacción cerrada' o 'corredor responsable' evita que cada reporte interprete el estado de un listado de forma distinta.",
+        "<strong>Reportes de autoservicio</strong>: sobre estas dimensiones comunes, distintas áreas construyen sus propios reportes sin depender de un analista para cada consulta — el valor de las dimensiones compartidas es habilitar autonomía sin perder consistencia.",
+        "<strong>Reportes diarios de operación</strong>: el caso de uso operativo por excelencia — un resumen diario de propiedades nuevas, propiedades cerradas y actividad por corredor, consumido directamente por el equipo de operaciones sin intervención manual."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado menciona «comparar el desempeño de corredores en zonas de mercado distintas», la pista es ajustar por contexto (zona o segmento de precio) antes de comparar métricas brutas."
+      }
+    },
+    {
+      "title_es": "5 · Orquestación y gobernanza del dato",
+      "title_en": "Orchestration and Data Governance",
+      "intro": "Este módulo conecta las piezas: cómo se automatiza el pipeline completo y qué prácticas de gobernanza evita que el proyecto se degrade con el tiempo.",
+      "points": [
+        "<strong>DataWorks como orquestador</strong>: cada capa (ODS→DWD→DWS→housing persona) se define como tarea programada con dependencias explícitas, asegurando que el perfil del día no se calcule antes de que la capa DWD correspondiente esté lista.",
+        "<strong>Versionado de la definición del perfil</strong>: cuando cambia la fórmula de una etiqueta derivada (p.ej. qué umbral define 'alta demanda'), documentar el cambio evita que comparaciones históricas se vuelvan inconsistentes sin explicación.",
+        "<strong>Propiedad (ownership) de las dimensiones comunes</strong>: asignar un responsable claro de mantener actualizada la definición de dimensiones compartidas (zona, tipo de propiedad) evita que se degraden silenciosamente con el tiempo.",
+        "<strong>Calidad de datos en la fuente</strong>: si la base operacional permite publicar una propiedad sin ubicación completa, esa falta de calidad se propaga a todo el pipeline — la validación de calidad debería aplicarse lo más cerca posible del origen.",
+        "<strong>Trazabilidad</strong>: poder rastrear un número en un reporte final hasta el evento original en la capa ODS es lo que hace auditable el pipeline ante una pregunta de negocio sobre por qué un número cambió."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La gobernanza no es un paso adicional opcional — es lo que garantiza que el housing persona siga siendo <em>comparable en el tiempo</em> y <em>auditable</em> cuando el negocio pregunta por qué cambió un número."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "El cierre del curso cubre los errores de análisis y modelado más frecuentes en proyectos de este tipo, base habitual de las preguntas más difíciles del examen.",
       "points": [
-        "<strong>Antipattern</strong>: KPIs con definiciones distintas por área",
-        "<strong>Antipattern</strong>: Features sin versionar",
-        "<strong>Antipattern</strong>: Cohorts mezclando temporalidades",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: comparar corredores por número bruto de cierres sin ajustar por zona o segmento de precio, favoreciendo injustamente a quienes trabajan mercados de alta rotación.",
+        "<strong>Antipatrón</strong>: recalcular el housing persona con definiciones distintas en cada reporte, en vez de mantener una capa DWS compartida con una sola fuente de verdad.",
+        "<strong>Antipatrón</strong>: no versionar cambios en la definición de una etiqueta derivada, rompiendo la comparabilidad de reportes históricos sin dejar rastro del motivo.",
+        "<strong>Antipatrón</strong>: dejar que datos incompletos en el origen (propiedad sin ubicación completa) se propaguen sin validación hasta el reporte final.",
+        "<strong>Antipatrón</strong>: mezclar propiedades activas y ya cerradas en el mismo cálculo de 'días en el mercado' sin distinguir su estado actual.",
+        "<strong>Estrategia de examen</strong>: cuando el enunciado describe un síntoma de inconsistencia entre reportes o comparaciones aparentemente injustas entre corredores/zonas, la respuesta casi siempre apunta a falta de <em>dimensiones comunes bien gobernadas</em> o falta de <em>ajuste por contexto</em>, no a un problema de infraestructura."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un enunciado sobre comparaciones injustas entre corredores o zonas, la respuesta correcta suele ser ajustar la métrica por el contexto relevante (zona, segmento de precio) antes de comparar, en vez de comparar el número bruto."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Análisis de comportamiento de usuario"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Segmentación (persona)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Optimización de operaciones logísticas"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Efectividad de campañas de marketing"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Detección de patrones en delivery/mobility"
-    }
+    { "title": "Escenario 1", "text": "Identificar propiedades con posible sobrevaloración por múltiples ajustes de precio a la baja" },
+    { "title": "Escenario 2", "text": "Medir el desempeño de corredores ajustando por zona de mercado en vez de por número bruto de cierres" },
+    { "title": "Escenario 3", "text": "Generar un reporte diario de operación con propiedades nuevas, cerradas y actividad por corredor" },
+    { "title": "Escenario 4", "text": "Alimentar un futuro modelo de valoración de propiedades con el housing persona como features" },
+    { "title": "Escenario 5", "text": "Detectar listados de 'alta demanda' con muchas visitas en poco tiempo desde su publicación" },
+    { "title": "Escenario 6", "text": "Auditar por qué producto y operaciones reportan cifras distintas de 'propiedades activas'" }
   ],
   "mistakes": [
-    "KPIs con definiciones distintas por área",
-    "Features sin versionar",
-    "Cohorts mezclando temporalidades"
+    "Comparar corredores por número bruto de cierres sin ajustar por zona o segmento de precio",
+    "Recalcular el housing persona con definiciones distintas en cada reporte en vez de una capa DWS compartida",
+    "No versionar cambios en la definición de etiquetas derivadas, rompiendo comparabilidad histórica",
+    "Dejar que datos incompletos del origen (ubicación faltante) se propaguen sin validación hasta el reporte final",
+    "Mezclar propiedades activas y cerradas en el mismo cálculo de 'días en el mercado'",
+    "No asignar un responsable claro de mantener actualizadas las dimensiones comunes"
   ],
   "cli": [
-    {
-      "cmd": "odps SQL",
-      "desc": "Analytics SQL"
-    },
-    {
-      "cmd": "Quick BI",
-      "desc": "Visualización"
-    }
+    { "cmd": "odpscmd -e \"SELECT property_id, COUNT(*) FROM dwd_listing_events GROUP BY property_id;\"", "desc": "Consultar eventos de actividad por propiedad en la capa de detalle" },
+    { "cmd": "odpscmd -e \"SELECT broker_id, zone_id, AVG(days_on_market) FROM dws_broker_zone;\"", "desc": "Calcular el tiempo promedio en el mercado agregado por corredor y zona" },
+    { "cmd": "dataworks-cli job submit --project ihouse_dw --node housing_persona_daily", "desc": "Disparar manualmente el nodo diario que construye el housing persona" },
+    { "cmd": "odpscmd -e \"DESC dim_property;\"", "desc": "Inspeccionar el esquema de la dimensión Propiedad" },
+    { "cmd": "odpscmd -e \"SELECT property_id, label FROM dws_housing_persona WHERE label='alta_demanda';\"", "desc": "Listar propiedades etiquetadas como de alta demanda" }
   ],
   "glossary": [
-    {
-      "en": "Data Model",
-      "es": "Data model",
-      "def": "Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "en": "Feature",
-      "es": "Feature",
-      "def": "Variable derivada usada por modelo/reporte."
-    },
-    {
-      "en": "KPI",
-      "es": "KPI",
-      "def": "Métrica clave del negocio."
-    },
-    {
-      "en": "Cohort",
-      "es": "Cohort",
-      "def": "Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "en": "Funnel",
-      "es": "Funnel",
-      "def": "Secuencia de pasos con conversión."
-    },
-    {
-      "en": "Retention",
-      "es": "Retention",
-      "def": "% de usuarios activos tras N días."
-    },
-    {
-      "en": "A/B Test",
-      "es": "A/B test",
-      "def": "Comparación estadística de variantes."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Housing Persona", "es": "Perfil de recurso de vivienda", "def": "Conjunto de atributos estáticos y señales de actividad de mercado que describen de forma unificada una propiedad." },
+    { "en": "Fact table (listing activity)", "es": "Tabla de hechos de actividad", "def": "Tabla con un registro por evento del ciclo de vida del listado: publicación, cambio de precio, visita, cierre." },
+    { "en": "Dimension: Property", "es": "Dimensión Propiedad", "def": "Atributos físicos relativamente estables de la propiedad: tipo, superficie, ubicación, año de construcción." },
+    { "en": "Dimension: Owner", "es": "Dimensión Propietario", "def": "Información del propietario asociado a la propiedad publicada." },
+    { "en": "Dimension: Broker", "es": "Dimensión Corredor", "def": "Atributos del corredor responsable de gestionar una propiedad: zona asignada, cartera activa, antigüedad." },
+    { "en": "Star schema", "es": "Esquema estrella", "def": "Modelo dimensional con una tabla de hechos central conectada a dimensiones descriptivas." },
+    { "en": "ODS (Operational Data Store)", "es": "ODS", "def": "Capa de datos crudos replicados desde las fuentes operacionales, sin transformar." },
+    { "en": "DWD (Data Warehouse Detail)", "es": "DWD", "def": "Capa de datos de detalle limpios y deduplicados, a nivel de evento individual." },
+    { "en": "DWS (Data Warehouse Summary)", "es": "DWS", "def": "Capa de datos agregados por propiedad, corredor o zona, base del housing persona final." },
+    { "en": "Days on market", "es": "Días en el mercado", "def": "Métrica acumulada de cuánto tiempo lleva activa una propiedad desde su publicación." },
+    { "en": "Price adjustment signal", "es": "Señal de ajuste de precio", "def": "Cambios de precio de un listado, cuya dirección (baja) puede indicar sobrevaloración inicial." },
+    { "en": "Common dimension", "es": "Dimensión común", "def": "Definición única y documentada de un concepto de negocio (propiedad activa, corredor responsable) compartida entre áreas." },
+    { "en": "Self-service report", "es": "Reporte de autoservicio", "def": "Reporte que un área de negocio construye por sí misma sobre dimensiones comunes ya definidas, sin depender de un analista." },
+    { "en": "Broker performance", "es": "Desempeño de corredor", "def": "Métricas como número de cierres, tiempo hasta el cierre y tasa de conversión, idealmente ajustadas por zona o segmento." },
+    { "en": "Context-adjusted comparison", "es": "Comparación ajustada por contexto", "def": "Ajustar una métrica por zona o segmento antes de comparar, evitando sesgo entre grupos con condiciones de mercado distintas." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Plataforma de procesamiento batch a gran escala de Alibaba Cloud, motor central del data warehouse del caso." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Servicio de orquestación e integración de datos que programa y encadena las tareas del pipeline." },
+    { "en": "Data governance", "es": "Gobernanza de datos", "def": "Prácticas de versionado, propiedad (ownership) y calidad que mantienen consistentes las definiciones compartidas." },
+    { "en": "Data lineage / traceability", "es": "Trazabilidad de datos", "def": "Capacidad de rastrear un número del reporte final hasta el evento original en la capa ODS." },
+    { "en": "Feature table", "es": "Tabla de features", "def": "Tabla reutilizable de atributos derivados, consumida tanto por reportes como por futuros modelos de análisis." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Analytics Case Studies?",
-      "options": [
-        "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo →",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción."
-    },
-    {
-      "q": "¿Qué es <strong>Data Model</strong> (Data model) en Analytics Case Studies?",
-      "options": [
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Data Model (Data model): Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "q": "¿Qué es <strong>Feature</strong> (Feature) en Analytics Case Studies?",
-      "options": [
-        "Variable derivada usada por modelo/reporte.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Feature (Feature): Variable derivada usada por modelo/reporte."
-    },
-    {
-      "q": "¿Qué es <strong>KPI</strong> (KPI) en Analytics Case Studies?",
-      "options": [
-        "Métrica clave del negocio.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "KPI (KPI): Métrica clave del negocio."
-    },
-    {
-      "q": "¿Qué es <strong>Cohort</strong> (Cohort) en Analytics Case Studies?",
-      "options": [
-        "Grupo definido por atributo común (fecha registro).",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Cohort (Cohort): Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "q": "¿Qué es <strong>Funnel</strong> (Funnel) en Analytics Case Studies?",
-      "options": [
-        "Secuencia de pasos con conversión.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Funnel (Funnel): Secuencia de pasos con conversión."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Analytics Case Studies, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Analytics Case Studies en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Analytics Case Studies, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Analytics Case Studies es la elección típica:",
-      "options": [
-        "Análisis de comportamiento de usuario",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Análisis de comportamiento de usuario."
-    }
+    { "q": "¿Cuál es el problema de negocio central que motiva el proyecto de data warehouse de IHouse?", "options": ["Falta de servidores físicos", "Los datos de propiedad, propietario y corredor están dispersos en sistemas distintos sin una definición común", "El precio de las propiedades es demasiado alto", "No existe ninguna aplicación móvil"], "answer": 1, "explain": "El curso parte de que distintas áreas consultan fuentes distintas sin una definición unificada de conceptos como 'propiedad activa'." },
+    { "q": "¿Qué es el 'housing persona' según el curso?", "options": ["Solo una lista de precios de propiedades", "Un perfil unificado que combina atributos físicos estáticos de la propiedad con señales dinámicas de actividad de mercado", "Un tipo de instancia ECS", "Un servicio de mensajería"], "answer": 1, "explain": "El housing persona no es solo una ficha descriptiva; incorpora también actividad de mercado como visitas, días publicado y cambios de precio." },
+    { "q": "En el modelo dimensional del caso, ¿dónde vive el número de visitas agendadas a una propiedad?", "options": ["En la dimensión Propiedad", "En la tabla de hechos de actividad", "En la dimensión Propietario", "En ningún lado, no se registra"], "answer": 1, "explain": "Las visitas son eventos medibles asociados a la propiedad, por lo tanto viven en la tabla de hechos, no en una dimensión descriptiva estática." },
+    { "q": "¿Qué señal puede indicar 'posible sobrevaloración' de un listado, según el curso?", "options": ["Que la propiedad tenga jardín", "Múltiples ajustes de precio a la baja mientras la propiedad lleva muchos días activa en el mercado", "Que el propietario tenga más de una propiedad", "Que el corredor sea nuevo en la empresa"], "answer": 1, "explain": "Ajustes de precio a la baja combinados con muchos días en el mercado son la señal de comportamiento que el curso asocia a sobrevaloración inicial." },
+    { "q": "¿Por qué comparar corredores solo por número bruto de cierres es un antipatrón?", "options": ["Porque no se puede medir el desempeño de corredores", "Porque sesga a favor de quienes trabajan zonas de alta rotación, sin ajustar por el contexto de mercado", "Porque el número de cierres nunca varía entre corredores", "Porque MaxCompute no permite esa consulta"], "answer": 1, "explain": "Sin ajustar por zona o segmento de precio, el número bruto favorece injustamente a corredores en mercados de mayor movimiento natural." },
+    { "q": "¿Qué capa del modelo (ODS, DWD o DWS) contiene los datos agregados por propiedad, corredor o zona que alimentan el housing persona final?", "options": ["ODS", "DWD", "DWS", "Ninguna, se calcula directo de las fuentes operacionales"], "answer": 2, "explain": "DWS (Data Warehouse Summary) es la capa de agregados, base directa del mart de housing persona." },
+    { "q": "¿Qué antipatrón describe el curso cuando producto y operaciones reportan cifras distintas de 'propiedades activas'?", "options": ["Falta de servidores", "Falta de una definición común y documentada, con una capa DWS compartida como única fuente de verdad", "Exceso de almacenamiento en OSS", "Uso incorrecto de DataWorks"], "answer": 1, "explain": "Sin dimensiones comunes bien gobernadas, cada área tiende a calcular su propia versión de conceptos clave como 'propiedad activa'." },
+    { "q": "¿Qué herramienta orquesta las tareas programadas del pipeline (ODS→DWD→DWS→housing persona) en el caso de estudio?", "options": ["Quick BI", "DataWorks", "PAI-Studio", "OSSImport"], "answer": 1, "explain": "DataWorks encadena las tareas con dependencias explícitas, asegurando que cada capa se calcule en el orden correcto." },
+    { "q": "¿Por qué es importante versionar los cambios en la definición de una etiqueta derivada como 'alta demanda'?", "options": ["No es importante, se puede cambiar sin registro", "Para no romper la comparabilidad de reportes históricos sin dejar rastro del motivo del cambio", "Porque MaxCompute lo exige técnicamente", "Solo aplica a la dimensión Propietario"], "answer": 1, "explain": "Cambiar la fórmula de una etiqueta sin documentarlo hace que comparaciones antes/después del cambio pierdan sentido sin explicación." },
+    { "q": "¿Qué riesgo corre el pipeline si se permite publicar una propiedad sin ubicación completa en el origen?", "options": ["Ningún riesgo, se corrige automáticamente en DWS", "La falta de calidad se propaga por todas las capas hasta el reporte final si no se valida cerca del origen", "El sistema rechaza automáticamente cualquier dato incompleto siempre", "Solo afecta a la dimensión Corredor"], "answer": 1, "explain": "Sin validación de calidad cerca del origen, los datos incompletos se propagan silenciosamente por ODS, DWD, DWS hasta el resultado final." },
+    { "q": "¿Qué consume finalmente el housing persona, además de los reportes de autoservicio?", "options": ["Nada más, es solo para reportes", "Puede alimentar como features de entrada un futuro modelo de valoración de propiedades", "Solo se usa para facturación", "Solo lo usa el equipo de seguridad"], "answer": 1, "explain": "Al ser una tabla de features reutilizable, el housing persona también puede servir de entrada para modelos de análisis o valoración." },
+    { "q": "¿Por qué mezclar propiedades activas y cerradas en el mismo cálculo de 'días en el mercado' es un error?", "options": ["No es un error, siempre da el mismo resultado", "Porque una propiedad cerrada ya no acumula días activos de la misma forma que una que sigue publicada, y mezclarlas distorsiona la métrica", "Porque las propiedades cerradas no tienen fecha", "Porque solo aplica a la dimensión Corredor"], "answer": 1, "explain": "El estado del listado (activo vs. cerrado) determina si sigue acumulando 'días en el mercado' de forma comparable; mezclarlos distorsiona el análisis." }
   ],
-  "exam_focus": "Data modeling star/snowflake, feature engineering, KPI governance, cohorts.",
+  "exam_focus": "El examen suele evaluar: (a) diseño de un modelo estrella con hechos de actividad y dimensiones de propiedad/propietario/corredor, (b) construcción del housing persona combinando atributos estáticos y señales dinámicas, (c) ajuste por contexto (zona, segmento) al medir desempeño de corredores, (d) el rol de las capas ODS/DWD/DWS y de DataWorks como orquestador, (e) gobernanza de dimensiones comunes y versionado de definiciones derivadas.",
   "official_intro": "IHouse is a second-hand housing transaction intermediary company, the company database precipitates a large number of second-hand housing related housing information, owners, broker operation data, but the data are scattered in different databases, not convenient for products, operations, analysis, algorithm personnel use. The company hopes that the data warehouse team can integrate the housing, the house source and the related broker operating data in various systems and various business links to form a perfect housing picture information to support the product iteration, improve the operation efficiency, facilitate the data analysis and provide complete characteristic data for the legal person, and carry out the depth of the data. Analysis and exploration. Based on the portrait, it is hoped that the data warehouse team will provide analysis reports on the common dimension to meet the daily operation report requirements.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_housingresource",

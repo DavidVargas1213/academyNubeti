@@ -2,415 +2,183 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-deliverybusiness",
   "title_en": "Delivery Business Data Analysis",
-  "title_es": "Delivery Negocio Datos Analysis",
+  "title_es": "Análisis de Datos de un Negocio de Delivery",
+  "title_es_html": "Análisis de Datos de un <em>Negocio de Delivery</em>",
   "duration_es": "116 minutos",
   "level_es": "Intermedio",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Analytics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_deliverybusiness",
-  "lead": "Guía completa en español para el curso «Delivery Business Data Analysis» de Alibaba Cloud Academy. Cubre en profundidad Analytics Case Studies. Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Delivery Business Data Analysis» de Alibaba Cloud Academy. El curso trabaja sobre el caso de «Lovely Food», una plataforma ficticia de comida a domicilio cuyos datos de clientes, productos y repartidores viven dispersos en distintas bases. El objetivo es construir, con MaxCompute y DataWorks, un modelo de datos unificado que soporte tres casos de uso reales: perfil de cliente (customer portrait), scoring de paquetes/productos, y detección de tiempos de entrega anómalos (sobrecalentamiento operativo).",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Analytics Case Studies</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Data Model, Feature, KPI, Cohort, Funnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Analytics Case Studies y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué los datos de una operación de delivery (clientes, productos, repartidores) deben unificarse en un almacén de datos antes de analizarse.",
+    "<strong>Diseñar</strong> un modelo dimensional (estrella) con tablas de hechos de pedidos y dimensiones de cliente, producto y repartidor.",
+    "<strong>Construir</strong> un perfil de cliente (customer portrait) a partir de variables de comportamiento de pedido.",
+    "<strong>Calcular</strong> un score de producto/paquete combinando frecuencia de pedido, calificación y tasa de recompra.",
+    "<strong>Detectar</strong> tiempos de entrega anómalos («overheating») comparando el tiempo real contra el esperado por zona y hora.",
+    "<strong>Orquestar</strong> el pipeline completo con DataWorks y exponer resultados en Quick BI.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre este caso de analítica."
   ],
-  "architecture": "Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
+  "architecture": "Fuentes operacionales de Lovely Food (base de pedidos, catálogo de productos/paquetes, registros de repartidores y GPS de entrega) → DataWorks sincroniza e integra los datos hacia MaxCompute → capa ODS (datos crudos replicados) → capa DWD (hechos de pedido a nivel de detalle, limpios y deduplicados) → capa DWS (agregados por cliente, por producto, por zona/hora) → tres marts de salida: customer portrait, product/package score, delivery time monitoring → Quick BI para reportes operativos diarios.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Analytics Case Studies",
-      "title_en": "Introduction to Analytics Case Studies",
-      "intro": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema de Lovely Food: datos dispersos",
+      "title_en": "The Lovely Food Case",
+      "intro": "El curso arranca con el escenario de negocio: una plataforma de delivery cuyos datos de clientes, productos y repartidores están repartidos en sistemas distintos, lo que impide a producto, operaciones y analítica trabajar con una sola verdad.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Analytics Case Studies se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El síntoma</strong>: el equipo de producto quiere segmentar clientes, operaciones quiere detectar entregas lentas, y el equipo de algoritmos quiere features para recomendación — pero cada uno consulta una base distinta con definiciones distintas de 'cliente activo' o 'pedido completado'.",
+        "<strong>La meta del proyecto de data warehouse</strong>: integrar los datos operacionales dispersos en un modelo único, para que cualquier área pueda analizar sin reinterpretar el esquema origen cada vez.",
+        "<strong>Tres casos de uso concretos</strong>: (1) construir el retrato/perfil del cliente, (2) calificar los paquetes/productos ofrecidos, (3) monitorear el tiempo de entrega para detectar zonas u horarios con sobrecarga operativa.",
+        "<strong>Por qué MaxCompute</strong>: el volumen de eventos de pedido y GPS de una plataforma de delivery crece rápido y no es viable analizarlo con consultas directas sobre la base transaccional de producción sin afectar su rendimiento — se necesita un almacén de datos separado, orientado a analítica batch a gran escala."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Analytics Case Studies es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El objetivo no es «tener más datos», sino tener <em>una única definición compartida</em> de cliente, producto y entrega que todas las áreas de negocio puedan usar sin ambigüedad."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Analytics Case Studies no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Modelo de datos: hechos y dimensiones del delivery",
+      "title_en": "Dimensional Model for Delivery",
+      "intro": "Antes de calcular cualquier métrica hay que decidir el modelo. El curso aplica un esquema estrella clásico adaptado al dominio de comida a domicilio.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Analytics Case Studies (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Data model</strong> <em>(Data Model)</em>: Estrella/copo de nieve con hechos y dimensiones.",
-        "<strong>Feature</strong> <em>(Feature)</em>: Variable derivada usada por modelo/reporte.",
-        "<strong>KPI</strong> <em>(KPI)</em>: Métrica clave del negocio.",
-        "<strong>Cohort</strong> <em>(Cohort)</em>: Grupo definido por atributo común (fecha registro).",
-        "<strong>Funnel</strong> <em>(Funnel)</em>: Secuencia de pasos con conversión.",
-        "<strong>Retention</strong> <em>(Retention)</em>: % de usuarios activos tras N días.",
-        "<strong>A/B test</strong> <em>(A/B Test)</em>: Comparación estadística de variantes."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Tabla de hechos de pedido</strong>: un registro por pedido con claves foráneas a cliente, paquete/producto y repartidor, más medidas numéricas (monto, tiempo de preparación, tiempo de entrega, calificación del cliente).",
+        "<strong>Dimensión Cliente</strong>: atributos relativamente estables del cliente (fecha de registro, zona habitual, canal de adquisición) — se actualiza con menor frecuencia que la tabla de hechos.",
+        "<strong>Dimensión Producto/Paquete</strong>: catálogo de combos o platillos ofrecidos, con atributos como categoría, precio base y restaurante asociado.",
+        "<strong>Dimensión Repartidor</strong>: atributos del repartidor asignado a cada entrega (zona asignada, turno, antigüedad) — necesaria para el análisis de tiempos de entrega por repartidor o zona.",
+        "<strong>Dimensión Tiempo/Zona</strong>: franja horaria y zona geográfica del pedido, clave para detectar patrones de sobrecarga que varían por hora pico o distrito.",
+        "<strong>Capas ODS → DWD → DWS</strong>: los datos crudos replicados (ODS) se limpian y deduplican a nivel de detalle (DWD), y luego se agregan por cliente/producto/zona (DWS) — cada capa sirve un propósito distinto y evita recalcular limpieza en cada consulta."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta «dónde vive la calificación de un pedido individual», la respuesta es la tabla de hechos; si pregunta «dónde vive la zona habitual de un cliente», la respuesta es la dimensión Cliente."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Construir el perfil de cliente (customer portrait)",
+      "title_en": "Customer Portrait",
+      "intro": "El primer caso de uso del curso: convertir el historial de pedidos de cada cliente en un conjunto de atributos accionables para marketing, producto y recomendación.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Data model documentado con owner",
-        "<strong>Buenas prácticas</strong>: Features versionadas + testadas",
-        "<strong>Buenas prácticas</strong>: KPIs con definición única cross-empresa",
-        "<strong>Buenas prácticas</strong>: Cohort analysis mensual",
-        "<strong>Buenas prácticas</strong>: A/B tests con significancia estadística"
+        "<strong>Variables de comportamiento</strong>: frecuencia de pedido (pedidos por mes), ticket promedio, categorías de comida preferidas, horario habitual de pedido, sensibilidad a promociones (% de pedidos con cupón).",
+        "<strong>Recencia-Frecuencia-Monto (RFM)</strong>: adaptación del modelo RFM clásico de retail al delivery — cuánto hace del último pedido, con qué frecuencia pide, y cuánto gasta en promedio — para segmentar clientes en niveles (nuevo, activo, en riesgo, inactivo).",
+        "<strong>Etiquetas derivadas</strong>: a partir de las variables base se generan etiquetas de negocio como 'foodie de fin de semana', 'sensible al precio' o 'cliente premium recurrente', que producto y marketing consumen directamente sin tocar SQL.",
+        "<strong>Actualización periódica</strong>: el perfil no es estático — se recalcula con una tarea programada (diaria o semanal) en DataWorks para reflejar comportamiento reciente, no solo el histórico completo.",
+        "<strong>Consumo del perfil</strong>: el mismo customer portrait alimenta tanto reportes de Quick BI para el equipo de negocio como features de entrada para modelos de recomendación en PAI, evitando que cada consumidor recalcule su propia versión del perfil."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "El customer portrait es una <em>tabla de features reutilizable</em>, no un reporte de una sola vez — se diseña para que múltiples consumidores (BI, marketing, modelos) lean la misma definición de cliente."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Scoring de productos y paquetes",
+      "title_en": "Package/Product Scoring",
+      "intro": "El segundo caso de uso: convertir el desempeño histórico de cada paquete o platillo en un score comparable que ayude a decidir qué promocionar o retirar del catálogo.",
       "points": [
-        "<strong>Antipattern</strong>: KPIs con definiciones distintas por área",
-        "<strong>Antipattern</strong>: Features sin versionar",
-        "<strong>Antipattern</strong>: Cohorts mezclando temporalidades",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Señales de entrada</strong>: número de pedidos históricos, calificación promedio otorgada por clientes, tasa de recompra (qué % de quienes lo pidieron una vez lo volvieron a pedir), y tasa de cancelación asociada.",
+        "<strong>Normalización entre categorías</strong>: comparar directamente un postre de bajo volumen con un plato principal de alto volumen sesga el ranking — el score se calcula normalizando dentro de cada categoría de producto antes de comparar.",
+        "<strong>Combinación ponderada</strong>: el score final combina las señales con pesos definidos por negocio (p.ej. la calificación pesa más que el volumen bruto de pedidos), documentados para que el cálculo sea auditable y reproducible.",
+        "<strong>Uso del score</strong>: alimenta decisiones operativas como qué paquetes destacar en la portada de la app, cuáles necesitan revisión de calidad, y cuáles retirar por bajo desempeño sostenido.",
+        "<strong>Reentrenamiento del score</strong>: al igual que el customer portrait, el score se recalcula periódicamente — un paquete puede subir o bajar de posición según tendencias recientes, no solo el histórico acumulado desde el lanzamiento."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado menciona «comparar productos de categorías distintas de forma justa», la pista es normalización dentro de categoría antes de combinar señales en un score único."
+      }
+    },
+    {
+      "title_es": "5 · Monitoreo de tiempos de entrega (overheating detection)",
+      "title_en": "Delivery Time Monitoring",
+      "intro": "El tercer caso de uso, y el más operativo: detectar cuándo el tiempo real de entrega se dispara respecto a lo esperado, señal de sobrecarga en una zona u horario.",
+      "points": [
+        "<strong>Tiempo esperado como línea base</strong>: para cada combinación de zona y franja horaria se calcula un tiempo de entrega esperado (mediana histórica), en vez de usar un umbral fijo global que ignoraría diferencias entre zonas.",
+        "<strong>Detección de anomalías</strong>: un pedido se marca como entrega 'sobrecalentada' cuando su tiempo real excede significativamente el esperado para esa zona/hora — la métrica es relativa al contexto, no absoluta.",
+        "<strong>Agregación por zona y turno</strong>: más que alertar por pedido individual, el valor operativo está en agregar la tasa de entregas anómalas por zona y franja horaria, revelando patrones sistemáticos (p.ej. una zona saturada todos los viernes a la hora de la cena).",
+        "<strong>Cierre del ciclo con operaciones</strong>: el resultado del monitoreo se expone en un dashboard de Quick BI que el equipo de logística revisa para redistribuir repartidores o ajustar la ventana de aceptación de pedidos en zonas saturadas.",
+        "<strong>Diferencia con alertamiento en tiempo real</strong>: este análisis en MaxCompute es batch (por lotes, con cierta latencia) — para alertas verdaderamente en tiempo real durante el pico de demanda se necesitaría una capa de streaming adicional, fuera del alcance de este caso de estudio."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "«Sobrecalentamiento» se mide contra la <em>línea base de esa zona y horario</em>, no contra un umbral global — un tiempo de 40 minutos puede ser normal en una zona y anómalo en otra."
+      }
+    },
+    {
+      "title_es": "6 · Orquestación, gobernanza y estrategia de examen",
+      "title_en": "Orchestration, Governance and Exam Strategy",
+      "intro": "El cierre del curso conecta las piezas: cómo se automatiza el pipeline completo y qué errores de gobernanza de datos suele penalizar el examen.",
+      "points": [
+        "<strong>DataWorks como orquestador</strong>: cada capa (ODS→DWD→DWS→marts) se define como una tarea programada en DataWorks, con dependencias explícitas para que el customer portrait no se recalcule antes de que la capa DWD del día esté lista.",
+        "<strong>Antipatrón</strong>: recalcular el perfil de cliente o el score de producto con definiciones distintas en cada reporte — sin una capa DWS compartida, marketing y producto llegan a números diferentes para 'clientes activos'.",
+        "<strong>Antipatrón</strong>: mezclar granularidades al comparar cohortes — analizar clientes registrados esta semana contra clientes con un año de antigüedad sin ajustar por el tiempo de vida introduce sesgos en cualquier comparación.",
+        "<strong>Buenas prácticas</strong>: documentar el peso de cada señal en el score de producto y la definición exacta de 'entrega sobrecalentada' — sin documentación, el cálculo no es auditable ni reproducible por otro analista.",
+        "<strong>Estrategia de examen</strong>: cuando una pregunta describe un síntoma de negocio (KPIs distintos entre áreas, comparaciones injustas entre grupos), la respuesta casi siempre apunta a un problema de <em>modelo de datos compartido o falta de normalización</em>, no a un problema de infraestructura."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un enunciado sobre inconsistencias entre reportes de distintas áreas, la respuesta correcta suele ser: construir una capa de datos agregada (DWS) compartida con definiciones únicas, en vez de que cada equipo calcule su propia versión."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Análisis de comportamiento de usuario"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Segmentación (persona)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Optimización de operaciones logísticas"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Efectividad de campañas de marketing"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Detección de patrones en delivery/mobility"
-    }
+    { "title": "Escenario 1", "text": "Segmentar clientes por RFM para una campaña de reactivación de usuarios inactivos" },
+    { "title": "Escenario 2", "text": "Decidir qué paquetes destacar en la portada de la app según su score normalizado" },
+    { "title": "Escenario 3", "text": "Identificar zonas con entregas sistemáticamente sobrecalentadas los viernes por la noche" },
+    { "title": "Escenario 4", "text": "Alimentar un modelo de recomendación de productos con el customer portrait como features" },
+    { "title": "Escenario 5", "text": "Detectar un repartidor con tiempos de entrega consistentemente por encima del promedio de su zona" },
+    { "title": "Escenario 6", "text": "Auditar por qué marketing y producto reportan cifras distintas de 'clientes activos'" }
   ],
   "mistakes": [
-    "KPIs con definiciones distintas por área",
-    "Features sin versionar",
-    "Cohorts mezclando temporalidades"
+    "Calcular 'cliente activo' con definiciones distintas en cada reporte en vez de una capa DWS compartida",
+    "Comparar productos de categorías distintas sin normalizar antes de combinar señales en un score",
+    "Usar un umbral fijo global de tiempo de entrega en vez de una línea base por zona y horario",
+    "No documentar los pesos usados en el score de producto, haciéndolo imposible de auditar",
+    "Mezclar cohortes de distinta antigüedad sin ajustar al comparar comportamiento de clientes",
+    "Recalcular el perfil de cliente una sola vez al año en vez de con una tarea programada periódica"
   ],
   "cli": [
-    {
-      "cmd": "odps SQL",
-      "desc": "Analytics SQL"
-    },
-    {
-      "cmd": "Quick BI",
-      "desc": "Visualización"
-    }
+    { "cmd": "odpscmd -e \"SELECT customer_id, COUNT(*) FROM dwd_orders GROUP BY customer_id;\"", "desc": "Consulta SQL sobre la tabla de hechos de pedidos en MaxCompute" },
+    { "cmd": "odpscmd -e \"SELECT zone_id, hour_bucket, AVG(delivery_time) FROM dws_delivery_zone_hour;\"", "desc": "Calcular el tiempo de entrega promedio agregado por zona y franja horaria" },
+    { "cmd": "dataworks-cli job submit --project lovelyfood_dw --node dwd_orders_daily", "desc": "Disparar manualmente el nodo diario que construye la capa DWD de pedidos" },
+    { "cmd": "odpscmd -e \"DESC dim_customer;\"", "desc": "Inspeccionar el esquema de la dimensión Cliente" },
+    { "cmd": "odpscmd -e \"SELECT product_id, score FROM dws_product_score ORDER BY score DESC LIMIT 10;\"", "desc": "Obtener el top 10 de paquetes según su score calculado" }
   ],
   "glossary": [
-    {
-      "en": "Data Model",
-      "es": "Data model",
-      "def": "Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "en": "Feature",
-      "es": "Feature",
-      "def": "Variable derivada usada por modelo/reporte."
-    },
-    {
-      "en": "KPI",
-      "es": "KPI",
-      "def": "Métrica clave del negocio."
-    },
-    {
-      "en": "Cohort",
-      "es": "Cohort",
-      "def": "Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "en": "Funnel",
-      "es": "Funnel",
-      "def": "Secuencia de pasos con conversión."
-    },
-    {
-      "en": "Retention",
-      "es": "Retention",
-      "def": "% de usuarios activos tras N días."
-    },
-    {
-      "en": "A/B Test",
-      "es": "A/B test",
-      "def": "Comparación estadística de variantes."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Customer Portrait", "es": "Perfil de cliente", "def": "Conjunto de atributos y etiquetas derivadas del comportamiento histórico de un cliente, reutilizable por múltiples áreas." },
+    { "en": "RFM (Recency, Frequency, Monetary)", "es": "RFM", "def": "Modelo de segmentación basado en cuán reciente, frecuente y valioso es el comportamiento de compra de un cliente." },
+    { "en": "Fact table", "es": "Tabla de hechos", "def": "Tabla con un registro por evento de negocio (pedido) y medidas numéricas, con claves foráneas a las dimensiones." },
+    { "en": "Dimension table", "es": "Tabla de dimensión", "def": "Tabla con atributos descriptivos relativamente estables (cliente, producto, repartidor, tiempo)." },
+    { "en": "Star schema", "es": "Esquema estrella", "def": "Modelo dimensional con una tabla de hechos central conectada a varias dimensiones." },
+    { "en": "ODS (Operational Data Store)", "es": "ODS", "def": "Capa de datos crudos replicados desde las fuentes operacionales, sin transformar." },
+    { "en": "DWD (Data Warehouse Detail)", "es": "DWD", "def": "Capa de datos de detalle limpios y deduplicados, a nivel de evento individual." },
+    { "en": "DWS (Data Warehouse Summary)", "es": "DWS", "def": "Capa de datos agregados por dimensión de negocio (cliente, producto, zona), base de los marts finales." },
+    { "en": "Data mart", "es": "Mart de datos", "def": "Subconjunto de datos agregados orientado a un caso de uso específico (customer portrait, product score, delivery monitoring)." },
+    { "en": "Product/Package Score", "es": "Score de producto", "def": "Métrica combinada (volumen, calificación, recompra) que rankea el desempeño de un producto o paquete." },
+    { "en": "Overheating detection", "es": "Detección de sobrecalentamiento", "def": "Identificación de tiempos de entrega anómalamente altos respecto a la línea base de zona y horario." },
+    { "en": "Baseline (median by zone/hour)", "es": "Línea base por zona/hora", "def": "Tiempo de entrega esperado calculado como la mediana histórica de esa combinación específica de zona y franja horaria." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Plataforma de procesamiento batch a gran escala de Alibaba Cloud, motor central del data warehouse del caso." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Servicio de orquestación e integración de datos que programa y encadena las tareas del pipeline." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de visualización de Alibaba Cloud usada para exponer los dashboards finales al negocio." },
+    { "en": "Cohort", "es": "Cohorte", "def": "Grupo de clientes agrupados por un atributo común, como fecha de registro, usado para comparaciones ajustadas por antigüedad." },
+    { "en": "Normalization by category", "es": "Normalización por categoría", "def": "Ajustar una métrica dentro de su categoría antes de comparar, evitando sesgo entre grupos de distinto volumen." },
+    { "en": "PAI (Platform for AI)", "es": "PAI", "def": "Plataforma de machine learning de Alibaba Cloud que puede consumir el customer portrait como features de entrada." },
+    { "en": "Data governance", "es": "Gobernanza de datos", "def": "Prácticas que aseguran definiciones únicas y documentadas de métricas compartidas entre áreas de negocio." },
+    { "en": "Scheduled task (DataWorks node)", "es": "Tarea programada", "def": "Nodo de DataWorks configurado para ejecutarse periódicamente, manteniendo actualizados perfiles y scores." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Analytics Case Studies?",
-      "options": [
-        "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo →",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción."
-    },
-    {
-      "q": "¿Qué es <strong>Data Model</strong> (Data model) en Analytics Case Studies?",
-      "options": [
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Data Model (Data model): Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "q": "¿Qué es <strong>Feature</strong> (Feature) en Analytics Case Studies?",
-      "options": [
-        "Variable derivada usada por modelo/reporte.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Feature (Feature): Variable derivada usada por modelo/reporte."
-    },
-    {
-      "q": "¿Qué es <strong>KPI</strong> (KPI) en Analytics Case Studies?",
-      "options": [
-        "Métrica clave del negocio.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "KPI (KPI): Métrica clave del negocio."
-    },
-    {
-      "q": "¿Qué es <strong>Cohort</strong> (Cohort) en Analytics Case Studies?",
-      "options": [
-        "Grupo definido por atributo común (fecha registro).",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Cohort (Cohort): Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "q": "¿Qué es <strong>Funnel</strong> (Funnel) en Analytics Case Studies?",
-      "options": [
-        "Secuencia de pasos con conversión.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Funnel (Funnel): Secuencia de pasos con conversión."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Analytics Case Studies, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Analytics Case Studies en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Analytics Case Studies, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Analytics Case Studies es la elección típica:",
-      "options": [
-        "Análisis de comportamiento de usuario",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Análisis de comportamiento de usuario."
-    }
+    { "q": "¿Cuál es el problema de negocio central que motiva el proyecto de data warehouse de Lovely Food?", "options": ["Falta de servidores para almacenar datos", "Los datos de clientes, productos y repartidores están dispersos en sistemas distintos con definiciones inconsistentes", "El precio de OSS es demasiado alto", "No existe ninguna base de datos en la empresa"], "answer": 1, "explain": "El curso parte de que distintas áreas consultan fuentes distintas y llegan a definiciones distintas de conceptos como 'cliente activo', lo que motiva unificar en un almacén de datos." },
+    { "q": "En el modelo dimensional del caso, ¿dónde vive la calificación otorgada por el cliente a un pedido específico?", "options": ["En la dimensión Cliente", "En la tabla de hechos de pedido", "En la dimensión Tiempo", "En ningún lado, no se registra"], "answer": 1, "explain": "La calificación es una medida asociada a un evento (el pedido), por lo tanto vive en la tabla de hechos, no en una dimensión." },
+    { "q": "¿Qué modelo de segmentación de clientes usa el curso, adaptado de retail al delivery?", "options": ["RFM (Recencia, Frecuencia, Monto)", "A/B Testing", "Sistema de tickets", "SLA multi-zona"], "answer": 0, "explain": "El customer portrait aplica RFM (recencia, frecuencia y monto de gasto) para segmentar el comportamiento de pedido." },
+    { "q": "¿Por qué el score de producto normaliza dentro de cada categoría antes de combinar señales?", "options": ["Para que todos los productos tengan el mismo score final", "Para comparar de forma justa productos de categorías con volúmenes muy distintos (p. ej. postres vs. platos principales)", "Porque MaxCompute lo exige técnicamente", "Para reducir el tamaño de la tabla"], "answer": 1, "explain": "Sin normalizar por categoría, un producto de alto volumen sesgaría el ranking frente a uno de bajo volumen pero buen desempeño relativo." },
+    { "q": "¿Cómo se determina si una entrega está 'sobrecalentada' (overheating) en el caso de Lovely Food?", "options": ["Si supera un umbral fijo de 30 minutos en cualquier zona", "Si su tiempo real excede significativamente la línea base histórica de esa zona y franja horaria específica", "Si el cliente se queja por escrito", "Si el repartidor reporta el retraso manualmente"], "answer": 1, "explain": "La detección es relativa a la línea base de zona/hora, no un umbral global, porque tiempos normales varían mucho entre zonas." },
+    { "q": "¿Qué capa del modelo (ODS, DWD o DWS) contiene los datos agregados por cliente, producto o zona que alimentan los marts finales?", "options": ["ODS", "DWD", "DWS", "Ninguna, los marts se calculan directo de las fuentes"], "answer": 2, "explain": "DWS (Data Warehouse Summary) es la capa de agregados por dimensión de negocio, base directa de los marts de salida." },
+    { "q": "¿Qué antipatrón describe el curso cuando marketing y producto reportan cifras distintas de 'clientes activos'?", "options": ["Falta de servidores", "Falta de una capa DWS compartida con una definición única de la métrica", "Exceso de almacenamiento en OSS", "Uso incorrecto de Quick BI"], "answer": 1, "explain": "Sin una capa agregada compartida, cada área tiende a calcular su propia versión de métricas clave con criterios distintos." },
+    { "q": "¿Qué herramienta orquesta las tareas programadas del pipeline (ODS→DWD→DWS→marts) en el caso de estudio?", "options": ["Quick BI", "DataWorks", "PAI-Studio", "OSSImport"], "answer": 1, "explain": "DataWorks encadena las tareas con dependencias explícitas, asegurando que cada capa se calcule en el orden correcto." },
+    { "q": "¿Cuál es la diferencia principal entre la tabla de hechos y una tabla de dimensión en este modelo?", "options": ["Son exactamente lo mismo", "La tabla de hechos registra eventos (pedidos) con medidas numéricas; las dimensiones describen entidades relativamente estables (cliente, producto, repartidor)", "Las dimensiones cambian cada segundo y los hechos nunca cambian", "Solo existe la tabla de hechos en el modelo"], "answer": 1, "explain": "El esquema estrella separa eventos medibles (hechos) de atributos descriptivos relativamente estables (dimensiones)." },
+    { "q": "¿Por qué comparar cohortes de clientes de distinta antigüedad sin ajustar introduce sesgo?", "options": ["No introduce ningún sesgo", "Porque el comportamiento de un cliente nuevo no es directamente comparable al de uno con un año de historial sin normalizar por tiempo de vida", "Porque las cohortes no existen en MaxCompute", "Porque solo aplica a productos, no a clientes"], "answer": 1, "explain": "Comparar directamente cohortes con distinto tiempo de vida sin ajuste produce conclusiones erróneas sobre su comportamiento relativo." },
+    { "q": "¿Qué consume finalmente el customer portrait, además de los reportes de Quick BI?", "options": ["Nada más, es solo para reportes", "Puede alimentar como features de entrada un modelo de recomendación en PAI", "Solo se usa para facturación", "Solo lo usa el equipo de seguridad"], "answer": 1, "explain": "El perfil de cliente, al ser una tabla de features reutilizable, también sirve como entrada para modelos de machine learning." },
+    { "q": "¿Por qué el curso recomienda recalcular el customer portrait y el score de producto de forma periódica en vez de una sola vez?", "options": ["Para gastar más cómputo innecesariamente", "Para reflejar comportamiento reciente del cliente/producto y no depender solo del histórico acumulado desde el inicio", "Porque MaxCompute borra los datos automáticamente", "No se recomienda recalcular nunca"], "answer": 1, "explain": "El comportamiento de clientes y el desempeño de productos cambia con el tiempo; recalcular periódicamente mantiene la relevancia del análisis." }
   ],
-  "exam_focus": "Data modeling star/snowflake, feature engineering, KPI governance, cohorts.",
+  "exam_focus": "El examen suele evaluar: (a) diseño de un modelo estrella con hechos de pedido y dimensiones de cliente/producto/repartidor, (b) construcción de perfiles de cliente con RFM, (c) normalización por categoría al calcular un score de producto, (d) detección de anomalías de tiempo de entrega contra una línea base contextual, (e) el rol de las capas ODS/DWD/DWS y de DataWorks como orquestador.",
   "official_intro": "Lovely Food is an online takeout provider, the company's database deposits a large number of customer information, package products, customer behavior, distribution behavior such information. But data scattered in different databases are not convenient for product, operation, analysis and algorithm personnel. The company hopes that the data warehouse team will be able to integrate operational data scattered in various systems, business links, and related customers and distributors. In order to support customer picture, package product score, real-time marketing and other business use requirements, convenient data analysis and provide complete feature data for the algorithm personnel, and carry out depth analysis and exploration. It enables the business people to perform independent analysis on the basis of the portrait and satisfy the daily operation report requirements. This experiment mainly completes the customer portrait, set meal product scoring, set meal distribution time matching (used to monitor the overheating distribution time) three data use scenarios.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_deliverybusiness",

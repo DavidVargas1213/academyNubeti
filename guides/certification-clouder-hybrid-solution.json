@@ -2,398 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-hybrid-solution",
   "title_en": "Alibaba Hybrid Cloud Solution",
-  "title_es": "Alibaba Hybrid Cloud Solución",
+  "title_es": "Solución Híbrida de Alibaba Cloud",
+  "title_es_html": "Solución <em>Híbrida</em> de Alibaba Cloud",
   "duration_es": "40 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-hybrid-solution",
-  "lead": "Guía completa en español para el curso «Alibaba Hybrid Cloud Solution» de Alibaba Cloud Academy. Cubre en profundidad Hybrid Cloud & Apsara Stack. Alibaba Cloud ofrece varias vías híbridas: Apsara Stack (private cloud on-prem con las mismas APIs), Apsara Stack Agility (edge/lightweight), Cloud Box (rack on-prem gestionado), Express Connect / VPN para conectividad, y CEN para networking global. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Hybrid Cloud Solution» de Alibaba Cloud Academy. El curso presenta los componentes que permiten combinar infraestructura on-premise con Alibaba Cloud público, y desarrolla cuatro arquitecturas de referencia híbridas: conectividad de red, almacenamiento híbrido, backup/recuperación ante desastres y bursting a la nube para picos de demanda.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Hybrid Cloud & Apsara Stack</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Apsara Stack, Cloud Box, Express Connect, CEN, Smart Access Gateway.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Hybrid Cloud & Apsara Stack y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una empresa elige una solución híbrida en vez de migrar por completo a la nube o quedarse totalmente on-premise.",
+    "<strong>Distinguir</strong> las vías de conectividad híbrida: Express Connect, VPN Gateway y Smart Access Gateway.",
+    "<strong>Diferenciar</strong> Apsara Stack (nube privada con las mismas APIs) de Cloud Box (rack gestionado en el propio data center).",
+    "<strong>Diseñar</strong> las cuatro arquitecturas de referencia híbridas: conectividad, almacenamiento, backup/DR y cloud bursting.",
+    "<strong>Aplicar</strong> Cloud Enterprise Network (CEN) para federar redes on-premise y múltiples VPCs en la nube.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre soluciones híbridas."
   ],
-  "architecture": "Data center on-prem con Apsara Stack o Cloud Box + Express Connect al Alibaba Cloud público + CEN federando VPCs. Bases con DTS bidireccional. Storage con HBR backup y OSS gateway.",
+  "architecture": "Data center on-premise (con o sin Apsara Stack/Cloud Box) conectado mediante Express Connect (circuito dedicado) o VPN Gateway (túnel cifrado sobre internet) a una VPC en Alibaba Cloud público. Cloud Enterprise Network (CEN) federa esa VPC con otras VPCs y con redes on-premise adicionales de otras sucursales (vía Smart Access Gateway) en una única red lógica. Sobre esa conectividad se apoyan los cuatro patrones de referencia: sincronización de almacenamiento (HBR/File Gateway), replicación de bases con DTS para DR, y desbordamiento de cómputo (cloud bursting) durante picos de demanda.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Hybrid Cloud & Apsara Stack",
-      "title_en": "Introduction to Hybrid Cloud & Apsara Stack",
-      "intro": "Alibaba Cloud ofrece varias vías híbridas: Apsara Stack (private cloud on-prem con las mismas APIs), Apsara Stack Agility (edge/lightweight), Cloud Box (rack on-prem gestionado), Express Connect / VPN para conectividad, y CEN para networking global. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué existe la nube híbrida",
+      "title_en": "Why Hybrid Cloud Exists",
+      "intro": "Antes de ver componentes, el curso justifica el modelo híbrido: no es un paso intermedio hacia migrar todo a la nube, sino una arquitectura permanente válida para ciertos requisitos de negocio.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud ofrece varias vías híbridas: Apsara Stack (private cloud on-prem con las mismas APIs), Apsara Stack Agility (edge/lightweight), Cloud Box (rack on-prem gestionado), Express Connect / VPN para conectividad, y CEN para networking global.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Hybrid Cloud & Apsara Stack se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Regulación y soberanía de datos</strong>: algunas industrias (finanzas, gobierno, salud) tienen requisitos legales de mantener cierta información dentro de instalaciones propias o dentro de fronteras específicas, lo que impide una migración completa a la nube pública.",
+        "<strong>Latencia crítica en planta</strong>: sistemas de control industrial o de manufactura que necesitan respuesta en milisegundos no pueden depender de una conexión a un data center remoto — deben procesar localmente, aunque se beneficien de la nube para analítica posterior.",
+        "<strong>Inversión previa en infraestructura</strong>: empresas con hardware on-premise reciente que aún no ha terminado su vida útil económica prefieren aprovecharlo mientras migran gradualmente cargas nuevas a la nube.",
+        "<strong>Picos de demanda estacionales</strong>: mantener capacidad on-premise dimensionada para el pico anual es costoso; una arquitectura híbrida permite operar el día a día en el propio data center y 'desbordar' (bursting) hacia la nube solo durante los picos.",
+        "<strong>Continuidad de negocio</strong>: usar la nube pública como sitio de recuperación ante desastres para una operación que sigue siendo primariamente on-premise, sin necesidad de mantener un segundo data center físico propio."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Hybrid Cloud & Apsara Stack es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La nube híbrida no es 'nube a medias' — es una arquitectura deliberada para cargas con <em>requisitos específicos</em> (regulación, latencia, inversión previa, estacionalidad) que combina lo mejor de ambos entornos."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Hybrid Cloud & Apsara Stack no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Conectividad: el puente entre on-premise y la nube",
+      "title_en": "Hybrid Connectivity",
+      "intro": "Ninguna arquitectura híbrida funciona sin una conexión confiable entre el data center propio y Alibaba Cloud. El curso cubre las tres vías disponibles y cuándo elegir cada una.",
       "points": [
-        "<strong>Patrón canónico</strong>: Data center on-prem con Apsara Stack o Cloud Box + Express Connect al Alibaba Cloud público + CEN federando VPCs. Bases con DTS bidireccional. Storage con HBR backup y OSS gateway.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Hybrid Cloud & Apsara Stack (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Apsara Stack</strong> <em>(Apsara Stack)</em>: Alibaba Cloud on-premise.",
-        "<strong>Cloud Box</strong> <em>(Cloud Box)</em>: Rack gestionado por Alibaba en tu DC.",
-        "<strong>Express Connect</strong> <em>(Express Connect)</em>: Circuito privado on-prem ↔ cloud.",
-        "<strong>CEN</strong> <em>(CEN)</em>: Cloud Enterprise Network multi-VPC.",
-        "<strong>SAG</strong> <em>(Smart Access Gateway)</em>: Appliance para conectar sucursales."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Express Connect</strong>: circuito de red dedicado y privado entre el data center del cliente y Alibaba Cloud, sin pasar por internet público — ofrece latencia baja y predecible, ancho de banda garantizado, ideal para tráfico crítico o de alto volumen constante.",
+        "<strong>VPN Gateway</strong>: túnel cifrado sobre internet público (IPsec-VPN) entre on-premise y la VPC — más rápido de aprovisionar y más económico que un circuito dedicado, pero con latencia y ancho de banda menos predecibles al depender de la red pública.",
+        "<strong>Smart Access Gateway (SAG)</strong>: appliance de hardware o software pensado para conectar sucursales o tiendas remotas (no necesariamente el data center principal) a la red híbrida de forma simplificada, sin requerir configuración manual compleja en cada sitio.",
+        "<strong>Redundancia con doble circuito</strong>: para cargas críticas, un solo circuito Express Connect es un punto único de falla — la práctica recomendada es contratar dos circuitos físicamente independientes (idealmente con proveedores o rutas distintas) para tolerar la caída de uno.",
+        "<strong>Cloud Enterprise Network (CEN)</strong>: una vez establecida la conectividad básica, CEN federa múltiples VPCs, múltiples regiones y múltiples conexiones on-premise en una única red lógica con enrutamiento centralizado, evitando configurar peering punto a punto entre cada par de redes."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona «tráfico crítico con ancho de banda garantizado», la respuesta es Express Connect. Si menciona «conexión rápida de desplegar y de menor costo, tolerante a latencia variable», la respuesta es VPN Gateway."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Apsara Stack frente a Cloud Box",
+      "title_en": "Apsara Stack vs. Cloud Box",
+      "intro": "Dos formas distintas de traer capacidades de Alibaba Cloud al propio data center, que el examen distingue con precisión.",
       "points": [
-        "<strong>HA</strong>: Express Connect con doble circuito para HA",
-        "<strong>HA</strong>: Backup cross (HBR)",
-        "<strong>Buenas prácticas</strong>: Data governance definido antes de mover",
-        "<strong>Buenas prácticas</strong>: Baseline igual para on-prem y cloud (mismos servicios)"
+        "<strong>Apsara Stack</strong>: una versión de Alibaba Cloud desplegada completamente dentro del data center del cliente, con las mismas APIs y servicios que la nube pública — el cliente opera su propia 'nube privada' con la misma experiencia de desarrollo, permitiendo portabilidad de aplicaciones entre on-premise y la nube pública sin reescribir código.",
+        "<strong>Cloud Box</strong>: un rack de hardware gestionado directamente por Alibaba Cloud, instalado físicamente en el data center del cliente, pero administrado como una extensión de la nube pública — el cliente no opera la infraestructura, solo la consume localmente con la latencia de estar en su propio sitio.",
+        "<strong>Diferencia de responsabilidad operativa</strong>: con Apsara Stack, el cliente (o su equipo de TI) es responsable de operar la plataforma; con Cloud Box, Alibaba Cloud sigue siendo responsable de la operación, similar al modelo de la nube pública pero con presencia física local.",
+        "<strong>Cuándo elegir cada uno</strong>: Apsara Stack encaja cuando el cliente necesita control operativo total y aislamiento completo de red (p.ej. requisitos regulatorios estrictos); Cloud Box encaja cuando el cliente quiere baja latencia local sin asumir la carga operativa de administrar la plataforma."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "Apsara Stack = nube privada que <em>tú operas</em> con las APIs de Alibaba Cloud. Cloud Box = hardware en tu sitio que <em>Alibaba Cloud opera</em> como extensión de la nube pública."
+      }
+    },
+    {
+      "title_es": "4 · Arquitectura de referencia 1 y 2: almacenamiento híbrido y backup/DR",
+      "title_en": "Reference Architecture: Hybrid Storage and Backup/DR",
+      "intro": "El curso presenta cuatro arquitecturas de referencia. Este módulo cubre las dos orientadas a datos: almacenamiento híbrido y recuperación ante desastres.",
+      "points": [
+        "<strong>Almacenamiento híbrido</strong>: aplicaciones on-premise que necesitan acceder a datos como si fueran un sistema de archivos local, mientras esos datos realmente residen (o se replican) en OSS — un gateway de almacenamiento traduce las llamadas locales hacia el object storage en la nube, dando capacidad prácticamente ilimitada sin cambiar la aplicación.",
+        "<strong>Caso de uso típico de almacenamiento híbrido</strong>: archivar datos fríos (logs antiguos, backups históricos) desde el data center hacia OSS de forma transparente, liberando espacio en el storage local costoso.",
+        "<strong>Backup y recuperación ante desastres (DR)</strong>: Hybrid Backup Recovery (HBR) respalda datos on-premise directamente hacia la nube, sin necesidad de mantener un segundo data center físico como destino de backup.",
+        "<strong>DR de bases de datos</strong>: para bases de datos críticas on-premise, DTS puede mantener una réplica sincronizada en ApsaraDB en la nube — si el data center principal falla, la aplicación puede conmutar hacia la réplica en la nube con una pérdida de datos mínima.",
+        "<strong>Diferencia entre backup y DR activo</strong>: un backup permite restaurar datos tras una pérdida, pero toma tiempo; una réplica activa en DR permite conmutar el servicio con un tiempo de recuperación mucho menor — la elección depende de cuánto downtime tolera el negocio."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado exige 'downtime mínimo ante la caída del data center principal', la respuesta es una réplica activa en la nube (vía DTS), no solo un backup periódico."
+      }
+    },
+    {
+      "title_es": "5 · Arquitectura de referencia 3 y 4: bursting y aplicaciones distribuidas",
+      "title_en": "Reference Architecture: Cloud Bursting and Distributed Apps",
+      "intro": "Las otras dos arquitecturas de referencia del curso cubren picos de demanda de cómputo y despliegues distribuidos entre múltiples sitios.",
+      "points": [
+        "<strong>Cloud bursting</strong>: la aplicación corre normalmente con capacidad on-premise fija, pero cuando la demanda supera esa capacidad, el desbordamiento se atiende automáticamente con instancias ECS en la nube pública, conectadas a la misma red vía Express Connect/VPN — evita sobredimensionar el data center propio para un pico ocasional.",
+        "<strong>Requisito técnico del bursting</strong>: la aplicación debe poder distribuir tráfico entre el sitio on-premise y la nube (vía balanceo de carga o enrutamiento inteligente) y compartir estado o datos entre ambos entornos sin inconsistencias.",
+        "<strong>Aplicaciones multi-sitio con CEN</strong>: para empresas con múltiples sucursales que necesitan comunicarse entre sí y con un centro de datos en la nube, CEN simplifica la topología de red a una malla lógica única, en vez de configurar túneles punto a punto entre cada sucursal.",
+        "<strong>Edge computing como extensión</strong>: en escenarios de IoT o manufactura distribuida, procesar datos localmente (edge) antes de enviar solo lo relevante a la nube para análisis agregado combina baja latencia local con la capacidad de análisis centralizado.",
+        "<strong>Consistencia de plataforma</strong>: cuando el bursting usa Apsara Stack on-premise junto con la nube pública, la aplicación se despliega con exactamente el mismo stack de servicios en ambos lados, evitando reescribir lógica específica de cada entorno."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El cloud bursting solo funciona si la aplicación fue <em>diseñada</em> para distribuir carga entre dos entornos — no es una capacidad automática que aparece por tener conectividad híbrida."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas más difíciles del examen sobre solución híbrida suelen basarse en errores reales de diseño de conectividad y continuidad observados en proyectos híbridos.",
       "points": [
-        "<strong>Antipattern</strong>: Un solo circuito Express Connect",
-        "<strong>Antipattern</strong>: Diferentes stacks on-prem vs cloud → doble operación",
-        "<strong>Antipattern</strong>: Sin plan de latencia",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: depender de un solo circuito Express Connect para tráfico crítico, sin redundancia — cualquier falla de ese circuito aísla completamente al data center de la nube.",
+        "<strong>Antipatrón</strong>: operar stacks de servicios distintos entre on-premise y la nube pública (por ejemplo, sin Apsara Stack), obligando a mantener dos versiones distintas de cada aplicación para cada entorno.",
+        "<strong>Antipatrón</strong>: confiar solo en backups periódicos para una carga que el negocio considera crítica y que en realidad exige un tiempo de recuperación mínimo (necesitaría DR activo, no solo backup).",
+        "<strong>Antipatrón</strong>: diseñar cloud bursting sin resolver primero cómo se comparte el estado o los datos entre el sitio on-premise y la nube, generando inconsistencias durante el desbordamiento.",
+        "<strong>Antipatrón</strong>: no tener un plan de latencia claro cuando la aplicación combina componentes on-premise (baja latencia requerida) con componentes en la nube (latencia de red variable).",
+        "<strong>Regla de oro</strong>: ante dos opciones del examen sobre diseño híbrido, descarta primero la que introduce un punto único de falla en la conectividad, y entre las restantes prioriza la que mantiene consistencia de plataforma entre ambos entornos."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Cuando el enunciado combina 'crítico' + 'sin downtime tolerable', la respuesta correcta casi siempre incluye <em>doble circuito de conectividad + réplica activa (no solo backup)</em>."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Regulaciones que exigen data on-prem"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Latencia crítica en factory floor"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Bursting a cloud para picos"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Continuidad on-prem con DR en cloud"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Edge computing distribuido"
-    }
+    { "title": "Escenario 1", "text": "Institución financiera obligada por regulación a mantener ciertos datos dentro de su propio data center" },
+    { "title": "Escenario 2", "text": "Planta de manufactura con control industrial que exige latencia de milisegundos en piso de producción" },
+    { "title": "Escenario 3", "text": "Retail con picos de demanda estacionales que no justifican comprar hardware propio para el pico anual" },
+    { "title": "Escenario 4", "text": "Empresa que necesita un sitio de recuperación ante desastres sin construir un segundo data center físico" },
+    { "title": "Escenario 5", "text": "Cadena con múltiples sucursales que necesitan conectarse entre sí y con la nube de forma simplificada — CEN" },
+    { "title": "Escenario 6", "text": "Archivar logs y backups históricos fuera del storage local costoso, de forma transparente para la aplicación" }
   ],
   "mistakes": [
-    "Un solo circuito Express Connect",
-    "Diferentes stacks on-prem vs cloud → doble operación",
-    "Sin plan de latencia"
+    "Depender de un solo circuito Express Connect sin redundancia para tráfico crítico",
+    "Mantener stacks de servicios distintos entre on-premise y nube pública, duplicando esfuerzo de desarrollo",
+    "Confiar solo en backups periódicos cuando el negocio exige un tiempo de recuperación mínimo (DR activo)",
+    "Diseñar cloud bursting sin resolver cómo se comparte estado o datos entre ambos entornos",
+    "No tener un plan de latencia claro al combinar componentes on-premise y en la nube"
   ],
   "cli": [
-    {
-      "cmd": "aliyun expressconnect DescribePhysicalConnections",
-      "desc": "Ver Express Connect"
-    }
+    { "cmd": "aliyun expressconnect DescribePhysicalConnections", "desc": "Listar los circuitos físicos de Express Connect configurados" },
+    { "cmd": "aliyun vpc DescribeVpnGateways", "desc": "Consultar las puertas de enlace VPN activas" },
+    { "cmd": "aliyun cbn DescribeCens", "desc": "Listar las instancias de Cloud Enterprise Network (CEN)" },
+    { "cmd": "aliyun hbr DescribeBackupPlans", "desc": "Consultar los planes de backup configurados en Hybrid Backup Recovery" },
+    { "cmd": "aliyun dts DescribeMigrationJobs --RegionId cn-hangzhou", "desc": "Verificar el estado de una réplica de DR entre base on-premise y ApsaraDB" }
   ],
   "glossary": [
-    {
-      "en": "Apsara Stack",
-      "es": "Apsara Stack",
-      "def": "Alibaba Cloud on-premise."
-    },
-    {
-      "en": "Cloud Box",
-      "es": "Cloud Box",
-      "def": "Rack gestionado por Alibaba en tu DC."
-    },
-    {
-      "en": "Express Connect",
-      "es": "Express Connect",
-      "def": "Circuito privado on-prem ↔ cloud."
-    },
-    {
-      "en": "CEN",
-      "es": "CEN",
-      "def": "Cloud Enterprise Network multi-VPC."
-    },
-    {
-      "en": "Smart Access Gateway",
-      "es": "SAG",
-      "def": "Appliance para conectar sucursales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Hybrid Cloud", "es": "Nube híbrida", "def": "Arquitectura que combina infraestructura on-premise con nube pública, para cargas con requisitos específicos de regulación, latencia o costo." },
+    { "en": "Express Connect", "es": "Express Connect", "def": "Circuito de red dedicado y privado entre el data center del cliente y Alibaba Cloud, sin pasar por internet público." },
+    { "en": "VPN Gateway", "es": "Puerta de enlace VPN", "def": "Túnel cifrado (IPsec) sobre internet público que conecta on-premise con una VPC, más económico que un circuito dedicado." },
+    { "en": "Smart Access Gateway (SAG)", "es": "SAG", "def": "Appliance para conectar sucursales remotas a la red híbrida de forma simplificada." },
+    { "en": "Cloud Enterprise Network (CEN)", "es": "CEN", "def": "Servicio que federa múltiples VPCs, regiones y conexiones on-premise en una única red lógica con enrutamiento centralizado." },
+    { "en": "Apsara Stack", "es": "Apsara Stack", "def": "Versión de Alibaba Cloud desplegada completamente en el data center del cliente, con las mismas APIs, operada por el propio cliente." },
+    { "en": "Cloud Box", "es": "Cloud Box", "def": "Rack de hardware instalado en el sitio del cliente pero operado directamente por Alibaba Cloud como extensión de la nube pública." },
+    { "en": "Storage Gateway", "es": "Gateway de almacenamiento", "def": "Componente que traduce accesos locales tipo sistema de archivos hacia OSS, habilitando almacenamiento híbrido transparente." },
+    { "en": "Hybrid Backup Recovery (HBR)", "es": "HBR", "def": "Servicio que respalda datos on-premise directamente hacia la nube sin requerir un segundo data center físico." },
+    { "en": "Disaster Recovery (DR)", "es": "Recuperación ante desastres", "def": "Capacidad de conmutar el servicio hacia un sitio alterno (la nube) ante la falla del data center principal." },
+    { "en": "Active replica (DR)", "es": "Réplica activa", "def": "Copia sincronizada en tiempo casi real de una base de datos, que permite un tiempo de recuperación mucho menor que un backup periódico." },
+    { "en": "Cloud Bursting", "es": "Desbordamiento a la nube", "def": "Patrón donde la capacidad on-premise fija se complementa automáticamente con instancias en la nube durante picos de demanda." },
+    { "en": "Edge Computing", "es": "Computación en el borde", "def": "Procesamiento de datos cerca de su origen (planta, sucursal) antes de enviar solo lo relevante a la nube para análisis agregado." },
+    { "en": "Data sovereignty", "es": "Soberanía de datos", "def": "Requisito regulatorio de mantener ciertos datos dentro de fronteras o instalaciones específicas." },
+    { "en": "Single point of failure (SPOF)", "es": "Punto único de falla", "def": "Componente cuya caída interrumpe todo el sistema; un solo circuito Express Connect sin redundancia es un ejemplo típico." },
+    { "en": "Platform consistency", "es": "Consistencia de plataforma", "def": "Usar el mismo conjunto de servicios y APIs entre on-premise y nube pública para evitar mantener dos versiones de cada aplicación." },
+    { "en": "RTO / RPO", "es": "RTO / RPO", "def": "Tiempo objetivo de recuperación y punto objetivo de recuperación, métricas que determinan si basta un backup o se necesita una réplica activa." },
+    { "en": "DTS (Data Transmission Service)", "es": "DTS", "def": "Servicio usado en arquitecturas híbridas para mantener una réplica sincronizada de bases de datos on-premise hacia ApsaraDB." },
+    { "en": "OSS", "es": "OSS", "def": "Object Storage Service, destino típico del almacenamiento híbrido y del backup en la nube." },
+    { "en": "IPsec", "es": "IPsec", "def": "Protocolo de cifrado usado por VPN Gateway para asegurar el túnel entre on-premise e internet hacia la nube." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Hybrid Cloud & Apsara Stack?",
-      "options": [
-        "Alibaba Cloud ofrece varias vías híbridas: Apsara Stack (private cloud on-prem con las mismas APIs), Apsara Stack Agility (edge/lightweight), Cloud Box (rack on-prem gestionado), Express Connect / VPN",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud ofrece varias vías híbridas: Apsara Stack (private cloud on-prem con las mismas APIs), Apsara Stack Agility (edge/lightweight), Cloud Box (rack on-prem gestionado), Express Connect / VPN para conectividad, y CEN para networking global."
-    },
-    {
-      "q": "¿Qué es <strong>Apsara Stack</strong> (Apsara Stack) en Hybrid Cloud & Apsara Stack?",
-      "options": [
-        "Alibaba Cloud on-premise.",
-        "Rack gestionado por Alibaba en tu DC.",
-        "Circuito privado on-prem ↔ cloud.",
-        "Cloud Enterprise Network multi-VPC."
-      ],
-      "answer": 0,
-      "explain": "Apsara Stack (Apsara Stack): Alibaba Cloud on-premise."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Box</strong> (Cloud Box) en Hybrid Cloud & Apsara Stack?",
-      "options": [
-        "Rack gestionado por Alibaba en tu DC.",
-        "Alibaba Cloud on-premise.",
-        "Circuito privado on-prem ↔ cloud.",
-        "Cloud Enterprise Network multi-VPC."
-      ],
-      "answer": 0,
-      "explain": "Cloud Box (Cloud Box): Rack gestionado por Alibaba en tu DC."
-    },
-    {
-      "q": "¿Qué es <strong>Express Connect</strong> (Express Connect) en Hybrid Cloud & Apsara Stack?",
-      "options": [
-        "Circuito privado on-prem ↔ cloud.",
-        "Alibaba Cloud on-premise.",
-        "Rack gestionado por Alibaba en tu DC.",
-        "Cloud Enterprise Network multi-VPC."
-      ],
-      "answer": 0,
-      "explain": "Express Connect (Express Connect): Circuito privado on-prem ↔ cloud."
-    },
-    {
-      "q": "¿Qué es <strong>CEN</strong> (CEN) en Hybrid Cloud & Apsara Stack?",
-      "options": [
-        "Cloud Enterprise Network multi-VPC.",
-        "Alibaba Cloud on-premise.",
-        "Rack gestionado por Alibaba en tu DC.",
-        "Circuito privado on-prem ↔ cloud."
-      ],
-      "answer": 0,
-      "explain": "CEN (CEN): Cloud Enterprise Network multi-VPC."
-    },
-    {
-      "q": "¿Qué es <strong>Smart Access Gateway</strong> (SAG) en Hybrid Cloud & Apsara Stack?",
-      "options": [
-        "Appliance para conectar sucursales.",
-        "Alibaba Cloud on-premise.",
-        "Rack gestionado por Alibaba en tu DC.",
-        "Circuito privado on-prem ↔ cloud."
-      ],
-      "answer": 0,
-      "explain": "Smart Access Gateway (SAG): Appliance para conectar sucursales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Hybrid Cloud & Apsara Stack, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Hybrid Cloud & Apsara Stack en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Hybrid Cloud & Apsara Stack, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Hybrid Cloud & Apsara Stack es la elección típica:",
-      "options": [
-        "Regulaciones que exigen data on-prem",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Regulaciones que exigen data on-prem."
-    }
+    { "q": "¿Cuál de las siguientes NO es una razón típica para adoptar una arquitectura híbrida según el curso?", "options": ["Requisitos regulatorios de soberanía de datos", "Latencia crítica en piso de planta industrial", "Preferencia estética por tener dos consolas de administración distintas", "Picos de demanda estacionales que no justifican comprar hardware propio para todo el año"], "answer": 2, "explain": "La nube híbrida responde a requisitos concretos de negocio (regulación, latencia, inversión previa, estacionalidad), no a preferencias sin justificación técnica o de negocio." },
+    { "q": "¿Qué diferencia principal existe entre Express Connect y VPN Gateway?", "options": ["Son exactamente el mismo servicio", "Express Connect es un circuito dedicado privado con latencia predecible; VPN Gateway es un túnel cifrado sobre internet público, más rápido de aprovisionar pero menos predecible", "VPN Gateway siempre es más caro que Express Connect", "Express Connect solo funciona dentro de la misma ciudad"], "answer": 1, "explain": "Express Connect ofrece un circuito privado dedicado con ancho de banda garantizado; VPN Gateway usa internet público con cifrado, más económico pero menos predecible." },
+    { "q": "¿Qué diferencia clave separa a Apsara Stack de Cloud Box?", "options": ["No hay ninguna diferencia real", "Apsara Stack lo opera el propio cliente con las APIs de Alibaba Cloud; Cloud Box lo opera Alibaba Cloud como extensión de la nube pública en el sitio del cliente", "Cloud Box solo existe fuera de China", "Apsara Stack no soporta ninguna API de la nube pública"], "answer": 1, "explain": "La diferencia central es la responsabilidad operativa: Apsara Stack la asume el cliente; Cloud Box la asume Alibaba Cloud aunque el hardware esté en el sitio del cliente." },
+    { "q": "Una empresa necesita un tiempo de recuperación mínimo si su data center principal falla. ¿Qué solución es más adecuada que un simple backup periódico?", "options": ["No hacer nada adicional", "Mantener una réplica activa sincronizada en la nube (por ejemplo, vía DTS hacia ApsaraDB)", "Aumentar la frecuencia de los backups a una vez por mes", "Eliminar el data center principal por completo"], "answer": 1, "explain": "Un backup periódico implica tiempo de restauración; una réplica activa permite conmutar el servicio con una interrupción mucho menor." },
+    { "q": "¿Qué servicio simplifica la topología de red cuando una empresa tiene múltiples sucursales y múltiples VPCs que deben comunicarse entre sí?", "options": ["Smart Access Gateway únicamente", "Cloud Enterprise Network (CEN)", "OSS", "HBR"], "answer": 1, "explain": "CEN federa VPCs, regiones y conexiones on-premise en una única red lógica, evitando configurar túneles punto a punto entre cada par de redes." },
+    { "q": "¿Qué requisito técnico es indispensable para que el cloud bursting funcione correctamente?", "options": ["Ninguno, funciona automáticamente con solo tener conectividad híbrida", "Que la aplicación esté diseñada para distribuir tráfico y compartir estado/datos consistentemente entre on-premise y la nube", "Que se use exclusivamente VPN Gateway", "Que no exista ninguna base de datos en la arquitectura"], "answer": 1, "explain": "El bursting requiere que la aplicación haya sido diseñada para operar distribuida entre ambos entornos, no es una capacidad automática de la conectividad." },
+    { "q": "¿Cuál es el riesgo de depender de un solo circuito Express Connect sin redundancia para tráfico crítico?", "options": ["Ningún riesgo, Express Connect nunca falla", "Se convierte en un punto único de falla: su caída aísla completamente al data center de la nube", "Aumenta automáticamente la latencia", "Reduce el costo sin ninguna contrapartida"], "answer": 1, "explain": "Un único circuito sin redundancia es un punto único de falla; la práctica recomendada es contratar dos circuitos independientes." },
+    { "q": "¿Qué componente permite que una aplicación on-premise acceda a datos almacenados realmente en OSS como si fueran un sistema de archivos local?", "options": ["Express Connect", "Un gateway de almacenamiento (Storage Gateway)", "CEN", "Smart Access Gateway"], "answer": 1, "explain": "El gateway de almacenamiento traduce accesos locales tipo sistema de archivos hacia el object storage en la nube, sin cambiar la aplicación." },
+    { "q": "¿Por qué mantener stacks de servicios distintos entre on-premise y nube pública se considera un antipatrón?", "options": ["Porque es imposible técnicamente", "Porque obliga a mantener dos versiones distintas de cada aplicación para cada entorno, duplicando esfuerzo", "Porque reduce automáticamente la latencia", "Porque Alibaba Cloud lo prohíbe contractualmente"], "answer": 1, "explain": "Sin consistencia de plataforma (por ejemplo, usando Apsara Stack), cada entorno puede requerir su propia versión adaptada de la aplicación." },
+    { "q": "¿Qué tipo de conexión es la más adecuada para tráfico crítico que exige ancho de banda garantizado y latencia predecible?", "options": ["VPN Gateway sobre internet público", "Express Connect", "Una conexión doméstica compartida", "No es posible garantizar esto en una arquitectura híbrida"], "answer": 1, "explain": "Express Connect, al ser un circuito dedicado privado, ofrece las garantías de ancho de banda y latencia que un túnel sobre internet público no puede asegurar." },
+    { "q": "En un escenario de IoT industrial con procesamiento local antes de enviar solo datos relevantes a la nube, ¿qué patrón describe mejor esta arquitectura?", "options": ["Cloud bursting puro", "Edge computing como extensión de la nube híbrida", "Backup periódico", "VPN Gateway sin ningún otro componente"], "answer": 1, "explain": "El procesamiento cercano al origen de los datos, con envío selectivo a la nube para análisis agregado, es el patrón de edge computing descrito en el curso." },
+    { "q": "¿Qué determina si una carga necesita solo backup periódico o una réplica activa de DR?", "options": ["El color de la interfaz de administración", "Cuánto tiempo de recuperación (RTO) y pérdida de datos (RPO) tolera el negocio para esa carga específica", "El tamaño del archivo de configuración", "El proveedor de internet utilizado"], "answer": 1, "explain": "Las métricas de RTO y RPO tolerables por el negocio determinan si basta un backup periódico o si se necesita una réplica activa con recuperación casi inmediata." }
   ],
-  "exam_focus": "Apsara Stack, Cloud Box, Express Connect vs VPN, CEN, SAG.",
+  "exam_focus": "El examen suele evaluar: (a) por qué una empresa elige una arquitectura híbrida frente a migración total o modelo on-premise puro, (b) diferencias entre Express Connect, VPN Gateway y Smart Access Gateway según el requisito de tráfico, (c) Apsara Stack frente a Cloud Box según responsabilidad operativa, (d) las cuatro arquitecturas de referencia (conectividad, almacenamiento híbrido, backup/DR, cloud bursting), (e) el rol de CEN al federar múltiples redes.",
   "official_intro": "This course helps you undertsand the components and services in Alibaba Cloud that will help you build a Hybrid Cloud solution. The course will also introduce 4 Hybrid reference architectures.",
   "recommended_for": "Cloud server users, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-hybrid-solution",

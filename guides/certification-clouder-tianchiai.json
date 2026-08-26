@@ -2,415 +2,177 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-tianchiai",
   "title_en": "Predicting Coupon Efficacy",
-  "title_es": "Predicting Coupon Efficacy",
+  "title_es": "Predicción de Eficacia de Cupones",
+  "title_es_html": "Predicción de <em>Eficacia de Cupones</em>",
   "duration_es": "90 minutos",
   "level_es": "Intermedio",
   "category_es": "Inteligencia Artificial",
   "subcategory_es": "Artificial Intelligence",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_tianchiai",
-  "lead": "Guía completa en español para el curso «Predicting Coupon Efficacy» de Alibaba Cloud Academy. Cubre en profundidad Analytics Case Studies. Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Predicting Coupon Efficacy» de Alibaba Cloud Academy, basado en el caso de estudio de la competencia Tianchi de predicción de uso de cupones O2O (Online-to-Offline). Cubre la parte más traicionera de este tipo de proyecto — definir correctamente la etiqueta y evitar fuga temporal de datos — la ingeniería de features de usuario/comercio/cupón, y por qué GBDT (Gradient Boosting Decision Trees) suele superar a un árbol único o a Random Forest en este tipo de datos tabulares.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Analytics Case Studies</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Data Model, Feature, KPI, Cohort, Funnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Analytics Case Studies y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Definir</strong> el problema de negocio: predecir si un cupón recibido será canjeado dentro de una ventana de 15 días.",
+    "<strong>Construir</strong> correctamente la etiqueta (label) a partir de tres conjuntos de datos, evitando ambigüedades que contaminan el entrenamiento.",
+    "<strong>Diseñar</strong> features de usuario, comercio y cupón, incluyendo el parseo correcto de formatos de descuento tipo 'gasta X, ahorra Y'.",
+    "<strong>Explicar</strong> el mecanismo de boosting secuencial de GBDT y contrastarlo con el bagging de Random Forest.",
+    "<strong>Evaluar</strong> el modelo con la métrica específica del problema: AUC promedio calculado por tipo de cupón, no un AUC global ingenuo.",
+    "<strong>Diagnosticar y evitar</strong> fuga de datos temporal — el error más frecuente y más caro en este tipo de dataset.",
+    "<strong>Implementar</strong> el pipeline de features a gran escala en MaxCompute/PAI y entrenar GBDT en PAI o con xgboost/lightgbm."
   ],
-  "architecture": "Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
+  "architecture": "Flujo del caso de estudio: registros de consumo offline + registros online + set de test en OSS/MaxCompute → definición de la etiqueta según reglas temporales (usado dentro de 15 días = positivo) → ingeniería de features en tres familias (usuario, comercio, cupón) calculada con SQL sobre MaxCompute o PyODPS, siempre respetando el corte temporal para no mirar al futuro → entrenamiento de GBDT (componente de PAI-Designer o <code>xgboost</code>/<code>lightgbm</code>/<code>GradientBoostingClassifier</code>) con early stopping para controlar el número de árboles → evaluación con AUC calculado por tipo de cupón y promediado → ajuste de hiperparámetros (learning_rate, n_estimators, max_depth) por validación cruzada respetando el orden temporal → generación de la predicción final sobre el set de test.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Analytics Case Studies",
-      "title_en": "Introduction to Analytics Case Studies",
-      "intro": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema: ¿usará el cliente el cupón?",
+      "title_en": "The Problem: Will the Customer Redeem the Coupon?",
+      "intro": "El negocio detrás de este caso de estudio es de marketing O2O (Online-to-Offline): una plataforma envía cupones de descuento a usuarios para comercios físicos, y necesita predecir a quién enviarle qué cupón para maximizar el retorno de la campaña sin saturar de cupones inútiles a quienes no los usarán.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Analytics Case Studies se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Formulación como clasificación binaria</strong>: dado que un usuario recibió un cupón específico de un comercio específico, predecir si lo canjeará (usará) dentro de un plazo determinado — no se predice si comprará, sino si usará ESE cupón concreto.",
+        "<strong>Por qué 'recibido pero no usado' también es una señal</strong>: un usuario que recibe cupones repetidamente y nunca los usa es tan informativo como uno que siempre los usa — ambos comportamientos alimentan las features históricas del usuario.",
+        "<strong>Motivación de negocio</strong>: enviar cupones tiene un costo (descuento otorgado + costo de la campaña); predecir bien a quién enviarlos mejora el ROI de marketing evitando 'regalar' descuentos a compras que hubieran ocurrido de todas formas.",
+        "<strong>Distinto de un problema de recomendación pura</strong>: aquí no se recomienda un producto — se predice la probabilidad de conversión de una oferta ya decidida (cupón X para usuario Y en comercio Z), un matiz que cambia qué features son relevantes."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Analytics Case Studies es una pieza fundamental de Inteligencia Artificial en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El objetivo no es 'este usuario comprará' en general, sino 'este usuario usará específicamente este cupón de este comercio en esta ventana de tiempo' — la granularidad del problema es (usuario, comercio, cupón, fecha de recepción)." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Analytics Case Studies no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Los datos y la trampa de definir la etiqueta",
+      "title_en": "The Data and the Label-Definition Trap",
+      "intro": "El dataset se compone de registros de consumo offline (con y sin cupón), registros online, y un set de test — y construir correctamente la etiqueta (label) a partir de estos registros es, con diferencia, el paso donde más se equivocan quienes abordan este problema por primera vez.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes (RDS, logs, streams) → DataWorks orquesta → MaxCompute tabla hechos + dimensiones → PyODPS/SQL para features → PAI-Studio o notebook para modelo → resultados a Quick BI/DataV. RAM segmenta acceso por área de negocio.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Tres fuentes de datos</strong>: historial de consumo offline (compras en tienda física, con o sin cupón), historial de consumo online, y el conjunto de test donde solo se sabe qué cupones se recibieron, sin saber si se usarán.",
+        "<strong>Regla de etiquetado</strong>: un registro se etiqueta como positivo (1) si el usuario recibió el cupón Y lo usó dentro de los 15 días posteriores a recibirlo; se etiqueta como negativo (0) si lo recibió y NO lo usó en ese plazo.",
+        "<strong>Registros que se excluyen del entrenamiento supervisado</strong>: las compras realizadas sin ningún cupón (consumo 'orgánico') no entran directamente en la etiqueta binaria de canje, pero sí se usan para calcular features históricas de comportamiento del usuario y del comercio.",
+        "<strong>La ambigüedad más peligrosa</strong>: un registro con cupón recibido pero sin fecha de consumo asociada dentro de la ventana debe etiquetarse con cuidado — tratarlo incorrectamente como positivo o simplemente descartarlo sin criterio distorsiona la proporción real de clases.",
+        "<strong>Por qué este paso es más importante que el algoritmo</strong>: ningún algoritmo, por sofisticado que sea, puede compensar una etiqueta mal construida — un error sistemático en el etiquetado se propaga a todas las métricas de evaluación posteriores."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Analytics Case Studies (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe ambigüedad sobre si contar un registro como positivo o negativo según la ventana de 15 días, la respuesta correcta es aplicar la regla temporal estrictamente, no asumir el caso más favorable para el modelo." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Ingeniería de features: usuario, comercio y cupón",
+      "title_en": "Feature Engineering: User, Merchant and Coupon",
+      "intro": "El desempeño en este tipo de competencia depende más de la calidad de las features que del algoritmo elegido — se construyen tres familias de features, cada una capturando una dimensión distinta del problema.",
       "points": [
-        "<strong>Data model</strong> <em>(Data Model)</em>: Estrella/copo de nieve con hechos y dimensiones.",
-        "<strong>Feature</strong> <em>(Feature)</em>: Variable derivada usada por modelo/reporte.",
-        "<strong>KPI</strong> <em>(KPI)</em>: Métrica clave del negocio.",
-        "<strong>Cohort</strong> <em>(Cohort)</em>: Grupo definido por atributo común (fecha registro).",
-        "<strong>Funnel</strong> <em>(Funnel)</em>: Secuencia de pasos con conversión.",
-        "<strong>Retention</strong> <em>(Retention)</em>: % de usuarios activos tras N días.",
-        "<strong>A/B test</strong> <em>(A/B Test)</em>: Comparación estadística de variantes."
+        "<strong>Features de usuario</strong>: tasa histórica de canje de cupones del usuario, número de comercios distintos visitados, días desde la última compra, frecuencia de recepción de cupones — capturan si este usuario, en general, suele usar los cupones que recibe.",
+        "<strong>Features de comercio</strong>: tasa de canje de cupones de ese comercio entre todos sus clientes, número de cupones distintos emitidos, ticket promedio del comercio — capturan si ese comercio, en general, logra que sus cupones se usen.",
+        "<strong>Features de cupón</strong>: tipo de descuento (porcentaje vs. monto fijo), valor del descuento, gasto mínimo requerido, días de validez del cupón — capturan qué tan atractiva es la oferta en sí misma.",
+        "<strong>Features de interacción usuario-comercio</strong>: número de veces que ESE usuario compró en ESE comercio antes, si ya usó cupones de ese comercio específico previamente — a menudo las features más predictivas, porque capturan una relación específica, no un promedio general.",
+        "<strong>Features de distancia</strong>: la distancia entre la ubicación habitual del usuario y el comercio (cuando el dato está disponible) — un cupón para un comercio lejano tiene menor probabilidad de canje que uno cercano, todo lo demás constante."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Las features de interacción (usuario × comercio) suelen aportar más señal que las features de usuario o comercio por separado, porque capturan un patrón específico en vez de un promedio genérico." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Parseo del descuento y features derivadas",
+      "title_en": "Parsing Discounts and Derived Features",
+      "intro": "El campo de descuento en el dataset original viene en formatos de texto mixtos que deben parsearse correctamente antes de poder usarse como feature numérica — un error de parseo aquí corrompe silenciosamente una de las features más importantes del problema.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Formato 'gasta X ahorra Y' (full-reduction)</strong>: un cupón expresado como 'gasta 200, ahorra 20' no es un 10% de descuento lineal — hay que calcular explícitamente la tasa de descuento efectiva (<code>20/200 = 0.10</code>) y, por separado, el gasto mínimo requerido (200) como dos features distintas.",
+        "<strong>Formato porcentaje directo</strong>: algunos cupones vienen como una tasa directa (p.ej. 0.95 significa 5% de descuento) — hay que normalizar ambos formatos a la misma escala de 'tasa de descuento efectiva' antes de comparar cupones entre sí.",
+        "<strong>discount_type como feature categórica</strong>: además de la tasa numérica, distinguir si el cupón es de tipo 'monto fijo por umbral de gasto' o 'porcentaje directo' aporta señal adicional, porque el comportamiento de canje difiere entre ambos tipos.",
+        "<strong>Gasto mínimo como barrera</strong>: un gasto mínimo alto relativo al ticket promedio del usuario reduce la probabilidad de canje — la relación entre el gasto mínimo del cupón y el historial de gasto del usuario es una feature derivada de interacción valiosa.",
+        "<strong>Error de parseo silencioso</strong>: si el parseo del descuento falla y produce valores nulos o incorrectos para un subconjunto de cupones, el modelo puede aprender un patrón espurio sin que ningún error visible lo delate."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Tratar el string 'gasta 200 ahorra 20' como si ya fuera una tasa de descuento numérica sin parsearlo primero es un error clásico que corrompe una de las features más predictivas del problema." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · GBDT: boosting secuencial de árboles",
+      "title_en": "GBDT: Sequential Tree Boosting",
+      "intro": "GBDT (Gradient Boosting Decision Trees) es el algoritmo protagonista de este caso de estudio — y su mecanismo es fundamentalmente distinto al de Random Forest, aunque ambos combinan muchos árboles pequeños.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Data model documentado con owner",
-        "<strong>Buenas prácticas</strong>: Features versionadas + testadas",
-        "<strong>Buenas prácticas</strong>: KPIs con definición única cross-empresa",
-        "<strong>Buenas prácticas</strong>: Cohort analysis mensual",
-        "<strong>Buenas prácticas</strong>: A/B tests con significancia estadística"
+        "<strong>Bagging (Random Forest) vs. Boosting (GBDT)</strong>: Random Forest entrena árboles en paralelo, cada uno sobre una muestra bootstrap independiente, y promedia sus votos; GBDT entrena árboles en secuencia, donde cada árbol nuevo se enfoca específicamente en corregir los errores (residuales) del conjunto de árboles anterior.",
+        "<strong>Ajuste al residual/gradiente</strong>: en cada iteración, GBDT calcula el gradiente de la función de pérdida respecto a las predicciones actuales y entrena un nuevo árbol pequeño para predecir ese gradiente — sumando su contribución (escalada) a la predicción acumulada.",
+        "<strong>Learning rate (shrinkage)</strong>: cada árbol nuevo se suma multiplicado por una tasa de aprendizaje pequeña (p.ej. 0.05-0.1) en vez de con peso completo — esto evita que un solo árbol domine la predicción y suele mejorar la generalización a costa de necesitar más árboles.",
+        "<strong>Por qué GBDT suele superar a un árbol único o a Random Forest en datos tabulares</strong>: al corregir errores de forma dirigida en cada iteración, GBDT puede capturar patrones residuales que ni un árbol único ni un promedio de árboles independientes detectan.",
+        "<strong>Riesgo de overfitting con demasiados árboles</strong>: a diferencia de Random Forest (donde añadir más árboles rara vez empeora el resultado), en GBDT un número excesivo de iteraciones sin early stopping puede sobreajustar progresivamente al ruido del training set."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Memoriza", "text": "Random Forest promedia árboles independientes entrenados en paralelo (reduce varianza); GBDT suma árboles secuenciales que corrigen el error del conjunto anterior (reduce sesgo). Son estrategias de ensamble fundamentalmente distintas." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Evaluación: AUC promedio por tipo de cupón",
+      "title_en": "Evaluation: Average AUC per Coupon Type",
+      "intro": "Este problema tiene una particularidad de evaluación que lo distingue de un problema de clasificación binaria genérico: la métrica oficial de la competencia Tianchi no es un AUC global simple, sino un promedio de AUCs calculados por separado para cada tipo de cupón.",
       "points": [
-        "<strong>Antipattern</strong>: KPIs con definiciones distintas por área",
-        "<strong>Antipattern</strong>: Features sin versionar",
-        "<strong>Antipattern</strong>: Cohorts mezclando temporalidades",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Por qué no basta un AUC global</strong>: distintos tipos de cupón tienen tasas de canje y dificultad de predicción muy distintas — un AUC global puede estar dominado por los tipos de cupón más frecuentes, ocultando un desempeño pobre en tipos de cupón menos comunes pero igualmente importantes para el negocio.",
+        "<strong>Cálculo de la métrica</strong>: se agrupan las predicciones por identificador de cupón, se calcula el AUC dentro de cada grupo (comparando positivos y negativos de ese mismo cupón), y se promedian todos esos AUCs individuales.",
+        "<strong>Desbalance severo de clases</strong>: la gran mayoría de los cupones recibidos no se canjean, por lo que accuracy es una métrica prácticamente inútil aquí — el foco está exclusivamente en el ranking relativo de probabilidades que produce el AUC.",
+        "<strong>Consecuencia para el entrenamiento</strong>: optimizar directamente el AUC global durante el entrenamiento (en vez de la métrica agrupada por cupón) puede producir un modelo que luzca bien en la métrica equivocada y decepcione en la evaluación real.",
+        "<strong>Validación consistente con la métrica de negocio</strong>: al hacer validación cruzada para elegir hiperparámetros, calcular el AUC agrupado por cupón sobre los folds de validación (no solo un AUC global) evita optimizar hacia un objetivo distinto del que realmente importa."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta por la métrica de evaluación oficial de este caso de estudio, la respuesta es el AUC promedio calculado por tipo de cupón, no un AUC global ni accuracy." }
+    },
+    {
+      "title_es": "7 · Fuga de datos temporal y buenas prácticas en Alibaba Cloud",
+      "title_en": "Temporal Data Leakage and Best Practices on Alibaba Cloud",
+      "intro": "En un problema con una dimensión temporal explícita (recepción del cupón → ventana de 15 días), la forma más frecuente y más dañina de fuga de datos es usar, sin darse cuenta, información que en producción no estaría disponible en el momento de la predicción.",
+      "points": [
+        "<strong>División por tiempo, no aleatoria</strong>: el training/validation split debe respetar el orden cronológico (entrenar con periodos anteriores, validar con periodos posteriores) — una división puramente aleatoria puede filtrar información del 'futuro' al conjunto de entrenamiento.",
+        "<strong>Features que miran al futuro</strong>: calcular la 'tasa de canje histórica del usuario' usando también consumos posteriores a la fecha de recepción del cupón que se está prediciendo es fuga de datos — las features deben calcularse solo con información anterior a esa fecha.",
+        "<strong>Estadísticas del comercio contaminadas por el periodo de test</strong>: si las tasas de canje de un comercio se calculan incluyendo datos del periodo de test, el modelo se beneficia de información que no tendría en un despliegue real.",
+        "<strong>Implementación a escala en MaxCompute</strong>: el cálculo de features de usuario/comercio/cupón sobre millones de registros se hace con SQL en MaxCompute (o PyODPS desde un notebook), definiendo explícitamente el corte temporal en cada agregación con cláusulas de fecha.",
+        "<strong>Entrenamiento de GBDT en PAI</strong>: PAI-Designer ofrece un componente de GBDT configurable (número de árboles, learning rate, profundidad); alternativamente, <code>xgboost</code> o <code>lightgbm</code> desde PAI-DSW ofrecen early stopping nativo basado en un conjunto de validación separado temporalmente."
+      ],
+      "keypoint": { "label": "Antipatrón frecuente en el examen", "text": "Calcular features históricas de un usuario o comercio usando datos posteriores a la fecha del evento que se está prediciendo es fuga de datos temporal — el error más caro y más común en este tipo de problema." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Análisis de comportamiento de usuario"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Segmentación (persona)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Optimización de operaciones logísticas"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Efectividad de campañas de marketing"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Detección de patrones en delivery/mobility"
-    }
+    { "title": "Escenario 1", "text": "Optimizar el envío de cupones de descuento para maximizar canjes reales, no solo impresiones" },
+    { "title": "Escenario 2", "text": "Segmentar usuarios por propensión histórica a canjear cupones antes de una campaña" },
+    { "title": "Escenario 3", "text": "Priorizar comercios con alta tasa de canje para acuerdos comerciales de cupones" },
+    { "title": "Escenario 4", "text": "Diseñar el valor y tipo de descuento (porcentaje vs. monto fijo) según el segmento de usuario" },
+    { "title": "Escenario 5", "text": "Detectar fuga de datos temporal en un pipeline de features antes de confiar en las métricas offline" },
+    { "title": "Escenario 6", "text": "Comparar GBDT contra Random Forest como algoritmo base para un problema de datos tabulares con features de interacción" }
   ],
   "mistakes": [
-    "KPIs con definiciones distintas por área",
-    "Features sin versionar",
-    "Cohorts mezclando temporalidades"
+    "Etiquetar de forma inconsistente los registros ambiguos de 'cupón recibido sin consumo asociado claro'",
+    "Dividir train/validation de forma aleatoria en vez de respetar el orden cronológico, filtrando información del futuro",
+    "Calcular features históricas del usuario o comercio incluyendo datos posteriores a la fecha del evento a predecir",
+    "Optimizar y validar contra un AUC global en vez de la métrica real: AUC promedio por tipo de cupón",
+    "Entrenar GBDT con un número de árboles excesivo sin early stopping, sobreajustando al ruido del training set",
+    "Tratar el string de descuento ('gasta X ahorra Y') como una tasa numérica sin parsearlo, corrompiendo una feature clave"
   ],
   "cli": [
-    {
-      "cmd": "odps SQL",
-      "desc": "Analytics SQL"
-    },
-    {
-      "cmd": "Quick BI",
-      "desc": "Visualización"
-    }
+    { "cmd": "-- PyODPS / MaxCompute SQL\nSELECT user_id, coupon_id, merchant_id, discount_rate, distance, date_received,\n       CASE WHEN date IS NOT NULL AND datediff(date, date_received) <= 15 THEN 1 ELSE 0 END AS label\nFROM offline_events\nWHERE date_received IS NOT NULL;", "desc": "Construir la etiqueta binaria respetando la ventana de 15 días desde la recepción del cupón" },
+    { "cmd": "def parse_discount(s):\n    if ':' in s:\n        full, reduce = map(float, s.split(':'))\n        return reduce / full, full\n    return 1 - float(s), 0.0", "desc": "Parsear el formato de descuento 'gasta:ahorra' a tasa de descuento efectiva y gasto mínimo" },
+    { "cmd": "-- Feature de usuario calculada solo con datos anteriores a la fecha de recepción\nSELECT user_id,\n       SUM(CASE WHEN used=1 THEN 1 ELSE 0 END) / COUNT(*) AS user_redeem_rate\nFROM offline_events\nWHERE date_received < CURRENT_PREDICTION_DATE\nGROUP BY user_id;", "desc": "Calcular tasa histórica de canje del usuario respetando el corte temporal (sin mirar al futuro)" },
+    { "cmd": "from sklearn.ensemble import GradientBoostingClassifier\ngbdt = GradientBoostingClassifier(n_estimators=300, learning_rate=0.05, max_depth=4, random_state=42)\ngbdt.fit(X_train, y_train)", "desc": "Entrenar un GBDT con learning rate bajo y profundidad limitada por árbol" },
+    { "cmd": "import lightgbm as lgb\nmodel = lgb.LGBMClassifier(n_estimators=1000, learning_rate=0.03)\nmodel.fit(X_train, y_train, eval_set=[(X_val, y_val)], callbacks=[lgb.early_stopping(50)])", "desc": "Entrenar con LightGBM usando early stopping sobre un set de validación separado temporalmente" },
+    { "cmd": "import pandas as pd\nfrom sklearn.metrics import roc_auc_score\ndf_pred['coupon_id'] = coupon_ids\nauc_por_cupon = df_pred.groupby('coupon_id').apply(lambda g: roc_auc_score(g['y_true'], g['y_pred']) if g['y_true'].nunique() > 1 else None)\nprint(auc_por_cupon.mean())", "desc": "Calcular el AUC promedio agrupado por tipo de cupón, la métrica real del problema" }
   ],
   "glossary": [
-    {
-      "en": "Data Model",
-      "es": "Data model",
-      "def": "Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "en": "Feature",
-      "es": "Feature",
-      "def": "Variable derivada usada por modelo/reporte."
-    },
-    {
-      "en": "KPI",
-      "es": "KPI",
-      "def": "Métrica clave del negocio."
-    },
-    {
-      "en": "Cohort",
-      "es": "Cohort",
-      "def": "Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "en": "Funnel",
-      "es": "Funnel",
-      "def": "Secuencia de pasos con conversión."
-    },
-    {
-      "en": "Retention",
-      "es": "Retention",
-      "def": "% de usuarios activos tras N días."
-    },
-    {
-      "en": "A/B Test",
-      "es": "A/B test",
-      "def": "Comparación estadística de variantes."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "O2O (Online-to-Offline)", "es": "O2O", "def": "Modelo de negocio donde una interacción online (recibir un cupón) impulsa una transacción offline (compra en tienda física)." },
+    { "en": "Coupon Redemption", "es": "Canje de cupón", "def": "Uso efectivo de un cupón recibido dentro del plazo de validez." },
+    { "en": "Label Construction", "es": "Construcción de la etiqueta", "def": "Proceso de derivar la variable objetivo (canjeado/no canjeado) a partir de las reglas temporales del problema." },
+    { "en": "Full-reduction Coupon", "es": "Cupón de reducción por umbral", "def": "Cupón tipo 'gasta X, ahorra Y', que requiere parsear tanto la tasa de descuento como el gasto mínimo." },
+    { "en": "Discount Rate", "es": "Tasa de descuento efectiva", "def": "Proporción del gasto descontada, calculada de forma consistente entre distintos formatos de cupón." },
+    { "en": "User Feature / Merchant Feature / Coupon Feature", "es": "Features de usuario / comercio / cupón", "def": "Tres familias de variables derivadas que capturan comportamiento histórico de cada entidad del problema." },
+    { "en": "Interaction Feature", "es": "Feature de interacción", "def": "Variable derivada de la relación específica entre dos entidades (p.ej. usuario × comercio), no de cada una por separado." },
+    { "en": "GBDT (Gradient Boosting Decision Trees)", "es": "GBDT", "def": "Ensamble de árboles entrenados secuencialmente, cada uno corrigiendo el error residual del conjunto anterior." },
+    { "en": "Boosting", "es": "Boosting", "def": "Estrategia de ensamble donde los modelos se entrenan en secuencia, enfocándose en corregir los errores previos." },
+    { "en": "Bagging", "es": "Bagging", "def": "Estrategia de ensamble (usada por Random Forest) donde los modelos se entrenan en paralelo sobre muestras bootstrap independientes." },
+    { "en": "Residual Fitting", "es": "Ajuste al residual", "def": "Mecanismo de GBDT donde cada árbol nuevo aprende a predecir el gradiente/error del modelo acumulado." },
+    { "en": "Learning Rate (Shrinkage)", "es": "Tasa de aprendizaje (shrinkage)", "def": "Factor que escala la contribución de cada árbol nuevo en GBDT, controlando la velocidad de ajuste." },
+    { "en": "Early Stopping", "es": "Parada temprana", "def": "Detener el entrenamiento de GBDT cuando el desempeño en validación deja de mejorar, evitando overfitting." },
+    { "en": "Temporal Data Leakage", "es": "Fuga de datos temporal", "def": "Uso de información posterior a la fecha del evento a predecir, no disponible en un escenario real de producción." },
+    { "en": "Time-based Split", "es": "División por tiempo", "def": "Separación train/validation que respeta el orden cronológico en vez de mezclar periodos aleatoriamente." },
+    { "en": "Average AUC per Coupon", "es": "AUC promedio por cupón", "def": "Métrica de evaluación que calcula el AUC dentro de cada grupo de cupón y promedia los resultados." },
+    { "en": "Severe Class Imbalance", "es": "Desbalance severo de clases", "def": "Situación donde la gran mayoría de cupones recibidos no se canjean, invalidando accuracy como métrica útil." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Motor de procesamiento masivo de datos de Alibaba Cloud, usado aquí para calcular features a escala con SQL." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Analytics Case Studies?",
-      "options": [
-        "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo →",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Casos de analítica end-to-end en Alibaba Cloud: análisis de bicis compartidas, cupones, perfiles de vivienda, delivery. Todos comparten un patrón: ingesta → MaxCompute → feature engineering → modelo → insight/acción."
-    },
-    {
-      "q": "¿Qué es <strong>Data Model</strong> (Data model) en Analytics Case Studies?",
-      "options": [
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Data Model (Data model): Estrella/copo de nieve con hechos y dimensiones."
-    },
-    {
-      "q": "¿Qué es <strong>Feature</strong> (Feature) en Analytics Case Studies?",
-      "options": [
-        "Variable derivada usada por modelo/reporte.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Métrica clave del negocio.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "Feature (Feature): Variable derivada usada por modelo/reporte."
-    },
-    {
-      "q": "¿Qué es <strong>KPI</strong> (KPI) en Analytics Case Studies?",
-      "options": [
-        "Métrica clave del negocio.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Grupo definido por atributo común (fecha registro)."
-      ],
-      "answer": 0,
-      "explain": "KPI (KPI): Métrica clave del negocio."
-    },
-    {
-      "q": "¿Qué es <strong>Cohort</strong> (Cohort) en Analytics Case Studies?",
-      "options": [
-        "Grupo definido por atributo común (fecha registro).",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Cohort (Cohort): Grupo definido por atributo común (fecha registro)."
-    },
-    {
-      "q": "¿Qué es <strong>Funnel</strong> (Funnel) en Analytics Case Studies?",
-      "options": [
-        "Secuencia de pasos con conversión.",
-        "Estrella/copo de nieve con hechos y dimensiones.",
-        "Variable derivada usada por modelo/reporte.",
-        "Métrica clave del negocio."
-      ],
-      "answer": 0,
-      "explain": "Funnel (Funnel): Secuencia de pasos con conversión."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Analytics Case Studies, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Analytics Case Studies en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Analytics Case Studies, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Analytics Case Studies es la elección típica:",
-      "options": [
-        "Análisis de comportamiento de usuario",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Análisis de comportamiento de usuario."
-    }
+    { "q": "¿Qué predice exactamente el modelo en este caso de estudio?", "options": ["Si el usuario comprará algo en general en los próximos días", "Si un usuario canjeará un cupón específico de un comercio específico dentro de una ventana de 15 días", "El monto total que gastará el usuario en el mes", "Qué producto comprará el usuario a continuación"], "answer": 1, "explain": "El problema está definido a nivel (usuario, comercio, cupón, fecha de recepción): se predice el canje de ESE cupón concreto, no el comportamiento de compra general." },
+    { "q": "¿Cuál es la regla de etiquetado (label) para un registro donde el usuario recibió un cupón?", "options": ["Positivo si lo recibió, sin importar si lo usa", "Positivo si lo usó dentro de los 15 días posteriores a recibirlo; negativo si no lo usó en ese plazo", "Positivo solo si el usuario nunca antes había recibido cupones", "Todos los registros con cupón recibido son negativos"], "answer": 1, "explain": "La ventana de 15 días desde la recepción define estrictamente si el registro es positivo o negativo." },
+    { "q": "¿Por qué las compras sin ningún cupón asociado no entran directamente en la etiqueta binaria de canje?", "options": ["Porque se descartan por completo y no se usan para nada", "Porque la etiqueta mide canje de un cupón específico, aunque esas compras sí se usan para calcular features históricas", "Porque el dataset no las incluye", "Porque siempre se etiquetan como positivas"], "answer": 1, "explain": "El consumo 'orgánico' sin cupón no tiene una etiqueta de canje que asignar, pero aporta información valiosa para las features de comportamiento." },
+    { "q": "Un cupón está expresado como 'gasta 200, ahorra 20'. ¿Cuál es la tasa de descuento efectiva que debe calcularse como feature?", "options": ["200", "20", "0.10 (20/200)", "2000 (200×10)"], "answer": 2, "explain": "La tasa de descuento efectiva se obtiene dividiendo el monto ahorrado entre el gasto mínimo requerido: 20/200 = 0.10." },
+    { "q": "¿Qué tipo de feature suele aportar más señal que las features de usuario o de comercio consideradas por separado?", "options": ["Features de interacción usuario × comercio", "El identificador numérico del cupón sin transformar", "La fecha de recepción como texto sin procesar", "El nombre del comercio como texto libre"], "answer": 0, "explain": "Las features de interacción capturan una relación histórica específica entre ese usuario y ese comercio, generalmente más predictiva que promedios generales." },
+    { "q": "¿Cuál es la diferencia fundamental entre el bagging de Random Forest y el boosting de GBDT?", "options": ["Son exactamente el mismo mecanismo con nombres distintos", "Random Forest entrena árboles en paralelo sobre muestras independientes; GBDT entrena árboles en secuencia, cada uno corrigiendo el error del anterior", "GBDT nunca usa árboles de decisión como base", "Random Forest siempre requiere más árboles que GBDT para el mismo desempeño"], "answer": 1, "explain": "Bagging promedia modelos independientes (reduce varianza); boosting suma modelos secuenciales que corrigen errores previos (reduce sesgo)." },
+    { "q": "¿Qué controla el hiperparámetro learning_rate (shrinkage) en GBDT?", "options": ["El número de features usadas por árbol", "Cuánto pesa la contribución de cada árbol nuevo al sumarse a la predicción acumulada", "La profundidad máxima de cada árbol individual", "El tamaño de la muestra bootstrap"], "answer": 1, "explain": "Un learning rate bajo escala hacia abajo cada nueva contribución, requiriendo más árboles pero generalizando mejor." },
+    { "q": "¿Cuál es la métrica de evaluación oficial de este caso de estudio, distinta de un AUC global genérico?", "options": ["Accuracy simple", "AUC promedio calculado agrupando las predicciones por tipo de cupón", "Error cuadrático medio (MSE)", "F1-score global sobre todo el dataset"], "answer": 1, "explain": "La métrica agrupa las predicciones por cupón, calcula el AUC dentro de cada grupo y promedia — refleja mejor el desempeño real del negocio que un AUC global." },
+    { "q": "¿Por qué accuracy es una métrica prácticamente inútil en este problema?", "options": ["Porque scikit-learn no permite calcularla en GBDT", "Porque la gran mayoría de los cupones recibidos no se canjean, generando un desbalance severo de clases", "Porque el problema no es de clasificación", "Porque accuracy solo aplica a regresión"], "answer": 1, "explain": "Con un desbalance tan pronunciado, un modelo trivial que prediga siempre 'no canjeado' lograría accuracy alta sin ser útil." },
+    { "q": "¿Qué es la fuga de datos temporal específica de este problema?", "options": ["Perder registros al dividir el dataset", "Calcular features históricas del usuario o comercio usando información posterior a la fecha del evento que se está prediciendo", "Usar demasiadas columnas en el modelo", "Entrenar el modelo con muy pocos datos"], "answer": 1, "explain": "Usar consumos futuros para calcular una 'tasa histórica' es información que no existiría en un escenario real de predicción, inflando el desempeño offline." },
+    { "q": "¿Por qué el train/validation split debe respetar el orden cronológico en vez de ser aleatorio en este problema?", "options": ["Por preferencia estética del equipo de datos", "Porque una división aleatoria puede filtrar información de periodos futuros al conjunto de entrenamiento, sobreestimando el desempeño real", "Porque MaxCompute no permite splits aleatorios", "Porque el modelo GBDT lo requiere por diseño técnico"], "answer": 1, "explain": "Un split aleatorio ignora la dimensión temporal del problema y puede dejar que el modelo 'vea' patrones de fechas posteriores durante el entrenamiento." },
+    { "q": "¿Qué riesgo aparece si se entrena GBDT con un número muy alto de árboles sin early stopping?", "options": ["El modelo se vuelve automáticamente más interpretable", "El modelo puede sobreajustar progresivamente al ruido del training set", "El entrenamiento se detiene automáticamente por scikit-learn", "No hay ningún riesgo, más árboles siempre mejoran el resultado en GBDT"], "answer": 1, "explain": "A diferencia de Random Forest, en GBDT agregar árboles indefinidamente sin control puede seguir ajustando al ruido, degradando la generalización." },
+    { "q": "¿Qué herramienta de Alibaba Cloud es la más adecuada para calcular, a gran escala, las features de usuario/comercio/cupón sobre millones de registros?", "options": ["ActionTrail", "MaxCompute (vía SQL o PyODPS)", "CloudMonitor", "KMS"], "answer": 1, "explain": "MaxCompute es el motor de procesamiento masivo de datos de Alibaba Cloud, adecuado para agregaciones SQL sobre datasets de gran volumen." }
   ],
-  "exam_focus": "Data modeling star/snowflake, feature engineering, KPI governance, cohorts.",
+  "exam_focus": "El examen suele evaluar: (a) la definición correcta del problema y de la etiqueta según la ventana de 15 días, (b) el parseo de formatos de descuento y las tres familias de features, (c) boosting (GBDT) frente a bagging (Random Forest), (d) la métrica real del problema — AUC promedio por cupón, no AUC global ni accuracy, (e) cómo detectar y evitar fuga de datos temporal en el pipeline de features.",
   "official_intro": "This course is designed to help engineers who want to do data mining work. You will fully understand the workflow of data mining and the core ideas of Desition Tree and GBDT algorithm. You will also be familiar with convenient and efficient ML service on Alibaba Cloud platform.",
   "recommended_for": "This training is for people who have basic coding and data analysis experience",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_tianchiai",

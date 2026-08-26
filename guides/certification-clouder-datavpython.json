@@ -2,398 +2,177 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datavpython",
   "title_en": "Data Visualization Using Python",
-  "title_es": "Datos Visualization Usar Python",
+  "title_es": "Visualización de Datos con Python",
+  "title_es_html": "Visualización de Datos con <em>Python</em>",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Big Data Application and Visualization",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datavpython",
-  "lead": "Guía completa en español para el curso «Data Visualization Using Python» de Alibaba Cloud Academy. Cubre en profundidad DataV. DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Data Visualization Using Python» de Alibaba Cloud Academy. A diferencia de DataV (editor visual drag-and-drop para pantallas grandes sin código), este curso enseña a generar gráficos programáticamente con el stack estándar de Python: Matplotlib como motor base, pandas para graficar directamente desde un DataFrame, y Seaborn para visualización estadística de alto nivel. Es la herramienta de un analista o científico de datos trabajando en un notebook, no la de un diseñador ensamblando un dashboard.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DataV</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Canvas, Widget, Data Source, Filter, Preview.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DataV y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> cuándo conviene visualizar con código Python frente a un editor visual como DataV o Quick BI.",
+    "<strong>Construir</strong> gráficos básicos con Matplotlib: figura, ejes, líneas, barras, dispersión (scatter) e histogramas.",
+    "<strong>Graficar</strong> directamente desde un DataFrame de pandas usando su API de plotting integrada sobre Matplotlib.",
+    "<strong>Usar</strong> Seaborn para visualización estadística de alto nivel: distribuciones, relaciones entre variables y mapas de calor.",
+    "<strong>Elegir</strong> el tipo de gráfico correcto según la pregunta analítica (comparación, distribución, relación, composición, tendencia).",
+    "<strong>Aplicar</strong> buenas prácticas de diseño: etiquetado claro, escalas apropiadas, evitar gráficos engañosos.",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre la relación entre Matplotlib, pandas y Seaborn."
   ],
-  "architecture": "Fuentes: APIs, DBs, Excel, streams → widgets 2D/3D configurables → canvas responsive → publish con URL protegida por token. Refresco automático cada N segundos.",
+  "architecture": "Matplotlib es la librería base de bajo nivel: expone una figura (Figure) que contiene uno o más ejes (Axes), sobre los que se dibujan las marcas visuales (líneas, barras, puntos) con control fino de cada elemento. pandas construye su propia API de plotting (<code>DataFrame.plot()</code>) directamente encima de Matplotlib, permitiendo graficar una columna o un DataFrame completo con una sola línea, sin instanciar figura y ejes manualmente. Seaborn, a su vez, se construye sobre Matplotlib y pandas: ofrece funciones de alto nivel orientadas a preguntas estadísticas comunes (relación entre dos variables, distribución de una variable, correlación entre muchas) con estilos y paletas de color sensatas por defecto, reduciendo drásticamente el código necesario frente a Matplotlib puro. Las tres capas coexisten: es común usar Seaborn o pandas para el 80% del gráfico y caer a llamadas de Matplotlib puro para el ajuste fino final (títulos, anotaciones, tamaño de figura).",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DataV",
-      "title_en": "Introduction to DataV",
-      "intro": "DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Cuándo visualizar con código en vez de una herramienta visual",
+      "title_en": "When to Visualize with Code Instead of a Visual Tool",
+      "intro": "Antes de escribir la primera línea de Matplotlib, el curso sitúa el problema: no toda visualización necesita un dashboard interactivo — muchas veces el objetivo es un gráfico reproducible, versionable y generado como parte de un análisis o un pipeline automatizado.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DataV se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Reproducibilidad</strong>: un gráfico generado por código puede regenerarse exactamente igual con datos nuevos, versionarse en git junto al análisis, y ejecutarse como parte de un pipeline automatizado — algo que un editor drag-and-drop como DataV no ofrece de la misma forma.",
+        "<strong>Exploración rápida en notebook</strong>: durante el análisis exploratorio de datos (EDA), generar decenas de gráficos rápidos con una línea de código por gráfico es mucho más ágil que configurar cada uno manualmente en una interfaz visual.",
+        "<strong>Publicación en reportes y papers</strong>: gráficos estáticos de alta calidad para un informe PDF, una presentación o un paper académico se controlan con más precisión tipográfica y de exportación (SVG, PDF vectorial) desde código que desde un editor visual pensado para pantalla.",
+        "<strong>Cuándo NO es la opción correcta</strong>: para un big screen operacional con refresco en vivo (DataV) o un dashboard interactivo que un usuario de negocio debe explorar sin escribir código (Quick BI), la visualización programática no es el reemplazo adecuado.",
+        "<strong>Entorno típico</strong>: en Alibaba Cloud, este flujo se ejecuta habitualmente en un notebook de PAI-DSW (Data Science Workshop) o en un nodo PyODPS de DataWorks, con acceso directo a los datos de MaxCompute vía pandas."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DataV es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es Matplotlib?» sino «¿el escenario necesita un gráfico reproducible dentro de un análisis en código, o un dashboard interactivo/observable a distancia?». El primero apunta a este stack; el segundo, a Quick BI o DataV."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DataV no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Matplotlib: Figure, Axes y los tipos de gráfico base",
+      "title_en": "Matplotlib: Figure, Axes and Base Chart Types",
+      "intro": "Matplotlib es la capa fundacional sobre la que se construyen tanto pandas.plot() como Seaborn — entender su modelo de objetos evita confusión al necesitar ajustar algo que las capas de alto nivel no exponen directamente.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes: APIs, DBs, Excel, streams → widgets 2D/3D configurables → canvas responsive → publish con URL protegida por token. Refresco automático cada N segundos.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DataV (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Canvas</strong> <em>(Canvas)</em>: Área de diseño del big screen.",
-        "<strong>Widget</strong> <em>(Widget)</em>: Componente visual (mapa, gauge, chart 3D, etc.).",
-        "<strong>Data source</strong> <em>(Data Source)</em>: API, DB, WebSocket, static file.",
-        "<strong>Filtro</strong> <em>(Filter)</em>: Transformación JS del dato antes de mostrar.",
-        "<strong>Preview</strong> <em>(Preview)</em>: Modo edición con datos reales."
+        "<strong>Figure</strong>: el lienzo completo — puede contener uno o varios subplots (rejillas de gráficos) organizados en filas y columnas.",
+        "<strong>Axes</strong>: cada subplot individual dentro de una Figure — es sobre el objeto Axes donde realmente se dibujan las marcas visuales (no confundir con 'axis', que se refiere a un eje X o Y específico).",
+        "<strong>Gráfico de líneas (<code>plot</code>)</strong>: ideal para mostrar una tendencia continua a lo largo de una variable ordenada, típicamente tiempo.",
+        "<strong>Gráfico de barras (<code>bar</code>)</strong>: ideal para comparar magnitudes entre categorías discretas.",
+        "<strong>Dispersión (<code>scatter</code>)</strong>: ideal para explorar la relación entre dos variables numéricas continuas, revelando correlación o clusters.",
+        "<strong>Histograma (<code>hist</code>)</strong>: ideal para visualizar la distribución de una sola variable numérica, mostrando dónde se concentran los valores."
       ],
       "keypoint": {
         "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+        "text": "Tendencia en el tiempo → línea. Comparar categorías → barras. Relación entre dos variables numéricas → dispersión. Distribución de una variable → histograma. Elegir el gráfico equivocado para la pregunta analítica es el error más común del examen."
       }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "3 · Graficar directamente desde pandas",
+      "title_en": "Plotting Directly from pandas",
+      "intro": "En la práctica diaria de un analista, rara vez se empieza con Matplotlib puro — se empieza con un DataFrame de pandas, que expone su propia API de graficado como atajo directo sobre Matplotlib.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong><code>df.plot()</code></strong>: método integrado en pandas que grafica directamente las columnas de un DataFrame o una Series, sin necesidad de extraer manualmente arrays ni instanciar Figure/Axes.",
+        "<strong>Parámetro <code>kind</code></strong>: selecciona el tipo de gráfico ('line', 'bar', 'scatter', 'hist', 'box', entre otros) usando el mismo motor de Matplotlib por debajo, con la conveniencia de operar directamente sobre las columnas nombradas del DataFrame.",
+        "<strong>Agrupar antes de graficar</strong>: un patrón muy común es encadenar <code>groupby()</code> y una agregación antes de <code>.plot()</code>, por ejemplo para graficar ventas totales por mes a partir de una tabla de transacciones individuales.",
+        "<strong>Ventaja de integración</strong>: al trabajar con datos que ya vienen de una consulta MaxCompute vía PyODPS como DataFrame de pandas, graficar directamente sin transformar a otra estructura ahorra pasos intermedios.",
+        "<strong>Límite de conveniencia</strong>: para personalización visual avanzada (anotaciones específicas, múltiples ejes Y, estilos muy particulares), suele ser necesario 'bajar' al objeto Axes que <code>df.plot()</code> devuelve y seguir ajustándolo con llamadas de Matplotlib puro."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "df.plot() no es una librería distinta de Matplotlib — es una conveniencia de pandas que internamente llama a Matplotlib. El objeto Axes que devuelve puede seguir modificándose con la API estándar de Matplotlib."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Seaborn: visualización estadística de alto nivel",
+      "title_en": "Seaborn: High-level Statistical Visualization",
+      "intro": "Cuando la pregunta analítica es explícitamente estadística —¿cómo se distribuye esta variable?, ¿cómo se correlacionan estas columnas?— Seaborn ofrece funciones diseñadas específicamente para responderla con menos código y mejores valores por defecto que Matplotlib puro.",
       "points": [
-        "<strong>HA</strong>: Refresh intervals razonables",
-        "<strong>Buenas prácticas</strong>: Widgets ligeros — no cargar 100 componentes",
-        "<strong>Buenas prácticas</strong>: Autenticación en publicación",
-        "<strong>Buenas prácticas</strong>: Datos preagregados desde el backend"
+        "<strong><code>sns.histplot</code> / <code>sns.kdeplot</code></strong>: visualizan la distribución de una variable, con estimación de densidad suavizada (KDE) como complemento o alternativa al histograma clásico.",
+        "<strong><code>sns.scatterplot</code> con <code>hue</code></strong>: dispersión entre dos variables que además colorea automáticamente los puntos según una tercera variable categórica, revelando patrones que un scatter simple de Matplotlib no mostraría sin código adicional.",
+        "<strong><code>sns.boxplot</code> / <code>sns.violinplot</code></strong>: comparan la distribución de una variable numérica entre varias categorías, mostrando mediana, cuartiles y outliers de un vistazo — más informativos que una simple barra de promedios.",
+        "<strong><code>sns.heatmap</code></strong>: visualiza una matriz de correlación entre múltiples variables numéricas con un código de color, una de las formas más rápidas de detectar qué variables se mueven juntas antes de un análisis más profundo.",
+        "<strong>Estilos y paletas por defecto</strong>: Seaborn aplica automáticamente estilos visuales coherentes (fondo, grid, paleta de color) que en Matplotlib puro habría que configurar manualmente línea por línea."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Seaborn no reemplaza a Matplotlib — se construye sobre él, igual que pandas.plot(). La jerarquía es: Matplotlib (control total, más código) → pandas.plot() (atajo desde un DataFrame) → Seaborn (preguntas estadísticas comunes, menos código, mejor estética por defecto)."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Elegir el gráfico correcto para la pregunta analítica",
+      "title_en": "Choosing the Right Chart for the Analytical Question",
+      "intro": "Saber usar las tres librerías no basta si se elige el tipo de gráfico equivocado — este módulo conecta la pregunta que se quiere responder con el tipo de visualización más honesto para responderla.",
       "points": [
-        "<strong>Antipattern</strong>: Consultas directas pesadas cada refresco",
-        "<strong>Antipattern</strong>: Sin proxy para APIs con credenciales",
-        "<strong>Antipattern</strong>: Big screens con detail overload",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Comparación entre categorías</strong>: barras (horizontales si hay muchas categorías con nombres largos, para evitar etiquetas rotadas ilegibles).",
+        "<strong>Tendencia en el tiempo</strong>: líneas — evitar barras para series temporales largas, ya que dificultan ver la tendencia continua frente a una línea.",
+        "<strong>Distribución de una variable</strong>: histograma o KDE — un boxplot si además se quiere ver rápidamente outliers y cuartiles.",
+        "<strong>Relación entre dos variables numéricas</strong>: dispersión (scatter), agregando color (hue) si hay una tercera dimensión categórica relevante.",
+        "<strong>Composición (parte de un todo)</strong>: gráfico de barras apiladas o de área — un gráfico de pastel (pie) rara vez es la opción más clara cuando hay más de 3-4 categorías, un antipatrón de visualización clásico que el examen suele señalar."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe una comparación de más de 5-6 categorías de composición, la respuesta correcta suele ser barras apiladas, no un gráfico de pastel — el pastel se vuelve ilegible y engañoso al comparar ángulos con muchas porciones pequeñas."
+      }
+    },
+    {
+      "title_es": "6 · Buenas prácticas y errores comunes de visualización",
+      "title_en": "Best Practices and Common Visualization Mistakes",
+      "intro": "El cierre del curso cubre los errores de diseño que hacen que un gráfico técnicamente correcto termine comunicando algo engañoso o simplemente ilegible.",
+      "points": [
+        "<strong>Eje Y que no empieza en cero en gráficos de barras</strong>: exagera visualmente diferencias pequeñas entre categorías — un antipatrón clásico que distorsiona la percepción de magnitud relativa.",
+        "<strong>Etiquetado incompleto</strong>: un gráfico sin título, sin etiquetas de eje o sin unidades es ambiguo — el lector no debería tener que adivinar qué representa cada eje.",
+        "<strong>Demasiadas series en un solo gráfico</strong>: más de 5-6 líneas o categorías en un mismo gráfico se vuelve difícil de leer — dividir en subplots (facetas) suele comunicar mejor que amontonar todo en un solo eje.",
+        "<strong>Color sin propósito</strong>: usar color aleatoriamente en vez de codificar una variable con él desaprovecha una dimensión visual completa — el color debería significar algo (categoría, magnitud) o no usarse.",
+        "<strong>Pie chart con muchas categorías</strong>: como se mencionó, comparar ángulos es más difícil que comparar longitudes de barra — es el antipatrón de elección de gráfico más citado en cualquier guía de buenas prácticas de visualización."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de examen sobre 'qué está mal en este gráfico', revisa en orden: ¿el eje Y engaña sobre la magnitud?, ¿el tipo de gráfico es el correcto para la pregunta analítica?, ¿está completo el etiquetado?, ¿hay demasiadas series amontonadas?"
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Sala de comando de tráfico urbano"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Dashboard Double 11 en tiempo real"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Monitor de operaciones logísticas"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Sala financiera de mercados"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Centros de monitoreo de red"
-    }
+    { "title": "Escenario 1", "text": "Análisis exploratorio de datos (EDA) en un notebook PAI-DSW antes de entrenar un modelo" },
+    { "title": "Escenario 2", "text": "Generar gráficos reproducibles para un reporte técnico versionado en git" },
+    { "title": "Escenario 3", "text": "Visualizar la distribución de una variable numérica para detectar outliers antes de un modelo de ML" },
+    { "title": "Escenario 4", "text": "Comparar ventas por categoría de producto agrupando y graficando directamente desde un DataFrame" },
+    { "title": "Escenario 5", "text": "Generar un mapa de calor de correlación entre variables como paso previo a un feature engineering" }
   ],
   "mistakes": [
-    "Consultas directas pesadas cada refresco",
-    "Sin proxy para APIs con credenciales",
-    "Big screens con detail overload"
+    "Usar un gráfico de pastel para comparar más de 5-6 categorías de composición",
+    "No hacer que el eje Y de un gráfico de barras empiece en cero, exagerando diferencias pequeñas",
+    "Amontonar demasiadas series en un solo gráfico en vez de dividir en subplots (facetas)",
+    "Elegir barras para una serie temporal larga en vez de una línea de tendencia",
+    "Dejar un gráfico sin título, etiquetas de eje o unidades claras",
+    "Usar visualización programática para un caso que en realidad necesita un dashboard interactivo (Quick BI) o un big screen (DataV)"
   ],
   "cli": [
-    {
-      "cmd": "Consola DataV",
-      "desc": "UI drag&drop"
-    }
+    { "cmd": "import matplotlib.pyplot as plt; fig, ax = plt.subplots()", "desc": "Crear una Figure con un Axes en Matplotlib" },
+    { "cmd": "df.groupby('mes')['ventas'].sum().plot(kind='bar')", "desc": "Agrupar y graficar directamente desde un DataFrame de pandas" },
+    { "cmd": "import seaborn as sns; sns.histplot(df['edad'], kde=True)", "desc": "Visualizar la distribución de una variable con Seaborn" },
+    { "cmd": "sns.heatmap(df.corr(), annot=True)", "desc": "Generar un mapa de calor de correlación entre variables numéricas" },
+    { "cmd": "plt.savefig('grafico.pdf', bbox_inches='tight')", "desc": "Exportar un gráfico como PDF vectorial para un reporte" }
   ],
   "glossary": [
-    {
-      "en": "Canvas",
-      "es": "Canvas",
-      "def": "Área de diseño del big screen."
-    },
-    {
-      "en": "Widget",
-      "es": "Widget",
-      "def": "Componente visual (mapa, gauge, chart 3D, etc.)."
-    },
-    {
-      "en": "Data Source",
-      "es": "Data source",
-      "def": "API, DB, WebSocket, static file."
-    },
-    {
-      "en": "Filter",
-      "es": "Filtro",
-      "def": "Transformación JS del dato antes de mostrar."
-    },
-    {
-      "en": "Preview",
-      "es": "Preview",
-      "def": "Modo edición con datos reales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Matplotlib", "es": "Matplotlib", "def": "Librería base de Python para graficación, con control fino sobre cada elemento visual." },
+    { "en": "Figure", "es": "Figura", "def": "El lienzo completo de Matplotlib, que puede contener uno o varios subplots." },
+    { "en": "Axes", "es": "Ejes (objeto)", "def": "Cada subplot individual dentro de una Figure, sobre el que se dibujan las marcas visuales." },
+    { "en": "pandas.DataFrame.plot()", "es": "df.plot()", "def": "Método integrado en pandas que grafica directamente columnas de un DataFrame, usando Matplotlib por debajo." },
+    { "en": "Seaborn", "es": "Seaborn", "def": "Librería de visualización estadística de alto nivel construida sobre Matplotlib y pandas." },
+    { "en": "Histogram", "es": "Histograma", "def": "Gráfico que visualiza la distribución de una variable numérica agrupando valores en intervalos (bins)." },
+    { "en": "KDE (Kernel Density Estimate)", "es": "Estimación de densidad", "def": "Curva suavizada que estima la distribución continua de una variable, complementaria al histograma." },
+    { "en": "Scatter Plot", "es": "Gráfico de dispersión", "def": "Gráfico que muestra la relación entre dos variables numéricas mediante puntos." },
+    { "en": "Box Plot", "es": "Diagrama de caja", "def": "Gráfico que muestra mediana, cuartiles y outliers de una variable, útil para comparar entre categorías." },
+    { "en": "Heatmap", "es": "Mapa de calor", "def": "Visualización de una matriz (como correlación) mediante un código de color." },
+    { "en": "hue (Seaborn)", "es": "hue", "def": "Parámetro de Seaborn que colorea los puntos o barras según una variable categórica adicional." },
+    { "en": "Faceting / Subplots", "es": "Facetas / Subplots", "def": "División de un gráfico en varios paneles pequeños para evitar amontonar demasiadas series en uno solo." },
+    { "en": "PAI-DSW", "es": "PAI-DSW", "def": "Data Science Workshop de Alibaba Cloud, entorno de notebook donde se ejecuta habitualmente este flujo de visualización." },
+    { "en": "PyODPS", "es": "PyODPS", "def": "SDK de Python para MaxCompute, que permite traer datos de tablas ODPS directamente como DataFrame de pandas." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DataV?",
-      "options": [
-        "DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real."
-    },
-    {
-      "q": "¿Qué es <strong>Canvas</strong> (Canvas) en DataV?",
-      "options": [
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "API, DB, WebSocket, static file.",
-        "Transformación JS del dato antes de mostrar."
-      ],
-      "answer": 0,
-      "explain": "Canvas (Canvas): Área de diseño del big screen."
-    },
-    {
-      "q": "¿Qué es <strong>Widget</strong> (Widget) en DataV?",
-      "options": [
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "Área de diseño del big screen.",
-        "API, DB, WebSocket, static file.",
-        "Transformación JS del dato antes de mostrar."
-      ],
-      "answer": 0,
-      "explain": "Widget (Widget): Componente visual (mapa, gauge, chart 3D, etc.)."
-    },
-    {
-      "q": "¿Qué es <strong>Data Source</strong> (Data source) en DataV?",
-      "options": [
-        "API, DB, WebSocket, static file.",
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "Transformación JS del dato antes de mostrar."
-      ],
-      "answer": 0,
-      "explain": "Data Source (Data source): API, DB, WebSocket, static file."
-    },
-    {
-      "q": "¿Qué es <strong>Filter</strong> (Filtro) en DataV?",
-      "options": [
-        "Transformación JS del dato antes de mostrar.",
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "API, DB, WebSocket, static file."
-      ],
-      "answer": 0,
-      "explain": "Filter (Filtro): Transformación JS del dato antes de mostrar."
-    },
-    {
-      "q": "¿Qué es <strong>Preview</strong> (Preview) en DataV?",
-      "options": [
-        "Modo edición con datos reales.",
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "API, DB, WebSocket, static file."
-      ],
-      "answer": 0,
-      "explain": "Preview (Preview): Modo edición con datos reales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DataV, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DataV en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DataV, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DataV es la elección típica:",
-      "options": [
-        "Sala de comando de tráfico urbano",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Sala de comando de tráfico urbano."
-    }
+    { "q": "¿Cuál es la relación entre pandas.plot(), Seaborn y Matplotlib?", "options": ["Son tres librerías completamente independientes sin relación entre sí", "pandas.plot() y Seaborn se construyen sobre Matplotlib, ofreciendo atajos de mayor nivel", "Seaborn reemplaza completamente a Matplotlib, que ya no se usa", "Matplotlib se construye sobre Seaborn"], "answer": 1, "explain": "Matplotlib es la capa base; pandas.plot() y Seaborn son conveniencias de más alto nivel construidas encima de ella." },
+    { "q": "¿Qué tipo de gráfico es el más adecuado para mostrar una tendencia continua a lo largo del tiempo?", "options": ["Gráfico de pastel", "Gráfico de líneas", "Histograma", "Mapa de calor"], "answer": 1, "explain": "Las líneas comunican claramente la evolución continua de una variable ordenada, típicamente el tiempo." },
+    { "q": "¿Qué objeto de Matplotlib representa el lienzo completo que puede contener uno o varios subplots?", "options": ["Axes", "Figure", "DataFrame", "Series"], "answer": 1, "explain": "La Figure es el contenedor de más alto nivel; cada subplot individual es un objeto Axes dentro de ella." },
+    { "q": "¿Qué logra el parámetro hue en una función de Seaborn como scatterplot?", "options": ["Cambia el tipo de gráfico a barras", "Colorea automáticamente los puntos según una tercera variable categórica", "Ajusta el tamaño de la figura", "Exporta el gráfico a PDF"], "answer": 1, "explain": "hue añade una dimensión visual adicional coloreando por categoría, revelando patrones que un scatter simple no mostraría." },
+    { "q": "¿Por qué un gráfico de barras con el eje Y que no empieza en cero es considerado un antipatrón?", "options": ["Porque Matplotlib no lo permite técnicamente", "Porque exagera visualmente diferencias pequeñas entre categorías, distorsionando la percepción de magnitud", "Porque hace que el gráfico tarde más en renderizarse", "No es un antipatrón, es una práctica recomendada"], "answer": 1, "explain": "Truncar el eje Y en un gráfico de barras infla visualmente diferencias relativas pequeñas entre categorías." },
+    { "q": "Se necesita comparar la composición porcentual de un total entre 10 categorías distintas. ¿Qué tipo de gráfico es preferible a un gráfico de pastel?", "options": ["Gráfico de dispersión", "Barras apiladas o de área", "Histograma", "Mapa de calor"], "answer": 1, "explain": "Con muchas categorías, comparar longitudes de barra es más legible que comparar ángulos de un pastel, que se vuelve confuso con más de 5-6 porciones." },
+    { "q": "¿Qué función de Seaborn se usa típicamente para visualizar una matriz de correlación entre variables numéricas?", "options": ["sns.boxplot", "sns.heatmap", "sns.lineplot", "sns.barplot"], "answer": 1, "explain": "sns.heatmap visualiza una matriz mediante un código de color, ideal para detectar rápidamente qué variables se correlacionan." },
+    { "q": "¿Qué ventaja ofrece df.plot() de pandas frente a construir el gráfico con Matplotlib puro desde cero?", "options": ["Genera gráficos completamente distintos, no relacionados con Matplotlib", "Permite graficar directamente columnas de un DataFrame sin instanciar Figure/Axes manualmente, aunque sigue usando Matplotlib por debajo", "Es la única forma de graficar datos de pandas", "No requiere tener Matplotlib instalado"], "answer": 1, "explain": "df.plot() es un atajo de conveniencia: sigue usando Matplotlib internamente pero evita pasos manuales de instanciación." },
+    { "q": "¿Cuál es la elección de gráfico correcta para explorar la relación entre dos variables numéricas continuas?", "options": ["Gráfico de barras", "Gráfico de dispersión (scatter)", "Gráfico de pastel", "Boxplot"], "answer": 1, "explain": "El scatter plot revela correlación, clusters o patrones entre dos variables numéricas continuas." },
+    { "q": "¿Cuándo NO es apropiado usar este stack de visualización con Python en vez de una herramienta como DataV o Quick BI?", "options": ["Cuando se necesita un big screen operacional con refresco en vivo o un dashboard interactivo sin código para usuarios de negocio", "Cuando se hace análisis exploratorio en un notebook", "Cuando se necesita reproducibilidad del gráfico", "Cuando el gráfico se va a incluir en un reporte técnico versionado"], "answer": 0, "explain": "Para observación pasiva a distancia (DataV) o exploración interactiva sin código (Quick BI), la visualización programática no es el reemplazo adecuado." },
+    { "q": "¿Qué complementa o reemplaza a un histograma clásico en Seaborn para mostrar la distribución de una variable de forma suavizada?", "options": ["sns.heatmap", "KDE (estimación de densidad, sns.kdeplot)", "sns.scatterplot", "sns.barplot"], "answer": 1, "explain": "El KDE produce una curva suavizada que estima la distribución continua de la variable, complementaria al histograma tradicional." },
+    { "q": "¿Por qué dividir un gráfico con demasiadas series en subplots (facetas) suele ser mejor que amontonarlas todas en un solo eje?", "options": ["Porque Matplotlib no permite más de 3 series en un gráfico", "Porque más de 5-6 líneas o categorías en un mismo gráfico se vuelve difícil de leer", "Porque reduce el tamaño del archivo exportado", "No hay ninguna ventaja real, es solo preferencia estética"], "answer": 1, "explain": "Dividir en paneles pequeños mejora la legibilidad cuando hay demasiadas series compitiendo visualmente en un mismo eje." }
   ],
-  "exam_focus": "Diferencia DataV vs Quick BI, widget composition, data source types.",
+  "exam_focus": "El examen suele evaluar: (a) la relación jerárquica entre Matplotlib, pandas.plot() y Seaborn, (b) elegir el tipo de gráfico correcto según la pregunta analítica (comparación, tendencia, distribución, relación, composición), (c) identificar antipatrones de visualización (eje Y truncado, pie chart con muchas categorías, exceso de series), (d) cuándo la visualización programática es preferible frente a DataV o Quick BI.",
   "official_intro": "Data visualization capabilities are very important. A beautiful and clear charts can help you understand the data intuitively when you explore and analyze data, Data visualization also plays an important role in your interactions with customers, and it helps you communicate the quantitative characteristics of the data. From this perspective, making an eye-catching chart is an indispensable technology. This training introduces the basic concepts of Python visualization, and the basic python visualization library Matplotlib as well as the two important third-party libraries based on matplotlib: pandas and seaborn. The training also introduces how to use Python visualization library for data analysis and processing.",
   "recommended_for": "This training is for people who have Python Programming experience and want to learn data visualization skills",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datavpython",

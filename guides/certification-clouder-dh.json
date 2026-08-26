@@ -3,407 +3,178 @@
   "course_id": "Curso Nº certification-clouder-dh",
   "title_en": "Dedicated Hardware: Bare Metal Instances and Dedicated Hosts",
   "title_es": "Hardware Dedicado: Instancias Bare Metal y Hosts Dedicados",
+  "title_es_html": "Hardware Dedicado: Instancias <em>Bare Metal</em> y Hosts Dedicados",
   "duration_es": "52 minutos",
   "level_es": "Intermedio",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_dh",
-  "lead": "Guía completa en español para el curso «Dedicated Hardware: Bare Metal Instances and Dedicated Hosts» de Alibaba Cloud Academy. Cubre en profundidad ECS Bare Metal & Dedicated Host. ECS Bare Metal Instance (EBM) combina el aislamiento del hardware físico con la elasticidad del cloud: sin hipervisor, sin ruido de vecinos, arranque en minutos y facturación por hora. Dedicated Host permite reservar servidores físicos donde luego se corren VMs propias para cumplimiento (BYOL, licencias). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Dedicated Hardware: Bare Metal Instances and Dedicated Hosts» de Alibaba Cloud Academy: los dos productos de cómputo de un solo inquilino (single-tenant) de Alibaba Cloud. ECS Bare Metal Instance (EBM) elimina el hipervisor para dar acceso directo al hardware físico; Dedicated Host reserva un servidor físico completo donde el cliente sigue lanzando sus propias VMs. Ambos existen para escenarios donde una instancia ECS compartida no basta: licenciamiento, rendimiento sin ruido de vecinos o requisitos estrictos de aislamiento físico.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ECS Bare Metal & Dedicated Host</em>.",
-    "<strong>Dominar</strong> los conceptos clave: EBM, Dedicated Host, SGX, NVMe Local, Licencia BYOL.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ECS Bare Metal & Dedicated Host y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Distinguir</strong> con precisión ECS Bare Metal Instance (EBM) de Dedicated Host y de una instancia ECS compartida estándar.",
+    "<strong>Explicar</strong> por qué eliminar el hipervisor mejora el rendimiento y en qué casos ese rendimiento realmente importa.",
+    "<strong>Aplicar</strong> Dedicated Host al escenario correcto: licencias BYOL y requisitos de aislamiento físico para compliance.",
+    "<strong>Reconocer</strong> las limitaciones operativas de EBM y Dedicated Host frente a una instancia ECS normal (tiempos de aprovisionamiento, migración en caliente).",
+    "<strong>Diseñar</strong> una arquitectura de alta disponibilidad para cargas EBM/Dedicated Host distribuidas en varias zonas.",
+    "<strong>Resolver</strong> con confianza las preguntas del examen Apsara Clouder que distinguen hardware dedicado de cómputo elástico compartido."
   ],
-  "architecture": "Workload sensible al rendimiento (bases oracle, HPC) → EBM en 2 zonas + SLB → NAS compartido. Licencias BYOL (Windows/Oracle/SAP) → Dedicated Host con quotas por host. VPC dedicada con Security Groups; backups gestionados con HBR.",
+  "architecture": "Para una carga sensible al rendimiento (bases de datos in-memory, HPC, análisis científico) se despliegan instancias EBM en al menos dos zonas de la misma región, cada una con acceso directo a NVMe local para I/O de baja latencia, detrás de un Server Load Balancer que reparte el tráfico. Los datos persistentes que deben sobrevivir a la instancia se escriben en discos en la nube o en NAS compartido, nunca solo en el NVMe local efímero. Para licencias propias de software (Windows Server, Oracle, SAP con BYOL) se usa un Dedicated Host: el cliente reserva el servidor físico completo y dentro de él lanza sus propias instancias ECS, cumpliendo así los términos de licenciamiento por socket/núcleo físico que el software exige. RAM controla quién puede administrar estos recursos, y CloudMonitor vigila la salud del host físico subyacente, no solo de las VMs.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ECS Bare Metal & Dedicated Host",
+      "title_es": "1 · El problema que resuelve el cómputo de un solo inquilino",
       "title_en": "Introduction to ECS Bare Metal & Dedicated Host",
-      "intro": "ECS Bare Metal Instance (EBM) combina el aislamiento del hardware físico con la elasticidad del cloud: sin hipervisor, sin ruido de vecinos, arranque en minutos y facturación por hora. Dedicated Host permite reservar servidores físicos donde luego se corren VMs propias para cumplimiento (BYOL, licencias). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "intro": "Una instancia ECS estándar comparte servidor físico con otros clientes, aislada por un hipervisor. Ese diseño es eficiente y suficiente para la inmensa mayoría de cargas, pero existen escenarios donde compartir servidor físico —o incluso el overhead del propio hipervisor— es un problema real, no una preocupación teórica.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ECS Bare Metal Instance (EBM) combina el aislamiento del hardware físico con la elasticidad del cloud: sin hipervisor, sin ruido de vecinos, arranque en minutos y facturación por hora.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ECS Bare Metal & Dedicated Host se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Ruido de vecinos (noisy neighbor)</strong>: en una instancia ECS compartida, el rendimiento de I/O o red puede verse afectado, aunque mínimamente, por la actividad de otros inquilinos en el mismo host físico. Para cargas extremadamente sensibles a latencia, incluso esa variabilidad mínima es inaceptable.",
+        "<strong>Licenciamiento por hardware físico</strong>: software como Oracle Database o Windows Server con licencias BYOL (Bring Your Own License) suele licenciarse por núcleo o socket físico real, no por vCPU virtual — un requisito que una instancia ECS compartida no puede satisfacer de forma auditable.",
+        "<strong>Aislamiento para compliance</strong>: ciertos marcos regulatorios (financiero, salud, gubernamental) exigen demostrar que una carga corre en hardware físico dedicado y no compartido con otros clientes de la nube pública.",
+        "<strong>Overhead de virtualización</strong>: incluso con arquitecturas modernas de descarga de hardware, un hipervisor consume algo de CPU y añade una capa de traducción; para HPC extremo o bases de datos in-memory al límite, eliminar esa capa por completo aporta un margen de rendimiento medible."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ECS Bare Metal & Dedicated Host es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen no pregunta «¿qué es más rápido?» de forma genérica — pregunta qué problema específico (ruido de vecinos, licenciamiento, compliance) resuelve cada producto. Memorizar el emparejamiento problema→producto es la clave para responder rápido."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ECS Bare Metal & Dedicated Host no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · ECS Bare Metal Instance (EBM): servidor físico sin hipervisor",
+      "title_en": "ECS Bare Metal Instance",
+      "intro": "EBM es el producto que va más lejos: el cliente obtiene un servidor físico completo, sin ninguna capa de virtualización entre el sistema operativo y el hardware, pero conservando la experiencia operativa de una instancia ECS normal.",
       "points": [
-        "<strong>Patrón canónico</strong>: Workload sensible al rendimiento (bases oracle, HPC) → EBM en 2 zonas + SLB → NAS compartido. Licencias BYOL (Windows/Oracle/SAP) → Dedicated Host con quotas por host. VPC dedicada con Security Groups; backups gestionados con HBR.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ECS Bare Metal & Dedicated Host (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>ECS Bare Metal</strong> <em>(EBM)</em>: Servidor físico gestionado como ECS: sin hipervisor.",
-        "<strong>Dedicated Host</strong> <em>(Dedicated Host)</em>: Servidor físico donde tú corres VMs propias.",
-        "<strong>Intel SGX</strong> <em>(SGX)</em>: Enclaves confidenciales soportados en algunas EBM.",
-        "<strong>NVMe local</strong> <em>(NVMe Local)</em>: Discos SSD locales de altísimo IOPS (efímeros).",
-        "<strong>Bring Your Own License</strong> <em>(Licencia BYOL)</em>: Uso de licencias Windows/Oracle propias.",
-        "<strong>Familia EBM</strong> <em>(Instance family)</em>: ebmg (general), ebmr (memoria), ebmc (cómputo), ebmhfg (alta frecuencia)."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Sin hipervisor</strong>: el sistema operativo del cliente corre directamente sobre el hardware físico — no hay capa de virtualización que traduzca instrucciones ni que consuma ciclos de CPU en su nombre.",
+        "<strong>Experiencia ECS estándar</strong>: a pesar de ser hardware físico dedicado, EBM se administra igual que cualquier instancia ECS: misma consola, mismo modelo de Security Groups, mismas imágenes, snapshots y APIs. El cliente no necesita gestionar un servidor físico como lo haría on-premise.",
+        "<strong>Rendimiento predecible al máximo</strong>: sin ruido de vecinos, con acceso directo a discos NVMe locales de altísimo IOPS y baja latencia — ideal para bases de datos in-memory, HPC con MPI/CUDA nativo, y cargas que necesitan explotar instrucciones de CPU específicas sin intermediación.",
+        "<strong>Costo y tiempos distintos a ECS estándar</strong>: el aprovisionamiento de una EBM puede tardar más que una instancia ECS normal (se está asignando hardware físico completo, no una porción virtual), y el precio por hora es mayor porque no hay multiplexación de la capacidad entre varios clientes.",
+        "<strong>Sin migración en caliente</strong>: a diferencia de una instancia ECS virtual, que Alibaba Cloud puede mover a otro host de forma transparente durante mantenimiento, una EBM está atada físicamente a un servidor concreto — un evento de mantenimiento de hardware puede requerir detener e iniciar la instancia."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el escenario menciona «rendimiento de CPU/disco sin ninguna variabilidad» o «acceso directo al hardware sin hipervisor», la respuesta es EBM. Si solo menciona «licencias propias», piensa primero en Dedicated Host."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Dedicated Host: el servidor físico que tú administras por dentro",
+      "title_en": "Dedicated Host",
+      "intro": "Dedicated Host resuelve un problema distinto al de EBM: no busca eliminar el hipervisor, sino garantizar que un servidor físico completo está reservado en exclusiva para las VMs de un único cliente.",
       "points": [
-        "<strong>HA</strong>: EBM en 2 zonas para HA",
-        "<strong>HA</strong>: Snapshots + replicación en OSS cross-region",
-        "<strong>Buenas prácticas</strong>: NVMe local solo para datos regenerables (efímero)",
-        "<strong>Buenas prácticas</strong>: Dedicated Host para BYOL, no para elasticidad"
+        "<strong>Reserva de servidor físico completo</strong>: el cliente reserva un host físico entero; dentro de él, sigue lanzando instancias ECS virtuales normales, con hipervisor, igual que en cualquier otro despliegue — la diferencia es que ningún otro cliente de Alibaba Cloud puede tener VMs en ese mismo servidor.",
+        "<strong>Caso de uso principal: BYOL</strong>: software licenciado por núcleo o socket físico (Oracle, SQL Server, SAP) requiere poder demostrar en qué hardware físico específico corre — Dedicated Host da esa trazabilidad, algo que una instancia ECS compartida no puede ofrecer de forma auditable.",
+        "<strong>Control de capacidad y ubicación</strong>: el cliente decide cuántas y qué tipo de VMs corren dentro de su host dedicado, permitiendo planificar la capacidad física con precisión (por ejemplo, reservar exactamente los núcleos que la licencia de Oracle permite usar).",
+        "<strong>No es para elasticidad</strong>: Dedicated Host no está pensado para cargas que necesitan escalar hacia arriba y abajo rápidamente — su valor es el aislamiento físico y el cumplimiento de licencias, no la flexibilidad de Auto Scaling.",
+        "<strong>Sigue existiendo el hipervisor</strong>: a diferencia de EBM, dentro de un Dedicated Host las VMs siguen virtualizadas — el aislamiento es a nivel de servidor físico compartido entre inquilinos, no a nivel de eliminar la virtualización en sí."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "EBM elimina el hipervisor por completo. Dedicated Host conserva el hipervisor, pero garantiza que el servidor físico es tuyo en exclusiva. Confundir estos dos productos es el error más común del examen en esta certificación."
+      }
+    },
+    {
+      "title_es": "4 · Familias de instancia y hardware especializado",
+      "title_en": "Instance Families and Specialized Hardware",
+      "intro": "Tanto EBM como Dedicated Host se ofrecen en distintas familias, cada una orientada a un perfil de carga concreto, igual que ocurre con las instancias ECS virtuales estándar.",
+      "points": [
+        "<strong>Familias EBM por perfil</strong>: existen variantes de propósito general, optimizadas a memoria y optimizadas a cómputo, replicando la misma lógica de ratio vCPU:memoria que las familias ECS virtuales, pero sobre hardware físico dedicado.",
+        "<strong>Discos NVMe locales</strong>: varias familias EBM incluyen discos NVMe físicamente instalados en el servidor, con IOPS extremadamente altos — pero son efímeros: si la instancia se libera o el hardware falla, esos datos se pierden, a diferencia de un disco en la nube.",
+        "<strong>Enclaves confidenciales (Intel SGX)</strong>: algunas familias EBM soportan Intel SGX, que crea regiones de memoria cifradas y aisladas incluso del propio sistema operativo host — relevante para cargas de computación confidencial con requisitos regulatorios extremos.",
+        "<strong>Dedicated Host por familia de VM</strong>: al reservar un Dedicated Host, el cliente elige qué familia de instancia virtual podrá lanzar dentro (general purpose, memoria, cómputo), determinando cuánta capacidad física de ese tipo tiene disponible."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "NVMe local en EBM es de altísimo rendimiento pero efímero — nunca es la respuesta correcta para «almacenamiento persistente crítico» sin una estrategia de réplica o backup adicional."
+      }
+    },
+    {
+      "title_es": "5 · Alta disponibilidad y buenas prácticas operativas",
+      "title_en": "HA, Security and Cost Optimization",
+      "intro": "Trabajar con hardware físico dedicado no exime del diseño de alta disponibilidad — al contrario, la ausencia de migración en caliente automática obliga a ser más deliberado con la resiliencia.",
+      "points": [
+        "<strong>Multi-zona obligatorio para producción</strong>: dado que una EBM o Dedicated Host individual está atada a un servidor físico concreto, la única forma de tolerar la falla de ese hardware es distribuir la carga en instancias equivalentes en al menos dos zonas distintas.",
+        "<strong>Backups activos, no solo snapshots pasivos</strong>: los datos en NVMe local de una EBM no sobreviven a la pérdida de la instancia — se necesita una estrategia de réplica hacia discos en la nube, NAS u OSS, con pruebas periódicas de restauración.",
+        "<strong>Planificar ventanas de mantenimiento</strong>: al no existir migración en caliente transparente para EBM, el mantenimiento de hardware programado por Alibaba Cloud puede requerir coordinación explícita, a diferencia de una instancia ECS virtual estándar.",
+        "<strong>RAM con mínimo privilegio</strong>: administrar hardware dedicado no cambia el modelo de identidad — los usuarios y roles RAM deben tener solo los permisos necesarios para operar EBM/Dedicated Host, evitando compartir credenciales de la cuenta raíz.",
+        "<strong>Costo total de propiedad</strong>: el precio por hora de EBM/Dedicated Host es mayor que el de una instancia ECS equivalente virtualizada; su uso debe justificarse por un requisito real (licenciamiento, compliance, rendimiento extremo), no por defecto."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Sin hipervisor y máximo rendimiento = EBM. Servidor físico exclusivo para tus VMs por licencias = Dedicated Host. Ninguno de los dos es la opción por defecto — ambos exigen una justificación específica en el enunciado."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de preguntas difíciles de esta certificación giran en torno a confundir EBM con Dedicated Host, o a subestimar sus limitaciones operativas frente a una instancia ECS estándar.",
       "points": [
-        "<strong>Antipattern</strong>: EBM en una sola zona",
-        "<strong>Antipattern</strong>: Usar NVMe local para datos persistentes",
-        "<strong>Antipattern</strong>: No planificar migración cuando llegan familias más nuevas",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: elegir EBM cuando el requisito real es licenciamiento BYOL por núcleo físico — la respuesta correcta en ese caso es Dedicated Host, no EBM.",
+        "<strong>Antipatrón</strong>: desplegar una única EBM en una sola zona para una carga crítica de producción, sin plan de recuperación ante la falla de ese servidor físico específico.",
+        "<strong>Antipatrón</strong>: guardar datos persistentes críticos únicamente en el disco NVMe local de una EBM, sin réplica hacia almacenamiento en la nube.",
+        "<strong>Antipatrón</strong>: usar EBM o Dedicated Host como opción por defecto para «máximo rendimiento» sin que el escenario justifique el sobrecosto frente a una instancia ECS virtual bien dimensionada.",
+        "<strong>Regla de oro</strong>: ante una pregunta que menciona hardware dedicado, primero identifica si el requisito es «eliminar el hipervisor» (EBM) o «aislar físicamente por licencia/compliance» (Dedicated Host) — son necesidades distintas con respuestas distintas."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el enunciado buscando la palabra clave: 'hipervisor', 'ruido de vecinos', 'NVMe' apuntan a EBM; 'licencia', 'BYOL', 'socket físico', 'compliance de aislamiento' apuntan a Dedicated Host."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "SAP HANA on Alibaba Cloud (memoria alta certificada)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Oracle DB con licencias BYOL"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "HPC MPI/CUDA sin overhead de virtualización"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Cumplimiento estricto (aislamiento físico)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Bases de datos con IOPS máximas (NVMe local)"
-    }
+    { "title": "Escenario 1", "text": "Base de datos in-memory de altísimo rendimiento sensible a cualquier variabilidad de latencia — EBM en 2+ zonas" },
+    { "title": "Escenario 2", "text": "Oracle Database con licencia BYOL exigiendo trazabilidad por núcleo físico — Dedicated Host" },
+    { "title": "Escenario 3", "text": "Clúster HPC con cargas MPI/CUDA que necesitan acceso directo al hardware — EBM" },
+    { "title": "Escenario 4", "text": "Carga regulada que exige demostrar aislamiento físico frente a otros inquilinos — Dedicated Host o EBM según el marco de compliance" },
+    { "title": "Escenario 5", "text": "Aplicación web estándar con tráfico variable — ECS virtual estándar, ni EBM ni Dedicated Host son necesarios" }
   ],
   "mistakes": [
-    "EBM en una sola zona",
-    "Usar NVMe local para datos persistentes",
-    "No planificar migración cuando llegan familias más nuevas"
+    "Elegir EBM para un requisito de licenciamiento BYOL, cuando el producto correcto es Dedicated Host",
+    "Desplegar una sola EBM en una única zona para una carga de producción crítica",
+    "Guardar datos persistentes solo en el disco NVMe local efímero de una EBM sin réplica externa",
+    "Usar EBM o Dedicated Host por defecto sin que el escenario justifique el sobrecosto frente a ECS virtual",
+    "Asumir que EBM soporta migración en caliente transparente igual que una instancia ECS virtual estándar",
+    "Olvidar coordinar ventanas de mantenimiento de hardware físico en cargas EBM críticas"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs DescribeDedicatedHosts",
-      "desc": "Listar Dedicated Hosts"
-    },
-    {
-      "cmd": "aliyun ecs RunInstances --InstanceType ecs.ebmg6.24xlarge",
-      "desc": "Lanzar EBM"
-    }
+    { "cmd": "aliyun ecs DescribeDedicatedHosts --RegionId cn-hangzhou", "desc": "Listar los Dedicated Hosts de la cuenta" },
+    { "cmd": "aliyun ecs AllocateDedicatedHosts --DedicatedHostType ddh.g6 --RegionId cn-hangzhou", "desc": "Reservar un nuevo Dedicated Host" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.ebmg6.24xlarge --ImageId centos_7_9_x64_20G_alibase", "desc": "Lanzar una instancia EBM (bare metal)" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.g6.large --DedicatedHostId dh-xxxxx", "desc": "Lanzar una VM dentro de un Dedicated Host específico" },
+    { "cmd": "aliyun ecs DescribeInstanceTypes --InstanceTypeFamily ecs.ebmg6", "desc": "Listar tamaños disponibles de la familia EBM general purpose" }
   ],
   "glossary": [
-    {
-      "en": "EBM",
-      "es": "ECS Bare Metal",
-      "def": "Servidor físico gestionado como ECS: sin hipervisor."
-    },
-    {
-      "en": "Dedicated Host",
-      "es": "Dedicated Host",
-      "def": "Servidor físico donde tú corres VMs propias."
-    },
-    {
-      "en": "SGX",
-      "es": "Intel SGX",
-      "def": "Enclaves confidenciales soportados en algunas EBM."
-    },
-    {
-      "en": "NVMe Local",
-      "es": "NVMe local",
-      "def": "Discos SSD locales de altísimo IOPS (efímeros)."
-    },
-    {
-      "en": "Licencia BYOL",
-      "es": "Bring Your Own License",
-      "def": "Uso de licencias Windows/Oracle propias."
-    },
-    {
-      "en": "Instance family",
-      "es": "Familia EBM",
-      "def": "ebmg (general), ebmr (memoria), ebmc (cómputo), ebmhfg (alta frecuencia)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "ECS Bare Metal Instance (EBM)", "es": "Instancia Bare Metal", "def": "Servidor físico administrado como una instancia ECS estándar, pero sin hipervisor: el SO corre directo sobre el hardware." },
+    { "en": "Dedicated Host", "es": "Host dedicado", "def": "Servidor físico reservado en exclusiva para un cliente, dentro del cual se lanzan instancias ECS virtuales normales." },
+    { "en": "Noisy neighbor", "es": "Ruido de vecinos", "def": "Variabilidad de rendimiento en una instancia compartida causada por la actividad de otros inquilinos del mismo host físico." },
+    { "en": "BYOL (Bring Your Own License)", "es": "Licencia propia", "def": "Uso de licencias de software (Oracle, Windows, SAP) ya adquiridas por el cliente, a menudo condicionadas al núcleo/socket físico." },
+    { "en": "Hypervisor", "es": "Hipervisor", "def": "Capa de software que virtualiza el hardware físico para ejecutar múltiples VMs; EBM elimina esta capa por completo." },
+    { "en": "Local NVMe disk", "es": "Disco NVMe local", "def": "Almacenamiento SSD físicamente instalado en el servidor, de altísimo IOPS pero efímero (no sobrevive a la instancia)." },
+    { "en": "Intel SGX", "es": "Enclave SGX", "def": "Región de memoria cifrada y aislada soportada en algunas familias EBM, para computación confidencial." },
+    { "en": "Live migration", "es": "Migración en caliente", "def": "Traslado transparente de una instancia virtual a otro host; no disponible de la misma forma para instancias EBM." },
+    { "en": "Instance family (EBM)", "es": "Familia de instancia EBM", "def": "Variantes de propósito general, memoria o cómputo, igual que en ECS virtual, pero sobre hardware físico dedicado." },
+    { "en": "Single-tenant compute", "es": "Cómputo de un solo inquilino", "def": "Modelo donde el hardware físico no se comparte con otros clientes, ya sea vía EBM o Dedicated Host." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful aplicable también a instancias EBM y a las VMs dentro de un Dedicated Host." },
+    { "en": "RAM (Resource Access Management)", "es": "RAM", "def": "Servicio de identidad y permisos usado para controlar quién administra EBM y Dedicated Host." },
+    { "en": "CloudMonitor", "es": "CloudMonitor", "def": "Servicio de métricas y alarmas, incluida la salud del host físico subyacente en despliegues dedicados." },
+    { "en": "Region / Zone", "es": "Región / Zona", "def": "Unidades geográficas y de aislamiento físico; el diseño multi-zona es esencial en EBM/Dedicated Host por la falta de migración transparente." },
+    { "en": "HPC (High Performance Computing)", "es": "Cómputo de alto rendimiento", "def": "Cargas científicas o de simulación que se benefician del acceso directo al hardware que ofrece EBM." },
+    { "en": "vCPU:memory ratio", "es": "Ratio vCPU:memoria", "def": "Relación entre núcleos y memoria que define cada familia, aplicable también a variantes EBM." },
+    { "en": "Physical core licensing", "es": "Licenciamiento por núcleo físico", "def": "Modelo de licencia de software que cuenta núcleos o sockets físicos reales, motivo principal para usar Dedicated Host." },
+    { "en": "Compliance isolation", "es": "Aislamiento por cumplimiento", "def": "Requisito regulatorio de que una carga corra en hardware no compartido con otros clientes." },
+    { "en": "Ephemeral storage", "es": "Almacenamiento efímero", "def": "Almacenamiento (como el NVMe local) que se pierde si la instancia se libera o el hardware falla." },
+    { "en": "Total cost of ownership (TCO)", "es": "Costo total de propiedad", "def": "Consideración de costo que debe justificar el uso de hardware dedicado frente a ECS virtual estándar." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ECS Bare Metal & Dedicated Host?",
-      "options": [
-        "ECS Bare Metal Instance (EBM) combina el aislamiento del hardware físico con la elasticidad del cloud: sin hipervisor, sin ruido de vecinos, arranque en minutos y facturación por hora. Dedicated Host ",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ECS Bare Metal Instance (EBM) combina el aislamiento del hardware físico con la elasticidad del cloud: sin hipervisor, sin ruido de vecinos, arranque en minutos y facturación por hora. Dedicated Host permite reservar servidores físicos donde luego se corren VMs propias para cumplimiento (BYOL, licencias)."
-    },
-    {
-      "q": "¿Qué es <strong>EBM</strong> (ECS Bare Metal) en ECS Bare Metal & Dedicated Host?",
-      "options": [
-        "Servidor físico gestionado como ECS: sin hipervisor.",
-        "Servidor físico donde tú corres VMs propias.",
-        "Enclaves confidenciales soportados en algunas EBM.",
-        "Discos SSD locales de altísimo IOPS (efímeros)."
-      ],
-      "answer": 0,
-      "explain": "EBM (ECS Bare Metal): Servidor físico gestionado como ECS: sin hipervisor."
-    },
-    {
-      "q": "¿Qué es <strong>Dedicated Host</strong> (Dedicated Host) en ECS Bare Metal & Dedicated Host?",
-      "options": [
-        "Servidor físico donde tú corres VMs propias.",
-        "Servidor físico gestionado como ECS: sin hipervisor.",
-        "Enclaves confidenciales soportados en algunas EBM.",
-        "Discos SSD locales de altísimo IOPS (efímeros)."
-      ],
-      "answer": 0,
-      "explain": "Dedicated Host (Dedicated Host): Servidor físico donde tú corres VMs propias."
-    },
-    {
-      "q": "¿Qué es <strong>SGX</strong> (Intel SGX) en ECS Bare Metal & Dedicated Host?",
-      "options": [
-        "Enclaves confidenciales soportados en algunas EBM.",
-        "Servidor físico gestionado como ECS: sin hipervisor.",
-        "Servidor físico donde tú corres VMs propias.",
-        "Discos SSD locales de altísimo IOPS (efímeros)."
-      ],
-      "answer": 0,
-      "explain": "SGX (Intel SGX): Enclaves confidenciales soportados en algunas EBM."
-    },
-    {
-      "q": "¿Qué es <strong>NVMe Local</strong> (NVMe local) en ECS Bare Metal & Dedicated Host?",
-      "options": [
-        "Discos SSD locales de altísimo IOPS (efímeros).",
-        "Servidor físico gestionado como ECS: sin hipervisor.",
-        "Servidor físico donde tú corres VMs propias.",
-        "Enclaves confidenciales soportados en algunas EBM."
-      ],
-      "answer": 0,
-      "explain": "NVMe Local (NVMe local): Discos SSD locales de altísimo IOPS (efímeros)."
-    },
-    {
-      "q": "¿Qué es <strong>Licencia BYOL</strong> (Bring Your Own License) en ECS Bare Metal & Dedicated Host?",
-      "options": [
-        "Uso de licencias Windows/Oracle propias.",
-        "Servidor físico gestionado como ECS: sin hipervisor.",
-        "Servidor físico donde tú corres VMs propias.",
-        "Enclaves confidenciales soportados en algunas EBM."
-      ],
-      "answer": 0,
-      "explain": "Licencia BYOL (Bring Your Own License): Uso de licencias Windows/Oracle propias."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ECS Bare Metal & Dedicated Host, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ECS Bare Metal & Dedicated Host en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ECS Bare Metal & Dedicated Host, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ECS Bare Metal & Dedicated Host es la elección típica:",
-      "options": [
-        "SAP HANA on Alibaba Cloud (memoria alta certificada)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: SAP HANA on Alibaba Cloud (memoria alta certificada)."
-    }
+    { "q": "¿Cuál es la diferencia fundamental entre ECS Bare Metal Instance (EBM) y una instancia ECS virtual estándar?", "options": ["No hay ninguna diferencia real", "EBM no tiene hipervisor: el sistema operativo corre directamente sobre el hardware físico", "EBM es más barata que una instancia virtual", "EBM solo soporta sistemas operativos Windows"], "answer": 1, "explain": "EBM elimina la capa de hipervisor por completo, dando acceso directo al hardware físico, a diferencia de una instancia ECS virtual." },
+    { "q": "Una empresa necesita ejecutar Oracle Database con una licencia que exige contar núcleos físicos reales. ¿Qué producto de Alibaba Cloud es el más adecuado?", "options": ["ECS Bare Metal Instance (EBM)", "Dedicated Host", "Una instancia ECS Spot", "Function Compute"], "answer": 1, "explain": "Dedicated Host reserva un servidor físico exclusivo donde se pueden lanzar VMs, permitiendo demostrar el licenciamiento por núcleo/socket físico que exige software como Oracle." },
+    { "q": "Dentro de un Dedicated Host, ¿cómo se ejecutan las instancias del cliente?", "options": ["Sin ningún hipervisor, igual que en EBM", "Como instancias ECS virtuales normales, con hipervisor, pero en hardware físico exclusivo", "No se pueden ejecutar instancias dentro de un Dedicated Host", "Solo se pueden ejecutar contenedores, nunca VMs"], "answer": 1, "explain": "A diferencia de EBM, Dedicated Host conserva el hipervisor: la exclusividad es del servidor físico, no la ausencia de virtualización." },
+    { "q": "¿Qué problema describe el término 'ruido de vecinos' (noisy neighbor)?", "options": ["Un error de red entre regiones distintas", "Variabilidad de rendimiento causada por otros inquilinos que comparten el mismo host físico", "Un fallo del servicio RAM", "Latencia entre zonas de disponibilidad distintas"], "answer": 1, "explain": "El ruido de vecinos ocurre cuando la actividad de otros clientes en el mismo servidor físico compartido afecta el rendimiento percibido." },
+    { "q": "¿Por qué el almacenamiento NVMe local de una instancia EBM NO debe usarse como única copia de datos críticos?", "options": ["Porque tiene IOPS muy bajos", "Porque es efímero: se pierde si la instancia se libera o el hardware falla", "Porque no soporta ningún sistema de archivos", "Porque solo funciona con bases de datos NoSQL"], "answer": 1, "explain": "El NVMe local ofrece IOPS altísimos pero es efímero, por lo que requiere réplica hacia almacenamiento persistente para datos críticos." },
+    { "q": "¿Qué limitación operativa tiene una instancia EBM frente a una instancia ECS virtual estándar?", "options": ["No soporta Security Groups", "No admite migración en caliente transparente durante mantenimiento de hardware", "No puede tener una IP pública", "No se puede detener nunca"], "answer": 1, "explain": "Al estar atada a un servidor físico específico sin hipervisor, EBM no puede migrarse en caliente de la misma forma que una VM estándar." },
+    { "q": "¿Cuál es el caso de uso principal de Dedicated Host según el curso?", "options": ["Maximizar la elasticidad de auto-escalado", "Cumplir requisitos de licenciamiento BYOL y aislamiento físico", "Reducir el costo por hora frente a ECS estándar", "Ejecutar contenedores Kubernetes exclusivamente"], "answer": 1, "explain": "Dedicated Host existe principalmente para licencias BYOL y requisitos de compliance que exigen aislamiento físico, no para elasticidad." },
+    { "q": "¿Qué tecnología soportada en algunas familias EBM permite crear regiones de memoria cifradas y aisladas incluso del sistema operativo host?", "options": ["Intel SGX", "Auto Scaling", "RAM Policy", "CloudMonitor"], "answer": 0, "explain": "Intel SGX crea enclaves de memoria cifrados, relevante para computación confidencial con requisitos regulatorios extremos." },
+    { "q": "Para una carga de producción crítica en EBM, ¿qué diseño de disponibilidad es correcto según el curso?", "options": ["Una sola EBM en una única zona, para minimizar latencia", "Distribuir instancias EBM equivalentes en al menos dos zonas distintas", "Usar únicamente instancias Spot dentro de la EBM", "No es necesario ningún diseño de alta disponibilidad con hardware dedicado"], "answer": 1, "explain": "Dado que una EBM está atada a un servidor físico concreto sin migración transparente, el diseño multi-zona es esencial para tolerar fallas de hardware." },
+    { "q": "¿Cuál de las siguientes es una razón válida para NO elegir EBM o Dedicated Host por defecto?", "options": ["Ambos son gratuitos, así que no hay motivo para no usarlos siempre", "Su costo por hora es mayor que el de una instancia ECS virtual equivalente, y requieren una justificación real", "No existen en todas las regiones de Alibaba Cloud", "Ambos productos han sido descontinuados"], "answer": 1, "explain": "El mayor costo de hardware de un solo inquilino debe justificarse por un requisito concreto (licenciamiento, compliance, rendimiento extremo), no usarse por defecto." },
+    { "q": "Un clúster HPC necesita ejecutar cargas MPI/CUDA con el máximo rendimiento posible, sin ninguna capa de virtualización intermedia. ¿Qué producto es el más adecuado?", "options": ["Dedicated Host con VMs estándar", "ECS Bare Metal Instance (EBM)", "Una instancia ECS Spot", "Server Load Balancer"], "answer": 1, "explain": "EBM elimina el hipervisor, dando acceso directo al hardware para cargas HPC extremadamente sensibles al rendimiento." },
+    { "q": "¿Qué elige el cliente al reservar un Dedicated Host?", "options": ["Solo la región donde estará ubicado, sin más control", "La familia de instancia virtual que podrá lanzar dentro y la capacidad física reservada para ese tipo", "El proveedor de electricidad del data center", "El sistema operativo que usará toda la cuenta"], "answer": 1, "explain": "El cliente elige qué familia de VM lanzará dentro del host dedicado, controlando así la capacidad física reservada para ese tipo de carga." }
   ],
-  "exam_focus": "EBM vs VM regular, cuándo elegir Dedicated Host, licencias BYOL, NVMe local (efímero).",
+  "exam_focus": "El examen evalúa principalmente: (a) distinguir EBM (sin hipervisor) de Dedicated Host (hipervisor + exclusividad física), (b) mapear el escenario correcto a cada producto (rendimiento extremo vs. licenciamiento BYOL/compliance), (c) las limitaciones operativas de EBM frente a ECS virtual (sin migración en caliente, NVMe efímero), (d) diseño multi-zona obligatorio para cargas de producción en hardware dedicado.",
   "official_intro": "In this course, you will learn the key differences between Alibaba Cloud's two single-tenant computing products, Dedicated Hosts and Bare Metal instances. Learn the benefits and limitations of each of these important Alibaba Cloud products, and see how to configure and use them hands-on from the Alibaba Cloud console.",
   "recommended_for": "Developer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_dh",

@@ -2,428 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-flink",
   "title_en": "Realtime Computing With Apache Flink",
-  "title_es": "Realtime Computación With Apache Flink",
+  "title_es": "Cómputo en Tiempo Real con Apache Flink",
+  "title_es_html": "Cómputo en Tiempo Real con <em>Apache Flink</em>",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_flink",
-  "lead": "Guía completa en español para el curso «Realtime Computing With Apache Flink» de Alibaba Cloud Academy. Cubre en profundidad Realtime Compute for Apache Flink. Realtime Compute for Apache Flink es Flink gestionado con SQL, DataStream y Table API. Procesa millones de eventos/segundo con latencia sub-segundo y semántica exactly-once. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Realtime Computing With Apache Flink» de Alibaba Cloud Academy, centrado en Realtime Compute for Apache Flink: la versión gestionada de Flink de Alibaba Cloud (basada en Ververica Platform, VVP). A diferencia de MaxCompute o Hadoop, que procesan datos ya almacenados en lotes (batch), Flink procesa eventos a medida que llegan — el cambio de modelo mental de «consultar histórico» a «reaccionar en el instante» es el eje de todo el curso.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Realtime Compute for Apache Flink</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Job, Task, Parallelism, Checkpoint, Savepoint.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Realtime Compute for Apache Flink y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia entre procesamiento batch y streaming, y por qué Flink trata ambos como casos particulares de un mismo modelo.",
+    "<strong>Distinguir</strong> event-time de processing-time y explicar el papel de los watermarks en el orden de eventos.",
+    "<strong>Describir</strong> los tipos de ventana (tumbling, sliding, session) y cuándo usar cada una.",
+    "<strong>Explicar</strong> el mecanismo de checkpoints y savepoints para tolerancia a fallos y actualizaciones de job.",
+    "<strong>Aplicar</strong> el concepto de semántica exactly-once end-to-end considerando fuentes y sinks.",
+    "<strong>Ubicar</strong> a Flink dentro del ecosistema de streaming de Alibaba Cloud (Kafka, DataHub, DTS CDC, Hologres).",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre semántica de tiempo, estado y recuperación ante fallos."
   ],
-  "architecture": "Fuentes: Kafka, DTS CDC, DataHub → Flink jobs (SQL o Java) → sinks: Hologres, ClickHouse, OSS, Elasticsearch. State backend RocksDB + checkpoints a OSS. Job manager gestionado; task managers auto-escalados.",
+  "architecture": "Eventos llegan desde fuentes de streaming como Kafka, DataHub o captura de cambios (CDC) vía DTS, y se procesan mediante un job Flink escrito en SQL, DataStream API o Table API. Dentro del job, cada operador (filtro, join, agregación por ventana) mantiene su propio estado (state), respaldado por un state backend como RocksDB cuando ese estado es grande. Periódicamente, el sistema toma un checkpoint consistente de todo el estado distribuido y lo persiste en OSS, permitiendo recuperar el job exactamente donde quedó ante un fallo, sin reprocesar todo el historial. Los resultados se escriben a un sink — Hologres o AnalyticDB para dashboards en vivo, OSS para archivo, Elasticsearch para búsqueda, o de vuelta a Kafka para encadenar con otro consumidor. El Job Manager gestionado coordina la ejecución; los Task Managers, auto-escalados según la carga, ejecutan las tareas paralelas reales.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Realtime Compute for Apache Flink",
-      "title_en": "Introduction to Realtime Compute for Apache Flink",
-      "intro": "Realtime Compute for Apache Flink es Flink gestionado con SQL, DataStream y Table API. Procesa millones de eventos/segundo con latencia sub-segundo y semántica exactly-once. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · De batch a streaming: el cambio de modelo",
+      "title_en": "From Batch to Streaming: The Mental Model Shift",
+      "intro": "Antes de escribir una sola línea de SQL de Flink, el curso sitúa el problema: procesar datos que ya terminaron de llegar (batch) es un problema distinto —y más simple— que reaccionar a datos que siguen llegando indefinidamente (streaming).",
       "points": [
-        "<strong>Problema que resuelve</strong>: Realtime Compute for Apache Flink es Flink gestionado con SQL, DataStream y Table API.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Realtime Compute for Apache Flink se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Batch</strong>: el conjunto de datos es finito y conocido de antemano — una consulta SQL sobre una tabla de MaxCompute lee un histórico completo y termina. Es el modelo de bigdata.json y del resto del stack analítico offline.",
+        "<strong>Streaming</strong>: el conjunto de datos es, en principio, infinito — nuevos eventos siguen llegando mientras el job corre, y el resultado se actualiza continuamente en vez de calcularse una sola vez.",
+        "<strong>Latencia como diferenciador</strong>: un reporte batch nocturno tiene horas de latencia aceptable; un job Flink de detección de fraude necesita reaccionar en milisegundos a segundos — la elección entre uno y otro depende de qué tan rápido necesita el negocio ver el resultado.",
+        "<strong>Flink unifica ambos</strong>: internamente, Flink trata un conjunto batch como un caso particular de stream que termina — la misma API de SQL/Table sirve, con matices, para ambos modos, evitando mantener dos motores separados para lo mismo.",
+        "<strong>No siempre es la opción correcta</strong>: para un reporte financiero mensual, la complejidad operativa adicional de un job streaming corriendo 24/7 no se justifica frente a un job batch programado — el examen espera que se elija la opción proporcional a la necesidad real de latencia."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Realtime Compute for Apache Flink es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es Flink?» sino «¿el escenario descrito necesita streaming o basta con batch?». Streaming se justifica cuando el negocio necesita reaccionar a eventos en segundos, no cuando simplemente sería «más moderno»."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Realtime Compute for Apache Flink no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Event-time, processing-time y watermarks",
+      "title_en": "Event-time, Processing-time and Watermarks",
+      "intro": "En un sistema distribuido, los eventos no siempre llegan en el orden en que ocurrieron — un móvil sin señal puede reportar datos de hace 10 minutos justo ahora. Cómo Flink maneja ese desorden es, con diferencia, el tema más preguntado del examen.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes: Kafka, DTS CDC, DataHub → Flink jobs (SQL o Java) → sinks: Hologres, ClickHouse, OSS, Elasticsearch. State backend RocksDB + checkpoints a OSS. Job manager gestionado; task managers auto-escalados.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Realtime Compute for Apache Flink (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Job</strong> <em>(Job)</em>: Programa Flink desplegado.",
-        "<strong>Task</strong> <em>(Task)</em>: Instancia paralela de un operador.",
-        "<strong>Parallelism</strong> <em>(Parallelism)</em>: Nº de instancias paralelas.",
-        "<strong>Checkpoint</strong> <em>(Checkpoint)</em>: Snapshot de state para recuperación.",
-        "<strong>Savepoint</strong> <em>(Savepoint)</em>: Checkpoint manual; usado para upgrades.",
-        "<strong>Watermark</strong> <em>(Watermark)</em>: Progreso del event-time; base de windowing correcto.",
-        "<strong>Window</strong> <em>(Window)</em>: Agrupación por tiempo (tumbling/sliding/session).",
-        "<strong>State backend</strong> <em>(State Backend)</em>: Almacén de state — RocksDB para state grande."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Processing-time</strong>: el reloj del sistema que procesa el evento — simple y de baja latencia, pero el resultado depende de cuándo llegó el dato al clúster, no de cuándo ocurrió realmente en el mundo real.",
+        "<strong>Event-time</strong>: el timestamp incluido en el propio evento (p.ej. cuándo el sensor midió el dato) — produce resultados correctos y reproducibles incluso si los eventos llegan desordenados o con retraso, a costa de mayor complejidad.",
+        "<strong>Watermark</strong>: una marca que declara «he visto todos los eventos hasta este momento en event-time» — le dice a Flink cuándo es seguro cerrar una ventana de tiempo y emitir su resultado, aun si algunos eventos individuales llegan tarde.",
+        "<strong>Eventos tardíos (late events)</strong>: datos que llegan después de que su ventana ya se cerró según el watermark — Flink permite configurar cuánto tolerar antes de descartarlos o enviarlos a un flujo lateral (side output) para tratamiento especial.",
+        "<strong>Por qué importa para el examen</strong>: un job de facturación o de detección de fraude que use processing-time en vez de event-time puede calcular ventanas incorrectas si hay eventos que llegan tarde — un error sutil que produce números equivocados sin lanzar ningún fallo visible."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona 'el orden real en que ocurrieron los eventos' o 'resultados reproducibles pese a retrasos de red', la respuesta es event-time + watermarks — no processing-time, que es más simple pero no garantiza corrección temporal."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Windows: agrupar un stream infinito",
+      "title_en": "Windows: Grouping an Infinite Stream",
+      "intro": "No se puede agregar (sumar, contar, promediar) sobre un stream infinito sin antes acotarlo en el tiempo — las ventanas son el mecanismo que convierte un flujo continuo en bloques finitos sobre los que sí se puede calcular una agregación.",
       "points": [
-        "<strong>HA</strong>: Checkpoints en OSS + retention razonable",
-        "<strong>HA</strong>: Parallelism = shards del source",
-        "<strong>Buenas prácticas</strong>: Watermarks correctos — event-time no processing-time",
-        "<strong>Buenas prácticas</strong>: Savepoints antes de upgrade",
-        "<strong>Buenas prácticas</strong>: Métricas custom + alertas de lag"
+        "<strong>Tumbling window</strong>: ventanas de duración fija que no se solapan (p.ej. cada 5 minutos exactos) — cada evento pertenece a exactamente una ventana. Es la más simple, ideal para métricas periódicas regulares.",
+        "<strong>Sliding window</strong>: ventanas de duración fija que se solapan, avanzando cada cierto intervalo menor a su duración (p.ej. ventana de 10 minutos que se recalcula cada 1 minuto) — un mismo evento puede pertenecer a varias ventanas, útil para suavizar métricas con actualización frecuente.",
+        "<strong>Session window</strong>: ventanas de duración variable, definidas por un gap de inactividad — la ventana se cierra cuando no llegan eventos nuevos durante X tiempo. Ideal para agrupar la actividad de un usuario en una sola sesión de navegación.",
+        "<strong>Trigger</strong>: la condición que decide cuándo emitir el resultado de una ventana — por defecto, cuando el watermark supera el final de la ventana, aunque puede configurarse para emitir resultados parciales antes de que la ventana cierre completamente.",
+        "<strong>Elección según el escenario</strong>: métricas por intervalo fijo (ventas por hora) → tumbling; suavizado de una métrica en vivo (media móvil de 10 minutos) → sliding; actividad de usuario delimitada por inactividad → session."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Un dashboard que necesita 'sesiones de usuario' delimitadas por inactividad SIEMPRE usa session windows, no tumbling — confundir ambos tipos es uno de los distractores más frecuentes del examen."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · State, Checkpoints y Savepoints",
+      "title_en": "State, Checkpoints and Savepoints",
+      "intro": "Un job streaming corre indefinidamente — tarde o temprano un nodo fallará, o habrá que desplegar una nueva versión del job. Flink resuelve ambos casos con el mismo mecanismo subyacente: una fotografía consistente del estado distribuido.",
       "points": [
-        "<strong>Antipattern</strong>: Processing-time cuando debería ser event-time",
-        "<strong>Antipattern</strong>: Sin checkpoints → cada fallo reprocesa todo",
-        "<strong>Antipattern</strong>: State creciendo sin TTL",
-        "<strong>Antipattern</strong>: Sinks no idempotentes rompiendo exactly-once",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>State</strong>: la memoria que un operador mantiene entre eventos — por ejemplo, el total acumulado de una ventana que aún no cerró, o el último valor visto de una clave para un join con otro stream.",
+        "<strong>State backend</strong>: dónde vive físicamente ese estado — en memoria para state pequeño y rápido, o en RocksDB (almacenamiento local en disco embebido) cuando el estado es demasiado grande para caber en memoria.",
+        "<strong>Checkpoint</strong>: una fotografía automática y periódica de todo el estado distribuido del job, tomada de forma consistente sin detener el procesamiento — si un Task Manager falla, el job se recupera desde el último checkpoint sin reprocesar todo el historial desde el inicio.",
+        "<strong>Savepoint</strong>: un checkpoint disparado manualmente, pensado para operaciones planeadas — actualizar el código del job, cambiar su paralelismo o migrarlo de clúster — el job se detiene limpiamente, se toma el savepoint, y se reinicia desde ahí con la nueva versión.",
+        "<strong>Diferencia clave</strong>: los checkpoints son automáticos y para recuperación ante fallos imprevistos; los savepoints son manuales y para cambios planeados — un savepoint es, en esencia, un checkpoint con garantías adicionales de portabilidad entre versiones del job."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe 'actualizar el código de un job en producción sin perder su estado acumulado', la respuesta es tomar un savepoint antes del despliegue — no simplemente reiniciar el job, que perdería todo el estado en memoria."
+      }
+    },
+    {
+      "title_es": "5 · Exactly-once end-to-end",
+      "title_en": "Exactly-once End-to-end",
+      "intro": "Que Flink garantice exactly-once internamente no basta si el sink final no coopera — este módulo explica por qué la semántica exactly-once verdadera depende de toda la cadena, no solo del motor de cómputo.",
+      "points": [
+        "<strong>Exactly-once dentro de Flink</strong>: gracias a los checkpoints, Flink garantiza que cada evento se procesa exactamente una vez desde el punto de vista de su propio estado interno, incluso tras un fallo y recuperación.",
+        "<strong>El problema del sink</strong>: si el resultado ya se escribió parcialmente en un sink externo antes de que ocurra un fallo, y el job se recupera reprocesando esos mismos eventos, el sink puede terminar con datos duplicados — a menos que coopere con la garantía transaccional de Flink.",
+        "<strong>Sinks idempotentes</strong>: si escribir el mismo resultado dos veces produce el mismo estado final (p.ej. un UPSERT por clave en vez de un INSERT), el duplicado deja de ser un problema — es la estrategia más simple para lograr exactly-once end-to-end.",
+        "<strong>Sinks transaccionales (two-phase commit)</strong>: algunos conectores (como Kafka como sink) soportan un protocolo de dos fases que solo confirma la escritura cuando el checkpoint correspondiente se completó exitosamente, evitando duplicados sin necesitar idempotencia.",
+        "<strong>Antipatrón</strong>: asumir que 'Flink es exactly-once' garantiza automáticamente que no habrá duplicados en la base de datos destino — sin un sink idempotente o transaccional, la garantía real terminada es at-least-once."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Exactly-once end-to-end = exactly-once dentro de Flink (por checkpoints) + un sink que coopera (idempotente o transaccional). La garantía se rompe en el eslabón más débil de la cadena, no solo dentro del motor."
+      }
+    },
+    {
+      "title_es": "6 · Ecosistema, dimensionamiento y errores comunes",
+      "title_en": "Ecosystem, Sizing and Common Mistakes",
+      "intro": "El cierre del curso conecta Flink con el resto del stack de streaming de Alibaba Cloud y repasa los antipatrones que más aparecen en preguntas de examen sobre operación real.",
+      "points": [
+        "<strong>Fuentes típicas</strong>: Kafka (el estándar de facto para streams de eventos), DataHub (el servicio nativo de streaming de Alibaba Cloud) y DTS en modo CDC (captura de cambios desde una base de datos transaccional) — cada una con su propio conector oficial.",
+        "<strong>Sinks típicos</strong>: Hologres o AnalyticDB para dashboards en vivo con latencia sub-segundo, Elasticsearch para búsqueda, OSS para archivo de resultados, o de vuelta a Kafka para encadenar con otro procesamiento downstream.",
+        "<strong>Parallelism</strong>: el número de instancias paralelas de cada operador — como regla práctica, debe alinearse con el número de particiones de la fuente (p.ej. particiones de un topic Kafka) para aprovechar el paralelismo real de lectura.",
+        "<strong>Antipatrón: state sin TTL</strong>: mantener estado indefinidamente para claves que ya no volverán a aparecer (usuarios inactivos, sesiones antiguas) hace crecer el estado sin límite — se debe configurar un TTL (time-to-live) que expire y limpie estado obsoleto automáticamente.",
+        "<strong>Antipatrón: usar processing-time cuando el negocio necesita event-time</strong>: produce ventanas técnicamente correctas pero con resultados que no corresponden al momento real en que ocurrieron los hechos, un error sutil que suele pasar desapercibido hasta una auditoría."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de diseño de streaming, revisa en orden: ¿event-time o processing-time según el requisito de corrección?, ¿qué tipo de ventana según el patrón de agrupación?, ¿checkpoints configurados?, ¿el sink es idempotente o transaccional para exactly-once real?"
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "ETL streaming (CDC → data warehouse en tiempo real)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Detección de fraude en pagos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Alertas de monitoreo con window aggregations"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering online para ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Enriquecimiento de eventos con lookup joins"
-    }
+    { "title": "Escenario 1", "text": "ETL en streaming: captura de cambios (CDC) de una base transaccional hacia un data warehouse en tiempo casi real" },
+    { "title": "Escenario 2", "text": "Detección de fraude en pagos con reglas sobre ventanas deslizantes de transacciones recientes" },
+    { "title": "Escenario 3", "text": "Alertas de monitoreo de infraestructura con agregaciones por ventana tumbling de 1 minuto" },
+    { "title": "Escenario 4", "text": "Feature engineering online para un modelo de recomendación en producción" },
+    { "title": "Escenario 5", "text": "Enriquecimiento de eventos de clickstream con datos de referencia mediante lookup joins" },
+    { "title": "Escenario 6", "text": "Cálculo de sesiones de usuario en una app móvil delimitadas por inactividad" }
   ],
   "mistakes": [
-    "Processing-time cuando debería ser event-time",
-    "Sin checkpoints → cada fallo reprocesa todo",
-    "State creciendo sin TTL",
-    "Sinks no idempotentes rompiendo exactly-once"
+    "Usar processing-time cuando el negocio necesita resultados correctos según el momento real del evento (event-time)",
+    "No configurar checkpoints, obligando a reprocesar todo el historial ante cualquier fallo",
+    "Dejar crecer el state indefinidamente sin configurar TTL para claves obsoletas",
+    "Asumir que 'Flink es exactly-once' garantiza automáticamente ausencia de duplicados sin un sink idempotente o transaccional",
+    "Confundir tumbling window con session window en un escenario de sesiones de usuario",
+    "Reiniciar un job en producción sin tomar un savepoint antes, perdiendo el estado acumulado"
   ],
   "cli": [
-    {
-      "cmd": "aliyun realtime-compute-vvp CreateJob",
-      "desc": "Crear job Flink"
-    },
-    {
-      "cmd": "Consola Flink VVP",
-      "desc": "UI para jobs"
-    }
+    { "cmd": "aliyun realtime-compute-vvp CreateJob --Name mi-job --Content @job.sql", "desc": "Crear un job Flink SQL en Realtime Compute" },
+    { "cmd": "aliyun realtime-compute-vvp StartJob --JobId job-xxxxx", "desc": "Iniciar la ejecución de un job" },
+    { "cmd": "aliyun realtime-compute-vvp CreateSavepoint --JobId job-xxxxx", "desc": "Tomar un savepoint manual antes de una actualización" },
+    { "cmd": "aliyun realtime-compute-vvp DescribeJob --JobId job-xxxxx", "desc": "Consultar el estado, paralelismo y checkpoints de un job" },
+    { "cmd": "aliyun realtime-compute-vvp StopJob --JobId job-xxxxx --WithSavepoint true", "desc": "Detener un job tomando un savepoint automáticamente" }
   ],
   "glossary": [
-    {
-      "en": "Job",
-      "es": "Job",
-      "def": "Programa Flink desplegado."
-    },
-    {
-      "en": "Task",
-      "es": "Task",
-      "def": "Instancia paralela de un operador."
-    },
-    {
-      "en": "Parallelism",
-      "es": "Parallelism",
-      "def": "Nº de instancias paralelas."
-    },
-    {
-      "en": "Checkpoint",
-      "es": "Checkpoint",
-      "def": "Snapshot de state para recuperación."
-    },
-    {
-      "en": "Savepoint",
-      "es": "Savepoint",
-      "def": "Checkpoint manual; usado para upgrades."
-    },
-    {
-      "en": "Watermark",
-      "es": "Watermark",
-      "def": "Progreso del event-time; base de windowing correcto."
-    },
-    {
-      "en": "Window",
-      "es": "Window",
-      "def": "Agrupación por tiempo (tumbling/sliding/session)."
-    },
-    {
-      "en": "State Backend",
-      "es": "State backend",
-      "def": "Almacén de state — RocksDB para state grande."
-    },
-    {
-      "en": "Exactly-once",
-      "es": "Exactly-once",
-      "def": "End-to-end con sinks transaccionales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Batch vs. Streaming", "es": "Batch vs. streaming", "def": "Procesamiento sobre un conjunto finito conocido de antemano vs. procesamiento continuo sobre un flujo en principio infinito." },
+    { "en": "Event-time", "es": "Tiempo de evento", "def": "El timestamp de cuándo ocurrió realmente el evento, incluido en el propio dato." },
+    { "en": "Processing-time", "es": "Tiempo de procesamiento", "def": "El reloj del sistema que procesa el evento, independiente de cuándo ocurrió realmente." },
+    { "en": "Watermark", "es": "Watermark", "def": "Marca que indica hasta qué event-time se han visto todos los eventos, permitiendo cerrar ventanas con seguridad." },
+    { "en": "Late Event", "es": "Evento tardío", "def": "Dato que llega después de que su ventana ya se cerró según el watermark." },
+    { "en": "Tumbling Window", "es": "Ventana fija", "def": "Ventanas de duración fija que no se solapan; cada evento pertenece a exactamente una." },
+    { "en": "Sliding Window", "es": "Ventana deslizante", "def": "Ventanas de duración fija que se solapan, recalculadas a intervalos menores que su duración." },
+    { "en": "Session Window", "es": "Ventana de sesión", "def": "Ventana de duración variable delimitada por un gap de inactividad entre eventos." },
+    { "en": "State", "es": "Estado", "def": "Memoria que un operador mantiene entre eventos, como un total acumulado o el último valor de una clave." },
+    { "en": "State Backend", "es": "Backend de estado", "def": "Almacén físico del estado: en memoria para state pequeño, RocksDB para state grande." },
+    { "en": "Checkpoint", "es": "Checkpoint", "def": "Fotografía automática y periódica del estado distribuido del job, usada para recuperación ante fallos." },
+    { "en": "Savepoint", "es": "Savepoint", "def": "Checkpoint manual pensado para operaciones planeadas como actualizaciones de código o cambios de paralelismo." },
+    { "en": "Exactly-once", "es": "Exactamente una vez", "def": "Garantía de que cada evento se procesa una sola vez; end-to-end requiere que el sink también coopere." },
+    { "en": "Idempotent Sink", "es": "Sink idempotente", "def": "Destino donde escribir el mismo resultado dos veces produce el mismo estado final, evitando duplicados." },
+    { "en": "Two-phase Commit", "es": "Confirmación en dos fases", "def": "Protocolo transaccional que solo confirma una escritura cuando el checkpoint correspondiente se completó." },
+    { "en": "Parallelism", "es": "Paralelismo", "def": "Número de instancias paralelas de un operador, idealmente alineado con las particiones de la fuente." },
+    { "en": "Job Manager / Task Manager", "es": "Job Manager / Task Manager", "def": "El Job Manager coordina la ejecución del job; los Task Managers ejecutan las tareas paralelas reales." },
+    { "en": "TTL (Time-to-Live)", "es": "TTL", "def": "Tiempo tras el cual una entrada de estado se considera obsoleta y se limpia automáticamente." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Realtime Compute for Apache Flink?",
-      "options": [
-        "Realtime Compute for Apache Flink es Flink gestionado con SQL, DataStream y Table API. Procesa millones de eventos/segundo con latencia sub-segundo y semántica exactly-once.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Realtime Compute for Apache Flink es Flink gestionado con SQL, DataStream y Table API. Procesa millones de eventos/segundo con latencia sub-segundo y semántica exactly-once."
-    },
-    {
-      "q": "¿Qué es <strong>Job</strong> (Job) en Realtime Compute for Apache Flink?",
-      "options": [
-        "Programa Flink desplegado.",
-        "Instancia paralela de un operador.",
-        "Nº de instancias paralelas.",
-        "Snapshot de state para recuperación."
-      ],
-      "answer": 0,
-      "explain": "Job (Job): Programa Flink desplegado."
-    },
-    {
-      "q": "¿Qué es <strong>Task</strong> (Task) en Realtime Compute for Apache Flink?",
-      "options": [
-        "Instancia paralela de un operador.",
-        "Programa Flink desplegado.",
-        "Nº de instancias paralelas.",
-        "Snapshot de state para recuperación."
-      ],
-      "answer": 0,
-      "explain": "Task (Task): Instancia paralela de un operador."
-    },
-    {
-      "q": "¿Qué es <strong>Parallelism</strong> (Parallelism) en Realtime Compute for Apache Flink?",
-      "options": [
-        "Nº de instancias paralelas.",
-        "Programa Flink desplegado.",
-        "Instancia paralela de un operador.",
-        "Snapshot de state para recuperación."
-      ],
-      "answer": 0,
-      "explain": "Parallelism (Parallelism): Nº de instancias paralelas."
-    },
-    {
-      "q": "¿Qué es <strong>Checkpoint</strong> (Checkpoint) en Realtime Compute for Apache Flink?",
-      "options": [
-        "Snapshot de state para recuperación.",
-        "Programa Flink desplegado.",
-        "Instancia paralela de un operador.",
-        "Nº de instancias paralelas."
-      ],
-      "answer": 0,
-      "explain": "Checkpoint (Checkpoint): Snapshot de state para recuperación."
-    },
-    {
-      "q": "¿Qué es <strong>Savepoint</strong> (Savepoint) en Realtime Compute for Apache Flink?",
-      "options": [
-        "Checkpoint manual; usado para upgrades.",
-        "Programa Flink desplegado.",
-        "Instancia paralela de un operador.",
-        "Nº de instancias paralelas."
-      ],
-      "answer": 0,
-      "explain": "Savepoint (Savepoint): Checkpoint manual; usado para upgrades."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Realtime Compute for Apache Flink, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Realtime Compute for Apache Flink en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Realtime Compute for Apache Flink, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Realtime Compute for Apache Flink es la elección típica:",
-      "options": [
-        "ETL streaming (CDC → data warehouse en tiempo real)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: ETL streaming (CDC → data warehouse en tiempo real)."
-    }
+    { "q": "¿Cuál es la diferencia fundamental entre procesamiento batch y streaming?", "options": ["No hay diferencia real, son sinónimos", "Batch procesa un conjunto finito conocido de antemano; streaming procesa un flujo continuo, en principio infinito", "Streaming solo funciona con datos numéricos", "Batch siempre es más rápido que streaming"], "answer": 1, "explain": "Batch opera sobre datos ya completos; streaming reacciona a eventos que siguen llegando mientras el job está en ejecución." },
+    { "q": "Un job necesita calcular ventanas correctas incluso si los eventos llegan desordenados por retrasos de red. ¿Qué noción de tiempo debe usar?", "options": ["Processing-time", "Event-time con watermarks", "No es posible resolver ese caso", "Ingestion-time exclusivamente"], "answer": 1, "explain": "Event-time usa el timestamp real del evento y, junto con watermarks, produce resultados correctos y reproducibles pese al desorden de llegada." },
+    { "q": "¿Qué función cumple un watermark en Flink?", "options": ["Cifra los eventos del stream", "Indica hasta qué event-time se han visto todos los eventos, permitiendo cerrar ventanas con seguridad", "Define el paralelismo del job", "Convierte un job streaming en batch"], "answer": 1, "explain": "El watermark le dice al sistema cuándo es seguro considerar completa una ventana de tiempo y emitir su resultado." },
+    { "q": "Se necesita agrupar la actividad de un usuario en una app, delimitada por períodos de inactividad. ¿Qué tipo de ventana es la correcta?", "options": ["Tumbling window", "Sliding window", "Session window", "No se puede resolver con ventanas"], "answer": 2, "explain": "Session window agrupa eventos según un gap de inactividad, exactamente el patrón de una sesión de usuario delimitada por pausas." },
+    { "q": "¿Cuál es la diferencia principal entre un checkpoint y un savepoint en Flink?", "options": ["Son exactamente lo mismo", "El checkpoint es automático para recuperación ante fallos; el savepoint es manual, pensado para cambios planeados como actualizar el código del job", "El savepoint no incluye el estado del job", "Los checkpoints solo existen en modo batch"], "answer": 1, "explain": "Ambos son fotografías del estado, pero el savepoint se dispara manualmente y está pensado para operaciones planeadas como despliegues." },
+    { "q": "Un equipo va a actualizar el código de un job Flink en producción sin perder el estado acumulado. ¿Qué debe hacer antes del despliegue?", "options": ["Simplemente reiniciar el job", "Tomar un savepoint y reiniciar el job desde ahí con la nueva versión", "Borrar el estado y empezar de cero", "No es posible actualizar un job sin perder estado"], "answer": 1, "explain": "El savepoint permite detener el job de forma controlada y reanudarlo con la nueva versión conservando el estado acumulado." },
+    { "q": "¿Por qué la garantía exactly-once de Flink no basta por sí sola para evitar duplicados en la base de datos destino?", "options": ["Porque Flink nunca garantiza exactly-once realmente", "Porque si el sink no es idempotente o transaccional, un reprocesamiento tras un fallo puede duplicar datos ya escritos", "Porque exactly-once solo aplica a fuentes, no a destinos", "Porque los checkpoints no incluyen el estado de los sinks"], "answer": 1, "explain": "La garantía end-to-end depende también de que el sink coopere, mediante idempotencia o un protocolo transaccional de dos fases." },
+    { "q": "¿Qué logra un sink idempotente frente a la posibilidad de reprocesamiento tras un fallo?", "options": ["Impide que Flink tome checkpoints", "Escribir el mismo resultado dos veces produce el mismo estado final, evitando efectivamente los duplicados", "Aumenta el paralelismo automáticamente", "Convierte el job de streaming a batch"], "answer": 1, "explain": "Con un sink idempotente (p.ej. UPSERT por clave), reescribir el mismo resultado no genera un duplicado real en el destino." },
+    { "q": "¿Qué riesgo corre un job que mantiene estado por clave de usuario sin configurar TTL?", "options": ["El job se vuelve más rápido con el tiempo", "El estado crece indefinidamente incluyendo claves de usuarios inactivos que ya no volverán a aparecer", "Flink rechaza automáticamente el job al desplegarlo", "No hay ningún riesgo real"], "answer": 1, "explain": "Sin TTL, el estado acumula entradas obsoletas indefinidamente, aumentando el tamaño del state backend sin necesidad." },
+    { "q": "Como regla práctica, ¿con qué debería alinearse el paralelismo de un job Flink que lee de Kafka?", "options": ["Con el número de nodos del clúster de destino", "Con el número de particiones del topic de origen, para aprovechar el paralelismo real de lectura", "Siempre debe ser 1 para garantizar orden total", "Con el número de usuarios activos de la aplicación"], "answer": 1, "explain": "Alinear el paralelismo con las particiones de la fuente permite que cada instancia paralela lea de una partición distinta simultáneamente." },
+    { "q": "Un reporte financiero se genera una vez al mes. ¿Qué enfoque es el más apropiado?", "options": ["Un job Flink streaming corriendo 24/7, por ser la opción más moderna", "Un job batch programado, ya que la complejidad operativa del streaming no se justifica para esa necesidad de latencia", "No es posible generar ese reporte sin streaming", "Debe usarse exclusivamente processing-time"], "answer": 1, "explain": "Streaming se justifica cuando el negocio necesita reaccionar en segundos; para un reporte mensual, un job batch es más simple y suficiente." },
+    { "q": "¿Qué fuente de Alibaba Cloud se usa típicamente para capturar cambios (CDC) de una base de datos transaccional hacia un job Flink?", "options": ["OSS", "DTS en modo CDC", "Quick BI", "ActionTrail"], "answer": 1, "explain": "DTS (Data Transmission Service) en modo CDC captura eventos insert/update/delete del log de transacciones de la base origen." }
   ],
-  "exam_focus": "Event-time vs processing-time, watermarks, exactly-once end-to-end, state backends.",
+  "exam_focus": "El examen suele evaluar: (a) cuándo streaming se justifica frente a batch según la latencia requerida, (b) event-time vs. processing-time y el rol de los watermarks, (c) elegir el tipo de ventana correcto (tumbling/sliding/session) según el escenario, (d) checkpoints vs. savepoints y cuándo usar cada uno, (e) qué se necesita para exactly-once end-to-end más allá de la garantía interna de Flink.",
   "official_intro": "In this course, you will learn about Alibaba Cloud's managed Apache Flink service. Learn how to create stream computing workflows on Alibaba Cloud from the web console, and see a demo of our Flink service in action.",
   "recommended_for": "Data Analyst, System Architect",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_flink",

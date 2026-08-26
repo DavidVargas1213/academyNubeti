@@ -3,484 +3,183 @@
   "course_id": "Curso Nº certification-clouder-cloudservercantonese",
   "title_en": "Operate and Manage a Cloud Server (Cantonese)",
   "title_es": "Operar y Administrar un Servidor en la Nube (Cantonés)",
+  "title_es_html": "Operar y Administrar un <em>Servidor en la Nube</em> (Cantonés)",
   "duration_es": "71 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Cantonés",
   "url": "https://edu.alibabacloud.com/certification/clouder_cloudservercantonese",
-  "lead": "Guía completa en español para el curso «Operate and Manage a Cloud Server (Cantonese)» de Alibaba Cloud Academy. Cubre en profundidad Elastic Compute Service (ECS). ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Operate and Manage a Cloud Server (Cantonese)», la edición en cantonés del curso de Alibaba Cloud Academy sobre Elastic Compute Service (ECS). El material presentado y las preguntas del examen son en inglés según el propio catálogo oficial; solo la narración del video cambia. Esta guía desarrolla en español los mismos cuatro bloques temáticos del curso original: por qué elegir un servidor en la nube, cómo aprovisionarlo, cómo administrarlo y cómo operarlo día a día.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Elastic Compute Service (ECS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Instance type, Region, Zone (AZ), Image, Snapshot.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Elastic Compute Service (ECS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Argumentar</strong> por qué una organización preferiría ECS frente a comprar y mantener servidores físicos propios.",
+    "<strong>Configurar</strong> correctamente familia de instancia, imagen, red y almacenamiento al crear una instancia ECS.",
+    "<strong>Gestionar</strong> el ciclo de vida operativo de la instancia: arranque, parada, redimensionado, respaldo y liberación.",
+    "<strong>Asegurar</strong> el acceso a la instancia mediante Security Groups y credenciales adecuadas.",
+    "<strong>Comparar</strong> los modelos de facturación disponibles y elegir el más adecuado según el patrón de uso.",
+    "<strong>Prepararse</strong> para las preguntas del examen Apsara Clouder, formuladas en inglés independientemente del idioma del video."
   ],
-  "architecture": "Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
+  "architecture": "El patrón de referencia es el mismo que en cualquier despliegue ECS estándar: la instancia se lanza dentro de una VPC y una zona concreta, arranca desde una Imagen, monta un disco de sistema obligatorio (más discos de datos opcionales) y queda protegida por un Security Group. Una Elastic IP proporciona una dirección pública estable cuando se necesita, y para alta disponibilidad se colocan instancias en al menos dos zonas detrás de un Server Load Balancer, con un Auto Scaling Group ajustando la capacidad según la demanda.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Elastic Compute Service (ECS)",
-      "title_en": "Introduction to Elastic Compute Service (ECS)",
-      "intro": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué elegir un servidor en la nube",
+      "title_en": "3 Reasons to embrace Cloud Server",
+      "intro": "Este primer bloque contrasta un servidor físico tradicional con una instancia ECS, sentando la base argumental que después se pregunta de forma indirecta en el examen: no basta con saber operar ECS, hay que poder justificar por qué se eligió.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Elastic Compute Service (ECS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Rapidez de despliegue</strong>: una instancia queda lista en minutos, sin compra de hardware ni instalación física.",
+        "<strong>Administración simplificada</strong>: los recursos de cómputo se ajustan desde la consola o por API, con la infraestructura subyacente gestionada por Alibaba Cloud.",
+        "<strong>Estabilidad de nivel empresarial</strong>: failover automático, redundancia de almacenamiento, protección DDoS básica sin costo adicional y SLA de hasta 99.975% en zona única (99.995% multi-zona).",
+        "<strong>Costo alineado al uso</strong>: sin gran inversión inicial; se paga según consumo o se reserva con descuento según el patrón de carga."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Elastic Compute Service (ECS) es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Cuando el examen pregunta por la ventaja de un servidor en la nube, la respuesta correcta combina velocidad, elasticidad operativa y garantías de disponibilidad — no solo el precio."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Elastic Compute Service (ECS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Aprovisionar la instancia adecuada",
+      "title_en": "1 minute to provisioning a customized ECS",
+      "intro": "El asistente de creación de instancias agrupa varias decisiones técnicas en pocos pasos. Cada una condiciona rendimiento, disponibilidad y costo final, y el examen suele presentar un escenario para que identifiques la elección correcta.",
       "points": [
-        "<strong>Patrón canónico</strong>: Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Elastic Compute Service (ECS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Tipo de instancia</strong> <em>(Instance type)</em>: Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "<strong>Región</strong> <em>(Region)</em>: Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "<strong>Zona de disponibilidad</strong> <em>(Zone (AZ))</em>: Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "<strong>Imagen</strong> <em>(Image)</em>: Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "<strong>Snapshot</strong> <em>(Snapshot)</em>: Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "<strong>Grupo de seguridad</strong> <em>(Security Group)</em>: Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG.",
-        "<strong>VPC / VSwitch</strong> <em>(VPC / VSwitch)</em>: Red virtual privada + subredes por zona donde se despliega la ENI.",
-        "<strong>Elastic Network Interface</strong> <em>(ENI)</em>: Tarjeta de red virtual. Una instancia puede tener varias."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Región y zona de disponibilidad</strong>: la región define la ubicación y la latencia hacia los usuarios; la zona es un data center aislado dentro de ella.",
+        "<strong>Familia de instancia</strong>: propósito general (<code>g</code>), optimizada a cómputo (<code>c</code>), optimizada a memoria (<code>r</code>), almacenamiento local NVMe (<code>i</code>) y con GPU (<code>gn</code>).",
+        "<strong>Imagen de arranque</strong>: pública, personalizada, compartida desde otra cuenta o del Marketplace con software preinstalado.",
+        "<strong>Discos</strong>: disco de sistema obligatorio y discos de datos opcionales, con ESSD para cargas de alto IOPS o discos estándar para datos menos exigentes.",
+        "<strong>Credenciales de acceso</strong>: se recomienda un par de claves SSH sobre una contraseña definida manualmente, y nunca dejar la contraseña por defecto de la imagen."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Ante «carga intensiva en CPU» piensa en la familia <code>c</code>; ante «base de datos en memoria» piensa en <code>r</code>; ante «render o entrenamiento de IA» piensa en <code>gn</code>."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Administrar la instancia en producción",
+      "title_en": "3 minutes to manage ECS instance",
+      "intro": "Una vez creada, la instancia entra en un ciclo operativo continuo. Este bloque cubre las operaciones que un administrador ejecuta con más frecuencia y las diferencias sutiles que el examen suele marcar como distractor.",
       "points": [
-        "<strong>HA</strong>: Usar instancias en al menos 2 zonas detrás de un SLB para HA",
-        "<strong>HA</strong>: Habilitar snapshots automáticos diarios de discos críticos",
-        "<strong>HA</strong>: Usar imágenes custom con hardening pre-aplicado en vez de configurar cada instancia manualmente",
-        "<strong>Seguridad</strong>: Nunca usar la cuenta raíz para operar ECS — crear usuarios RAM con roles específicos",
-        "<strong>Costo</strong>: Combinar Reserved Instances (baseline) + pay-as-you-go (picos) + spot (batch) para minimizar costo",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups siguiendo mínimo privilegio (denegar todo por defecto)",
-        "<strong>Buenas prácticas</strong>: Instrumentar con CloudMonitor + alertas para CPU/memoria/disco antes de que falle"
+        "<strong>Ciclo de estados</strong>: Running, Stopped, Starting, Stopping — con matices de facturación distintos entre Pay-As-You-Go y Subscription al detener la instancia.",
+        "<strong>Redimensionado</strong>: cambiar el tipo de instancia para obtener más o menos vCPU/memoria sin recrear el recurso desde cero.",
+        "<strong>Snapshots</strong>: copias incrementales puntuales del disco, base de las imágenes personalizadas y de la restauración ante corrupción de datos.",
+        "<strong>Migración en caliente</strong>: reubicación transparente de la instancia a otro host físico por mantenimiento, sin interrumpir su ejecución.",
+        "<strong>Liberación (Release)</strong>: elimina la instancia de forma permanente y, según configuración, también sus discos asociados."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Detener una instancia es reversible y conserva el disco; liberarla es una acción destructiva y permanente. El examen distingue ambos términos con frecuencia."
+      }
+    },
+    {
+      "title_es": "4 · Operación diaria, acceso y automatización",
+      "title_en": "5 minutes to operate ECS instance",
+      "intro": "Operar una instancia día a día implica más que el ciclo básico de encendido/apagado: incluye control de acceso, observabilidad y automatización de la configuración inicial.",
+      "points": [
+        "<strong>Security Groups</strong>: firewall stateful por tarjeta de red; se recomienda denegar todo el tráfico entrante por defecto y abrir solo lo estrictamente necesario.",
+        "<strong>Acceso remoto</strong>: SSH en Linux, RDP en Windows, y el acceso de consola del Cloud Assistant como alternativa de emergencia sin exponer puertos a internet.",
+        "<strong>CloudMonitor</strong>: métricas nativas de CPU, memoria, disco y red con alarmas configurables sobre umbrales críticos.",
+        "<strong>User Data</strong>: automatiza la instalación de software en el primer arranque, clave para flujos de auto-escalado sin intervención manual.",
+        "<strong>RAM</strong>: usuarios y roles con permisos acotados, evitando compartir las credenciales de la cuenta raíz del equipo."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando una pregunta contrapone «más simple» contra «más seguro», la respuesta correcta casi siempre es la más segura."
+      }
+    },
+    {
+      "title_es": "5 · Modelos de facturación",
+      "title_en": "Billing Models and Cost Control",
+      "intro": "Elegir el modelo de facturación adecuado según el patrón de uso descrito en el enunciado es una de las áreas donde el examen concentra más preguntas prácticas.",
+      "points": [
+        "<strong>Pay-As-You-Go</strong>: sin compromiso, facturación por hora o segundo; el modelo más flexible pero más caro por unidad.",
+        "<strong>Subscription</strong>: pago anticipado mensual o anual con descuento, adecuado para cargas estables a mediano plazo.",
+        "<strong>Reserved Instance</strong>: descuento aplicado sobre el consumo Pay-As-You-Go a cambio de comprometerse 1-3 años.",
+        "<strong>Instancias Spot</strong>: descuentos de hasta 90%, con el riesgo de que Alibaba Cloud reclame la capacidad con minutos de aviso.",
+        "<strong>Regla de decisión</strong>: carga estable → reservar; carga variable → pago por uso; carga batch tolerante a interrupciones → Spot."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Predecible y estable: reservar. Variable e impredecible: pago por uso. Tolerante a interrupciones y sensible al costo: spot."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "6 · Errores frecuentes y cómo abordar el examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas más difíciles suelen construirse a partir de errores de operación reales. Reconocer el patrón del error suele ser más rápido que diseñar la arquitectura ideal desde cero durante el examen.",
       "points": [
-        "<strong>Antipattern</strong>: Poner instancias productivas en una sola zona → caída total si la zona falla",
-        "<strong>Antipattern</strong>: Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-        "<strong>Antipattern</strong>: Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-        "<strong>Antipattern</strong>: No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-        "<strong>Antipattern</strong>: Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-        "<strong>Antipattern</strong>: Preemptible en producción crítica sin plan de reintento",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: instancias productivas concentradas en una única zona de disponibilidad.",
+        "<strong>Antipatrón</strong>: puertos administrativos abiertos a cualquier IP de internet.",
+        "<strong>Antipatrón</strong>: pagar Pay-As-You-Go puro durante años para una carga estable.",
+        "<strong>Antipatrón</strong>: depender de un snapshot local como único plan de recuperación ante desastres.",
+        "<strong>Antipatrón</strong>: usar Spot para una base de datos productiva sin réplicas.",
+        "<strong>Antipatrón</strong>: no etiquetar recursos, perdiendo capacidad de atribución de costos."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Descarta primero la opción que sacrifica disponibilidad o seguridad; entre las restantes, elige la más económica que cumpla el requisito planteado."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Sitios web y APIs con tráfico variable (auto-escalado)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Renderizado de video / cargas GPU-intensivas (familia gn)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis batch nocturno (spot instances con hasta 90% descuento)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "SAP y aplicaciones enterprise (familia re con memoria alta)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Entornos de desarrollo/pruebas (pay-as-you-go, apagado nocturno)"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Escritorios virtuales y bastion hosts"
-    }
+    { "title": "Escenario 1", "text": "Sitio o API con tráfico impredecible — familia general purpose con Auto Scaling Group" },
+    { "title": "Escenario 2", "text": "Render de video o entrenamiento de IA — familia gn con GPU" },
+    { "title": "Escenario 3", "text": "Procesamiento batch nocturno — instancias Spot con hasta 90% de descuento" },
+    { "title": "Escenario 4", "text": "Sistema crítico estable a 2-3 años — Subscription o Reserved Instance" },
+    { "title": "Escenario 5", "text": "Entorno de pruebas apagado fuera de horario — Pay-As-You-Go con modo de ahorro" },
+    { "title": "Escenario 6", "text": "Bastion host con acceso limitado a IPs corporativas" }
   ],
   "mistakes": [
-    "Poner instancias productivas en una sola zona → caída total si la zona falla",
-    "Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-    "Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-    "No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-    "Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-    "Preemptible en producción crítica sin plan de reintento"
+    "Concentrar todas las instancias productivas en una sola zona de disponibilidad",
+    "Dejar puertos 22/3389 abiertos a 0.0.0.0/0 en producción",
+    "Usar Pay-As-You-Go puro para una carga estable de largo plazo",
+    "No etiquetar los recursos, dificultando la atribución de costos",
+    "Confiar en un snapshot de la misma región como único respaldo ante desastres",
+    "Usar Spot para cargas productivas críticas sin mecanismo de réplica"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs DescribeInstances",
-      "desc": "Listar instancias ECS en la región actual"
-    },
-    {
-      "cmd": "aliyun ecs RunInstances --ImageId ... --InstanceType ecs.g6.large",
-      "desc": "Crear instancia"
-    },
-    {
-      "cmd": "aliyun ecs StopInstance --InstanceId i-xxxxx --StoppedMode StopCharging",
-      "desc": "Detener sin cobrar"
-    },
-    {
-      "cmd": "aliyun ecs CreateSnapshot --DiskId d-xxxxx",
-      "desc": "Crear snapshot de disco"
-    },
-    {
-      "cmd": "aliyun ecs ModifyInstanceAttribute --InstanceId ... --Password ...",
-      "desc": "Cambiar credenciales"
-    }
+    { "cmd": "aliyun ecs DescribeInstances --RegionId cn-hongkong", "desc": "Listar instancias ECS en una región" },
+    { "cmd": "aliyun ecs RunInstances --ImageId win_or_linux_image_id --InstanceType ecs.g6.large --SecurityGroupId sg-xxxxx", "desc": "Crear una instancia nueva" },
+    { "cmd": "aliyun ecs StopInstance --InstanceId i-xxxxx --StoppedMode StopCharging", "desc": "Detener sin seguir cobrando cómputo" },
+    { "cmd": "aliyun ecs CreateSnapshot --DiskId d-xxxxx", "desc": "Crear un snapshot del disco" },
+    { "cmd": "aliyun ecs ModifyInstanceSpec --InstanceId i-xxxxx --InstanceType ecs.g6.xlarge", "desc": "Redimensionar una instancia" },
+    { "cmd": "aliyun ecs ReleaseInstance --InstanceId i-xxxxx", "desc": "Liberar (destruir) una instancia" }
   ],
   "glossary": [
-    {
-      "en": "Instance type",
-      "es": "Tipo de instancia",
-      "def": "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "en": "Zone (AZ)",
-      "es": "Zona de disponibilidad",
-      "def": "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "en": "Image",
-      "es": "Imagen",
-      "def": "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "en": "Snapshot",
-      "es": "Snapshot",
-      "def": "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG."
-    },
-    {
-      "en": "VPC / VSwitch",
-      "es": "VPC / VSwitch",
-      "def": "Red virtual privada + subredes por zona donde se despliega la ENI."
-    },
-    {
-      "en": "ENI",
-      "es": "Elastic Network Interface",
-      "def": "Tarjeta de red virtual. Una instancia puede tener varias."
-    },
-    {
-      "en": "Elastic IP (EIP)",
-      "es": "IP elástica",
-      "def": "IP pública estática, se puede desasociar y reasociar."
-    },
-    {
-      "en": "Pay-as-you-go",
-      "es": "Pago por uso",
-      "def": "Facturación por segundo/hora sin compromiso. Ideal para cargas variables."
-    },
-    {
-      "en": "Subscription",
-      "es": "Suscripción",
-      "def": "Compra anticipada mensual/anual con 15-40% descuento."
-    },
-    {
-      "en": "Reserved Instance",
-      "es": "Instancia reservada",
-      "def": "Descuento adicional a cambio de compromiso 1-3 años."
-    },
-    {
-      "en": "Preemptible / Spot",
-      "es": "Preemptible",
-      "def": "Hasta 90% descuento; puede terminarse con 5 min de aviso."
-    },
-    {
-      "en": "Savings Plan",
-      "es": "Plan de ahorro",
-      "def": "Compromiso de $/hora aplicable a cualquier familia."
-    },
-    {
-      "en": "Auto Scaling Group",
-      "es": "Grupo de auto-escalado",
-      "def": "Ajusta capacidad según políticas de CPU/tiempo/eventos."
-    },
-    {
-      "en": "Cloud-init / User Data",
-      "es": "User Data",
-      "def": "Script que se ejecuta al arrancar la instancia (bootstrap)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Instance type", "es": "Tipo de instancia", "def": "Combinación de familia (g/c/r/i/gn) y tamaño que determina vCPU, memoria y red disponibles." },
+    { "en": "Region", "es": "Región", "def": "Área geográfica independiente que agrupa varias zonas de disponibilidad." },
+    { "en": "Zone (AZ)", "es": "Zona de disponibilidad", "def": "Data center físicamente aislado dentro de una región." },
+    { "en": "Image", "es": "Imagen", "def": "Plantilla de arranque con SO y software preinstalado." },
+    { "en": "System Disk / Data Disk", "es": "Disco de sistema / de datos", "def": "El de sistema es obligatorio; los de datos son adicionales y opcionales." },
+    { "en": "Snapshot", "es": "Instantánea", "def": "Copia incremental puntual de un disco." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful a nivel de tarjeta de red." },
+    { "en": "Elastic IP (EIP)", "es": "IP elástica", "def": "IP pública asociable/desasociable independiente del ciclo de vida de la instancia." },
+    { "en": "VPC / VSwitch", "es": "VPC / VSwitch", "def": "Red virtual privada y subredes por zona." },
+    { "en": "Auto Scaling Group", "es": "Grupo de auto-escalado", "def": "Ajusta automáticamente el número de instancias según demanda." },
+    { "en": "Pay-As-You-Go", "es": "Pago por uso", "def": "Facturación por hora/segundo sin compromiso." },
+    { "en": "Subscription", "es": "Suscripción", "def": "Compra anticipada mensual o anual con descuento." },
+    { "en": "Reserved Instance", "es": "Instancia reservada", "def": "Descuento por comprometerse 1-3 años en una familia/región." },
+    { "en": "Preemptible / Spot Instance", "es": "Instancia Spot", "def": "Descuento agresivo con riesgo de reclamo por parte del proveedor." },
+    { "en": "Cloud-init / User Data", "es": "Datos de usuario", "def": "Script ejecutado en el primer arranque de la instancia." },
+    { "en": "RAM", "es": "RAM (Resource Access Management)", "def": "Servicio de identidad y permisos equivalente a IAM." },
+    { "en": "CloudMonitor", "es": "CloudMonitor", "def": "Servicio nativo de métricas y alarmas." },
+    { "en": "Live migration", "es": "Migración en caliente", "def": "Traslado de una instancia a otro host sin apagarla." },
+    { "en": "Tag", "es": "Etiqueta", "def": "Par clave-valor para organizar recursos y costos." },
+    { "en": "SLA", "es": "SLA", "def": "Garantía contractual de disponibilidad." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Elastic Compute Service (ECS)?",
-      "options": [
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud."
-    },
-    {
-      "q": "¿Qué es <strong>Instance type</strong> (Tipo de instancia) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Instance type (Tipo de instancia): Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "q": "¿Qué es <strong>Region</strong> (Región) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Region (Región): Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "q": "¿Qué es <strong>Zone (AZ)</strong> (Zona de disponibilidad) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Zone (AZ) (Zona de disponibilidad): Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "q": "¿Qué es <strong>Image</strong> (Imagen) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Image (Imagen): Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "q": "¿Qué es <strong>Snapshot</strong> (Snapshot) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Snapshot (Snapshot): Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Elastic Compute Service (ECS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Elastic Compute Service (ECS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Elastic Compute Service (ECS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Elastic Compute Service (ECS) es la elección típica:",
-      "options": [
-        "Sitios web y APIs con tráfico variable (auto-escalado)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Sitios web y APIs con tráfico variable (auto-escalado)."
-    }
+    { "q": "¿Qué combinación de razones destaca el curso para preferir ECS sobre un servidor físico propio?", "options": ["Solo el precio más bajo", "Velocidad de despliegue, gestión simplificada y fiabilidad respaldada por SLA", "Solo la ausencia de contratos", "Solo la disponibilidad de soporte telefónico"], "answer": 1, "explain": "El curso combina rapidez de despliegue, administración simplificada y garantías de disponibilidad, no solo el costo." },
+    { "q": "¿Qué ocurre al detener una instancia Pay-As-You-Go con StoppedMode=StopCharging?", "options": ["Se deja de cobrar todo, incluido el disco", "Se detiene el cobro de cómputo, pero el disco sigue facturándose", "No cambia la facturación", "Se penaliza económicamente"], "answer": 1, "explain": "El modo de ahorro económico solo detiene el cobro del cómputo, no del almacenamiento asociado." },
+    { "q": "Para una carga de trabajo de entrenamiento de modelos de IA, ¿qué familia de instancia conviene?", "options": ["Familia c", "Familia r", "Familia gn", "Familia i"], "answer": 2, "explain": "La familia gn incluye aceleración por GPU, ideal para entrenamiento e inferencia de modelos." },
+    { "q": "¿Cuál es la diferencia esencial entre Stop y Release en ECS?", "options": ["No hay diferencia", "Stop es reversible y conserva el disco; Release destruye la instancia de forma permanente", "Release es reversible y Stop no", "Stop solo existe en instancias Windows"], "answer": 1, "explain": "Detener permite reanudar más tarde; liberar elimina el recurso de forma permanente." },
+    { "q": "¿Por qué un snapshot en la misma región no es suficiente como único plan de recuperación ante desastres?", "options": ["No se puede restaurar nunca", "Si la región completa falla, el snapshot también se pierde", "Caduca automáticamente a los 7 días", "No incluye el sistema operativo"], "answer": 1, "explain": "Se requiere replicar a otra región distinta para una verdadera recuperación ante desastres." },
+    { "q": "Para una carga estable durante 3 años, ¿qué modelo de facturación minimiza el costo?", "options": ["Pay-As-You-Go puro", "Solo Spot", "Subscription o Reserved Instance", "Facturación por solicitud"], "answer": 2, "explain": "Los compromisos de largo plazo ofrecen descuentos relevantes frente al pago por uso." },
+    { "q": "¿Qué tipo de carga es apropiada para instancias Spot?", "options": ["Base de datos productiva sin réplicas", "Proceso batch tolerante a interrupciones", "Servidor DNS principal", "Servidor de autenticación crítico"], "answer": 1, "explain": "Spot puede reclamarse con poco aviso, por lo que solo conviene a cargas tolerantes a interrupción." },
+    { "q": "¿Cuál es la práctica correcta para el Security Group de una instancia productiva?", "options": ["Abrir todos los puertos a internet", "Permitir SSH/RDP solo desde IPs corporativas conocidas", "Deshabilitar el Security Group", "Compartir la contraseña de la cuenta raíz"], "answer": 1, "explain": "Restringir el acceso administrativo reduce la superficie de ataque de la instancia." },
+    { "q": "¿Qué diferencia a una Zona de una Región?", "options": ["Son lo mismo", "Una Región agrupa varias Zonas, cada una un data center aislado", "Una Zona agrupa varias Regiones", "Las Zonas no afectan la disponibilidad"], "answer": 1, "explain": "La Zona es la unidad de aislamiento físico dentro de la Región, base del diseño multi-zona." },
+    { "q": "¿Qué función cumple RAM en el contexto de ECS?", "options": ["Añade memoria física a la instancia", "Gestiona usuarios, roles y permisos", "Monitorea el uso de CPU", "Crea snapshots automáticos"], "answer": 1, "explain": "RAM es el servicio de identidad y permisos, sin relación con la memoria física del servidor." },
+    { "q": "¿Cómo se llama el mecanismo que ejecuta un script automáticamente en el primer arranque de una instancia?", "options": ["Live migration", "Security Group", "User Data / cloud-init", "Snapshot"], "answer": 2, "explain": "User Data permite automatizar la configuración inicial sin intervención manual." },
+    { "q": "¿Qué SLA multi-zona cita el curso para ECS?", "options": ["95%", "99.5%", "99.975%", "99.995%"], "answer": 3, "explain": "El curso cita hasta 99.975% en zona única y 99.995% en despliegues multi-zona." },
+    { "q": "¿Qué mecanismo usa un equipo para atribuir costos de ECS a distintos proyectos?", "options": ["Security Groups", "Etiquetas (Tags)", "Snapshots", "VSwitches"], "answer": 1, "explain": "Las etiquetas permiten desglosar la facturación por proyecto, entorno o equipo." }
   ],
-  "exam_focus": "Preguntas típicas: (a) qué familia elegir para X carga, (b) diferencias entre región/zona, (c) modelos de facturación óptimos según patrón de uso, (d) diseño HA multi-AZ, (e) permisos con RAM roles.",
+  "exam_focus": "El examen se rinde en inglés independientemente del idioma del video: evalúa elegir la familia de instancia correcta, diferenciar Stop de Release, seleccionar el modelo de facturación según el patrón de uso, diseño multi-zona y buenas prácticas de Security Groups y RAM.",
   "official_intro": "Understand the advantage of a cloud server. Learn how to purchase a cloud server on Alibaba Cloud, manage the server on our console, backup critical data and ensure your system can adjust according to business needs.",
   "recommended_for": "Cloud Beginners, Technical Operators that are interested in Alibaba Cloud ECS",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_cloudservercantonese",

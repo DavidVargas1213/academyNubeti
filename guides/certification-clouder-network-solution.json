@@ -2,470 +2,199 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-network-solution",
   "title_en": "Alibaba Cloud Network Solution",
-  "title_es": "Alibaba Red en la Nube Solución",
+  "title_es": "Solución de Red de Alibaba Cloud: Guía de Decisión de Servicios",
+  "title_es_html": "Solución de Red de Alibaba Cloud: <em>Guía de Decisión</em> de Servicios",
   "duration_es": "53 minutos",
   "level_es": "Principiante",
   "category_es": "Redes y CDN",
   "subcategory_es": "Red en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-network-solution",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Network Solution» de Alibaba Cloud Academy. Cubre en profundidad Virtual Private Cloud (VPC). VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud Network Solution» de Alibaba Cloud Academy. A diferencia de los cursos que profundizan en un solo servicio (VPC, CDN, SLB, VPN Gateway...), este curso es un mapa de decisión: recorre las tres familias de productos de red de Alibaba Cloud —red en la nube, interconexión de redes y conexión al exterior— y enseña a elegir el servicio correcto según el escenario, tal como lo exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Virtual Private Cloud (VPC)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: VPC, VSwitch, Route Table, Custom Route, NAT Gateway.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Virtual Private Cloud (VPC) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Ubicar</strong> cada servicio de red de Alibaba Cloud dentro de las tres familias del portafolio: Cloud Network, Interconnected Cloud Network y Connection to Cloud Network.",
+    "<strong>Explicar</strong> por qué VPC es el cimiento sobre el que se apoya el resto del portafolio de red.",
+    "<strong>Comparar</strong> VPC Peering, Express Connect, VPN Gateway y Cloud Enterprise Network como mecanismos de interconexión, y elegir el correcto según escenario.",
+    "<strong>Comparar</strong> EIP, NAT Gateway, Server Load Balancer, CDN y Global Accelerator como mecanismos de exposición y aceleración hacia el exterior.",
+    "<strong>Aplicar</strong> una matriz de decisión rápida ante un enunciado de examen que describe un requisito de red sin nombrar el servicio.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder que evalúan selección de servicio, no configuración detallada de uno solo."
   ],
-  "architecture": "Diseño típico: VPC con CIDR 10.0.0.0/16 → dos VSwitch (10.0.1.0/24 zona A, 10.0.2.0/24 zona B). Un NAT Gateway proporciona salida a internet para instancias sin EIP. Un SLB público en front. Peering o CEN conecta con VPCs de otras cuentas/regiones. VPN Gateway une la oficina.",
+  "architecture": "El portafolio de red de Alibaba Cloud se entiende mejor en tres capas concéntricas. En el centro, Cloud Network: la VPC con sus VSwitches, tablas de rutas y Security Groups, donde vive todo recurso de cómputo o base de datos. Alrededor, Interconnected Cloud Network: los mecanismos que unen esa VPC con otras redes —VPC Peering para pares puntuales, Express Connect/VBR para circuitos físicos dedicados, VPN Gateway para túneles cifrados sobre internet, y Cloud Enterprise Network como hub central cuando el número de redes a unir crece más allá de lo que el modelo punto a punto puede sostener—. En el borde exterior, Connection to Cloud Network: los servicios que exponen la VPC hacia el internet público o aceleran ese tráfico —EIP y NAT Gateway para IP pública básica, Server Load Balancer para repartir carga entrante, y CDN/DCDN/Global Accelerator para acercar el contenido o la ruta de red al usuario final—. Un mismo proyecto real casi siempre combina las tres capas: nunca una sola.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Virtual Private Cloud (VPC)",
-      "title_en": "Introduction to Virtual Private Cloud (VPC)",
-      "intro": "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Cloud Network: VPC como cimiento de todo",
+      "title_en": "Cloud Network: VPC as the Foundation",
+      "intro": "Antes de decidir cómo conectar o exponer una red, hay que tener claro que absolutamente todo recurso de cómputo, base de datos o balanceo de Alibaba Cloud vive dentro de una VPC — es la capa que sostiene a todas las demás.",
       "points": [
-        "<strong>Problema que resuelve</strong>: VPC es la red lógica privada donde vive todo recurso Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Virtual Private Cloud (VPC) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>VPC (Virtual Private Cloud)</strong>: red privada lógica aislada con un bloque CIDR propio (rangos RFC 1918); el punto de partida obligatorio de cualquier diseño de red en Alibaba Cloud.",
+        "<strong>VSwitch</strong>: subred de la VPC atada a una zona de disponibilidad concreta; los recursos toman su IP privada de aquí, nunca directamente de la VPC.",
+        "<strong>Security Group</strong>: firewall stateful a nivel de instancia/ENI que controla qué tráfico entra y sale, independientemente de si el origen es interno o externo a la VPC.",
+        "<strong>Tabla de rutas</strong>: define hacia dónde va el tráfico; la tabla del sistema resuelve el tráfico interno de la VPC, y las tablas personalizadas se usan para dirigir tráfico hacia NAT Gateway, Peering, VBR o VPN Gateway.",
+        "<strong>Por qué es el cimiento</strong>: ninguno de los servicios de interconexión o exposición de las siguientes lecciones tiene sentido sin una VPC bien diseñada primero — el CIDR elegido aquí condiciona qué interconexiones serán posibles después."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Virtual Private Cloud (VPC) es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Diseñar el CIDR de la VPC no es un detalle administrativo de esta primera lección — es la decisión que determina, meses después, si un VPC Peering o una migración a CEN serán triviales o requerirán renumerar toda la red."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Virtual Private Cloud (VPC) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Interconnected Cloud Network: uniendo VPC entre sí",
+      "title_en": "Interconnected Cloud Network: Joining VPCs Together",
+      "intro": "Cuando una organización crece más allá de una sola VPC —por entorno, por región, por unidad de negocio— necesita un mecanismo para que esas redes privadas se hablen entre sí sin pasar por internet público.",
       "points": [
-        "<strong>Patrón canónico</strong>: Diseño típico: VPC con CIDR 10.0.0.0/16 → dos VSwitch (10.0.1.0/24 zona A, 10.0.2.0/24 zona B). Un NAT Gateway proporciona salida a internet para instancias sin EIP. Un SLB público en front. Peering o CEN conecta con VPCs de otras cuentas/regiones. VPN Gateway une la oficina.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Virtual Private Cloud (VPC) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>VPC</strong> <em>(VPC)</em>: Red privada lógica con rango CIDR RFC1918 propio.",
-        "<strong>VSwitch</strong> <em>(VSwitch)</em>: Subred atada a una zona; los recursos toman IP de aquí.",
-        "<strong>Tabla de rutas</strong> <em>(Route Table)</em>: Define dónde va el tráfico. Se asocia a VSwitches.",
-        "<strong>Ruta personalizada</strong> <em>(Custom Route)</em>: Entrada manual (destino → next-hop) para NAT/VPN/peering.",
-        "<strong>NAT Gateway</strong> <em>(NAT Gateway)</em>: Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto).",
-        "<strong>EIP</strong> <em>(Elastic IP)</em>: IP pública portable, asignable a ECS, NAT o SLB.",
-        "<strong>VPN Gateway</strong> <em>(VPN Gateway)</em>: Túnel IPsec o SSL con redes remotas.",
-        "<strong>Express Connect</strong> <em>(Express Connect)</em>: Circuito físico dedicado (10/40/100 Gbps) con on-premise."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>VPC Peering</strong>: conexión privada directa 1:1 entre dos VPC; simple y económica, pero no transitiva — unir tres o más VPC exige una conexión explícita por cada par, lo que escala mal más allá de un puñado de redes.",
+        "<strong>Cloud Enterprise Network (CEN)</strong>: actúa como un hub central que interconecta muchas VPC y VBR de distintas regiones y cuentas a la vez, resolviendo el problema de escala que Peering no puede — es el servicio de un curso de certificación dedicado por su profundidad.",
+        "<strong>Cuándo Peering basta y cuándo hace falta CEN</strong>: con 2-3 VPC que deben unirse puntualmente, Peering es suficiente y más simple de administrar; a partir de un puñado de VPC o cuando se necesita ruteo dinámico entre regiones, CEN se vuelve la opción sostenible.",
+        "<strong>Requisito común a ambos</strong>: los rangos CIDR de las VPC a interconectar deben ser disjuntos — ni Peering ni CEN pueden resolver un solape de direcciones IP."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el escenario menciona «un par de VPC» → Peering. Si menciona «decenas de VPC en múltiples regiones» o «red empresarial global» → CEN. El número de redes a unir es la señal más directa para decidir entre ambos."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Interconnected Cloud Network: uniendo la nube con on-premise",
+      "title_en": "Interconnected Cloud Network: Joining the Cloud with On-Premise",
+      "intro": "Cuando la red a unir no es otra VPC sino un data center físico o una oficina, entran en juego dos mecanismos con un mismo objetivo pero presupuestos y tiempos de aprovisionamiento muy distintos.",
       "points": [
-        "<strong>HA</strong>: Planificar CIDR sin solapes desde el inicio (evita rehacer red al conectar)",
-        "<strong>HA</strong>: Usar VSwitch por zona (mínimo 2) para HA",
-        "<strong>HA</strong>: Habilitar Flow Logs en subredes sensibles",
-        "<strong>Buenas prácticas</strong>: NAT Gateway compartido para todas las subredes privadas — más barato que EIPs individuales",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups + Network ACL en capas defense-in-depth",
-        "<strong>Buenas prácticas</strong>: Nunca dar EIP directa a bases de datos — usarlas solo tras un bastion o SLB privado"
+        "<strong>Express Connect (con VBR)</strong>: circuito físico dedicado entre el data center del cliente y Alibaba Cloud; ofrece la latencia más estable y el mayor ancho de banda garantizado, a cambio de mayor costo y un aprovisionamiento de días o semanas.",
+        "<strong>VPN Gateway</strong>: túnel cifrado (IPsec sitio a sitio, o SSL cliente a sitio) sobre internet público; se aprovisiona en minutos y es la opción más económica, a costa de latencia y jitter menos predecibles.",
+        "<strong>Patrón híbrido habitual</strong>: usar Express Connect como conexión primaria y VPN Gateway como respaldo económico que se activa automáticamente solo si el circuito físico dedicado falla.",
+        "<strong>Cuándo cada uno domina</strong>: presupuesto amplio + latencia crítica (ERP, bases de datos replicadas) → Express Connect; presupuesto ajustado + necesidad de desplegar rápido (oficina remota, piloto) → VPN Gateway.",
+        "<strong>Acceso individual vs. red completa</strong>: si lo que se conecta es una oficina entera, se piensa en IPsec-VPN o Express Connect; si son empleados individuales trabajando remoto, la respuesta es SSL-VPN dentro de VPN Gateway."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Ambos mecanismos resuelven «unir una VPC con una red externa» — la pregunta de examen no es cuál es mejor en abstracto, sino cuál equilibra correctamente presupuesto, urgencia de despliegue y sensibilidad a la latencia del escenario descrito."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Connection to Cloud Network: exponer servicios de forma controlada",
+      "title_en": "Connection to Cloud Network: Exposing Services Safely",
+      "intro": "Una vez que la red interna está bien diseñada e interconectada, queda decidir cómo (y cuánto) exponerla hacia el internet público — el borde exterior del portafolio de red.",
       "points": [
-        "<strong>Antipattern</strong>: CIDR 10.0.0.0/8 completo — imposible peerar con otros que usen mismo rango",
-        "<strong>Antipattern</strong>: Todo en una sola VPC/zona — sin HA ni segmentación",
-        "<strong>Antipattern</strong>: Reglas de SG 0.0.0.0/0 → cualquier puerto → ataques triviales",
-        "<strong>Antipattern</strong>: Confundir SG (stateful, por instancia) con NACL (stateless, por subred)",
-        "<strong>Antipattern</strong>: Olvidar que NAT Gateway tiene cargo por hora + por GB procesado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>EIP (Elastic IP)</strong>: dirección IP pública fija que se asocia o desasocia de una instancia, NAT Gateway o balanceador de forma independiente del ciclo de vida del recurso.",
+        "<strong>NAT Gateway</strong>: salida a internet compartida (SNAT) para instancias sin IP pública propia, evitando exponer cada una individualmente; también puede exponer un servicio puntual hacia dentro (DNAT).",
+        "<strong>Server Load Balancer (CLB/ALB/NLB)</strong>: punto de entrada único que reparte tráfico entrante entre múltiples backends, dando alta disponibilidad y capacidad de escalar horizontalmente detrás de una sola IP pública.",
+        "<strong>Principio de exposición mínima</strong>: exponer solo lo estrictamente necesario (normalmente el balanceador, nunca cada instancia individual) y restringir Security Groups al tráfico imprescindible es la práctica que el examen espera ver aplicada en cualquier escenario público."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe «varias instancias sin IP pública que necesitan salir a internet» → NAT Gateway. Si describe «tráfico entrante que debe repartirse entre varios servidores» → Server Load Balancer. Ambos pueden convivir en el mismo diseño, resolviendo direcciones distintas del tráfico."
+      }
+    },
+    {
+      "title_es": "5 · Connection to Cloud Network: acelerar el acceso global",
+      "title_en": "Connection to Cloud Network: Accelerating Global Access",
+      "intro": "Exponer un servicio no es lo mismo que exponerlo con buena latencia para usuarios en todo el mundo — esta familia de servicios ataca específicamente el problema de la distancia de red.",
+      "points": [
+        "<strong>CDN</strong>: cachea copias de contenido estático (imágenes, video, JS/CSS) en miles de nodos edge cercanos al usuario, reduciendo latencia y carga sobre el origen para contenido que se repite entre solicitudes.",
+        "<strong>DCDN</strong>: complementa al CDN acelerando contenido HTTP dinámico no cacheable mediante ruteo de red optimizado, en vez de servir desde una copia en caché.",
+        "<strong>Global Accelerator (GA)</strong>: opera en la capa de transporte (TCP/UDP) sin cachear nada — entrega cualquier tráfico (juegos en tiempo real, VoIP, bases de datos) al backbone privado de Alibaba Cloud lo antes posible, reduciendo la distancia recorrida por internet público.",
+        "<strong>Regla de selección por tipo de tráfico</strong>: contenido cacheable → CDN; HTTP dinámico no cacheable → DCDN; tráfico no HTTP o que necesita una IP fija global para cualquier protocolo → Global Accelerator.",
+        "<strong>Los tres son complementarios, no excluyentes</strong>: una aplicación global típica sirve sus assets estáticos por CDN, su API dinámica por DCDN o directamente vía SLB, y reserva GA para tráfico en tiempo real sensible a jitter."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Los tres servicios comparten la promesa de «acelerar para usuarios globales», pero atacan capas distintas: caché de contenido (CDN), ruteo HTTP optimizado (DCDN) y ruteo de red por debajo de HTTP (GA). Identificar si el contenido es cacheable es la primera pregunta a responder."
+      }
+    },
+    {
+      "title_es": "6 · Matriz de decisión: leyendo un escenario de examen",
+      "title_en": "Decision Matrix: Reading an Exam Scenario",
+      "intro": "El examen rara vez pregunta «¿qué es X?» de forma aislada — casi siempre describe un requisito de negocio y espera que identifiques qué servicio (o combinación) lo resuelve. Este módulo entrena ese reflejo.",
+      "points": [
+        "<strong>Paso 1 — identificar la capa</strong>: ¿el problema es de red interna (VPC/VSwitch), de interconexión entre redes (Peering/CEN/Express Connect/VPN) o de exposición/aceleración hacia afuera (EIP/NAT/SLB/CDN/DCDN/GA)?",
+        "<strong>Paso 2 — identificar el volumen y la escala</strong>: ¿son 2 redes o 20? ¿es tráfico cacheable o en tiempo real? ¿es una oficina completa o un empleado individual? Las respuestas correctas casi siempre dependen de estos matices de escala.",
+        "<strong>Paso 3 — identificar la restricción dominante</strong>: presupuesto ajustado apunta a VPN Gateway o CDN estándar; latencia crítica apunta a Express Connect o GA; simplicidad operativa con pocas redes apunta a Peering en vez de CEN.",
+        "<strong>Ejemplo resuelto</strong>: «Empresa con oficinas en 3 países necesita que todas accedan a una VPC central de forma segura y económica, sin inversión en circuitos físicos» → VPN Gateway (IPsec) desde cada oficina hacia la misma VPC, o CEN si además se necesitan interconectar VPC en varias regiones."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado no nombra ningún producto explícitamente, subraya mentalmente: tipo de tráfico, número de redes/usuarios involucrados, y la restricción dominante (costo, latencia o velocidad de despliegue). Esas tres pistas casi siempre bastan para descartar 2 de las 4 opciones."
+      }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Las preguntas más falladas de esta parte del examen no son sobre un servicio mal entendido, sino sobre elegir el servicio equivocado para un escenario que en realidad pedía otro de la misma familia.",
+      "points": [
+        "<strong>Antipatrón</strong>: usar VPC Peering para interconectar una docena de VPC en vez de migrar a Cloud Enterprise Network cuando el número de conexiones se vuelve inmanejable.",
+        "<strong>Antipatrón</strong>: elegir Express Connect para un piloto de corta duración con presupuesto ajustado, cuando VPN Gateway resuelve lo mismo en minutos y a menor costo.",
+        "<strong>Antipatrón</strong>: esperar que un CDN acelere tráfico dinámico no cacheable o tráfico UDP de un juego en tiempo real — esa combinación exige DCDN o Global Accelerator, no CDN.",
+        "<strong>Antipatrón</strong>: exponer instancias individuales con EIP propia en vez de centralizar la entrada en un Server Load Balancer.",
+        "<strong>Antipatrón</strong>: diseñar el CIDR de una VPC nueva sin considerar futuras interconexiones, bloqueando un Peering o CEN por solape de direcciones.",
+        "<strong>Regla de oro</strong>: ante dos servicios de la misma familia que parecen resolver el mismo problema, la variable decisiva casi siempre es la escala (cuántas redes/usuarios) o la restricción dominante (costo vs. latencia vs. velocidad de despliegue)."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Este curso es, en esencia, un índice del resto del portafolio de red. Cuando una pregunta te resulte ambigua entre dos servicios, vuelve a las tres capas —Cloud Network, Interconnected Cloud Network, Connection to Cloud Network— y ubica primero en cuál de ellas vive el problema."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Aislamiento de entornos dev/staging/prod en VPCs separadas"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Extensión híbrida: on-premise ↔ Alibaba Cloud vía Express Connect"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-región con CEN para replicación y failover"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Zero-trust: cada microservicio en su propia subred con SG restrictivos"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Segmentación PCI-DSS: red de tarjetas aislada"
-    }
+    { "title": "Escenario 1", "text": "Startup con una sola VPC que empieza a necesitar un entorno de staging aislado — segunda VPC + Peering puntual" },
+    { "title": "Escenario 2", "text": "Empresa con oficinas en 3 países que necesita acceso seguro y económico a una VPC central — VPN Gateway multi-sitio" },
+    { "title": "Escenario 3", "text": "Corporación con 15 VPC en 4 regiones que ya no puede sostener conexiones Peering punto a punto — migración a CEN" },
+    { "title": "Escenario 4", "text": "Banco con latencia crítica hacia su data center on-premise y presupuesto amplio — Express Connect con VBR" },
+    { "title": "Escenario 5", "text": "App móvil global que sirve imágenes (CDN), API dinámica (DCDN) y un juego en tiempo real (Global Accelerator) simultáneamente" },
+    { "title": "Escenario 6", "text": "Sitio web con tráfico creciente que empieza a saturar un único servidor — Server Load Balancer delante de varias instancias" }
   ],
   "mistakes": [
-    "CIDR 10.0.0.0/8 completo — imposible peerar con otros que usen mismo rango",
-    "Todo en una sola VPC/zona — sin HA ni segmentación",
-    "Reglas de SG 0.0.0.0/0 → cualquier puerto → ataques triviales",
-    "Confundir SG (stateful, por instancia) con NACL (stateless, por subred)",
-    "Olvidar que NAT Gateway tiene cargo por hora + por GB procesado"
+    "Usar VPC Peering para interconectar muchas VPC en vez de migrar a Cloud Enterprise Network a tiempo",
+    "Elegir Express Connect para necesidades de corto plazo o presupuesto ajustado, cuando VPN Gateway resuelve lo mismo más rápido y barato",
+    "Esperar que un CDN acelere tráfico dinámico no cacheable o tráfico UDP en tiempo real",
+    "Exponer instancias individuales con EIP propia en vez de centralizar la entrada en un Server Load Balancer",
+    "Diseñar el CIDR de una VPC sin pensar en interconexiones futuras, bloqueando un Peering o CEN por solape",
+    "Confundir 'conectar redes' (Interconnected Cloud Network) con 'exponer un servicio a internet' (Connection to Cloud Network) como si fueran el mismo problema"
   ],
   "cli": [
-    {
-      "cmd": "aliyun vpc CreateVpc --CidrBlock 10.0.0.0/16",
-      "desc": "Crear VPC"
-    },
-    {
-      "cmd": "aliyun vpc CreateVSwitch --VpcId ... --ZoneId ... --CidrBlock 10.0.1.0/24",
-      "desc": "Crear subred"
-    },
-    {
-      "cmd": "aliyun vpc CreateNatGateway --VpcId ... --NatType Enhanced",
-      "desc": "NAT Gateway"
-    },
-    {
-      "cmd": "aliyun vpc AllocateEipAddress --Bandwidth 5",
-      "desc": "Reservar EIP"
-    }
+    { "cmd": "aliyun vpc CreateVpc --CidrBlock 10.0.0.0/16 --VpcName vpc-central", "desc": "Crear la VPC base del diseño (capa Cloud Network)" },
+    { "cmd": "aliyun vpc CreateVpcPeerConnection --VpcId vpc-xxxxx --AcceptingVpcId vpc-yyyyy", "desc": "Interconectar dos VPC puntualmente (capa Interconnected Cloud Network)" },
+    { "cmd": "aliyun cbn CreateCenInstance --Name red-empresarial", "desc": "Crear un hub CEN cuando Peering deja de escalar" },
+    { "cmd": "aliyun vpc AllocateEipAddress --Bandwidth 10", "desc": "Reservar una EIP para exponer un recurso (capa Connection to Cloud Network)" },
+    { "cmd": "aliyun slb CreateLoadBalancer --LoadBalancerName front-web --AddressType internet", "desc": "Crear un balanceador como punto de entrada único" },
+    { "cmd": "aliyun cdn AddCdnDomain --DomainName static.midominio.com --CdnType web", "desc": "Acelerar contenido estático cacheable con CDN" }
   ],
   "glossary": [
-    {
-      "en": "VPC",
-      "es": "VPC",
-      "def": "Red privada lógica con rango CIDR RFC1918 propio."
-    },
-    {
-      "en": "VSwitch",
-      "es": "VSwitch",
-      "def": "Subred atada a una zona; los recursos toman IP de aquí."
-    },
-    {
-      "en": "Route Table",
-      "es": "Tabla de rutas",
-      "def": "Define dónde va el tráfico. Se asocia a VSwitches."
-    },
-    {
-      "en": "Custom Route",
-      "es": "Ruta personalizada",
-      "def": "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-    },
-    {
-      "en": "NAT Gateway",
-      "es": "NAT Gateway",
-      "def": "Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto)."
-    },
-    {
-      "en": "Elastic IP",
-      "es": "EIP",
-      "def": "IP pública portable, asignable a ECS, NAT o SLB."
-    },
-    {
-      "en": "VPN Gateway",
-      "es": "VPN Gateway",
-      "def": "Túnel IPsec o SSL con redes remotas."
-    },
-    {
-      "en": "Express Connect",
-      "es": "Express Connect",
-      "def": "Circuito físico dedicado (10/40/100 Gbps) con on-premise."
-    },
-    {
-      "en": "VBR",
-      "es": "Virtual Border Router",
-      "def": "Punto de peering entre red física y VPC vía Express Connect."
-    },
-    {
-      "en": "CEN",
-      "es": "Cloud Enterprise Network",
-      "def": "Malla global que interconecta múltiples VPCs y VBRs."
-    },
-    {
-      "en": "VPC Peering",
-      "es": "Peering",
-      "def": "Conexión directa 1:1 entre dos VPCs en la misma región."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de instancia."
-    },
-    {
-      "en": "Network ACL",
-      "es": "ACL de red",
-      "def": "Reglas stateless a nivel de VSwitch."
-    },
-    {
-      "en": "PrivateLink",
-      "es": "PrivateLink",
-      "def": "Acceso privado a servicios sin exponer a internet."
-    },
-    {
-      "en": "Flow Log",
-      "es": "Flow Log",
-      "def": "Captura metadatos de tráfico para forensia."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Cloud Network", "es": "Red en la nube", "def": "Familia de servicios de red interna: VPC, VSwitch, Security Group, tabla de rutas." },
+    { "en": "Interconnected Cloud Network", "es": "Red en la nube interconectada", "def": "Familia de servicios que unen VPC entre sí o con on-premise: Peering, CEN, Express Connect, VPN Gateway." },
+    { "en": "Connection to Cloud Network", "es": "Conexión a la red en la nube", "def": "Familia de servicios que exponen o aceleran el acceso hacia el exterior: EIP, NAT Gateway, SLB, CDN, DCDN, GA." },
+    { "en": "VPC", "es": "VPC", "def": "Red privada lógica aislada con CIDR propio; el cimiento de todo el portafolio de red." },
+    { "en": "VSwitch", "es": "VSwitch", "def": "Subred de la VPC atada a una zona de disponibilidad." },
+    { "en": "VPC Peering", "es": "Peering de VPC", "def": "Conexión privada directa 1:1 entre dos VPC, no transitiva." },
+    { "en": "Cloud Enterprise Network (CEN)", "es": "CEN", "def": "Hub central que interconecta muchas VPC y VBR de distintas regiones/cuentas." },
+    { "en": "Express Connect", "es": "Express Connect", "def": "Circuito físico dedicado hacia on-premise con latencia estable y mayor costo." },
+    { "en": "VPN Gateway", "es": "VPN Gateway", "def": "Túnel cifrado sobre internet público, económico y rápido de desplegar." },
+    { "en": "EIP (Elastic IP)", "es": "IP elástica", "def": "Dirección pública fija asociable a instancias, NAT Gateway o balanceadores." },
+    { "en": "NAT Gateway", "es": "NAT Gateway", "def": "Salida compartida a internet (SNAT) para instancias sin IP pública propia." },
+    { "en": "Server Load Balancer (SLB)", "es": "Balanceador de carga", "def": "Punto de entrada único que reparte tráfico entre múltiples backends." },
+    { "en": "CDN", "es": "CDN", "def": "Red de distribución de contenido que cachea objetos estáticos cerca del usuario." },
+    { "en": "DCDN", "es": "DCDN", "def": "Aceleración de contenido HTTP dinámico no cacheable mediante ruteo optimizado." },
+    { "en": "Global Accelerator (GA)", "es": "Global Accelerator", "def": "Aceleración de capa de transporte (TCP/UDP) sin caché, vía backbone privado." },
+    { "en": "CIDR", "es": "CIDR", "def": "Notación que define el rango de direcciones IP de una red o subred." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful a nivel de instancia/ENI." },
+    { "en": "VBR (Virtual Border Router)", "es": "VBR", "def": "Punto de peering lógico entre un circuito de Express Connect y una VPC." },
+    { "en": "Transitividad", "es": "Transitividad", "def": "Propiedad que no tiene VPC Peering: A-B y B-C no implican que A alcance a C." },
+    { "en": "Backbone privado", "es": "Backbone privado", "def": "Red de fibra propia de Alibaba Cloud que Global Accelerator usa para evitar el internet público." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Virtual Private Cloud (VPC)?",
-      "options": [
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN."
-    },
-    {
-      "q": "¿Qué es <strong>VPC</strong> (VPC) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "VPC (VPC): Red privada lógica con rango CIDR RFC1918 propio."
-    },
-    {
-      "q": "¿Qué es <strong>VSwitch</strong> (VSwitch) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "VSwitch (VSwitch): Subred atada a una zona; los recursos toman IP de aquí."
-    },
-    {
-      "q": "¿Qué es <strong>Route Table</strong> (Tabla de rutas) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "Route Table (Tabla de rutas): Define dónde va el tráfico. Se asocia a VSwitches."
-    },
-    {
-      "q": "¿Qué es <strong>Custom Route</strong> (Ruta personalizada) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches."
-      ],
-      "answer": 0,
-      "explain": "Custom Route (Ruta personalizada): Entrada manual (destino → next-hop) para NAT/VPN/peering."
-    },
-    {
-      "q": "¿Qué es <strong>NAT Gateway</strong> (NAT Gateway) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto).",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches."
-      ],
-      "answer": 0,
-      "explain": "NAT Gateway (NAT Gateway): Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Virtual Private Cloud (VPC), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Virtual Private Cloud (VPC) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Virtual Private Cloud (VPC), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Virtual Private Cloud (VPC) es la elección típica:",
-      "options": [
-        "Aislamiento de entornos dev/staging/prod en VPCs separadas",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Aislamiento de entornos dev/staging/prod en VPCs separadas."
-    }
+    { "q": "¿Cuáles son las tres familias en que se organiza el portafolio de red de Alibaba Cloud según este curso?", "options": ["Cómputo, Almacenamiento y Bases de Datos", "Cloud Network, Interconnected Cloud Network y Connection to Cloud Network", "IaaS, PaaS y SaaS", "Seguridad, Monitoreo y Facturación"], "answer": 1, "explain": "El curso organiza el portafolio en red interna (Cloud Network), interconexión entre redes (Interconnected Cloud Network) y exposición/aceleración al exterior (Connection to Cloud Network)." },
+    { "q": "¿Por qué se dice que VPC es el 'cimiento' del portafolio de red de Alibaba Cloud?", "options": ["Porque es el servicio más caro", "Porque todo recurso de cómputo o base de datos vive dentro de una VPC, y su diseño de CIDR condiciona las interconexiones futuras", "Porque reemplaza a todos los demás servicios de red", "Porque solo se usa en cuentas empresariales"], "answer": 1, "explain": "Ningún mecanismo de interconexión o exposición tiene sentido sin una VPC bien diseñada primero, y el CIDR elegido determina qué interconexiones serán posibles después." },
+    { "q": "Una empresa necesita interconectar únicamente 2 VPC de la misma cuenta. ¿Qué mecanismo es suficiente y más simple que un hub central?", "options": ["Cloud Enterprise Network", "VPC Peering", "Express Connect", "Global Accelerator"], "answer": 1, "explain": "Para un par puntual de VPC, Peering es más simple de administrar que migrar a un hub central como CEN." },
+    { "q": "Una corporación tiene 15 VPC en 4 regiones y ya no puede sostener las conexiones Peering necesarias. ¿Qué servicio resuelve este problema de escala?", "options": ["NAT Gateway", "Cloud Enterprise Network (CEN)", "Server Load Balancer", "CDN"], "answer": 1, "explain": "CEN actúa como hub central que interconecta muchas VPC sin necesidad de una conexión Peering por cada par, resolviendo el problema de escala." },
+    { "q": "¿Qué diferencia principal existe entre Express Connect y VPN Gateway como mecanismos de interconexión con on-premise?", "options": ["Son idénticos en costo y tiempo de aprovisionamiento", "Express Connect usa un circuito físico dedicado con mayor costo y latencia estable; VPN Gateway usa un túnel cifrado sobre internet, más económico y rápido de desplegar", "VPN Gateway requiere semanas de aprovisionamiento", "Express Connect no puede combinarse con VPN Gateway"], "answer": 1, "explain": "Express Connect prioriza estabilidad de latencia a mayor costo; VPN Gateway prioriza velocidad de despliegue y economía." },
+    { "q": "¿Qué mecanismo permite que instancias sin IP pública propia salgan a internet sin exponer cada una individualmente?", "options": ["VPC Peering", "NAT Gateway", "CDN", "VBR"], "answer": 1, "explain": "NAT Gateway centraliza la salida a internet (SNAT) de instancias privadas, evitando asignarles una EIP individual a cada una." },
+    { "q": "Un sitio web recibe cada vez más tráfico y un único servidor empieza a saturarse. ¿Qué servicio de la familia 'Connection to Cloud Network' resuelve este problema?", "options": ["VPN Gateway", "Server Load Balancer", "VPC Peering", "Express Connect"], "answer": 1, "explain": "El balanceador de carga reparte el tráfico entre múltiples servidores backend, permitiendo escalar horizontalmente y evitar el punto único de falla." },
+    { "q": "Una aplicación necesita acelerar imágenes y video estáticos que se repiten entre miles de usuarios. ¿Qué servicio es el más adecuado?", "options": ["Global Accelerator", "CDN", "VPN Gateway", "NAT Gateway"], "answer": 1, "explain": "CDN cachea contenido estático cerca del usuario, ideal para contenido que se repite entre solicitudes." },
+    { "q": "Un videojuego multijugador en tiempo real usa tráfico UDP y necesita reducir jitter entre continentes. ¿Qué servicio de aceleración es el correcto, y por qué no un CDN?", "options": ["CDN, porque acelera cualquier tráfico", "Global Accelerator, porque opera en capa de transporte (TCP/UDP) sin depender de contenido cacheable", "DCDN, porque solo funciona con HTTP dinámico", "Ninguno, no se puede acelerar tráfico UDP"], "answer": 1, "explain": "GA acelera cualquier protocolo TCP/UDP entregándolo al backbone privado lo antes posible; un CDN solo cachea contenido HTTP, inútil para tráfico UDP no cacheable." },
+    { "q": "¿Qué variable es la más determinante para elegir entre VPC Peering y Cloud Enterprise Network según este curso?", "options": ["El color de la consola de administración", "El número de VPC/regiones a interconectar y la necesidad de ruteo dinámico entre ellas", "El sistema operativo de las instancias", "El nombre de la cuenta de Alibaba Cloud"], "answer": 1, "explain": "La escala (cuántas redes hay que unir) es la señal más directa: pocas VPC puntuales favorecen Peering, muchas VPC en varias regiones favorecen CEN." },
+    { "q": "Una empresa con presupuesto ajustado necesita conectar una oficina remota a su VPC en cuestión de días, no semanas. ¿Qué opción es la más adecuada?", "options": ["Express Connect", "VPN Gateway", "Cloud Enterprise Network exclusivamente", "Global Accelerator"], "answer": 1, "explain": "VPN Gateway se aprovisiona en minutos u horas sobre internet público, frente a los días o semanas que toma un circuito físico dedicado de Express Connect." },
+    { "q": "¿Cuál es el principio de exposición mínima que el examen espera ver aplicado al diseñar el borde exterior de una red?", "options": ["Asignar una EIP pública a cada instancia individual para máxima flexibilidad", "Centralizar la entrada pública en un balanceador o gateway, restringiendo Security Groups al tráfico imprescindible", "Deshabilitar todos los Security Groups para simplificar el acceso", "Exponer siempre todos los puertos por si acaso"], "answer": 1, "explain": "El diseño recomendado minimiza la superficie expuesta centralizando el acceso público (SLB, NAT Gateway) en vez de dar IP pública a cada recurso individual." },
+    { "q": "Una aplicación global sirve assets estáticos, una API dinámica y un canal de voz en tiempo real. ¿Qué combinación de servicios de aceleración describe mejor una arquitectura completa?", "options": ["Solo CDN para todo el tráfico", "CDN para los assets estáticos, DCDN o SLB directo para la API dinámica, y Global Accelerator para el canal de voz en tiempo real", "Solo Global Accelerator para todo el tráfico", "Solo VPN Gateway para todo el tráfico"], "answer": 1, "explain": "Cada tipo de tráfico se beneficia de un servicio distinto: CDN para lo cacheable, DCDN/SLB para HTTP dinámico, y GA para tráfico en tiempo real sensible a latencia y jitter." }
   ],
-  "exam_focus": "Preguntas: (a) diferencia SG vs NACL, (b) cuándo usar CEN vs Peering vs VPN, (c) diseño CIDR sin solapes, (d) NAT Gateway vs EIP individuales, (e) Express Connect vs VPN.",
-  "official_intro": "This course aims to help Alibaba Cloud users quickly understand Alibaba Cloud network products, so as to have the ability to select Alibaba Cloud Network services according to scenarios, to enable individual users or enterprise users to quickly understand cloud network technology. The course mainly focuses on the services of three parts: Cloud Network, Interconnected Cloud Network and Connection to Cloud Network. Each part is composed of specific Alibaba Cloud Network services.",
+  "exam_focus": "El examen suele evaluar: (a) ubicar correctamente cada servicio dentro de sus tres familias (Cloud Network / Interconnected Cloud Network / Connection to Cloud Network), (b) elegir Peering vs. CEN según el número de redes a interconectar, (c) elegir Express Connect vs. VPN Gateway según presupuesto y urgencia, (d) elegir CDN vs. DCDN vs. Global Accelerator según el tipo de tráfico, (e) aplicar el principio de exposición mínima al diseñar el borde público de la red.",
+  "official_intro": "This course aims to help Alibaba Cloud users quickly understand Alibaba Cloud network products, so as to have the ability to select Alibaba Cloud Network services according to scenarios, to enable individual users or enterprise users to quickly understand cloud network technology. The course mainly focuses on the services of three parts: Cloud Network, Interconnected Cloud Network and Connection to Cloud Network.",
   "recommended_for": "Cloud server users, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-network-solution",
   "exam_meta": {

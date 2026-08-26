@@ -2,411 +2,183 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-clickhouse2",
   "title_en": "Alibaba Cloud ApsaraDB for ClickHouse Deep Dive",
-  "title_es": "Alibaba Cloud ApsaraDB para ClickHouse Profundización",
+  "title_es": "Profundización en Alibaba Cloud ApsaraDB for ClickHouse",
+  "title_es_html": "Profundización en Alibaba Cloud <em>ApsaraDB for ClickHouse</em>",
   "duration_es": "59 minutos",
   "level_es": "Avanzado",
   "category_es": "Bases de Datos",
   "subcategory_es": "Data Warehouse",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_clickhouse2",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud ApsaraDB for ClickHouse Deep Dive» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB for ClickHouse. ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows. Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre ApsaraDB for ClickHouse, el motor columnar OLAP de Alibaba Cloud pensado para agregaciones sobre miles de millones de filas en milisegundos. A diferencia de un motor OLTP fila-por-fila (MySQL, PostgreSQL), ClickHouse organiza los datos por columna y los ordena físicamente según una clave de ordenación, lo que permite escanear solo las columnas y los rangos que la consulta necesita. Esta guía profundiza en la familia de motores MergeTree, el diseño de partition/order key y el patrón de sharding con tablas Distributed, que es donde se concentra el examen.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB for ClickHouse</em>.",
-    "<strong>Dominar</strong> los conceptos clave: MergeTree, Partition Key, Order Key, Materialized View, Distributed Table.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB for ClickHouse y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué un motor columnar como ClickHouse supera a un motor fila-por-fila en cargas analíticas de agregación.",
+    "<strong>Distinguir</strong> las variantes de la familia MergeTree: MergeTree, ReplacingMergeTree, SummingMergeTree, AggregatingMergeTree, CollapsingMergeTree.",
+    "<strong>Diseñar</strong> correctamente la partition key y la sorting key (order by) de una tabla según el patrón de consulta.",
+    "<strong>Explicar</strong> el patrón de sharding con tablas Distributed sobre tablas locales ReplicatedMergeTree.",
+    "<strong>Aplicar</strong> materialized views para pre-agregar datos en el momento de la escritura.",
+    "<strong>Evitar</strong> los antipatrones de ingesta que degradan el rendimiento de un clúster ClickHouse en producción.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre arquitectura y diseño de esquema en ClickHouse."
   ],
-  "architecture": "Kafka/Flink CDC → ingesta en ClickHouse → tablas MergeTree con partition por día + order by columnas de filtro → materialized views para agregaciones pre-computadas → Quick BI/Grafana como frontend.",
+  "architecture": "Un pipeline típico ingiere eventos desde Kafka o Flink hacia una tabla local ReplicatedMergeTree en cada nodo shard (con 2 réplicas síncronas coordinadas por ClickHouse Keeper, el reemplazo nativo de ZooKeeper). Una tabla Distributed, definida encima de las tablas locales, actúa como vista de enrutamiento: las consultas SELECT se envían a esta tabla y ClickHouse las reparte entre los shards en paralelo, combinando resultados parciales. Cada tabla local se particiona por fecha (partition key) y se ordena internamente por las columnas de filtro más frecuentes (sorting key), lo que genera un índice disperso (sparse primary index) que permite saltar bloques completos de datos sin leerlos. Materialized views escuchan los INSERT de la tabla base y escriben agregaciones pre-calculadas en tablas SummingMergeTree o AggregatingMergeTree, que los dashboards (Grafana, Quick BI, Superset) consultan directamente en vez de re-agregar sobre los datos crudos en cada refresco.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ApsaraDB for ClickHouse",
-      "title_en": "Introduction to ApsaraDB for ClickHouse",
-      "intro": "ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué un motor columnar para analítica",
+      "title_en": "Why a Columnar Engine for Analytics",
+      "intro": "Antes de tocar sintaxis hay que entender la decisión de diseño fundamental de ClickHouse: almacenar los datos por columna en vez de por fila. Esa única decisión explica casi todas sus ventajas y limitaciones frente a un motor OLTP tradicional.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ApsaraDB for ClickHouse se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Almacenamiento por columna</strong>: cada columna se guarda en su propio archivo comprimido; una consulta que agrega 3 de 50 columnas solo lee esas 3, mientras que un motor fila-por-fila (row store) lee la fila completa aunque solo necesite un campo.",
+        "<strong>Compresión superior</strong>: valores del mismo tipo y dominio, almacenados contiguos, comprimen mucho mejor (LZ4 o ZSTD) que filas heterogéneas — reduce I/O de disco, que suele ser el cuello de botella real.",
+        "<strong>Ejecución vectorizada</strong>: ClickHouse procesa los datos en bloques (vectores) de miles de valores por instrucción de CPU en vez de fila por fila, aprovechando SIMD y minimizando el overhead por fila.",
+        "<strong>El costo de esta ventaja</strong>: actualizar o borrar una sola fila es una operación costosa (reescribe partes completas de la columna), y por eso ClickHouse no es apto para cargas OLTP con muchos UPDATE/DELETE puntuales.",
+        "<strong>Cuándo NO usar ClickHouse</strong>: si la carga es transaccional (muchas escrituras pequeñas con consistencia ACID estricta por fila), la respuesta correcta sigue siendo RDS/PolarDB, no ClickHouse."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ApsaraDB for ClickHouse es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "ClickHouse cambia el modelo de costos: escrituras en bloques grandes y baratas, lecturas analíticas extremadamente rápidas, a cambio de UPDATE/DELETE fila-por-fila caros. El examen espera que reconozcas ese trade-off, no que memorices que 'es más rápido' en abstracto."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ApsaraDB for ClickHouse no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · La familia de motores MergeTree",
+      "title_en": "The MergeTree Engine Family",
+      "intro": "MergeTree no es un solo motor sino una familia: todas comparten el mecanismo de partición + orden + fusión en segundo plano, pero cada variante resuelve un problema distinto de deduplicación o agregación.",
       "points": [
-        "<strong>Patrón canónico</strong>: Kafka/Flink CDC → ingesta en ClickHouse → tablas MergeTree con partition por día + order by columnas de filtro → materialized views para agregaciones pre-computadas → Quick BI/Grafana como frontend.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ApsaraDB for ClickHouse (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>MergeTree</strong> <em>(MergeTree)</em>: Engine principal, particionado + ordenado.",
-        "<strong>Partition key</strong> <em>(Partition Key)</em>: División física, típicamente por fecha.",
-        "<strong>Order by</strong> <em>(Order Key)</em>: Clave de ordenación dentro de partición — clave del rendimiento.",
-        "<strong>Materialized View</strong> <em>(Materialized View)</em>: Vista pre-agregada actualizada en escritura.",
-        "<strong>Tabla distribuida</strong> <em>(Distributed Table)</em>: Vista que rutea a múltiples shards.",
-        "<strong>ReplicatedMergeTree</strong> <em>(ReplicatedMergeTree)</em>: Replicación entre nodos via ZooKeeper."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>MergeTree</strong>: el motor base — inserta datos en 'parts' inmutables que se fusionan (merge) en segundo plano según la sorting key; es la base de todas las demás variantes.",
+        "<strong>ReplacingMergeTree</strong>: durante el merge, conserva solo la última fila entre las que comparten la misma sorting key — útil para tablas tipo 'estado actual' donde llegan actualizaciones repetidas de la misma entidad (p.ej. perfil de usuario).",
+        "<strong>SummingMergeTree</strong>: durante el merge, suma automáticamente las columnas numéricas de filas con la misma sorting key — ideal para contadores o métricas que se pre-agregan sin necesidad de GROUP BY en cada consulta.",
+        "<strong>AggregatingMergeTree</strong>: almacena estados de función agregada (no solo sumas) que se combinan durante el merge — se usa casi siempre detrás de una materialized view para pre-computar agregaciones complejas (promedios, percentiles, conteos distintos).",
+        "<strong>CollapsingMergeTree / VersionedCollapsingMergeTree</strong>: permite 'cancelar' una fila anterior insertando una fila con signo opuesto (+1/-1), simulando updates sin reescribir datos — típico en sistemas de eventos que necesitan corregir registros ya insertados.",
+        "<strong>ReplicatedMergeTree</strong>: prefijo que se combina con cualquiera de las anteriores (ej. ReplicatedSummingMergeTree) para replicar los datos entre nodos vía ClickHouse Keeper, base de la alta disponibilidad."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado dice 'conservar solo el último valor por clave' → ReplacingMergeTree. Si dice 'sumar automáticamente métricas por clave' → SummingMergeTree. Si dice 'pre-calcular agregaciones complejas detrás de una vista' → AggregatingMergeTree."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Diseño de partition key y sorting key",
+      "title_en": "Partition Key and Sorting Key Design",
+      "intro": "La decisión de diseño con mayor impacto en el rendimiento de ClickHouse no es el tamaño del clúster: es cómo se particiona y ordena cada tabla. Un mal diseño aquí no se compensa añadiendo más nodos.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Partition mensual/diaria — no por rango tiny",
-        "<strong>Buenas prácticas</strong>: Order by con columnas de filtro más frecuentes primero",
-        "<strong>Buenas prácticas</strong>: Materialized views para agregaciones repetidas",
-        "<strong>Buenas prácticas</strong>: Batches grandes en INSERT (1K-1M rows)",
-        "<strong>Buenas prácticas</strong>: Compresión ZSTD para datos históricos"
+        "<strong>Partition key</strong>: divide físicamente la tabla en directorios independientes, típicamente por mes o día (<code>PARTITION BY toYYYYMM(fecha)</code>); permite eliminar particiones completas (TTL) o podarlas (partition pruning) sin leerlas cuando el filtro WHERE las excluye.",
+        "<strong>Sorting key (ORDER BY)</strong>: define el orden físico de las filas dentro de cada part y genera un índice disperso (sparse index) que marca la posición cada N filas (por defecto 8192) — no es un índice B-tree tradicional, es una guía para saltar bloques.",
+        "<strong>Orden de las columnas en ORDER BY</strong>: deben ir de menor a mayor cardinalidad relativa según la frecuencia de filtro — una columna de baja cardinalidad usada en casi todos los WHERE (p.ej. <code>tenant_id</code>) va primero; una de alta cardinalidad (p.ej. <code>user_id</code>) va después.",
+        "<strong>Particiones demasiado pequeñas o numerosas</strong>: generan miles de 'parts' pequeños que el proceso de merge en background no logra consolidar a tiempo, produciendo el error clásico 'Too many parts' y degradando tanto inserts como selects.",
+        "<strong>Índices de salto (skip indexes)</strong>: <code>minmax</code>, <code>set</code> o <code>bloom_filter</code> sobre columnas que no forman parte de la sorting key, para acelerar filtros secundarios sin reordenar toda la tabla."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "Partition key = por dónde se puede podar de un tajo (normalmente fecha). Sorting key = qué tan rápido se filtra dentro de cada partición. Son decisiones distintas y ambas se definen una sola vez al crear la tabla — cambiarlas después implica reescribir los datos."
+      }
+    },
+    {
+      "title_es": "4 · Ingesta: por qué el tamaño del batch lo es todo",
+      "title_en": "Ingestion: Why Batch Size Is Everything",
+      "intro": "ClickHouse está optimizado para recibir pocos INSERT grandes, no miles de INSERT pequeños. Este módulo cubre los patrones de ingesta correctos y por qué los incorrectos degradan el clúster completo.",
+      "points": [
+        "<strong>Cada INSERT crea un part nuevo</strong>: insertar fila por fila (o en micro-lotes de pocas filas) genera miles de parts diminutos por segundo, saturando el proceso de merge en background y degradando toda consulta posterior.",
+        "<strong>Batch recomendado</strong>: agrupar entre 1,000 y 1,000,000 de filas por INSERT — vía buffer en la aplicación, Kafka Engine con consumo por lotes, o la tabla Buffer Engine de ClickHouse como colchón intermedio.",
+        "<strong>Kafka Engine</strong>: tabla especial que consume directamente de un tópico Kafka y, combinada con una materialized view, vuelca los datos ya transformados hacia la tabla MergeTree de destino — patrón estándar de ingesta streaming.",
+        "<strong>Materialized views en escritura</strong>: se disparan automáticamente en cada INSERT hacia la tabla origen, no son vistas 'bajo demanda' como en un motor OLTP — el costo de la agregación se paga una vez en la escritura, no en cada lectura.",
+        "<strong>Deduplicación</strong>: ReplicatedMergeTree deduplica automáticamente inserts idénticos en una ventana corta, lo que hace seguro reintentar un INSERT que falló por timeout sin duplicar datos."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe 'miles de eventos por segundo insertados uno por uno' como causa de degradación, la respuesta casi siempre es agrupar en batches más grandes o interponer una tabla Buffer/Kafka Engine, no aumentar el tamaño del clúster."
+      }
+    },
+    {
+      "title_es": "5 · Sharding, réplicas y alta disponibilidad",
+      "title_en": "Sharding, Replicas and High Availability",
+      "intro": "Cuando una sola máquina no basta —por volumen de datos o de consultas concurrentes— ClickHouse escala horizontalmente combinando shards (partición horizontal de datos) con réplicas (copias del mismo shard).",
+      "points": [
+        "<strong>Shard</strong>: subconjunto horizontal de los datos de una tabla, alojado en uno o más nodos; cada shard tiene su propia tabla local ReplicatedMergeTree.",
+        "<strong>Réplica</strong>: copia sincronizada de un shard en otro nodo, coordinada por ClickHouse Keeper (o ZooKeeper en versiones más antiguas), para tolerar la caída de un nodo sin perder datos ni disponibilidad.",
+        "<strong>Tabla Distributed</strong>: tabla 'virtual' que no almacena datos propios — enruta cada INSERT al shard correspondiente (según una clave de sharding) y cada SELECT lo reparte entre todos los shards en paralelo, combinando resultados.",
+        "<strong>Clave de sharding</strong>: expresión (p.ej. <code>rand()</code> o <code>cityHash64(user_id)</code>) que determina a qué shard va cada fila; una clave mal elegida concentra datos en un solo shard (hotspot), igual que una distribution key mal elegida en un warehouse MPP tradicional.",
+        "<strong>ApsaraDB for ClickHouse Enterprise / Double-Replica</strong>: la edición gestionada de Alibaba Cloud añade multi-zona, backup automático a OSS y separación opcional de cómputo/almacenamiento, reduciendo la carga operativa de gestionar Keeper y el balanceo de shards manualmente."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Las consultas de la aplicación se dirigen siempre a la tabla Distributed, nunca directamente a las tablas locales — de lo contrario cada consulta solo vería los datos de un shard, no el dataset completo."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de las preguntas difíciles del examen sobre ClickHouse están inspiradas en errores reales de diseño de esquema o de ingesta observados en producción.",
       "points": [
-        "<strong>Antipattern</strong>: INSERT row por row",
-        "<strong>Antipattern</strong>: Order by con columna cardinalidad alta primero",
-        "<strong>Antipattern</strong>: Muchas partitions pequeñas → merge overhead",
-        "<strong>Antipattern</strong>: OLTP transaccional en ClickHouse (no es su caso)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: usar ClickHouse como base de datos transaccional con UPDATE/DELETE frecuentes por fila — el motor no está diseñado para eso.",
+        "<strong>Antipatrón</strong>: insertar fila por fila desde la aplicación en vez de agrupar en batches — genera el error 'Too many parts' y degrada todo el clúster.",
+        "<strong>Antipatrón</strong>: poner la columna de mayor cardinalidad primero en el ORDER BY — reduce la efectividad del índice disperso para los filtros más comunes.",
+        "<strong>Antipatrón</strong>: particionar por una granularidad demasiado fina (por hora o por minuto) en tablas de bajo volumen — multiplica innecesariamente el número de parts.",
+        "<strong>Antipatrón</strong>: recalcular agregaciones pesadas en cada consulta del dashboard en vez de usar una materialized view con AggregatingMergeTree o SummingMergeTree.",
+        "<strong>Regla de oro</strong>: ante una pregunta de rendimiento, primero sospecha del diseño de partition/sorting key o del patrón de ingesta antes de asumir que hace falta más hardware."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Identifica primero si el problema descrito es de <em>escritura</em> (ingesta, tamaño de batch, número de parts) o de <em>lectura</em> (diseño de sorting key, materialized views, sharding) — son familias de solución distintas."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Log analytics a escala (reemplazo de ELK caro)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Dashboards de negocio con TB de eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis de clickstream"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Métricas de aplicaciones"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Fraud detection en tiempo real"
-    }
+    { "title": "Escenario 1", "text": "Reemplazo de un stack ELK costoso para análisis de logs a escala — ClickHouse como backend columnar" },
+    { "title": "Escenario 2", "text": "Dashboard ejecutivo sobre terabytes de eventos de producto — materialized views con AggregatingMergeTree" },
+    { "title": "Escenario 3", "text": "Análisis de clickstream y funnels de conversión con filtros por fecha y usuario" },
+    { "title": "Escenario 4", "text": "Tabla de 'estado actual' de dispositivos IoT que se actualiza constantemente — ReplacingMergeTree" },
+    { "title": "Escenario 5", "text": "Contadores de métricas de aplicación agregados en tiempo real — SummingMergeTree" },
+    { "title": "Escenario 6", "text": "Volumen que excede la capacidad de un solo nodo — sharding con tabla Distributed sobre 4+ shards" }
   ],
   "mistakes": [
-    "INSERT row por row",
-    "Order by con columna cardinalidad alta primero",
-    "Muchas partitions pequeñas → merge overhead",
-    "OLTP transaccional en ClickHouse (no es su caso)"
+    "Usar ClickHouse para cargas OLTP con UPDATE/DELETE frecuentes por fila",
+    "Insertar fila por fila en vez de agrupar en batches de miles de filas",
+    "Ordenar el ORDER BY con la columna de mayor cardinalidad primero",
+    "Particionar por una granularidad demasiado fina para el volumen real de datos",
+    "Recalcular agregaciones pesadas en cada consulta en vez de usar materialized views",
+    "Elegir una clave de sharding que concentra datos en un solo shard"
   ],
   "cli": [
-    {
-      "cmd": "clickhouse-client",
-      "desc": "Cliente SQL"
-    },
-    {
-      "cmd": "aliyun clickhouse DescribeDBClusters",
-      "desc": "Listar clusters"
-    }
+    { "cmd": "clickhouse-client --host <endpoint> --query \"SELECT 1\"", "desc": "Probar conectividad con el cliente nativo" },
+    { "cmd": "aliyun clickhouse DescribeDBClusters --RegionId cn-hangzhou", "desc": "Listar clústeres ApsaraDB for ClickHouse" },
+    { "cmd": "CREATE TABLE events (dt Date, uid UInt64, ev String) ENGINE=MergeTree PARTITION BY toYYYYMM(dt) ORDER BY (uid, dt)", "desc": "Crear una tabla MergeTree con partition y sorting key" },
+    { "cmd": "CREATE TABLE events_dist AS events ENGINE=Distributed(cluster1, default, events, rand())", "desc": "Crear la tabla Distributed que enruta hacia los shards" },
+    { "cmd": "SELECT partition, count() FROM system.parts WHERE table='events' GROUP BY partition", "desc": "Diagnosticar el número de parts por partición" }
   ],
   "glossary": [
-    {
-      "en": "MergeTree",
-      "es": "MergeTree",
-      "def": "Engine principal, particionado + ordenado."
-    },
-    {
-      "en": "Partition Key",
-      "es": "Partition key",
-      "def": "División física, típicamente por fecha."
-    },
-    {
-      "en": "Order Key",
-      "es": "Order by",
-      "def": "Clave de ordenación dentro de partición — clave del rendimiento."
-    },
-    {
-      "en": "Materialized View",
-      "es": "Materialized View",
-      "def": "Vista pre-agregada actualizada en escritura."
-    },
-    {
-      "en": "Distributed Table",
-      "es": "Tabla distribuida",
-      "def": "Vista que rutea a múltiples shards."
-    },
-    {
-      "en": "ReplicatedMergeTree",
-      "es": "ReplicatedMergeTree",
-      "def": "Replicación entre nodos via ZooKeeper."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "MergeTree", "es": "MergeTree", "def": "Motor base de ClickHouse: inserta datos en parts inmutables que se fusionan en background según la sorting key." },
+    { "en": "Partition Key", "es": "Clave de partición", "def": "Expresión (típicamente por fecha) que divide físicamente la tabla en directorios independientes, podables sin leerlos." },
+    { "en": "Sorting Key (ORDER BY)", "es": "Clave de ordenación", "def": "Define el orden físico de las filas dentro de cada part y genera el índice disperso de la tabla." },
+    { "en": "Sparse Primary Index", "es": "Índice primario disperso", "def": "Índice que marca la posición cada N filas (por defecto 8192), usado para saltar bloques de datos irrelevantes." },
+    { "en": "ReplacingMergeTree", "es": "ReplacingMergeTree", "def": "Variante que conserva solo la última fila entre las que comparten sorting key durante el merge." },
+    { "en": "SummingMergeTree", "es": "SummingMergeTree", "def": "Variante que suma automáticamente columnas numéricas de filas con la misma sorting key durante el merge." },
+    { "en": "AggregatingMergeTree", "es": "AggregatingMergeTree", "def": "Variante que combina estados de funciones agregadas complejas durante el merge, usada detrás de materialized views." },
+    { "en": "CollapsingMergeTree", "es": "CollapsingMergeTree", "def": "Variante que simula updates cancelando filas anteriores mediante un signo +1/-1 en vez de reescribirlas." },
+    { "en": "ReplicatedMergeTree", "es": "ReplicatedMergeTree", "def": "Prefijo que añade replicación entre nodos vía ClickHouse Keeper a cualquier motor de la familia MergeTree." },
+    { "en": "Distributed Table", "es": "Tabla Distributed", "def": "Tabla virtual sin datos propios que enruta INSERT y reparte SELECT entre los shards de un clúster." },
+    { "en": "Shard", "es": "Shard", "def": "Subconjunto horizontal de los datos de una tabla, alojado en uno o más nodos del clúster." },
+    { "en": "ClickHouse Keeper", "es": "ClickHouse Keeper", "def": "Servicio de coordinación (reemplazo nativo de ZooKeeper) usado para sincronizar réplicas." },
+    { "en": "Materialized View", "es": "Vista materializada", "def": "Vista que se dispara en cada INSERT sobre la tabla origen y escribe resultados pre-agregados en otra tabla." },
+    { "en": "Kafka Engine", "es": "Motor Kafka", "def": "Tabla especial que consume directamente de un tópico Kafka como fuente de ingesta streaming." },
+    { "en": "Part", "es": "Part", "def": "Unidad inmutable de datos escrita por cada INSERT; se fusiona con otras en background según la política de merge." },
+    { "en": "Skip Index", "es": "Índice de salto", "def": "Índice secundario (minmax, set, bloom_filter) sobre columnas fuera de la sorting key, para acelerar filtros adicionales." },
+    { "en": "Vectorized Execution", "es": "Ejecución vectorizada", "def": "Procesamiento de datos en bloques de miles de valores por instrucción de CPU, en vez de fila por fila." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ApsaraDB for ClickHouse?",
-      "options": [
-        "ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ClickHouse gestionado: base de datos columnar OLAP con queries analíticas 100-1000× más rápidas que un OLTP tradicional. Ideal para dashboards, logs y agregaciones sobre billones de rows."
-    },
-    {
-      "q": "¿Qué es <strong>MergeTree</strong> (MergeTree) en ApsaraDB for ClickHouse?",
-      "options": [
-        "Engine principal, particionado + ordenado.",
-        "División física, típicamente por fecha.",
-        "Clave de ordenación dentro de partición — clave del rendimiento.",
-        "Vista pre-agregada actualizada en escritura."
-      ],
-      "answer": 0,
-      "explain": "MergeTree (MergeTree): Engine principal, particionado + ordenado."
-    },
-    {
-      "q": "¿Qué es <strong>Partition Key</strong> (Partition key) en ApsaraDB for ClickHouse?",
-      "options": [
-        "División física, típicamente por fecha.",
-        "Engine principal, particionado + ordenado.",
-        "Clave de ordenación dentro de partición — clave del rendimiento.",
-        "Vista pre-agregada actualizada en escritura."
-      ],
-      "answer": 0,
-      "explain": "Partition Key (Partition key): División física, típicamente por fecha."
-    },
-    {
-      "q": "¿Qué es <strong>Order Key</strong> (Order by) en ApsaraDB for ClickHouse?",
-      "options": [
-        "Clave de ordenación dentro de partición — clave del rendimiento.",
-        "Engine principal, particionado + ordenado.",
-        "División física, típicamente por fecha.",
-        "Vista pre-agregada actualizada en escritura."
-      ],
-      "answer": 0,
-      "explain": "Order Key (Order by): Clave de ordenación dentro de partición — clave del rendimiento."
-    },
-    {
-      "q": "¿Qué es <strong>Materialized View</strong> (Materialized View) en ApsaraDB for ClickHouse?",
-      "options": [
-        "Vista pre-agregada actualizada en escritura.",
-        "Engine principal, particionado + ordenado.",
-        "División física, típicamente por fecha.",
-        "Clave de ordenación dentro de partición — clave del rendimiento."
-      ],
-      "answer": 0,
-      "explain": "Materialized View (Materialized View): Vista pre-agregada actualizada en escritura."
-    },
-    {
-      "q": "¿Qué es <strong>Distributed Table</strong> (Tabla distribuida) en ApsaraDB for ClickHouse?",
-      "options": [
-        "Vista que rutea a múltiples shards.",
-        "Engine principal, particionado + ordenado.",
-        "División física, típicamente por fecha.",
-        "Clave de ordenación dentro de partición — clave del rendimiento."
-      ],
-      "answer": 0,
-      "explain": "Distributed Table (Tabla distribuida): Vista que rutea a múltiples shards."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ApsaraDB for ClickHouse, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ApsaraDB for ClickHouse en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB for ClickHouse, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ApsaraDB for ClickHouse es la elección típica:",
-      "options": [
-        "Log analytics a escala (reemplazo de ELK caro)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Log analytics a escala (reemplazo de ELK caro)."
-    }
+    { "q": "¿Cuál es la razón principal por la que ClickHouse responde consultas de agregación mucho más rápido que un motor OLTP tradicional?", "options": ["Usa más memoria RAM por defecto", "Almacena los datos por columna, leyendo solo las columnas que la consulta necesita", "Ejecuta las consultas en la nube en vez de en disco local", "No usa índices de ningún tipo"], "answer": 1, "explain": "El almacenamiento columnar permite leer solo las columnas relevantes para la consulta, en vez de filas completas como un motor row-store." },
+    { "q": "Una tabla necesita conservar únicamente el último valor conocido por cada clave, entre múltiples inserciones de actualización. ¿Qué motor de la familia MergeTree es el más adecuado?", "options": ["SummingMergeTree", "ReplacingMergeTree", "MergeTree básico", "Distributed"], "answer": 1, "explain": "ReplacingMergeTree descarta las filas antiguas y conserva la más reciente entre las que comparten sorting key durante el proceso de merge." },
+    { "q": "¿Qué problema causa insertar datos fila por fila en vez de agrupar en batches grandes en ClickHouse?", "options": ["Ninguno, ClickHouse está optimizado para eso", "Genera miles de parts pequeños que saturan el merge en background ('Too many parts')", "Aumenta la compresión de los datos", "Desactiva automáticamente las materialized views"], "answer": 1, "explain": "Cada INSERT crea un part nuevo; insertar en micro-lotes genera demasiados parts que el proceso de merge no logra consolidar a tiempo." },
+    { "q": "¿Qué determina la partition key de una tabla MergeTree?", "options": ["El orden físico de las filas dentro de cada part", "La división física de la tabla en directorios independientes, podables sin leerlos", "El nodo del clúster donde vive cada fila", "El tipo de compresión usado"], "answer": 1, "explain": "La partition key (típicamente por fecha) permite eliminar o ignorar particiones completas cuando el filtro de la consulta las excluye." },
+    { "q": "Al diseñar el ORDER BY de una tabla ClickHouse con varias columnas de filtro frecuente, ¿en qué orden deben ir?", "options": ["Alfabético por nombre de columna", "De mayor a menor cardinalidad", "De menor a mayor cardinalidad relativa según frecuencia de filtro", "El orden no afecta el rendimiento"], "answer": 2, "explain": "Colocar primero las columnas de baja cardinalidad usadas en la mayoría de los filtros maximiza la efectividad del índice disperso." },
+    { "q": "¿Para qué se usa una tabla Distributed en un clúster ClickheHouse con sharding?", "options": ["Para almacenar una copia completa de los datos en un solo nodo", "Como vista de enrutamiento que reparte INSERT y SELECT entre los shards del clúster", "Para reemplazar completamente a las tablas MergeTree locales", "Solo se usa en modo de una sola instancia sin sharding"], "answer": 1, "explain": "La tabla Distributed no almacena datos propios: enruta escrituras al shard correspondiente y reparte lecturas en paralelo entre todos los shards." },
+    { "q": "¿Qué componente coordina la sincronización entre réplicas en un clúster ReplicatedMergeTree?", "options": ["Kafka Engine", "ClickHouse Keeper (o ZooKeeper)", "La tabla Distributed", "El Backup Gateway"], "answer": 1, "explain": "ClickHouse Keeper (o ZooKeeper en versiones anteriores) coordina la replicación entre nodos que alojan el mismo shard." },
+    { "q": "Un equipo necesita pre-calcular percentiles y conteos distintos sobre eventos que llegan constantemente, sin recalcularlos en cada consulta del dashboard. ¿Qué combinación es la más adecuada?", "options": ["Una tabla Distributed sin materialized view", "Una materialized view escribiendo hacia una tabla AggregatingMergeTree", "Aumentar el número de shards únicamente", "Usar ReplacingMergeTree en la tabla de eventos crudos"], "answer": 1, "explain": "AggregatingMergeTree almacena estados de funciones agregadas complejas, combinados automáticamente durante el merge, alimentados por una materialized view en la escritura." },
+    { "q": "¿Por qué ClickHouse NO es la elección adecuada para una carga transaccional con muchos UPDATE y DELETE puntuales por fila?", "options": ["Porque no soporta SQL", "Porque actualizar o borrar filas individuales es costoso en un motor columnar orientado a parts inmutables", "Porque no admite más de 1000 filas en total", "Porque no tiene clientes SQL disponibles"], "answer": 1, "explain": "El modelo de parts inmutables hace que las modificaciones fila por fila sean costosas; para OLTP la respuesta correcta sigue siendo un motor como RDS o PolarDB." },
+    { "q": "¿Qué logra un índice de salto (skip index) tipo minmax o bloom_filter en ClickHouse?", "options": ["Reemplaza completamente a la sorting key", "Acelera filtros sobre columnas que no forman parte de la sorting key, sin reordenar la tabla", "Convierte la tabla en Distributed automáticamente", "Elimina la necesidad de partition key"], "answer": 1, "explain": "Los índices de salto son índices secundarios ligeros que ayudan a descartar bloques de datos para filtros adicionales fuera de la sorting key." },
+    { "q": "¿Qué patrón de ingesta se recomienda para consumir eventos de un tópico Kafka directamente hacia ClickHouse?", "options": ["Insertar cada mensaje individualmente con un script externo", "Usar Kafka Engine combinado con una materialized view hacia la tabla MergeTree de destino", "Copiar los datos a un archivo CSV y subirlo manualmente cada hora", "No es posible integrar Kafka con ClickHouse"], "answer": 1, "explain": "Kafka Engine consume el tópico directamente y una materialized view vuelca los datos transformados hacia la tabla MergeTree destino, en batches." },
+    { "q": "Un clúster ClickHouse muestra el error 'Too many parts' de forma recurrente. ¿Cuál es la causa más probable?", "options": ["El clúster tiene demasiada memoria RAM", "Inserciones demasiado frecuentes y pequeñas que el proceso de merge no logra consolidar a tiempo", "El uso de materialized views", "Un exceso de réplicas configuradas"], "answer": 1, "explain": "Insertar en lotes muy pequeños y frecuentes genera más parts de los que el merge en background puede fusionar, degradando el rendimiento." },
+    { "q": "¿Qué distingue a la edición gestionada ApsaraDB for ClickHouse de una instalación autogestionada del motor open source?", "options": ["No hay ninguna diferencia funcional", "Añade alta disponibilidad multi-zona, backup automático a OSS y gestión operativa de Keeper y balanceo de shards", "Elimina por completo la necesidad de diseñar partition/sorting key", "Solo funciona con datos ya almacenados en OSS"], "answer": 1, "explain": "La edición gestionada reduce la carga operativa (HA, backups, gestión de Keeper) pero las decisiones de diseño de esquema siguen siendo responsabilidad del usuario." }
   ],
-  "exam_focus": "MergeTree y variantes, cuándo elegir ClickHouse vs MaxCompute vs Hologres, materialized views.",
+  "exam_focus": "El examen evalúa: (a) por qué un motor columnar acelera agregaciones frente a un motor row-store, (b) diferenciar las variantes de la familia MergeTree según el comportamiento descrito, (c) diseño correcto de partition key vs. sorting key, (d) patrones de ingesta en batch vs. antipatrón fila-por-fila, (e) sharding con tablas Distributed y el rol de ClickHouse Keeper.",
   "official_intro": "ApsaraDB for ClickHouse is a distributed column-oriented database service that provides real-time analysis. ApsaraDB for ClickHouse is high-performance and easy to use. ApsaraDB for ClickHouse meets various enterprise requirements. It is widely used in traffic analysis, marketing analysis, behavior analysis, crowd division, customer profiles, agile BI, data marts, network monitoring, distributed services, and link monitoring. In this clouder, we will introduce detailed products features, applicable scenarios and show comprehensive demonstration for product console operations.",
   "recommended_for": "Database Administrator, Database Developer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_clickhouse2",

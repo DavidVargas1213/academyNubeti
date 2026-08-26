@@ -2,533 +2,204 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-oss",
   "title_en": "Operate and Manage Object Storage on the Cloud",
-  "title_es": "Operate y Gestionar Object Almacenamiento en Cloud",
+  "title_es": "Operar y Gestionar Almacenamiento de Objetos en la Nube",
+  "title_es_html": "Operar y Gestionar <em>Almacenamiento de Objetos</em> en la Nube",
   "duration_es": "62 minutos",
   "level_es": "Principiante",
   "category_es": "Almacenamiento",
   "subcategory_es": "Essential Storage Service",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_oss",
-  "lead": "Guía completa en español para el curso «Operate and Manage Object Storage on the Cloud» de Alibaba Cloud Academy. Cubre en profundidad Object Storage Service (OSS). OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-region, versionado, lifecycle y control fino de permisos. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Operate and Manage Object Storage on the Cloud» de Alibaba Cloud Academy, centrado en Object Storage Service (OSS). Sigue las 8 lecciones oficiales del curso — de concepto a operación de buckets, objetos, procesamiento de imágenes, hosting de sitios y seguridad — con la profundidad que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Object Storage Service (OSS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Bucket, Object, Key, Standard, Infrequent Access (IA).",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Object Storage Service (OSS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué es OSS y por qué reemplaza al almacenamiento en disco tradicional para datos no estructurados.",
+    "<strong>Distinguir</strong> los conceptos fundamentales: Bucket, Object, Key, Región y Endpoint.",
+    "<strong>Operar</strong> buckets y objetos: crear, subir, listar, versionar y aplicar reglas de ciclo de vida.",
+    "<strong>Usar</strong> el procesamiento de imágenes on-the-fly de OSS mediante parámetros en la URL.",
+    "<strong>Configurar</strong> hosting de sitios estáticos y monitoreo de acceso.",
+    "<strong>Aplicar</strong> los controles de seguridad de OSS: ACL, Bucket Policy, RAM Policy y cifrado."
   ],
-  "architecture": "Bucket con Standard para hot data + regla lifecycle que baja a IA a 30 días, Archive a 90, Cold Archive a 365. CDN al frente para reducir egress. Cross-region replication a bucket en otra región como DR. RAM policy limitando qué usuarios ven qué prefijos.",
+  "architecture": "Un bucket OSS vive en una única región y recibe objetos mediante su Key (nombre completo, que puede simular una jerarquía de carpetas con '/'). Para contenido servido a usuarios finales, un CDN se coloca delante del bucket para reducir latencia y costo de egress. Para reducir costo de almacenamiento en frío, una regla de Lifecycle mueve automáticamente objetos poco usados de Standard a IA, luego a Archive y finalmente a Cold Archive. Para recuperación ante desastres, Cross-Region Replication (CRR) copia el contenido a un bucket en otra región. El acceso se controla en tres capas: ACL del bucket/objeto, Bucket Policy (JSON granular) y RAM Policy (permisos por usuario o rol).",
   "lessons": [
     {
-      "title_es": "0 · Sílabo oficial del curso",
-      "title_en": "Official Course Syllabus",
-      "intro": "El curso original en Alibaba Cloud Academy está estructurado en las lecciones que se listan a continuación. Los módulos posteriores (fundamentos, arquitectura, operación...) amplían cada lección con contenido de referencia en español, alineado con la certificación.",
+      "title_es": "1 · Presentación del curso y objetivos",
+      "title_en": "Course overview and objectives",
+      "intro": "El curso cubre OSS de principio a fin: concepto, operaciones sobre buckets y objetos, procesamiento de imágenes, hosting de sitios estáticos y seguridad. El objetivo es que, al terminar, puedas diseñar y operar una solución de almacenamiento de objetos en producción y responder con seguridad las preguntas de certificación.",
       "points": [
-        "<strong>Lección 1</strong>: Course overview and objectives",
-        "<strong>Lección 2</strong>: What is OSS?",
-        "<strong>Lección 3</strong>: OSS concept",
-        "<strong>Lección 4</strong>: Operations - Bucket Operation",
-        "<strong>Lección 5</strong>: Operations - Object Operation",
-        "<strong>Lección 6</strong>: Operations - Image Processing",
-        "<strong>Lección 7</strong>: Operations - Website Hosting and Monitoring",
-        "<strong>Lección 8</strong>: Security Feature"
+        "OSS es el servicio de almacenamiento de objetos de Alibaba Cloud, pensado para datos no estructurados: imágenes, videos, backups, logs, archivos estáticos.",
+        "El curso está orientado a quienes ya conocen los fundamentos de la nube y quieren certificarse en el uso operativo de OSS.",
+        "La certificación evalúa tanto conceptos (qué es un bucket, qué es una clase de almacenamiento) como decisiones de diseño (qué clase usar, cómo proteger un bucket)."
       ],
-      "keypoint": {
-        "label": "Fuente oficial",
-        "text": "Títulos extraídos directamente del catálogo <em>edu.alibabacloud.com</em>. Ver el curso original para ver los videos y materiales."
-      }
+      "keypoint": { "label": "Enfoque del curso", "text": "No basta con saber qué es OSS — el examen pregunta <em>cuándo</em> usar cada clase de almacenamiento y <em>cómo</em> protegerlo correctamente." }
     },
     {
-      "title_es": "1 · Introducción a Object Storage Service (OSS)",
-      "title_en": "Introduction to Object Storage Service (OSS)",
-      "intro": "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-region, versionado, lifecycle y control fino de permisos. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "2 · Qué es OSS",
+      "title_en": "What is OSS?",
+      "intro": "OSS (Object Storage Service) es almacenamiento de objetos con capacidad prácticamente ilimitada, alta durabilidad y acceso vía HTTP/HTTPS o SDK — el equivalente de Alibaba Cloud a Amazon S3.",
       "points": [
-        "<strong>Problema que resuelve</strong>: OSS es almacenamiento de objetos ilimitado y durable (11 nueves).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Object Storage Service (OSS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Durabilidad</strong>: diseñado para 99.9999999999% (doce nueves) de durabilidad de datos gracias a replicación redundante dentro de la región — superior a los 11 nueves típicos de otros proveedores.",
+        "<strong>Acceso universal</strong>: cada objeto es accesible por una URL HTTP/HTTPS única, o mediante SDKs (Java, Python, Node.js, etc.) y la CLI de <code>ossutil</code>/<code>aliyun oss</code>.",
+        "<strong>Sin límite de capacidad práctico</strong>: no hay que aprovisionar espacio por adelantado — se paga por lo que efectivamente se almacena y transfiere.",
+        "<strong>Casos de uso típicos</strong>: hosting de imágenes/video para aplicaciones web, backups y archivado, data lake para analítica (MaxCompute/EMR leen directo de OSS), distribución de software.",
+        "<strong>Diferencia con almacenamiento en bloque (disco)</strong>: OSS no se monta como un sistema de archivos tradicional — se accede por API/HTTP, no por rutas de sistema de archivos como un disco ECS."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Object Storage Service (OSS) es una pieza fundamental de Almacenamiento en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "OSS resuelve el problema de <em>datos no estructurados a gran escala</em>: cuando el volumen o el patrón de acceso no encajan en una base de datos ni en un disco tradicional, OSS es la opción por defecto." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Object Storage Service (OSS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "3 · Conceptos de OSS",
+      "title_en": "OSS concept",
+      "intro": "Antes de operar OSS hay que dominar su vocabulario — el examen distingue con precisión estos términos y sus variantes.",
       "points": [
-        "<strong>Patrón canónico</strong>: Bucket con Standard para hot data + regla lifecycle que baja a IA a 30 días, Archive a 90, Cold Archive a 365. CDN al frente para reducir egress. Cross-region replication a bucket en otra región como DR. RAM policy limitando qué usuarios ven qué prefijos.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Bucket</strong>: contenedor lógico con nombre único global dentro de la región donde se crea. Todos los objetos viven dentro de un bucket.",
+        "<strong>Object</strong>: la unidad fundamental almacenada — datos + metadatos + una Key. Un objeto puede pesar hasta 48.8 TB (usando carga multiparte).",
+        "<strong>Key</strong>: el nombre completo del objeto dentro del bucket, incluyendo prefijos que simulan una jerarquía de carpetas (p.ej. <code>fotos/2024/verano.jpg</code>), aunque OSS internamente es un espacio de nombres plano.",
+        "<strong>Endpoint</strong>: la URL base de acceso a la región (p.ej. <code>oss-cn-hangzhou.aliyuncs.com</code>); existen endpoints internos (gratis dentro de la misma región, para tráfico desde ECS) y públicos.",
+        "<strong>Clases de almacenamiento</strong>: <em>Standard</em> (acceso frecuente, sin mínimo de permanencia), <em>Infrequent Access — IA</em> (acceso esporádico, mínimo 30 días de permanencia), <em>Archive</em> (frío, mínimo 60 días, restauración en ~1 minuto), <em>Cold Archive</em> (muy frío, mínimo 180 días, restauración de 1 a 12 horas según la prioridad elegida), <em>Deep Cold Archive</em> (la más fría y económica, mínimo 180 días, restauración de 12 a 48 horas).",
+        "<strong>Región</strong>: un bucket vive en una única región elegida al crearlo y no puede moverse — para cambiar de región hay que copiar los objetos a un bucket nuevo."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Object Storage Service (OSS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Memoriza", "text": "El examen pregunta directamente por los días mínimos de permanencia y tiempos de restauración de cada clase: IA=30 días/inmediato, Archive=60 días/~1 minuto, Cold Archive=180 días/1-12h, Deep Cold Archive=180 días/12-48h." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "4 · Operaciones sobre buckets",
+      "title_en": "Operations - Bucket Operation",
+      "intro": "Crear y configurar un bucket es la primera operación práctica del curso, y define el comportamiento por defecto de todo lo que se suba después.",
       "points": [
-        "<strong>Bucket</strong> <em>(Bucket)</em>: Contenedor lógico con nombre global. Vive en una región.",
-        "<strong>Objeto</strong> <em>(Object)</em>: Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "<strong>Key</strong> <em>(Key)</em>: Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "<strong>Standard</strong> <em>(Standard)</em>: Acceso frecuente, mayor $/GB, menor $/GET.",
-        "<strong>IA</strong> <em>(Infrequent Access (IA))</em>: Acceso poco frecuente, mínimo 30 días de almacenaje.",
-        "<strong>Archive</strong> <em>(Archive)</em>: Frío, mínimo 60 días, restauración en minutos.",
-        "<strong>Cold Archive</strong> <em>(Cold Archive)</em>: Muy frío, mínimo 180 días, restauración horas.",
-        "<strong>Ciclo de vida</strong> <em>(Lifecycle)</em>: Regla automática: mover clase o borrar tras X días."
+        "<strong>Creación</strong>: al crear un bucket se define su nombre (único globalmente), la región, la clase de almacenamiento por defecto y el tipo de ACL (private por defecto, recomendado).",
+        "<strong>Listar y eliminar buckets</strong>: un bucket debe estar vacío para poder eliminarse — no se puede borrar un bucket con objetos dentro sin vaciarlo primero.",
+        "<strong>Versioning (versionado)</strong>: al activarse, cada sobrescritura o borrado conserva la versión anterior en vez de perderla — protege contra borrados o sobrescrituras accidentales, a costa de más almacenamiento usado.",
+        "<strong>Lifecycle (ciclo de vida)</strong>: reglas automáticas que mueven objetos entre clases de almacenamiento o los eliminan tras N días — es la herramienta principal de optimización de costos en OSS.",
+        "<strong>Logging</strong>: se puede habilitar el registro de accesos a un bucket hacia otro bucket de logs, útil para auditoría."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Configurar Lifecycle desde el día 1 es la respuesta correcta casi siempre que el examen pregunte «cómo minimizar el costo de almacenamiento a largo plazo»." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "5 · Operaciones sobre objetos",
+      "title_en": "Operations - Object Operation",
+      "intro": "Una vez existe el bucket, el día a día operativo gira en torno a subir, descargar, listar y compartir objetos de forma segura y eficiente.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Subida simple vs. multiparte</strong>: archivos pequeños se suben en una sola llamada; archivos grandes (recomendado >100 MB) deben subirse con Multipart Upload, que divide el archivo en partes subidas en paralelo y permite reanudar si falla una parte.",
+        "<strong>Metadatos</strong>: cada objeto puede llevar metadatos HTTP estándar (Content-Type, Cache-Control) y metadatos personalizados definidos por el usuario.",
+        "<strong>Copiar y mover</strong>: OSS no tiene un «mover» nativo entre buckets — se copia el objeto al destino y se borra el original.",
+        "<strong>URLs prefirmadas (Presigned URL)</strong>: permiten dar acceso temporal a un objeto privado sin exponer las credenciales de la cuenta ni hacerlo público — la forma correcta de compartir un archivo privado por tiempo limitado.",
+        "<strong>Listado</strong>: se puede listar por prefijo (simulando navegación de carpetas) y paginar resultados cuando hay miles de objetos."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Compartir un archivo privado NO es hacer el objeto público — es generar una URL prefirmada con expiración, manteniendo el bucket privado." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "6 · Procesamiento de imágenes",
+      "title_en": "Operations - Image Processing",
+      "intro": "OSS incluye un servicio de procesamiento de imágenes on-the-fly (IMG) que transforma una imagen almacenada sin necesidad de un servidor de procesamiento adicional.",
       "points": [
-        "<strong>HA</strong>: Habilitar versioning y MFA delete en buckets críticos",
-        "<strong>HA</strong>: CRR para DR + Object Lock si necesitas WORM",
-        "<strong>Seguridad</strong>: Bloquear ACL public — usar bucket policy explícita",
-        "<strong>Seguridad</strong>: Habilitar versioning y MFA delete en buckets críticos",
-        "<strong>Seguridad</strong>: SSE-KMS para datos regulados",
-        "<strong>Costo</strong>: Lifecycle desde el día 1 — evita facturas sorpresa",
-        "<strong>Buenas prácticas</strong>: CDN al frente si sirves contenido público"
+        "<strong>Transformación por parámetros de URL</strong>: agregando parámetros a la URL del objeto (p.ej. <code>?x-oss-process=image/resize,w_200</code>) se obtiene una versión redimensionada, recortada o con marca de agua, generada al vuelo.",
+        "<strong>Operaciones soportadas</strong>: resize, crop, rotate, formato (conversión a WebP/JPG/PNG), marca de agua (texto o imagen), y obtención de metadatos EXIF/info básica de la imagen.",
+        "<strong>Cacheo del resultado</strong>: la imagen procesada se puede cachear en CDN, evitando reprocesarla en cada solicitud.",
+        "<strong>Ventaja arquitectónica</strong>: elimina la necesidad de mantener un servicio dedicado (o una función serverless) solo para redimensionar imágenes — se resuelve con la URL."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «generar miniaturas de imágenes bajo demanda sin infraestructura adicional», la respuesta es el procesamiento de imágenes nativo de OSS, no una función de cómputo separada." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "7 · Hosting de sitios estáticos y monitoreo",
+      "title_en": "Operations - Website Hosting and Monitoring",
+      "intro": "OSS puede servir directamente un sitio web estático (HTML/CSS/JS sin backend dinámico), y ofrece métricas de acceso para monitorear su uso.",
       "points": [
-        "<strong>Antipattern</strong>: Buckets public-read-write — riesgo de data leak y facturas por egress abusivo",
-        "<strong>Antipattern</strong>: Guardar millones de objetos pequeños en Standard sin lifecycle",
-        "<strong>Antipattern</strong>: No usar multipart para archivos >100 MB — reinicios de upload dolorosos",
-        "<strong>Antipattern</strong>: Confundir clase Archive con Cold Archive (SLA de restauración muy distintos)",
-        "<strong>Antipattern</strong>: Compartir AccessKey en vez de presigned URLs",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Static Website Hosting</strong>: se configura un documento índice (p.ej. <code>index.html</code>) y un documento de error (p.ej. <code>404.html</code>) sobre un bucket con acceso de lectura pública; el bucket empieza a servir contenido web directamente por HTTP.",
+        "<strong>Dominio personalizado</strong>: se puede enlazar un dominio propio al bucket (vía CNAME) y colocar CDN + certificado SSL delante para HTTPS.",
+        "<strong>Costos de egress</strong>: servir tráfico directamente desde OSS genera costo de transferencia saliente; colocar un CDN delante reduce ese costo y la latencia para usuarios globales.",
+        "<strong>Monitoreo</strong>: CloudMonitor expone métricas de OSS como número de solicitudes, tráfico de red y latencia; los logs de acceso (si se habilitan) permiten auditoría detallada por objeto y solicitante."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "OSS como hosting estático sirve para sitios sin lógica de servidor (landing pages, SPAs) — cualquier lógica dinámica del lado del servidor requiere un servicio de cómputo aparte (ECS, Function Compute)." }
+    },
+    {
+      "title_es": "8 · Características de seguridad",
+      "title_en": "Security Feature",
+      "intro": "El último módulo cubre las capas de control de acceso y protección de datos de OSS — es, junto con las clases de almacenamiento, el área donde más se concentran las preguntas del examen.",
+      "points": [
+        "<strong>ACL (Access Control List)</strong>: nivel más básico — private (por defecto, recomendado), public-read o public-read-write a nivel de bucket u objeto. public-read-write casi nunca es correcto en un escenario de examen.",
+        "<strong>Bucket Policy</strong>: documento JSON con reglas granulares (por usuario, IP, prefijo de objeto, hora del día) — más flexible y preciso que un ACL simple.",
+        "<strong>RAM Policy</strong>: controla qué usuarios o roles de la cuenta pueden invocar qué operaciones de OSS (leer, escribir, borrar) sobre qué buckets — es la capa de identidad, no de red.",
+        "<strong>Cifrado en reposo</strong>: SSE-OSS (clave gestionada automáticamente por OSS) o SSE-KMS (clave gestionada por el usuario en KMS, necesaria para requisitos de compliance más estrictos).",
+        "<strong>Cifrado en tránsito</strong>: HTTPS en el endpoint asegura que los datos viajen cifrados entre el cliente y OSS.",
+        "<strong>Referer / Hotlink protection</strong>: se puede restringir qué dominios pueden enlazar directamente a los objetos, evitando que terceros consuman tu ancho de banda sin autorización."
+      ],
+      "keypoint": { "label": "Regla mnemotécnica", "text": "Tres capas de seguridad en OSS: <strong>ACL</strong> (básico, por bucket/objeto) → <strong>Bucket Policy</strong> (granular, por recurso) → <strong>RAM Policy</strong> (por identidad). Un diseño robusto casi siempre combina Bucket Policy + RAM Policy y evita ACL public-read-write." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Backups incrementales y respaldos de bases de datos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Almacenamiento de imágenes/video para web con CDN"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Data lake — MaxCompute y EMR leen directamente de OSS"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Distribución de firmware/software con URLs presigned"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Archivo legal a largo plazo (Cold Archive, ¢/GB/mes)"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Hosting de sitios estáticos"
-    }
+    { "title": "Escenario 1", "text": "Backups incrementales de bases de datos con Lifecycle hacia Archive" },
+    { "title": "Escenario 2", "text": "Imágenes y video de una app móvil, servidos con CDN + procesamiento de imágenes on-the-fly" },
+    { "title": "Escenario 3", "text": "Data lake para analítica — MaxCompute o EMR leyendo directo de OSS" },
+    { "title": "Escenario 4", "text": "Distribución de instaladores/firmware mediante URLs prefirmadas con expiración" },
+    { "title": "Escenario 5", "text": "Archivo legal a largo plazo con requisito de bajo costo — Cold Archive" },
+    { "title": "Escenario 6", "text": "Landing page o SPA sin backend — Static Website Hosting" }
   ],
   "mistakes": [
-    "Buckets public-read-write — riesgo de data leak y facturas por egress abusivo",
-    "Guardar millones de objetos pequeños en Standard sin lifecycle",
-    "No usar multipart para archivos >100 MB — reinicios de upload dolorosos",
-    "Confundir clase Archive con Cold Archive (SLA de restauración muy distintos)",
-    "Compartir AccessKey en vez de presigned URLs"
+    "Configurar un bucket como public-read-write → riesgo de fuga de datos y facturas de egress abusivo",
+    "Guardar millones de objetos pequeños en Standard sin regla de Lifecycle → costo innecesariamente alto",
+    "Subir archivos grandes (>100 MB) sin Multipart Upload → reinicios de carga costosos ante cualquier fallo de red",
+    "Confundir Archive con Cold Archive → tiempos de restauración muy distintos (minutos vs. horas)",
+    "Compartir el AccessKey de la cuenta en vez de generar una URL prefirmada temporal",
+    "No activar versioning en buckets críticos → un borrado accidental es irreversible"
   ],
   "cli": [
-    {
-      "cmd": "aliyun oss mb oss://mi-bucket",
-      "desc": "Crear bucket"
-    },
-    {
-      "cmd": "aliyun oss cp archivo.zip oss://mi-bucket/",
-      "desc": "Subir objeto"
-    },
-    {
-      "cmd": "aliyun oss ls oss://mi-bucket --recursive",
-      "desc": "Listar objetos"
-    },
-    {
-      "cmd": "aliyun oss sign oss://mi-bucket/archivo.zip --timeout 3600",
-      "desc": "Presigned URL 1h"
-    }
+    { "cmd": "aliyun oss mb oss://mi-bucket --region cn-hangzhou", "desc": "Crear un bucket" },
+    { "cmd": "aliyun oss cp archivo.zip oss://mi-bucket/backups/", "desc": "Subir un objeto" },
+    { "cmd": "aliyun oss ls oss://mi-bucket --recursive", "desc": "Listar objetos de un bucket" },
+    { "cmd": "aliyun oss sign oss://mi-bucket/archivo.zip --timeout 3600", "desc": "Generar una URL prefirmada válida por 1 hora" },
+    { "cmd": "aliyun oss bucket-lifecycle --method put oss://mi-bucket lifecycle.xml", "desc": "Aplicar una regla de ciclo de vida" },
+    { "cmd": "aliyun oss rm oss://mi-bucket/archivo.zip", "desc": "Eliminar un objeto" }
   ],
   "glossary": [
-    {
-      "en": "Bucket",
-      "es": "Bucket",
-      "def": "Contenedor lógico con nombre global. Vive en una región."
-    },
-    {
-      "en": "Object",
-      "es": "Objeto",
-      "def": "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB."
-    },
-    {
-      "en": "Key",
-      "es": "Key",
-      "def": "Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-    },
-    {
-      "en": "Standard",
-      "es": "Standard",
-      "def": "Acceso frecuente, mayor $/GB, menor $/GET."
-    },
-    {
-      "en": "Infrequent Access (IA)",
-      "es": "IA",
-      "def": "Acceso poco frecuente, mínimo 30 días de almacenaje."
-    },
-    {
-      "en": "Archive",
-      "es": "Archive",
-      "def": "Frío, mínimo 60 días, restauración en minutos."
-    },
-    {
-      "en": "Cold Archive",
-      "es": "Cold Archive",
-      "def": "Muy frío, mínimo 180 días, restauración horas."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Ciclo de vida",
-      "def": "Regla automática: mover clase o borrar tras X días."
-    },
-    {
-      "en": "Versioning",
-      "es": "Versionado",
-      "def": "Mantiene versiones históricas; protege de borrado accidental."
-    },
-    {
-      "en": "CRR",
-      "es": "Cross-Region Replication",
-      "def": "Réplica asíncrona a bucket en otra región."
-    },
-    {
-      "en": "ACL",
-      "es": "ACL",
-      "def": "private (default) / public-read / public-read-write. Preferir bucket policy."
-    },
-    {
-      "en": "Bucket Policy",
-      "es": "Bucket Policy",
-      "def": "JSON con permisos granulares por RAM/IP/prefijo/hora."
-    },
-    {
-      "en": "Presigned URL",
-      "es": "URL prefirmada",
-      "def": "Enlace temporal firmado — acceso sin credenciales."
-    },
-    {
-      "en": "SSE-OSS / SSE-KMS",
-      "es": "Cifrado servidor",
-      "def": "AES-256 gestionado por OSS o con claves KMS."
-    },
-    {
-      "en": "Multipart Upload",
-      "es": "Upload multiparte",
-      "def": "Subir archivos grandes en partes paralelas."
-    },
-    {
-      "en": "Transfer Acceleration",
-      "es": "Aceleración",
-      "def": "Endpoint edge que acelera uploads globales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Bucket", "es": "Bucket", "def": "Contenedor lógico con nombre único global; vive en una única región." },
+    { "en": "Object", "es": "Objeto", "def": "Unidad almacenada: datos + metadatos + Key. Hasta 48.8 TB con carga multiparte." },
+    { "en": "Key", "es": "Key", "def": "Nombre completo del objeto dentro del bucket, con prefijos que simulan carpetas." },
+    { "en": "Endpoint", "es": "Endpoint", "def": "URL base de acceso a la región; puede ser interno (gratis desde ECS de la misma región) o público." },
+    { "en": "Standard", "es": "Standard", "def": "Clase de almacenamiento para acceso frecuente; mayor costo por GB, menor costo por solicitud." },
+    { "en": "Infrequent Access (IA)", "es": "IA", "def": "Clase para acceso esporádico; permanencia mínima de 30 días." },
+    { "en": "Archive", "es": "Archive", "def": "Clase fría; permanencia mínima de 60 días, restauración en ~1 minuto." },
+    { "en": "Cold Archive", "es": "Cold Archive", "def": "Clase muy fría; permanencia mínima de 180 días, restauración de 1 a 12 horas." },
+    { "en": "Deep Cold Archive", "es": "Deep Cold Archive", "def": "La clase más fría y económica; permanencia mínima de 180 días, restauración de 12 a 48 horas." },
+    { "en": "Lifecycle", "es": "Ciclo de vida", "def": "Regla automática que mueve objetos entre clases o los elimina tras N días." },
+    { "en": "Versioning", "es": "Versionado", "def": "Conserva versiones anteriores de un objeto ante sobrescrituras o borrados." },
+    { "en": "Cross-Region Replication (CRR)", "es": "Replicación entre regiones", "def": "Réplica asíncrona automática hacia un bucket en otra región, usada para recuperación ante desastres." },
+    { "en": "ACL", "es": "Lista de Control de Acceso", "def": "Nivel básico de permisos: private, public-read o public-read-write." },
+    { "en": "Bucket Policy", "es": "Política de bucket", "def": "Documento JSON con permisos granulares por usuario, IP, prefijo u hora." },
+    { "en": "RAM Policy", "es": "Política RAM", "def": "Permisos por identidad (usuario o rol) sobre qué operaciones de OSS puede ejecutar." },
+    { "en": "Presigned URL", "es": "URL prefirmada", "def": "Enlace temporal firmado que da acceso a un objeto privado sin exponer credenciales." },
+    { "en": "SSE-OSS / SSE-KMS", "es": "Cifrado del lado del servidor", "def": "Cifrado en reposo con clave gestionada por OSS (SSE-OSS) o por el usuario vía KMS (SSE-KMS)." },
+    { "en": "Multipart Upload", "es": "Carga multiparte", "def": "Divide un archivo grande en partes subidas en paralelo, reanudable ante fallos." },
+    { "en": "Static Website Hosting", "es": "Hosting de sitio estático", "def": "Servir HTML/CSS/JS directamente desde un bucket, sin servidor de aplicación." },
+    { "en": "Hotlink protection (Referer)", "es": "Protección de enlaces directos", "def": "Restringe qué dominios pueden referenciar directamente los objetos del bucket." },
+    { "en": "Image Processing (IMG)", "es": "Procesamiento de imágenes", "def": "Transformación on-the-fly de imágenes vía parámetros en la URL (resize, crop, watermark, formato)." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Object Storage Service (OSS)?",
-      "options": [
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-region, versionado, lifecycle y control fino de permisos."
-    },
-    {
-      "q": "¿Qué es <strong>Bucket</strong> (Bucket) en Object Storage Service (OSS)?",
-      "options": [
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "Acceso frecuente, mayor $/GB, menor $/GET."
-      ],
-      "answer": 0,
-      "explain": "Bucket (Bucket): Contenedor lógico con nombre global. Vive en una región."
-    },
-    {
-      "q": "¿Qué es <strong>Object</strong> (Objeto) en Object Storage Service (OSS)?",
-      "options": [
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "Acceso frecuente, mayor $/GB, menor $/GET."
-      ],
-      "answer": 0,
-      "explain": "Object (Objeto): Archivo + metadatos + key (nombre con /). Hasta 48.8 TB."
-    },
-    {
-      "q": "¿Qué es <strong>Key</strong> (Key) en Object Storage Service (OSS)?",
-      "options": [
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy).",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Acceso frecuente, mayor $/GB, menor $/GET."
-      ],
-      "answer": 0,
-      "explain": "Key (Key): Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-    },
-    {
-      "q": "¿Qué es <strong>Standard</strong> (Standard) en Object Storage Service (OSS)?",
-      "options": [
-        "Acceso frecuente, mayor $/GB, menor $/GET.",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-      ],
-      "answer": 0,
-      "explain": "Standard (Standard): Acceso frecuente, mayor $/GB, menor $/GET."
-    },
-    {
-      "q": "¿Qué es <strong>Infrequent Access (IA)</strong> (IA) en Object Storage Service (OSS)?",
-      "options": [
-        "Acceso poco frecuente, mínimo 30 días de almacenaje.",
-        "Contenedor lógico con nombre global. Vive en una región.",
-        "Archivo + metadatos + key (nombre con /). Hasta 48.8 TB.",
-        "Nombre completo con prefijos tipo carpeta (fake hierarchy)."
-      ],
-      "answer": 0,
-      "explain": "Infrequent Access (IA) (IA): Acceso poco frecuente, mínimo 30 días de almacenaje."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Object Storage Service (OSS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Object Storage Service (OSS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Object Storage Service (OSS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Object Storage Service (OSS) es la elección típica:",
-      "options": [
-        "Backups incrementales y respaldos de bases de datos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Backups incrementales y respaldos de bases de datos."
-    }
+    { "q": "¿Qué es un Bucket en Object Storage Service (OSS)?", "options": ["Un contenedor lógico con nombre único global que vive en una única región", "Un tipo de instancia de cómputo", "Un disco virtual montado en ECS", "Un servicio de balanceo de carga"], "answer": 0, "explain": "El bucket es el contenedor de nivel superior en OSS; se crea en una región específica y no puede moverse después." },
+    { "q": "Un objeto necesita permanecer accesible con restauración en aproximadamente 1 minuto, pero su costo de almacenamiento debe ser bajo porque se accede rara vez. ¿Qué clase de almacenamiento es la más adecuada?", "options": ["Standard", "Infrequent Access (IA)", "Archive", "Cold Archive"], "answer": 2, "explain": "Archive ofrece bajo costo con restauración en ~1 minuto; Cold Archive es aún más barato pero tarda de 1 a 12 horas en restaurar." },
+    { "q": "¿Cuál es la permanencia mínima recomendada antes de mover un objeto a la clase Cold Archive sin incurrir en penalización?", "options": ["7 días", "30 días", "60 días", "180 días"], "answer": 3, "explain": "Cold Archive tiene una permanencia mínima de 180 días; moverlo o borrarlo antes puede generar cargos adicionales." },
+    { "q": "¿Cuál es la forma correcta de compartir un archivo privado de OSS con un tercero por tiempo limitado?", "options": ["Cambiar el ACL del objeto a public-read-write", "Compartir el AccessKey de la cuenta", "Generar una URL prefirmada (Presigned URL) con expiración", "Copiar el objeto a un bucket público permanentemente"], "answer": 2, "explain": "La URL prefirmada da acceso temporal sin exponer credenciales ni hacer público el objeto de forma permanente." },
+    { "q": "Un archivo de 2 GB necesita subirse a OSS de forma confiable. ¿Qué mecanismo es el adecuado?", "options": ["Subida simple en una sola llamada", "Multipart Upload (carga multiparte)", "Solo se puede subir por la consola web", "OSS no admite archivos mayores a 1 GB"], "answer": 1, "explain": "Multipart Upload divide el archivo en partes subidas en paralelo y permite reanudar si una parte falla — recomendado para archivos grandes." },
+    { "q": "¿Qué logra activar Versioning en un bucket de OSS?", "options": ["Reduce el costo de almacenamiento automáticamente", "Conserva versiones anteriores de un objeto ante sobrescrituras o borrados accidentales", "Mueve automáticamente los objetos a Cold Archive", "Cifra automáticamente todos los objetos"], "answer": 1, "explain": "Versioning protege contra pérdida de datos por sobrescritura o borrado accidental, conservando versiones previas." },
+    { "q": "¿Qué mecanismo de OSS permite generar una miniatura de una imagen sin necesidad de un servicio de cómputo adicional?", "options": ["Lifecycle", "Cross-Region Replication", "Procesamiento de imágenes vía parámetros de URL (image/resize)", "Static Website Hosting"], "answer": 2, "explain": "OSS procesa imágenes on-the-fly agregando parámetros a la URL del objeto, sin necesidad de infraestructura de cómputo separada." },
+    { "q": "¿Cuál es la diferencia principal entre ACL, Bucket Policy y RAM Policy en OSS?", "options": ["Son exactamente lo mismo con nombres distintos", "ACL es básico (public/private), Bucket Policy es granular por recurso, RAM Policy controla permisos por identidad", "RAM Policy solo aplica a instancias ECS, no a OSS", "Bucket Policy solo puede usarse si Versioning está desactivado"], "answer": 1, "explain": "Las tres capas se complementan: ACL es el control más básico, Bucket Policy permite reglas JSON granulares, y RAM Policy controla qué puede hacer cada identidad." },
+    { "q": "Un equipo quiere alojar una Single Page Application (SPA) sin backend dinámico. ¿Qué característica de OSS usarían?", "options": ["Cross-Region Replication", "Static Website Hosting", "Multipart Upload", "SSE-KMS"], "answer": 1, "explain": "OSS puede servir directamente contenido HTML/CSS/JS mediante Static Website Hosting, ideal para sitios sin lógica de servidor." },
+    { "q": "¿Qué opción de cifrado en reposo permite al cliente controlar y auditar sus propias claves criptográficas en OSS?", "options": ["SSE-OSS", "SSE-KMS", "ACL private", "Versioning"], "answer": 1, "explain": "SSE-KMS usa claves gestionadas por el cliente en el servicio KMS, dando control y auditoría adicional frente a SSE-OSS." },
+    { "q": "¿Por qué configurar un bucket como public-read-write se considera un antipatrón de seguridad?", "options": ["Porque hace el bucket más lento", "Porque permite que cualquiera lea y escriba objetos, exponiendo a fuga de datos y abuso de costos", "Porque desactiva automáticamente el versionado", "Porque impide usar HTTPS"], "answer": 1, "explain": "public-read-write elimina el control de acceso, permitiendo que terceros lean, sobrescriban o suban contenido no autorizado." },
+    { "q": "Para reducir el costo de servir imágenes de una app a usuarios en distintas regiones del mundo, ¿qué se recomienda colocar delante del bucket OSS?", "options": ["Un segundo bucket idéntico", "Un CDN", "Otra región de OSS sin CDN", "Solo aumentar la clase de almacenamiento a Standard"], "answer": 1, "explain": "Un CDN cachea el contenido cerca del usuario final, reduciendo latencia y costo de egress directo desde OSS." },
+    { "q": "¿Qué mecanismo de OSS está diseñado específicamente para recuperación ante desastres a nivel de región?", "options": ["Lifecycle", "Cross-Region Replication (CRR)", "Bucket Policy", "Procesamiento de imágenes"], "answer": 1, "explain": "CRR replica el contenido del bucket hacia otra región de forma asíncrona, protegiendo ante la falla de una región completa." },
+    { "q": "Se necesita evitar que otros sitios web enlacen directamente a las imágenes de tu bucket, consumiendo tu ancho de banda. ¿Qué función de OSS lo resuelve?", "options": ["Multipart Upload", "Hotlink protection (Referer whitelist)", "Cold Archive", "RAM Policy"], "answer": 1, "explain": "La protección por Referer restringe qué dominios pueden cargar directamente los objetos del bucket." },
+    { "q": "¿Cuál es la unidad de almacenamiento de OSS y qué contiene?", "options": ["Instance — vCPU y memoria", "Object — datos, metadatos y una Key", "Volume — bloques de disco", "Table — filas y columnas"], "answer": 1, "explain": "El Object es la unidad fundamental de OSS: contiene los datos binarios, metadatos HTTP/personalizados y una Key única dentro del bucket." }
   ],
-  "exam_focus": "Preguntas: (a) qué storage class elegir según patrón de acceso, (b) lifecycle design, (c) permisos ACL vs bucket policy vs RAM policy, (d) versioning + CRR para DR, (e) presigned URLs vs public ACL.",
+  "exam_focus": "El examen suele evaluar: (a) qué clase de almacenamiento elegir según patrón de acceso y tiempo de restauración, (b) diseño de reglas de Lifecycle, (c) diferencia entre ACL, Bucket Policy y RAM Policy, (d) Versioning + CRR para protección de datos, (e) URLs prefirmadas frente a hacer un objeto público.",
   "official_intro": "This course explains the basic concepts of OSS. It also includes demos such as bucket management, object storage operations, image processing, website hosting and monitoring and introduces the OSS related security features.",
   "recommended_for": "Cloud Beginners, Technical Operators that are interested in Alibaba Cloud OSS",
   "official_lessons": [
-    {
-      "num": 1,
-      "title_en": "Course overview and objectives"
-    },
-    {
-      "num": 2,
-      "title_en": "What is OSS?"
-    },
-    {
-      "num": 3,
-      "title_en": "OSS concept"
-    },
-    {
-      "num": 4,
-      "title_en": "Operations - Bucket Operation"
-    },
-    {
-      "num": 5,
-      "title_en": "Operations - Object Operation"
-    },
-    {
-      "num": 6,
-      "title_en": "Operations - Image Processing"
-    },
-    {
-      "num": 7,
-      "title_en": "Operations - Website Hosting and Monitoring"
-    },
-    {
-      "num": 8,
-      "title_en": "Security Feature"
-    }
+    { "num": 1, "title_en": "Course overview and objectives" },
+    { "num": 2, "title_en": "What is OSS?" },
+    { "num": 3, "title_en": "OSS concept" },
+    { "num": 4, "title_en": "Operations - Bucket Operation" },
+    { "num": 5, "title_en": "Operations - Object Operation" },
+    { "num": 6, "title_en": "Operations - Image Processing" },
+    { "num": 7, "title_en": "Operations - Website Hosting and Monitoring" },
+    { "num": 8, "title_en": "Security Feature" }
   ],
   "source_url": "https://edu.alibabacloud.com/certification/clouder_oss",
   "exam_meta": {

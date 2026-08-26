@@ -2,428 +2,174 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-sparksetup",
   "title_en": "How to Use Spark on Cloud Series - Setup",
-  "title_es": "Cómo Usar Spark en Cloud Series - Setup",
+  "title_es": "Cómo Usar Spark en la Nube - Instalación y Configuración",
+  "title_es_html": "Cómo Usar Spark en la Nube - <em>Instalación y Configuración</em>",
   "duration_es": "45 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_sparksetup",
-  "lead": "Guía completa en español para el curso «How to Use Spark on Cloud Series - Setup» de Alibaba Cloud Academy. Cubre en profundidad Apache Spark en Alibaba Cloud. Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «How to Use Spark on Cloud Series - Setup» de Alibaba Cloud Academy. Es el primer curso de la serie Spark on Cloud: no usa E-MapReduce ni ningún clúster gestionado, sino que instala y configura Apache Spark en modo local sobre una única instancia ECS con Linux, sentando la base conceptual (Driver, Executor, Cluster Manager) antes de escalar a un clúster real en cursos posteriores.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Apache Spark en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: RDD, DataFrame, Dataset, Executor, Partition.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Apache Spark en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la arquitectura básica de Spark (Driver, Executor, Cluster Manager) antes de instalar nada.",
+    "<strong>Preparar</strong> una instancia ECS Linux con la versión de Java requerida por Spark.",
+    "<strong>Descargar, instalar y configurar</strong> Spark en modo local sobre esa instancia.",
+    "<strong>Verificar</strong> la instalación ejecutando spark-shell y pyspark.",
+    "<strong>Distinguir</strong> los modos de ejecución local, standalone y sobre YARN, y saber cuándo aplica cada uno.",
+    "<strong>Identificar</strong> qué cambia al pasar de este experimento local a un clúster real en E-MapReduce."
   ],
-  "architecture": "Job Spark: SparkSession → lee de OSS (Parquet particionado) → transformaciones lazy → escribe a Hologres/OSS. Deploy: EMR o ACK con Spark Operator. Metastore en DLF (Data Lake Formation). Monitoring en Spark UI.",
+  "architecture": "En modo local, todo el proceso de Spark —Driver y Executors— corre dentro de una única JVM en la misma instancia ECS, sin ningún Cluster Manager externo coordinando múltiples máquinas; el paralelismo se limita a los núcleos de esa instancia. El Driver es el proceso que ejecuta el código principal de la aplicación, construye el plan de ejecución y coordina el trabajo; los Executors son los procesos que efectivamente ejecutan las tareas y mantienen los datos en memoria o disco durante el cálculo. Esta arquitectura es idéntica conceptualmente a la de un clúster real: lo único que cambia al escalar es quién actúa como Cluster Manager (ninguno en modo local, el propio Standalone Cluster Manager de Spark, o YARN dentro de un clúster EMR) y si Driver y Executors viven en la misma máquina o distribuidos en varias.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Apache Spark en Alibaba Cloud",
-      "title_en": "Introduction to Apache Spark en Alibaba Cloud",
-      "intro": "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Arquitectura básica de Spark antes de instalar nada",
+      "title_en": "Basic Spark Architecture Before Installing Anything",
+      "intro": "Instalar Spark sin entender su arquitectura lleva a configurarlo a ciegas. Este primer módulo presenta los tres conceptos que hay que tener claros antes de tocar la terminal.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Apache Spark en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Driver</strong>: el proceso que ejecuta la función <code>main()</code> de la aplicación, construye el grafo de operaciones (DAG) y coordina la ejecución distribuida — incluso en modo local, existe un proceso Driver separado conceptualmente de los Executors.",
+        "<strong>Executor</strong>: proceso worker que ejecuta las tareas concretas asignadas por el Driver y almacena datos en memoria/disco durante el cálculo; en modo local puede haber uno o varios hilos actuando como Executors dentro de la misma JVM.",
+        "<strong>Cluster Manager</strong>: componente responsable de asignar recursos (CPU, memoria) a la aplicación Spark; en modo local no existe como proceso separado, en modo standalone es el propio gestor de Spark, y en un clúster EMR es YARN.",
+        "<strong>SparkContext / SparkSession</strong>: el punto de entrada de programación que la aplicación crea al arrancar, y a través del cual se comunica con el Cluster Manager para solicitar Executors.",
+        "<strong>Por qué empezar en modo local</strong>: permite aprender la API y depurar la lógica de una aplicación sin la complejidad de coordinar múltiples máquinas, antes de introducir la variable de la distribución real."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Apache Spark en Alibaba Cloud es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Modo local no significa «Spark simplificado» — es el mismo modelo Driver/Executor de un clúster real, solo que todo corre en una única máquina sin un Cluster Manager externo coordinando nada."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Apache Spark en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Preparar la instancia ECS: sistema operativo y Java",
+      "title_en": "Preparing the ECS Instance: OS and Java",
+      "intro": "Spark no corre sobre el aire — necesita un sistema operativo Linux correctamente actualizado y, sobre todo, la versión de Java adecuada antes de descargar un solo binario de Spark.",
       "points": [
-        "<strong>Patrón canónico</strong>: Job Spark: SparkSession → lee de OSS (Parquet particionado) → transformaciones lazy → escribe a Hologres/OSS. Deploy: EMR o ACK con Spark Operator. Metastore en DLF (Data Lake Formation). Monitoring en Spark UI.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Apache Spark en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>RDD</strong> <em>(RDD)</em>: Colección distribuida inmutable — API legacy.",
-        "<strong>DataFrame</strong> <em>(DataFrame)</em>: API estructurada con Catalyst optimizer.",
-        "<strong>Dataset</strong> <em>(Dataset)</em>: DataFrame tipado (Scala/Java).",
-        "<strong>Executor</strong> <em>(Executor)</em>: Proceso worker que ejecuta tasks.",
-        "<strong>Partition</strong> <em>(Partition)</em>: Chunk de datos procesado en paralelo.",
-        "<strong>Shuffle</strong> <em>(Shuffle)</em>: Redistribución cross-partition — costoso.",
-        "<strong>Broadcast</strong> <em>(Broadcast)</em>: Enviar pequeño dataset a todos los executors (evita shuffle).",
-        "<strong>Catalyst</strong> <em>(Catalyst)</em>: Optimizador de queries de Spark SQL."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Elección de la instancia</strong>: para un experimento de aprendizaje en modo local, una instancia ECS de tamaño moderado (pocos vCPU, unos pocos GB de RAM) es suficiente — el modo local no necesita el dimensionamiento de un clúster de producción.",
+        "<strong>Actualización del sistema</strong>: antes de instalar dependencias, se actualiza el gestor de paquetes de la distribución Linux elegida para evitar conflictos de versiones con paquetes desactualizados.",
+        "<strong>Instalación de Java</strong>: Spark requiere una JVM compatible (JDK); se instala la versión soportada por la release de Spark elegida y se verifica con <code>java -version</code> antes de continuar.",
+        "<strong>Variables de entorno</strong>: <code>JAVA_HOME</code> debe apuntar al directorio de instalación del JDK; Spark falla al arrancar si esta variable no está correctamente configurada o apunta a una instalación incompleta.",
+        "<strong>Usuario y permisos</strong>: se recomienda trabajar con un usuario no root dedicado para instalar y ejecutar Spark, evitando problemas de permisos sobre los directorios de trabajo y logs."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "La causa número uno de que Spark no arranque tras una instalación aparentemente correcta es JAVA_HOME mal configurado o apuntando a una versión de Java incompatible con la release de Spark instalada."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Descargar, instalar y configurar Spark en modo local",
+      "title_en": "Downloading, Installing and Configuring Spark in Local Mode",
+      "intro": "Con Java listo, este módulo cubre el proceso concreto de poner Spark en marcha sobre la instancia, sin ningún componente de clúster adicional.",
       "points": [
-        "<strong>HA</strong>: AQE habilitado",
-        "<strong>Seguridad</strong>: DataFrame API sobre RDD (Catalyst optimiza)",
-        "<strong>Buenas prácticas</strong>: Particiones ~128-256 MB por partition",
-        "<strong>Buenas prácticas</strong>: Broadcast joins para tablas pequeñas",
-        "<strong>Buenas prácticas</strong>: Parquet + partition pruning en OSS"
+        "<strong>Descarga del binario</strong>: se descarga el paquete pre-compilado de Spark correspondiente a la versión de Hadoop deseada (o «sin Hadoop» si se usará solo en modo local sin HDFS) desde el sitio oficial del proyecto.",
+        "<strong>Extracción y ubicación</strong>: el paquete se descomprime en un directorio estable del sistema; se define <code>SPARK_HOME</code> apuntando a esa ruta y se añade su carpeta <code>bin</code> al <code>PATH</code> del usuario.",
+        "<strong>Archivos de configuración</strong>: <code>spark-env.sh</code> permite fijar variables de entorno específicas de Spark (como memoria por defecto del Driver); <code>spark-defaults.conf</code> permite fijar propiedades de configuración que aplican a todas las ejecuciones sin tener que pasarlas por línea de comandos cada vez.",
+        "<strong>Sin necesidad de HDFS</strong>: en modo local, Spark puede leer y escribir directamente sobre el sistema de archivos local de la instancia — no hace falta levantar HDFS ni ningún otro servicio de almacenamiento distribuido para este experimento.",
+        "<strong>Puerto de la interfaz web</strong>: al ejecutar una aplicación, Spark expone una interfaz web (Spark UI) en un puerto local (por defecto 4040) con el estado de los jobs, stages y tareas en curso — útil para verificar que algo realmente se está ejecutando."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Instalar Spark en modo local es, en esencia, descomprimir un binario y fijar dos variables de entorno (JAVA_HOME y SPARK_HOME) — la complejidad real aparece al coordinar múltiples máquinas, no en esta instalación de un solo nodo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Verificar la instalación con spark-shell y pyspark",
+      "title_en": "Verifying the Installation with spark-shell and pyspark",
+      "intro": "Una instalación no está terminada hasta que se confirma que realmente ejecuta código distribuido, aunque sea sobre una sola máquina.",
       "points": [
-        "<strong>Antipattern</strong>: Muchas partitions pequeñas (small files problem)",
-        "<strong>Antipattern</strong>: Collect() en DF grande → OOM en driver",
-        "<strong>Antipattern</strong>: UDFs Python cuando existe función nativa",
-        "<strong>Antipattern</strong>: Shuffle innecesario por reorderings",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>spark-shell</strong>: abre una consola interactiva en Scala con un SparkSession ya inicializado (accesible como la variable <code>spark</code>), lista para ejecutar transformaciones sobre RDDs o DataFrames sin escribir un programa completo.",
+        "<strong>pyspark</strong>: equivalente en Python, abre una consola interactiva con el mismo SparkSession preconfigurado, apropiado para quienes prefieren la API de Python sobre Scala.",
+        "<strong>Prueba mínima de humo</strong>: crear un RDD simple a partir de un rango de números y aplicar una transformación seguida de una acción (por ejemplo, sumar sus valores) confirma que el Driver y los Executors locales están funcionando correctamente.",
+        "<strong>Revisar la Spark UI</strong>: mientras corre una operación desde spark-shell/pyspark, abrir la interfaz web en el puerto 4040 permite observar cómo se descompone el trabajo en jobs y stages, aun en modo local.",
+        "<strong>Errores típicos en esta etapa</strong>: mensajes de «class not found» suelen apuntar a una versión de Java incompatible; errores de permisos en el directorio de trabajo suelen apuntar a haber instalado Spark con un usuario distinto al que lo ejecuta."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "spark-shell (Scala) y pyspark (Python) son ambos consolas interactivas sobre el mismo SparkSession — la elección entre uno u otro depende del lenguaje preferido del desarrollador, no de una diferencia funcional del motor subyacente."
+      }
+    },
+    {
+      "title_es": "5 · Modos de ejecución: local, standalone y YARN",
+      "title_en": "Execution Modes: Local, Standalone and YARN",
+      "intro": "El modo local instalado en este curso es solo uno de varios modos posibles — entender dónde encaja cada uno evita confundir «cómo aprendí Spark» con «cómo se ejecuta en producción».",
+      "points": [
+        "<strong>Modo local</strong>: todo el procesamiento ocurre en una única JVM sobre una sola máquina, sin ningún Cluster Manager externo — apropiado para aprendizaje, desarrollo y pruebas unitarias, nunca para cargas de producción reales.",
+        "<strong>Modo Standalone</strong>: el propio Spark aporta su Cluster Manager simple, coordinando varias máquinas dedicadas exclusivamente a ejecutar aplicaciones Spark — más simple de operar que YARN, pero sin la multi-tenencia de compartir el clúster con otros motores.",
+        "<strong>Modo sobre YARN</strong>: Spark se somete como una aplicación más gestionada por el ResourceManager de YARN, compartiendo el mismo clúster físico con otros motores (MapReduce, Hive) — es el modo típico dentro de un clúster E-MapReduce en producción.",
+        "<strong>Deploy mode: client vs. cluster</strong>: independientemente del Cluster Manager elegido, el Driver puede correr en la máquina que sometió el job (client) o dentro del propio clúster (cluster) — el modo cluster es preferible para jobs de larga duración que no dependen de que la máquina que los sometió siga conectada.",
+        "<strong>Progresión natural</strong>: el camino de aprendizaje típico va de modo local (este curso) a un clúster EMR real sobre YARN (cursos posteriores de la serie), sin que el código de la aplicación en sí necesite cambios sustanciales entre ambos."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El código de una aplicación Spark bien escrita no debería depender del modo de ejecución — la elección entre local, standalone o YARN se hace mayormente a través de parámetros de despliegue (<code>--master</code>), no reescribiendo la lógica."
+      }
+    },
+    {
+      "title_es": "6 · De un experimento local a un clúster real",
+      "title_en": "From a Local Experiment to a Real Cluster",
+      "intro": "Este módulo cierra el curso conectando lo instalado aquí con el siguiente paso lógico de la serie: correr Spark sobre un clúster gestionado real en E-MapReduce.",
+      "points": [
+        "<strong>Qué cambia</strong>: al pasar de local a un clúster EMR, el <code>--master</code> pasa de <code>local[*]</code> a <code>yarn</code>, y el almacenamiento de entrada/salida típicamente pasa del sistema de archivos local de una instancia a OSS o HDFS distribuido.",
+        "<strong>Qué NO cambia</strong>: la API de transformaciones y acciones sobre RDDs/DataFrames es la misma; una aplicación bien escrita en modo local corre sin modificaciones de lógica sobre un clúster real, solo cambian los parámetros de despliegue.",
+        "<strong>Límite del modo local</strong>: el paralelismo está limitado a los núcleos de una sola instancia — cualquier carga que exceda la capacidad de una máquina exige pasar a un modo distribuido real.",
+        "<strong>Preparación para EMR</strong>: entender aquí los conceptos de Driver, Executor y Cluster Manager es exactamente lo que se necesita para razonar después sobre cómo EMR asigna recursos de Spark a través de YARN.",
+        "<strong>Costo de aprendizaje vs. costo de producción</strong>: experimentar y depurar en modo local sobre una instancia ECS modesta es mucho más económico que iterar directamente sobre un clúster EMR completo — una buena práctica de desarrollo, no solo un paso didáctico."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Si el examen pregunta por la diferencia entre desarrollar en modo local y ejecutar en producción sobre EMR, la respuesta correcta rara vez está en la lógica de la aplicación — está en los parámetros de despliegue y en dónde viven los datos de entrada/salida."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "ETL batch nocturno TB-PB"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Feature engineering para ML"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración de ETL SQL a código versionado"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Análisis ad-hoc con pyspark"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Streaming con Structured Streaming"
-    }
+    { "title": "Escenario 1", "text": "Aprender la API de Spark y depurar transformaciones sin coordinar múltiples máquinas — modo local sobre una instancia ECS" },
+    { "title": "Escenario 2", "text": "Ejecutar spark-shell y confirmar que el Driver/Executor local funciona con una prueba de humo simple" },
+    { "title": "Escenario 3", "text": "Preparar una demo rápida sin levantar infraestructura de clúster — modo local con datos pequeños en disco local" },
+    { "title": "Escenario 4", "text": "Escalar el mismo código desarrollado en local hacia un clúster real de producción — cambiar --master a yarn en EMR" },
+    { "title": "Escenario 5", "text": "Diagnosticar un fallo de arranque de Spark tras la instalación — revisar primero JAVA_HOME" },
+    { "title": "Escenario 6", "text": "Elegir entre modo Standalone y YARN para un clúster dedicado exclusivamente a Spark sin otros motores — Standalone es válido y más simple de operar" }
   ],
   "mistakes": [
-    "Muchas partitions pequeñas (small files problem)",
-    "Collect() en DF grande → OOM en driver",
-    "UDFs Python cuando existe función nativa",
-    "Shuffle innecesario por reorderings"
+    "Configurar JAVA_HOME apuntando a una versión de Java incompatible con la release de Spark descargada",
+    "Instalar Spark con un usuario y ejecutarlo con otro, provocando errores de permisos en directorios de trabajo",
+    "Asumir que el modo local es apto para cargas de producción reales en vez de solo aprendizaje y desarrollo",
+    "No verificar la instalación con una prueba de humo simple antes de asumir que todo funciona correctamente",
+    "Reescribir la lógica de la aplicación al pasar de modo local a un clúster real, en vez de solo cambiar los parámetros de despliegue",
+    "Ignorar la Spark UI durante el desarrollo local, perdiendo la oportunidad de entender cómo se descompone el trabajo en jobs y stages"
   ],
   "cli": [
-    {
-      "cmd": "spark-submit --deploy-mode cluster ...",
-      "desc": "Envío job"
-    },
-    {
-      "cmd": "pyspark",
-      "desc": "Shell interactivo"
-    }
+    { "cmd": "java -version", "desc": "Verificar la versión de Java instalada antes de instalar Spark" },
+    { "cmd": "tar -xzf spark-*.tgz -C /opt/", "desc": "Extraer el binario de Spark descargado" },
+    { "cmd": "export SPARK_HOME=/opt/spark && export PATH=$PATH:$SPARK_HOME/bin", "desc": "Configurar las variables de entorno de Spark" },
+    { "cmd": "spark-shell --master local[*]", "desc": "Abrir la consola interactiva de Scala en modo local usando todos los núcleos" },
+    { "cmd": "pyspark --master local[2]", "desc": "Abrir la consola interactiva de Python en modo local con 2 núcleos" }
   ],
   "glossary": [
-    {
-      "en": "RDD",
-      "es": "RDD",
-      "def": "Colección distribuida inmutable — API legacy."
-    },
-    {
-      "en": "DataFrame",
-      "es": "DataFrame",
-      "def": "API estructurada con Catalyst optimizer."
-    },
-    {
-      "en": "Dataset",
-      "es": "Dataset",
-      "def": "DataFrame tipado (Scala/Java)."
-    },
-    {
-      "en": "Executor",
-      "es": "Executor",
-      "def": "Proceso worker que ejecuta tasks."
-    },
-    {
-      "en": "Partition",
-      "es": "Partition",
-      "def": "Chunk de datos procesado en paralelo."
-    },
-    {
-      "en": "Shuffle",
-      "es": "Shuffle",
-      "def": "Redistribución cross-partition — costoso."
-    },
-    {
-      "en": "Broadcast",
-      "es": "Broadcast",
-      "def": "Enviar pequeño dataset a todos los executors (evita shuffle)."
-    },
-    {
-      "en": "Catalyst",
-      "es": "Catalyst",
-      "def": "Optimizador de queries de Spark SQL."
-    },
-    {
-      "en": "Adaptive Query Execution",
-      "es": "AQE",
-      "def": "Optimización dinámica en runtime."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Driver", "es": "Driver", "def": "Proceso que ejecuta el código principal de la aplicación y coordina la ejecución distribuida." },
+    { "en": "Executor", "es": "Executor", "def": "Proceso worker que ejecuta las tareas asignadas por el Driver y almacena datos durante el cálculo." },
+    { "en": "Cluster Manager", "es": "Cluster Manager", "def": "Componente que asigna recursos a la aplicación Spark: ninguno en local, Standalone propio, o YARN en EMR." },
+    { "en": "SparkSession", "es": "SparkSession", "def": "Punto de entrada de programación para interactuar con Spark y solicitar Executors." },
+    { "en": "Local Mode", "es": "Modo local", "def": "Ejecución de Spark completa dentro de una única JVM sobre una sola máquina, sin Cluster Manager externo." },
+    { "en": "Standalone Mode", "es": "Modo Standalone", "def": "Modo de clúster con el Cluster Manager propio de Spark, sin YARN ni otro gestor externo." },
+    { "en": "YARN Mode", "es": "Modo YARN", "def": "Ejecución de Spark como aplicación sometida al ResourceManager de YARN, típica en E-MapReduce." },
+    { "en": "spark-shell", "es": "spark-shell", "def": "Consola interactiva en Scala con un SparkSession ya inicializado." },
+    { "en": "pyspark", "es": "pyspark", "def": "Consola interactiva en Python con un SparkSession ya inicializado." },
+    { "en": "SPARK_HOME", "es": "SPARK_HOME", "def": "Variable de entorno que apunta al directorio de instalación de Spark." },
+    { "en": "JAVA_HOME", "es": "JAVA_HOME", "def": "Variable de entorno que apunta al directorio de instalación del JDK requerido por Spark." },
+    { "en": "Spark UI", "es": "Spark UI", "def": "Interfaz web (puerto 4040 por defecto) que muestra el estado de jobs, stages y tareas en curso." },
+    { "en": "Deploy Mode (client/cluster)", "es": "Modo de despliegue", "def": "Determina si el Driver corre en la máquina que sometió el job (client) o dentro del clúster (cluster)." },
+    { "en": "--master", "es": "--master", "def": "Parámetro que indica a Spark qué Cluster Manager usar (local[*], spark://, yarn)." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Spark corre en EMR, ACK, DataWorks (Spark on MaxCompute) y PAI-DLC. Es el motor de facto para batch y ETL a escala. Alibaba ofrece serverless Spark (DLF+Spark) y integración con OSS/Hologres."
-    },
-    {
-      "q": "¿Qué es <strong>RDD</strong> (RDD) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "DataFrame tipado (Scala/Java).",
-        "Proceso worker que ejecuta tasks."
-      ],
-      "answer": 0,
-      "explain": "RDD (RDD): Colección distribuida inmutable — API legacy."
-    },
-    {
-      "q": "¿Qué es <strong>DataFrame</strong> (DataFrame) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "API estructurada con Catalyst optimizer.",
-        "Colección distribuida inmutable — API legacy.",
-        "DataFrame tipado (Scala/Java).",
-        "Proceso worker que ejecuta tasks."
-      ],
-      "answer": 0,
-      "explain": "DataFrame (DataFrame): API estructurada con Catalyst optimizer."
-    },
-    {
-      "q": "¿Qué es <strong>Dataset</strong> (Dataset) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "DataFrame tipado (Scala/Java).",
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "Proceso worker que ejecuta tasks."
-      ],
-      "answer": 0,
-      "explain": "Dataset (Dataset): DataFrame tipado (Scala/Java)."
-    },
-    {
-      "q": "¿Qué es <strong>Executor</strong> (Executor) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Proceso worker que ejecuta tasks.",
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "DataFrame tipado (Scala/Java)."
-      ],
-      "answer": 0,
-      "explain": "Executor (Executor): Proceso worker que ejecuta tasks."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partition) en Apache Spark en Alibaba Cloud?",
-      "options": [
-        "Chunk de datos procesado en paralelo.",
-        "Colección distribuida inmutable — API legacy.",
-        "API estructurada con Catalyst optimizer.",
-        "DataFrame tipado (Scala/Java)."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partition): Chunk de datos procesado en paralelo."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Apache Spark en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Apache Spark en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Apache Spark en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Apache Spark en Alibaba Cloud es la elección típica:",
-      "options": [
-        "ETL batch nocturno TB-PB",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: ETL batch nocturno TB-PB."
-    }
+    { "q": "¿Qué proceso ejecuta el código principal de una aplicación Spark y coordina su ejecución distribuida?", "options": ["Executor", "Driver", "Cluster Manager", "NodeManager"], "answer": 1, "explain": "El Driver ejecuta la función main(), construye el plan de ejecución y coordina el trabajo, incluso en modo local." },
+    { "q": "¿Qué diferencia hay entre modo local y modo Standalone de Spark?", "options": ["Son exactamente lo mismo", "En modo local todo corre en una sola JVM sin Cluster Manager externo; en Standalone el propio Spark coordina varias máquinas dedicadas", "Standalone solo funciona con Python", "El modo local requiere YARN obligatoriamente"], "answer": 1, "explain": "El modo local no tiene Cluster Manager externo y corre en una sola máquina; Standalone es un modo de clúster real con el gestor propio de Spark coordinando varias máquinas." },
+    { "q": "¿Cuál es la causa más común de que Spark no arranque correctamente tras una instalación aparentemente completa?", "options": ["Falta de espacio en disco", "JAVA_HOME mal configurado o apuntando a una versión de Java incompatible", "El nombre de la instancia ECS es incorrecto", "No tener acceso a internet"], "answer": 1, "explain": "Spark depende de una JVM compatible; JAVA_HOME mal configurado es la causa más citada de fallos de arranque tras la instalación." },
+    { "q": "¿Qué comando abre una consola interactiva de Scala con un SparkSession ya inicializado?", "options": ["pyspark", "spark-submit", "spark-shell", "hadoop jar"], "answer": 2, "explain": "spark-shell abre la consola interactiva en Scala; pyspark es su equivalente en Python." },
+    { "q": "En modo local, ¿qué limita el paralelismo real disponible para una aplicación Spark?", "options": ["El número de tablas Hive registradas", "Los núcleos disponibles en la única máquina donde corre la JVM", "El tamaño del bucket de OSS", "La versión de HDFS instalada"], "answer": 1, "explain": "En modo local, todo el procesamiento ocurre dentro de una JVM en una sola máquina, por lo que el paralelismo está limitado a sus núcleos disponibles." },
+    { "q": "¿Qué cambia principalmente al pasar una aplicación Spark de modo local a un clúster EMR sobre YARN?", "options": ["Es necesario reescribir toda la lógica de transformaciones", "Se cambian los parámetros de despliegue (--master) y típicamente dónde viven los datos de entrada/salida, sin reescribir la API usada", "Spark deja de soportar RDDs en YARN", "No es posible migrar una aplicación desarrollada en modo local"], "answer": 1, "explain": "Una aplicación bien escrita usa la misma API de transformaciones/acciones; lo que cambia son los parámetros de despliegue y la ubicación del almacenamiento." },
+    { "q": "¿En qué puerto expone Spark por defecto su interfaz web (Spark UI) durante la ejecución de una aplicación?", "options": ["22", "8080", "4040", "9000"], "answer": 2, "explain": "El puerto 4040 es el valor por defecto de la Spark UI, que muestra el estado de jobs, stages y tareas en curso." },
+    { "q": "¿Qué modo de ejecución es el típico dentro de un clúster E-MapReduce en producción que comparte recursos con otros motores como Hive?", "options": ["Modo local", "Modo Standalone", "Modo sobre YARN", "Modo sin Cluster Manager"], "answer": 2, "explain": "Dentro de EMR, Spark típicamente se somete como aplicación gestionada por YARN, compartiendo el clúster con otros motores." },
+    { "q": "¿Qué determina el parámetro de despliegue 'client' frente a 'cluster' en Spark?", "options": ["El lenguaje de programación usado (Scala vs Python)", "Si el Driver corre en la máquina que sometió el job o dentro del propio clúster", "Si se usa HDFS o solo el sistema de archivos local", "El número de particiones del RDD"], "answer": 1, "explain": "El deploy mode client mantiene el Driver en la máquina que sometió el trabajo; el modo cluster ejecuta el Driver dentro del propio clúster." },
+    { "q": "¿Por qué se recomienda experimentar en modo local sobre una instancia ECS modesta antes de iterar directamente sobre un clúster EMR completo?", "options": ["Porque el modo local es obligatorio antes de crear cualquier clúster", "Porque es mucho más económico depurar la lógica de la aplicación sin el costo de un clúster completo encendido", "Porque EMR no soporta pyspark", "Porque el modo local tiene mejor rendimiento que un clúster real"], "answer": 1, "explain": "Desarrollar y depurar en modo local sobre una instancia modesta reduce el costo de iteración frente a hacerlo directamente sobre un clúster EMR completo." }
   ],
-  "exam_focus": "DataFrame vs RDD, shuffles y broadcast, Catalyst/AQE, particionamiento.",
+  "exam_focus": "El examen suele evaluar: (a) los roles de Driver, Executor y Cluster Manager, (b) los requisitos de Java y las variables de entorno necesarias para instalar Spark, (c) la diferencia entre modo local, Standalone y YARN, (d) qué cambia (y qué no) al migrar una aplicación de modo local a un clúster EMR real.",
   "official_intro": "The basic concepts and architecture of Spark will be covered in this course, we will also explain how to setup and configure Linux operating system and Spark running environment on Alibaba Clouod ECS server through demo. Spark will be running on a single instance in local mode in this course.",
   "recommended_for": "Spark beginners, cloud computing beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_sparksetup",

@@ -2,477 +2,194 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-ecommerce",
   "title_en": "Using SAS to Publish an Opencart E-commerce Website",
-  "title_es": "Usar SAS para Publicar un Sitio de E-commerce con Opencart",
+  "title_es": "Usar SAS para Publicar una Tienda Online con OpenCart",
+  "title_es_html": "Usar SAS para Publicar una <em>Tienda Online con OpenCart</em>",
   "duration_es": "21 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_ecommerce",
-  "lead": "Guía completa en español para el curso «Using SAS to Publish an Opencart E-commerce Website» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Using SAS to Publish an Opencart E-commerce Website» de Alibaba Cloud Academy. El curso usa Simple Application Server (SAS) —no ECS completo— como plataforma: un servidor «todo en uno» con plan de precio fijo, imágenes de aplicación preconfiguradas y un panel simplificado, pensado para que alguien sin experiencia profunda en infraestructura pueda publicar una tienda OpenCart funcional en minutos.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué es Simple Application Server (SAS) y en qué se diferencia de una instancia ECS tradicional.",
+    "<strong>Elegir</strong> el plan de SAS adecuado para una tienda OpenCart de tráfico bajo-medio.",
+    "<strong>Desplegar</strong> OpenCart usando una imagen de aplicación preconfigurada o instalándolo sobre un stack LAMP desde cero.",
+    "<strong>Configurar</strong> el catálogo, la moneda, los métodos de envío y de pago de una tienda OpenCart nueva.",
+    "<strong>Proteger</strong> la tienda con el firewall integrado de SAS, HTTPS y snapshots periódicos.",
+    "<strong>Reconocer</strong> el punto en que una tienda OpenCart en crecimiento necesita migrar de SAS a una arquitectura ECS completa."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Simple Application Server empaqueta en un solo recurso lo que en ECS serían varias piezas independientes: cómputo, disco del sistema, ancho de banda y un firewall simplificado, todo bajo un precio fijo mensual/anual. Sobre esa instancia corre un stack LAMP (Linux + Apache + MySQL/MariaDB + PHP) con OpenCart como capa de aplicación. El panel de SAS añade snapshots con un clic, monitoreo básico de CPU/red/disco y reinicio del sistema operativo sin pasar por la consola completa de ECS. Cuando el negocio crece más allá de lo que un solo SAS puede sostener, la migración natural separa capas: la aplicación pasa a una o varias instancias ECS detrás de un SLB, la base de datos migra a RDS, las imágenes de producto se mueven a OSS con CDN delante, y el dominio se resuelve hacia el nuevo frontend con TLS gestionado.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es Simple Application Server y por qué usarlo aquí",
+      "title_en": "Introduction to Simple Application Server (SAS)",
+      "intro": "Antes de tocar OpenCart, el curso explica por qué eligió SAS en vez de ECS clásico para este proyecto: la audiencia objetivo es alguien que quiere una tienda funcionando rápido, no un arquitecto diseñando una plataforma desde cero.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Todo en un solo recurso</strong>: cómputo, disco, ancho de banda y firewall vienen empaquetados en un único plan de precio fijo, sin necesidad de configurar VPC, Security Groups o discos por separado como en ECS.",
+        "<strong>Imágenes de aplicación</strong>: SAS ofrece imágenes preconfiguradas con stacks completos (LAMP, WordPress, Node.js, y también OpenCart) listas para usar, además de imágenes de sistema operativo limpio para quien prefiera instalar todo manualmente.",
+        "<strong>Panel simplificado</strong>: la consola de SAS agrupa monitoreo, firewall, snapshots y terminal web en una sola pantalla por servidor, reduciendo la curva de aprendizaje frente a la consola completa de ECS.",
+        "<strong>Límite de personalización</strong>: a cambio de esa simplicidad, SAS ofrece menos control fino que ECS — no hay VPC dedicada configurable a medida ni el catálogo completo de tipos de instancia; es una compensación deliberada de flexibilidad por velocidad.",
+        "<strong>Público objetivo</strong>: pequeños comerciantes, desarrolladores freelance o proyectos piloto que necesitan una tienda online funcional sin construir la infraestructura desde cero."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "SAS no es «ECS con menos funciones» sino un producto distinto orientado a simplicidad operativa; el examen puede preguntar directamente por qué elegir SAS sobre ECS en un escenario de comercio pequeño."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Elegir el plan y la imagen de partida",
+      "title_en": "Choosing a Plan and Application Image",
+      "intro": "El asistente de compra de SAS pide dos decisiones simples: cuánta capacidad contratar y con qué software arranca el servidor — ambas condicionan cómo se instala OpenCart después.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Planes por capacidad fija</strong>: cada plan de SAS define vCPU, memoria, disco y cuota de tráfico incluida en un solo precio; para una tienda OpenCart de catálogo pequeño y tráfico bajo-medio, el plan de entrada suele ser suficiente para empezar.",
+        "<strong>Imagen de aplicación OpenCart</strong>: si está disponible en el catálogo de imágenes, arranca con OpenCart ya instalado sobre un LAMP preconfigurado, reduciendo el trabajo de instalación al asistente web inicial de la tienda.",
+        "<strong>Imagen de sistema operativo limpio</strong>: para quien prefiera controlar exactamente qué versión de PHP, Apache/Nginx y MySQL se instala, se parte de una imagen de SO limpio y se instala el stack manualmente antes de descargar OpenCart.",
+        "<strong>Región</strong>: elegir la región más cercana a la mayoría de los clientes esperados de la tienda reduce la latencia percibida al navegar el catálogo y al pagar."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado dice «lanzar rápido, sin personalizar el stack», la imagen de aplicación preconfigurada es la respuesta; si dice «control total sobre versiones de software», la imagen de SO limpio es la correcta."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Instalación y configuración inicial de OpenCart",
+      "title_en": "Installing and Configuring OpenCart",
+      "intro": "Con el servidor corriendo, el siguiente bloque cubre el asistente de instalación de OpenCart y las primeras decisiones que definen cómo se comporta la tienda.",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>Asistente de instalación web</strong>: OpenCart detecta la conexión a la base de datos y pide los datos de la cuenta de administrador; al finalizar, es obligatorio eliminar o renombrar la carpeta <code>install/</code> del proyecto para que no quede expuesta a internet.",
+        "<strong>Panel de administración</strong>: separado de la tienda pública, permite gestionar catálogo, pedidos, clientes y configuración general — debe protegerse con una contraseña fuerte y, si es posible, restringirse por IP a nivel de firewall.",
+        "<strong>Configuración regional</strong>: moneda por defecto, zona horaria e idioma de la tienda se definen antes de cargar productos, porque cambiarlos después puede requerir ajustar precios ya ingresados.",
+        "<strong>Estructura de categorías</strong>: definir la jerarquía de categorías del catálogo antes de importar productos masivamente evita tener que reorganizar cientos de artículos después.",
+        "<strong>Modo mantenimiento</strong>: OpenCart permite poner la tienda pública en modo mantenimiento mientras se termina de configurar, evitando que un cliente real navegue una tienda incompleta."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Dejar la carpeta <code>install/</code> de OpenCart accesible tras la instalación es uno de los errores de seguridad más comunes y evaluados — permite a un atacante reinstalar la tienda desde cero."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Catálogo, pagos y envíos",
+      "title_en": "Catalog, Payments and Shipping",
+      "intro": "Una tienda técnica sin métodos de pago ni reglas de envío configuradas no puede vender — este módulo cubre las piezas de negocio que completan el proyecto.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Productos y variantes</strong>: cada producto en OpenCart puede tener opciones (talla, color) con ajuste de precio y stock por combinación; planificar las opciones desde el inicio evita reestructurar el catálogo más adelante.",
+        "<strong>Métodos de pago</strong>: OpenCart soporta múltiples extensiones de pasarela de pago (tarjeta, transferencia, contra-entrega); cada una se activa y configura por separado, y algunas requieren certificado TLS activo para procesar tarjetas de forma segura.",
+        "<strong>Métodos de envío</strong>: se configuran por zona geográfica, peso o valor del pedido; una regla de envío mal configurada es una causa común de pedidos abandonados en el checkout.",
+        "<strong>Impuestos</strong>: las clases de impuesto se asignan por producto y por zona geográfica del cliente — un error aquí genera precios incorrectos en el checkout, no solo un problema estético."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "El examen puede plantear un escenario de «checkout roto» o «pedidos abandonados» — la causa suele estar en reglas de envío/impuestos mal configuradas, no en un problema del servidor SAS en sí."
+      }
+    },
+    {
+      "title_es": "5 · Dominio, HTTPS y rendimiento",
+      "title_en": "Domain, HTTPS and Performance",
+      "intro": "Publicar la tienda implica más que tenerla accesible por IP: necesita un dominio propio, cifrado en tránsito y ajustes básicos de rendimiento para no perder clientes por lentitud.",
+      "points": [
+        "<strong>Dominio propio</strong>: se apunta un registro DNS (A o CNAME según si se usa la IP del SAS directamente o un servicio intermedio) hacia el servidor SAS antes de anunciar la tienda públicamente.",
+        "<strong>Certificado TLS/HTTPS</strong>: obligatorio para cualquier tienda que procese pagos — sin HTTPS, los navegadores marcan el sitio como no seguro y varias pasarelas de pago simplemente rechazan operar.",
+        "<strong>Caché e imágenes optimizadas</strong>: comprimir y redimensionar las imágenes de producto antes de subirlas, y activar caché de página donde el tema de OpenCart lo permita, reduce el tiempo de carga del catálogo.",
+        "<strong>Cuota de tráfico del plan SAS</strong>: cada plan incluye una cuota de transferencia de datos; una tienda con imágenes pesadas o mucho tráfico puede acercarse al límite del plan antes que a un cuello de botella de CPU."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "En SAS, el primer límite que una tienda en crecimiento suele encontrar no es la CPU sino la cuota de ancho de banda o disco del plan contratado — vale la pena monitorear ambos, no solo el uso de CPU."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad, backups y snapshots",
+      "title_en": "Security, Backups and Snapshots",
+      "intro": "Una tienda que procesa datos de clientes y pagos tiene requisitos de seguridad más altos que un sitio informativo — el curso los cubre como parte integral del proyecto, no como un extra opcional.",
+      "points": [
+        "<strong>Firewall integrado de SAS</strong>: el panel permite abrir/cerrar puertos con un clic; solo deben quedar abiertos 80/443 al público y el puerto de administración remota restringido a IPs conocidas.",
+        "<strong>Actualizaciones de OpenCart</strong>: el núcleo y las extensiones de terceros deben actualizarse regularmente — las vulnerabilidades conocidas de versiones antiguas son el vector de ataque más común contra tiendas OpenCart.",
+        "<strong>Snapshots</strong>: SAS permite tomar instantáneas completas del servidor con un clic desde el panel; conviene tomar una antes de cada actualización de OpenCart o de una extensión de pago.",
+        "<strong>Backup de base de datos por separado</strong>: un snapshot del servidor respalda el disco completo, pero exportar la base de datos por separado (pedidos, clientes) permite una recuperación más granular sin restaurar todo el servidor.",
+        "<strong>Cumplimiento de datos de pago</strong>: si la tienda procesa tarjetas directamente (en vez de redirigir a una pasarela externa), aplican requisitos de cumplimiento (PCI-DSS) que suelen resolverse delegando el procesamiento a la pasarela en vez de almacenar datos de tarjeta en el propio servidor."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado pregunta cómo minimizar el riesgo de manejar datos de tarjeta, la respuesta esperada es delegar el procesamiento a la pasarela de pago (redirección/tokenización), no intentar almacenar o cifrar los datos manualmente en el servidor."
+      }
+    },
+    {
+      "title_es": "7 · Cuándo migrar de SAS a una arquitectura ECS completa",
+      "title_en": "Growing Beyond SAS",
+      "intro": "El curso cierra reconociendo el límite natural de SAS: es la herramienta correcta para empezar, no necesariamente para escalar indefinidamente.",
+      "points": [
+        "<strong>Señal de crecimiento</strong>: cuando el tráfico o el catálogo empiezan a acercarse consistentemente a los límites del plan de SAS (CPU, disco, ancho de banda), es momento de evaluar una arquitectura ECS completa.",
+        "<strong>Separar la base de datos</strong>: el primer paso de escalado suele ser mover MySQL/MariaDB de la misma instancia a una RDS gestionada, liberando recursos para la capa de aplicación.",
+        "<strong>Medios a OSS + CDN</strong>: las imágenes de producto, que crecen con el catálogo, se benefician de moverse a OSS con un CDN delante en vez de seguir en el disco de un único servidor.",
+        "<strong>Múltiples instancias detrás de un SLB</strong>: para tráfico alto o estacional (rebajas, campañas), replicar la aplicación en varias instancias ECS detrás de un balanceador permite escalar horizontalmente, algo que SAS no soporta de forma nativa.",
+        "<strong>Migración de datos</strong>: exportar la base de datos y los archivos del servidor SAS e importarlos en la nueva arquitectura es el mecanismo estándar de migración, similar a mover un sitio autoalojado a la nube por primera vez."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "SAS y ECS no son competidores sino etapas: SAS para lanzar rápido y validar el negocio, ECS (con RDS, OSS y SLB) cuando el negocio ya demostró que necesita escalar más allá de un solo servidor."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Emprendedor lanzando su primera tienda con catálogo pequeño — SAS con imagen de aplicación OpenCart" },
+    { "title": "Escenario 2", "text": "Tienda que necesita procesar pagos con tarjeta de forma segura — HTTPS obligatorio + pasarela con tokenización" },
+    { "title": "Escenario 3", "text": "Catálogo con muchas imágenes de producto de alta resolución — optimización de imágenes + monitoreo de cuota de tráfico" },
+    { "title": "Escenario 4", "text": "Tienda que se acerca al límite de CPU/disco del plan SAS en campaña de fin de año — evaluar migración a ECS + SLB" },
+    { "title": "Escenario 5", "text": "Actualización de una extensión de pago de terceros — snapshot previo antes de aplicar el cambio" },
+    { "title": "Escenario 6", "text": "Checkout con pedidos abandonados por costos de envío incorrectos — revisar reglas de envío por zona/peso" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Dejar la carpeta install/ de OpenCart accesible tras completar la instalación",
+    "Procesar o almacenar datos de tarjeta directamente en el servidor en vez de delegar a la pasarela de pago",
+    "No actualizar el núcleo de OpenCart ni sus extensiones de terceros",
+    "Publicar la tienda sin certificado TLS/HTTPS activo",
+    "No monitorear la cuota de ancho de banda y disco del plan SAS hasta que la tienda ya sufre cortes",
+    "Configurar reglas de envío o impuestos incorrectas que rompen el checkout sin que se note de inmediato"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun swas CreateInstance --PlanId sas-plan-basic --ImageId opencart_app_image", "desc": "Crear un servidor SAS con la imagen de aplicación OpenCart" },
+    { "cmd": "aliyun swas CreateSnapshot --InstanceId sas-xxxxx", "desc": "Tomar un snapshot del servidor antes de una actualización" },
+    { "cmd": "aliyun swas ResetSystem --InstanceId sas-xxxxx --ImageId opencart_app_image", "desc": "Reinstalar el sistema desde una imagen si es necesario partir de cero" },
+    { "cmd": "aliyun swas UpdateFirewallRuleAttribute --InstanceId sas-xxxxx --Port 443", "desc": "Confirmar que el puerto 443 (HTTPS) está permitido en el firewall del panel" },
+    { "cmd": "mysqldump -u root -p opencart_db > backup_pedidos.sql", "desc": "Exportar la base de datos de la tienda por separado del snapshot del servidor" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Simple Application Server (SAS)", "es": "Simple Application Server", "def": "Servidor todo en uno con cómputo, disco, ancho de banda y firewall en un solo plan de precio fijo, orientado a simplicidad." },
+    { "en": "Application Image", "es": "Imagen de aplicación", "def": "Imagen preconfigurada de SAS con un stack de software completo (p.ej. LAMP + OpenCart) listo para usar." },
+    { "en": "OpenCart", "es": "OpenCart", "def": "Plataforma de e-commerce open source basada en PHP, ligera y orientada a tiendas pequeñas y medianas." },
+    { "en": "install/ directory", "es": "Carpeta de instalación", "def": "Directorio del instalador web de OpenCart que debe eliminarse o renombrarse tras completar la configuración inicial." },
+    { "en": "Payment gateway", "es": "Pasarela de pago", "def": "Servicio externo que procesa transacciones con tarjeta, reduciendo la necesidad de manejar datos sensibles en el propio servidor." },
+    { "en": "Shipping rule", "es": "Regla de envío", "def": "Configuración que determina el costo de envío según zona geográfica, peso o valor del pedido." },
+    { "en": "Tax class", "es": "Clase de impuesto", "def": "Categoría fiscal asignada a un producto y una zona geográfica que determina el impuesto aplicado en el checkout." },
+    { "en": "TLS/SSL Certificate", "es": "Certificado TLS/SSL", "def": "Certificado que habilita HTTPS; obligatorio en cualquier tienda que procese pagos." },
+    { "en": "Firewall panel (SAS)", "es": "Panel de firewall", "def": "Interfaz simplificada de SAS para abrir/cerrar puertos sin gestionar Security Groups como en ECS." },
+    { "en": "Snapshot", "es": "Instantánea", "def": "Copia puntual del servidor completo tomada desde el panel de SAS con un clic." },
+    { "en": "Database export/import", "es": "Exportación/importación de base de datos", "def": "Volcado de la base de datos usado para backups o migraciones, independiente del snapshot del servidor." },
+    { "en": "Bandwidth quota", "es": "Cuota de ancho de banda", "def": "Límite de transferencia de datos incluido en el plan de SAS; suele ser el primer cuello de botella antes que la CPU." },
+    { "en": "PCI-DSS", "es": "PCI-DSS", "def": "Estándar de seguridad de datos de tarjetas de pago; normalmente se cumple delegando el procesamiento a la pasarela." },
+    { "en": "DNS A/CNAME Record", "es": "Registro DNS A/CNAME", "def": "Registro que apunta un dominio a la IP o al nombre del servidor donde vive la tienda." },
+    { "en": "RDS", "es": "Base de datos gestionada", "def": "Servicio de base de datos administrado usado como siguiente paso de escalado tras salir de SAS." },
+    { "en": "OSS + CDN", "es": "Almacenamiento de objetos con CDN", "def": "Combinación usada para servir imágenes de producto cuando el catálogo crece más allá de un solo servidor." },
+    { "en": "SLB (Server Load Balancer)", "es": "Balanceador de carga", "def": "Distribuye tráfico entre varias instancias ECS cuando la tienda escala horizontalmente más allá de SAS." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Qué caracteriza principalmente a Simple Application Server (SAS) frente a una instancia ECS tradicional?", "options": ["SAS es simplemente una ECS más cara", "SAS empaqueta cómputo, disco, ancho de banda y firewall en un solo plan de precio fijo con panel simplificado", "SAS no permite alojar aplicaciones PHP", "SAS solo funciona fuera de China"], "answer": 1, "explain": "SAS agrupa varios recursos en un solo producto simplificado, a cambio de menos personalización que ECS." },
+    { "q": "¿Qué se debe hacer con la carpeta install/ de OpenCart después de completar la instalación?", "options": ["Dejarla accesible por si se necesita reinstalar", "Eliminarla o renombrarla para que no quede expuesta a internet", "Moverla a la carpeta de administración", "Comprimirla y subirla a OSS"], "answer": 1, "explain": "Dejar el instalador accesible permite a un atacante reinstalar la tienda desde cero; es uno de los errores de seguridad más comunes." },
+    { "q": "¿Por qué es obligatorio HTTPS en una tienda OpenCart que procesa pagos?", "options": ["Es opcional si el catálogo es pequeño", "Los navegadores marcan el sitio como inseguro y varias pasarelas de pago rechazan operar sin TLS", "HTTPS solo afecta el SEO", "HTTPS ralentiza el checkout, por eso se evita"], "answer": 1, "explain": "El cifrado en tránsito es un requisito tanto de confianza del usuario como técnico de la mayoría de pasarelas de pago." },
+    { "q": "¿Cuál es la forma recomendada de minimizar el riesgo de manejar datos de tarjeta en una tienda OpenCart?", "options": ["Almacenar los números de tarjeta cifrados en la base de datos propia", "Delegar el procesamiento de pago a la pasarela mediante redirección o tokenización", "Guardar los datos de tarjeta en un archivo de texto plano como backup", "Desactivar HTTPS para simplificar el checkout"], "answer": 1, "explain": "Delegar a la pasarela de pago reduce drásticamente el alcance de cumplimiento (PCI-DSS) del propio servidor." },
+    { "q": "En SAS, ¿cuál suele ser el primer límite que encuentra una tienda en crecimiento, antes que la CPU?", "options": ["El número de productos permitidos", "La cuota de ancho de banda o disco del plan contratado", "El número de administradores permitidos", "El idioma de la tienda"], "answer": 1, "explain": "El plan de SAS incluye una cuota fija de transferencia y disco que suele alcanzarse antes que un cuello de botella de CPU." },
+    { "q": "¿Qué logra tomar un snapshot desde el panel de SAS antes de actualizar una extensión de pago?", "options": ["Aumenta automáticamente el plan contratado", "Permite restaurar el servidor completo si la actualización falla", "Reemplaza la necesidad de HTTPS", "Actualiza automáticamente OpenCart a la última versión"], "answer": 1, "explain": "El snapshot es un punto de restauración del servidor completo, útil como red de seguridad antes de cambios riesgosos." },
+    { "q": "¿Qué combinación de backup es más completa para una tienda OpenCart en SAS?", "options": ["Solo snapshot del servidor", "Solo export de la base de datos", "Snapshot del servidor completo más export independiente de la base de datos", "Ninguno, SAS respalda todo automáticamente sin configuración"], "answer": 2, "explain": "El snapshot cubre el disco completo, pero un export de base de datos permite una recuperación más granular de pedidos y clientes." },
+    { "q": "Un cliente reporta que el costo de envío calculado en el checkout es incorrecto para su zona. ¿Dónde debe revisarse primero?", "options": ["El firewall de SAS", "Las reglas de envío configuradas por zona, peso o valor del pedido", "El certificado TLS", "El snapshot más reciente"], "answer": 1, "explain": "Errores en las reglas de envío por zona/peso/valor son la causa más común de checkouts con costos incorrectos." },
+    { "q": "¿Cuál es el primer paso típico al escalar una tienda de SAS hacia una arquitectura ECS completa?", "options": ["Eliminar la base de datos", "Separar la base de datos hacia una instancia RDS gestionada", "Desactivar HTTPS temporalmente", "Reducir el catálogo de productos"], "answer": 1, "explain": "Migrar la base de datos a RDS es habitualmente el primer paso de escalado, liberando recursos de la capa de aplicación." },
+    { "q": "¿Qué ventaja ofrece una imagen de aplicación OpenCart preconfigurada en SAS frente a instalar el stack manualmente?", "options": ["Es la única forma de instalar OpenCart", "Reduce el trabajo de instalación al asistente web inicial de la tienda", "Elimina la necesidad de configurar métodos de pago", "Hace innecesario el dominio propio"], "answer": 1, "explain": "La imagen preconfigurada ahorra tiempo de instalación del stack, dejando solo la configuración específica de la tienda por hacer." },
+    { "q": "¿Por qué es importante definir la estructura de categorías del catálogo antes de importar productos masivamente?", "options": ["No tiene ningún impacto práctico", "Evita tener que reorganizar cientos de artículos después de importarlos", "Es un requisito técnico obligatorio del servidor SAS", "Afecta directamente el certificado TLS"], "answer": 1, "explain": "Planificar la jerarquía de categorías desde el inicio ahorra trabajo de reorganización masiva posterior." },
+    { "q": "¿Qué recurso se recomienda mover a OSS con CDN cuando una tienda OpenCart crece más allá de un solo servidor SAS?", "options": ["Las reglas de firewall", "Las imágenes de producto", "Los certificados TLS", "Los registros DNS"], "answer": 1, "explain": "Las imágenes de producto crecen con el catálogo y se benefician de OSS+CDN en vez de ocupar el disco de un único servidor." },
+    { "q": "¿Qué diferencia principal existe entre elegir la imagen de aplicación OpenCart y la imagen de sistema operativo limpio en SAS?", "options": ["No hay ninguna diferencia real", "La imagen de aplicación acelera el lanzamiento; la imagen de SO limpio da control total sobre versiones de software", "La imagen de SO limpio no permite instalar PHP", "La imagen de aplicación no permite personalizar la tienda después"], "answer": 1, "explain": "Es un trade-off entre velocidad de lanzamiento (imagen de aplicación) y control fino de versiones (imagen limpia)." },
+    { "q": "¿Qué distingue a SAS y ECS según la estrategia de crecimiento presentada en el curso?", "options": ["Son mutuamente excluyentes y nunca se combinan en el ciclo de vida de un proyecto", "SAS es para lanzar rápido y validar; ECS (con RDS, OSS y SLB) es para escalar cuando el negocio ya lo demanda", "ECS siempre es más barato que SAS para cualquier escenario", "SAS no puede alojar tiendas de e-commerce"], "answer": 1, "explain": "El curso presenta SAS y ECS como etapas complementarias del ciclo de vida de un proyecto, no como opciones excluyentes." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen evalúa: (a) por qué elegir SAS sobre ECS para un proyecto de comercio pequeño, (b) buenas prácticas de instalación y seguridad de OpenCart (carpeta install/, actualizaciones, HTTPS), (c) configuración correcta de envíos/impuestos/pagos y su impacto en el checkout, (d) uso de snapshots y backups de base de datos por separado, (e) reconocer cuándo y cómo migrar de SAS a una arquitectura ECS completa.",
   "official_intro": "In this Clouder course, you will learn how to launch an e-commerce website using Alibaba Cloud's SAS service and configure OpenCart to fit your needs",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_ecommerce",

@@ -3,465 +3,180 @@
   "course_id": "Curso Nº certification-clouder-hybriddb-for-postgresql",
   "title_en": "Introduction to HybridDB for PostgreSQL",
   "title_es": "Introducción a HybridDB para PostgreSQL",
+  "title_es_html": "Introducción a <em>HybridDB para PostgreSQL</em>",
   "duration_es": "77 minutos",
   "level_es": "Principiante",
   "category_es": "Bases de Datos",
   "subcategory_es": "Relational Database",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-hybriddb-for-postgresql",
-  "lead": "Guía completa en español para el curso «Introduction to HybridDB for PostgreSQL» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB RDS. RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre HybridDB for PostgreSQL (renombrado comercialmente como AnalyticDB for PostgreSQL), el data warehouse MPP de Alibaba Cloud basado en el motor Greenplum. Antes de entrar en la arquitectura hay que entender por qué existe una categoría de base de datos separada para analítica: este curso arranca comparando OLTP contra OLAP, presenta el diseño de Greenplum, y cierra con las operaciones cotidianas del servicio gestionado.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB RDS</em>.",
-    "<strong>Dominar</strong> los conceptos clave: HA Edition, Basic Edition, Enterprise Edition, Read-only Replica, Parameter Group.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB RDS y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Distinguir</strong> con precisión OLTP (transaccional) de OLAP (analítico) y por qué un mismo motor rara vez sirve bien a ambos.",
+    "<strong>Explicar</strong> la arquitectura master + segmentos de Greenplum, la base sobre la que se construye HybridDB for PostgreSQL.",
+    "<strong>Diseñar</strong> la distribución de una tabla eligiendo entre distribución por hash y round-robin.",
+    "<strong>Elegir</strong> entre almacenamiento por fila y por columna según el patrón de consulta.",
+    "<strong>Operar</strong> el servicio: carga masiva de datos, gestión de recursos y monitoreo de consultas.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre HybridDB for PostgreSQL."
   ],
-  "architecture": "Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
+  "architecture": "Un clúster HybridDB for PostgreSQL tiene un nodo master que recibe la consulta SQL, genera un plan de ejecución distribuido y lo reparte entre múltiples segment nodes; cada segmento almacena y procesa en paralelo una porción de cada tabla, según la estrategia de distribución elegida al crearla. Los datos ingresan típicamente por carga masiva (bulk load) desde OSS o mediante herramientas de replicación como DTS, en vez de inserciones fila por fila como en un sistema OLTP. Las tablas pueden almacenarse por fila (mejor para acceso a muchas columnas de pocas filas) o por columna (mejor para agregaciones sobre pocas columnas de muchas filas), y opcionalmente comprimirse para reducir el volumen leído en cada scan. Herramientas de BI como Quick BI se conectan directamente al endpoint del master para dashboards y reportes.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ApsaraDB RDS",
-      "title_en": "Introduction to ApsaraDB RDS",
-      "intro": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · OLTP vs. OLAP: por qué un motor no sirve para todo",
+      "title_en": "OLTP vs. OLAP: Why One Engine Doesn't Fit All",
+      "intro": "Antes de hablar de Greenplum o de HybridDB, el curso oficial arranca con una distinción fundamental que el examen evalúa con frecuencia: los sistemas transaccionales y los analíticos tienen patrones de acceso opuestos, y optimizar para uno degrada al otro.",
       "points": [
-        "<strong>Problema que resuelve</strong>: RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ApsaraDB RDS se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>OLTP (Online Transaction Processing)</strong>: muchas transacciones cortas y concurrentes —insertar un pedido, actualizar un saldo— que tocan pocas filas cada vez; el motor se optimiza para escritura rápida y consistencia estricta por transacción (RDS, PolarDB son motores OLTP).",
+        "<strong>OLAP (Online Analytical Processing)</strong>: pocas consultas, pero cada una lee y agrega millones de filas —ventas totales del trimestre por región— con tolerancia a mayor latencia por consulta a cambio de procesar volúmenes enormes.",
+        "<strong>Por qué no conviene mezclar ambos en el mismo motor</strong>: un motor OLTP indexado para escritura puntual no está diseñado para escanear tablas completas eficientemente; un motor OLAP columnar optimizado para scans masivos no está diseñado para miles de transacciones concurrentes de una sola fila.",
+        "<strong>El patrón habitual</strong>: los datos operativos viven en un motor OLTP (RDS/PolarDB) y se replican o cargan periódicamente hacia un motor OLAP (HybridDB for PostgreSQL) para análisis, evitando que las consultas analíticas pesadas degraden el sistema transaccional.",
+        "<strong>Dónde encaja HybridDB for PostgreSQL</strong>: es el motor OLAP de la familia PostgreSQL de Alibaba Cloud, pensado para consultas analíticas complejas —muchos JOIN, ventanas analíticas, agregaciones sobre históricos completos— no para servir como backend transaccional de una aplicación."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ApsaraDB RDS es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Si el examen describe 'miles de transacciones cortas por segundo' → motor OLTP (RDS/PolarDB). Si describe 'agregaciones complejas sobre históricos completos' → motor OLAP (HybridDB for PostgreSQL / AnalyticDB for PostgreSQL)."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ApsaraDB RDS no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Greenplum: la base del motor",
+      "title_en": "Greenplum: The Engine's Foundation",
+      "intro": "HybridDB for PostgreSQL no reinventa el motor analítico desde cero: se construye sobre Greenplum, un motor MPP de código abierto ampliamente adoptado, heredando su arquitectura y su compatibilidad con el ecosistema PostgreSQL.",
       "points": [
-        "<strong>Patrón canónico</strong>: Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ApsaraDB RDS (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Edición HA</strong> <em>(HA Edition)</em>: Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "<strong>Edición básica</strong> <em>(Basic Edition)</em>: Instancia única sin HA — solo dev/test.",
-        "<strong>Edición enterprise</strong> <em>(Enterprise Edition)</em>: Múltiples nodos, mayor SLA.",
-        "<strong>Réplica de lectura</strong> <em>(Read-only Replica)</em>: Hasta 5 réplicas asíncronas para escalar SELECT.",
-        "<strong>Parameter Group</strong> <em>(Parameter Group)</em>: Configuración reutilizable del engine.",
-        "<strong>Backup automático</strong> <em>(Automated Backup)</em>: Full diario + binlogs incrementales. Retención 7-730 días.",
-        "<strong>Point-in-Time Recovery</strong> <em>(PITR)</em>: Restaura al segundo exacto dentro del rango de retención.",
-        "<strong>Whitelist</strong> <em>(Whitelist)</em>: Lista de IPs/SG autorizados. Sin esto, nadie conecta."
+        "<strong>MPP (Massively Parallel Processing)</strong>: en vez de que un solo servidor procese toda la consulta, el trabajo se divide entre múltiples nodos que ejecutan su porción en paralelo y combinan los resultados parciales — el mismo principio de escalado horizontal que otros warehouses MPP.",
+        "<strong>Compatibilidad con PostgreSQL</strong>: hereda gran parte del dialecto SQL, tipos de datos y funciones de PostgreSQL estándar, lo que facilita migrar cargas analíticas existentes construidas sobre PostgreSQL o Greenplum on-premise sin reescribir todo el SQL.",
+        "<strong>Por qué elegir un motor basado en Greenplum en vez de construir uno propio</strong>: aprovechar un proyecto maduro con años de optimizaciones de planificador de consultas y ejecución distribuida, en vez de partir de cero.",
+        "<strong>Diferencia frente a un motor fila-por-fila tradicional</strong>: Greenplum está diseñado desde el origen para consultas analíticas distribuidas, no es un PostgreSQL estándar con más hardware — el planificador de consultas y el modelo de ejecución están pensados para paralelismo masivo.",
+        "<strong>Relación con AnalyticDB for PostgreSQL</strong>: el nombre comercial actual del servicio es AnalyticDB for PostgreSQL; 'HybridDB for PostgreSQL' es el nombre bajo el que se lanzó originalmente y aparece aún en documentación y certificaciones más antiguas."
       ],
       "keypoint": {
         "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+        "text": "El examen puede referirse al mismo servicio con dos nombres: HybridDB for PostgreSQL (nombre original) y AnalyticDB for PostgreSQL (nombre comercial actual) — ambos apuntan al mismo motor basado en Greenplum."
       }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "3 · Arquitectura master + segmentos",
+      "title_en": "Master + Segment Architecture",
+      "intro": "Entender qué hace el nodo master frente a los segment nodes es la base para razonar sobre el rendimiento de cualquier consulta en este motor, y una de las áreas más preguntadas del examen.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Master node</strong>: recibe la conexión del cliente, analiza la consulta SQL, genera el plan de ejecución distribuido y coordina a los segmentos — no almacena los datos de las tablas de usuario, solo metadata y el catálogo del sistema.",
+        "<strong>Segment nodes</strong>: cada uno almacena y procesa en paralelo una porción de cada tabla distribuida; el número de segmentos determina directamente el grado de paralelismo disponible para una consulta.",
+        "<strong>Interconnect</strong>: la red interna de alta velocidad mediante la cual los segmentos intercambian resultados parciales durante una consulta que requiere combinar datos entre segmentos (por ejemplo, un JOIN sobre columnas distintas a la clave de distribución).",
+        "<strong>Master standby</strong>: para alta disponibilidad, existe un nodo master en espera que puede asumir el rol de master activo si el principal falla, evitando que la caída de un único nodo deje el clúster completo inutilizable.",
+        "<strong>Escalado</strong>: aumentar la capacidad del clúster implica añadir más segment nodes, redistribuyendo los datos existentes entre el nuevo total de segmentos disponibles."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta qué nodo planifica la consulta pero no almacena los datos de negocio, la respuesta es el master. Si pregunta qué determina el paralelismo real disponible, la respuesta es el número de segment nodes."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Distribución de datos: hash vs. round-robin",
+      "title_en": "Data Distribution: Hash vs. Round-Robin",
+      "intro": "Cómo se reparten las filas de una tabla entre los segmentos es la decisión de diseño con mayor impacto en el rendimiento de las consultas — equivalente en importancia a la distribution key en otros warehouses MPP.",
       "points": [
-        "<strong>HA</strong>: HA Edition en producción — siempre",
-        "<strong>HA</strong>: PITR probado — hacer un drill de restauración trimestral",
-        "<strong>Seguridad</strong>: TDE + KMS para datos regulados (PCI, HIPAA)",
-        "<strong>Buenas prácticas</strong>: Whitelist con IPs privadas o Security Groups, no 0.0.0.0/0",
-        "<strong>Buenas prácticas</strong>: SSL obligatorio para conexiones desde fuera de la VPC",
-        "<strong>Buenas prácticas</strong>: Réplicas de lectura para BI/reportes — no golpear la primaria"
+        "<strong>Distribución por hash</strong>: se elige una o varias columnas como clave de distribución; el motor aplica una función hash sobre esos valores para decidir en qué segmento vive cada fila — si la clave coincide con la columna de JOIN más frecuente, ese JOIN se resuelve sin mover datos entre segmentos.",
+        "<strong>Distribución round-robin</strong>: las filas se reparten de forma secuencial y uniforme entre los segmentos sin usar ninguna columna como clave; útil cuando no existe una columna de join dominante o cuando se prioriza una distribución perfectamente uniforme sobre la optimización de un JOIN específico.",
+        "<strong>Consecuencia de una mala clave de distribución</strong>: elegir una columna de baja cardinalidad (por ejemplo, un booleano) como clave de hash concentra las filas en pocos segmentos, generando un desbalance de carga —el mismo problema de hotspot que aparece en otros sistemas distribuidos con una clave de partición mal elegida.",
+        "<strong>Redistribución en tiempo de consulta</strong>: cuando un JOIN se ejecuta sobre columnas que no coinciden con la clave de distribución de ambas tablas, el motor debe mover datos entre segmentos (motion) para poder combinarlos, lo que añade costo de red a la consulta.",
+        "<strong>Regla práctica de diseño</strong>: distribuir por la columna que participa en los JOIN más frecuentes y que tiene alta cardinalidad (muchos valores distintos), evitando columnas booleanas o de pocas categorías como clave de distribución."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Elegir mal la clave de distribución en HybridDB for PostgreSQL tiene el mismo efecto que elegir mal una distribution key en cualquier warehouse MPP: desbalance de carga y JOIN que requieren mover datos entre nodos."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · Almacenamiento por fila vs. por columna",
+      "title_en": "Row Storage vs. Column Storage",
+      "intro": "Además de decidir cómo se distribuyen las filas entre segmentos, hay que decidir cómo se organizan físicamente dentro de cada segmento — una segunda palanca de diseño independiente de la distribución.",
       "points": [
-        "<strong>Antipattern</strong>: Basic Edition en producción — sin failover ni SLA",
-        "<strong>Antipattern</strong>: Whitelist 0.0.0.0/0 — DB expuesta a internet",
-        "<strong>Antipattern</strong>: Reportes pesados en la primaria — degradan transacciones",
-        "<strong>Antipattern</strong>: No monitorear IOPS/CPU — el motor se satura sin alerta",
-        "<strong>Antipattern</strong>: Retención de backup demasiado corta (default 7 días)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Almacenamiento por fila (row-oriented)</strong>: todos los valores de una fila se almacenan contiguos; conviene cuando las consultas típicas leen la mayoría de las columnas de pocas filas, similar a un patrón de acceso OLTP dentro del motor analítico.",
+        "<strong>Almacenamiento por columna (column-oriented)</strong>: cada columna se almacena en su propio bloque; conviene cuando las consultas agregan pocas columnas sobre muchas filas —el patrón típico de un dashboard analítico— porque solo se lee del disco lo que la consulta necesita.",
+        "<strong>Compresión</strong>: el almacenamiento columnar suele comprimir mejor porque valores del mismo tipo y dominio quedan contiguos, reduciendo el volumen de I/O leído en cada scan.",
+        "<strong>Elección por tabla, no global</strong>: la decisión de orientación se define al crear cada tabla individualmente, permitiendo mezclar tablas row-oriented (por ejemplo, tablas de dimensión pequeñas consultadas por fila completa) y column-oriented (tablas de hechos grandes consultadas por agregación) dentro del mismo clúster.",
+        "<strong>Trade-off de escritura</strong>: el almacenamiento columnar generalmente tiene mayor costo de escritura por fila individual frente al almacenamiento por fila, reforzando que este motor está pensado para cargas masivas periódicas y no para inserciones puntuales frecuentes."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario describe 'reportes que agregan pocas columnas sobre millones de filas' → almacenamiento por columna. Si describe 'consultas que leen registros completos de una tabla de dimensión pequeña' → almacenamiento por fila."
+      }
+    },
+    {
+      "title_es": "6 · Operación cotidiana y errores comunes",
+      "title_en": "Day-to-Day Operations and Common Mistakes",
+      "intro": "El curso oficial cierra con las operaciones prácticas del servicio gestionado: cómo entran los datos, cómo se monitorea el clúster y qué antipatrones de diseño degradan el rendimiento con más frecuencia.",
+      "points": [
+        "<strong>Carga masiva (bulk load)</strong>: la forma recomendada de ingestar grandes volúmenes es mediante carga masiva desde OSS o herramientas de sincronización como DTS, en vez de sentencias <code>INSERT</code> individuales fila por fila, que son ineficientes en un motor pensado para lotes grandes.",
+        "<strong>Gestión de recursos (resource queues)</strong>: el clúster permite definir colas de recursos que limitan cuánta memoria y concurrencia puede consumir un grupo de usuarios o consultas, evitando que un reporte pesado acapare todo el clúster y bloquee a otros usuarios.",
+        "<strong>Monitoreo</strong>: además de CloudMonitor para métricas de infraestructura, el motor expone vistas del sistema para diagnosticar consultas lentas, distribución desigual entre segmentos y uso de recursos por sesión.",
+        "<strong>Antipatrón</strong>: insertar datos fila por fila desde la aplicación en vez de acumular y cargar en lotes — el motor está optimizado para lotes grandes, no para el patrón transaccional de un OLTP.",
+        "<strong>Antipatrón</strong>: elegir una clave de distribución de baja cardinalidad, generando el desbalance de carga descrito en el módulo 4.",
+        "<strong>Antipatrón</strong>: usar HybridDB for PostgreSQL como backend transaccional de una aplicación con muchas escrituras puntuales concurrentes, cuando el motor correcto para ese patrón es RDS o PolarDB."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de diseño, verifica primero si el escenario es realmente OLAP (agregación sobre históricos) antes de aplicar cualquier optimización de distribución o almacenamiento — el error más común es forzar este motor a un patrón OLTP."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Backend transaccional de aplicaciones web/móviles"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ERP/CRM con requisitos de HA y PITR"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración lift-and-shift desde MySQL/PG on-premise"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Read scaling con read-only replicas para reportes"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Test/dev con clones rápidos a partir de snapshots"
-    }
+    { "title": "Escenario 1", "text": "Reporting mensual con joins complejos entre 15 tablas dimensionales — HybridDB for PostgreSQL con distribución por hash" },
+    { "title": "Escenario 2", "text": "Migración de una carga analítica existente sobre Greenplum on-premise — compatibilidad de dialecto SQL" },
+    { "title": "Escenario 3", "text": "Carga nocturna masiva de archivos desde OSS hacia el warehouse — bulk load en vez de INSERT fila por fila" },
+    { "title": "Escenario 4", "text": "Dashboard ejecutivo agregando pocas columnas sobre miles de millones de filas — tabla con almacenamiento por columna" },
+    { "title": "Escenario 5", "text": "Múltiples equipos compitiendo por recursos del clúster con reportes pesados — resource queues por grupo de usuarios" },
+    { "title": "Escenario 6", "text": "Aplicación con miles de transacciones cortas por segundo — motor OLTP (RDS/PolarDB), no HybridDB for PostgreSQL" }
   ],
   "mistakes": [
-    "Basic Edition en producción — sin failover ni SLA",
-    "Whitelist 0.0.0.0/0 — DB expuesta a internet",
-    "Reportes pesados en la primaria — degradan transacciones",
-    "No monitorear IOPS/CPU — el motor se satura sin alerta",
-    "Retención de backup demasiado corta (default 7 días)"
+    "Insertar datos fila por fila en vez de cargar en lotes masivos (bulk load)",
+    "Elegir una clave de distribución de baja cardinalidad, generando desbalance de carga entre segmentos",
+    "Usar el motor como backend transaccional de una aplicación con escrituras puntuales concurrentes",
+    "No definir resource queues, permitiendo que un reporte pesado acapare todo el clúster",
+    "Elegir almacenamiento por fila para tablas de hechos grandes consultadas por agregación",
+    "No distribuir por la columna de JOIN más frecuente, forzando movimiento de datos entre segmentos en cada consulta"
   ],
   "cli": [
-    {
-      "cmd": "aliyun rds CreateDBInstance",
-      "desc": "Crear instancia RDS"
-    },
-    {
-      "cmd": "aliyun rds ModifySecurityIps --SecurityIps 10.0.0.0/24",
-      "desc": "Whitelist"
-    },
-    {
-      "cmd": "aliyun rds CreateBackup",
-      "desc": "Backup on-demand"
-    },
-    {
-      "cmd": "aliyun rds RestoreDBInstance --RestoreTime ...",
-      "desc": "Restauración PITR"
-    }
+    { "cmd": "aliyun gpdb DescribeDBClusters --RegionId cn-hangzhou", "desc": "Listar clústeres de HybridDB / AnalyticDB for PostgreSQL" },
+    { "cmd": "psql -h <endpoint> -p 5432 -U admin -d mydb", "desc": "Conectar al clúster con el cliente estándar de PostgreSQL" },
+    { "cmd": "CREATE TABLE ventas (id bigint, region text, monto numeric) DISTRIBUTED BY (region);", "desc": "Crear una tabla con distribución por hash sobre una columna" },
+    { "cmd": "CREATE TABLE hechos (...) WITH (appendonly=true, orientation=column);", "desc": "Crear una tabla con almacenamiento orientado a columna" },
+    { "cmd": "COPY ventas FROM 'oss://bucket/ventas.csv' WITH (FORMAT csv);", "desc": "Carga masiva de datos desde OSS" }
   ],
   "glossary": [
-    {
-      "en": "HA Edition",
-      "es": "Edición HA",
-      "def": "Primaria + standby síncrono en zona distinta con failover <60 s."
-    },
-    {
-      "en": "Basic Edition",
-      "es": "Edición básica",
-      "def": "Instancia única sin HA — solo dev/test."
-    },
-    {
-      "en": "Enterprise Edition",
-      "es": "Edición enterprise",
-      "def": "Múltiples nodos, mayor SLA."
-    },
-    {
-      "en": "Read-only Replica",
-      "es": "Réplica de lectura",
-      "def": "Hasta 5 réplicas asíncronas para escalar SELECT."
-    },
-    {
-      "en": "Parameter Group",
-      "es": "Parameter Group",
-      "def": "Configuración reutilizable del engine."
-    },
-    {
-      "en": "Automated Backup",
-      "es": "Backup automático",
-      "def": "Full diario + binlogs incrementales. Retención 7-730 días."
-    },
-    {
-      "en": "PITR",
-      "es": "Point-in-Time Recovery",
-      "def": "Restaura al segundo exacto dentro del rango de retención."
-    },
-    {
-      "en": "Whitelist",
-      "es": "Whitelist",
-      "def": "Lista de IPs/SG autorizados. Sin esto, nadie conecta."
-    },
-    {
-      "en": "Account Privilege",
-      "es": "Privilegios de cuenta",
-      "def": "Roles: read/write/DDL/DML granulares."
-    },
-    {
-      "en": "SSL",
-      "es": "SSL",
-      "def": "Cifrado en tránsito; certificado descargable."
-    },
-    {
-      "en": "TDE",
-      "es": "Transparent Data Encryption",
-      "def": "Cifrado en reposo integrado con KMS."
-    },
-    {
-      "en": "Slow Query Log",
-      "es": "Log de queries lentas",
-      "def": "Diagnóstico automático de rendimiento."
-    },
-    {
-      "en": "DTS",
-      "es": "Data Transmission Service",
-      "def": "Migración y replicación entre motores."
-    },
-    {
-      "en": "Auto Scaling Storage",
-      "es": "Storage auto-scaling",
-      "def": "Aumenta disco automáticamente si se llena."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "OLTP", "es": "OLTP", "def": "Procesamiento transaccional en línea: muchas transacciones cortas y concurrentes sobre pocas filas cada vez." },
+    { "en": "OLAP", "es": "OLAP", "def": "Procesamiento analítico en línea: pocas consultas que agregan grandes volúmenes de datos históricos." },
+    { "en": "Greenplum", "es": "Greenplum", "def": "Motor MPP de código abierto sobre el que se construye HybridDB / AnalyticDB for PostgreSQL." },
+    { "en": "MPP (Massively Parallel Processing)", "es": "Procesamiento masivamente paralelo", "def": "Arquitectura donde múltiples nodos procesan porciones de una consulta en paralelo y combinan resultados." },
+    { "en": "Master Node", "es": "Nodo master", "def": "Nodo que recibe la consulta, genera el plan distribuido y coordina a los segmentos, sin almacenar datos de negocio." },
+    { "en": "Segment Node", "es": "Nodo segmento", "def": "Nodo que almacena y procesa en paralelo una porción de cada tabla distribuida." },
+    { "en": "Interconnect", "es": "Interconexión", "def": "Red interna de alta velocidad usada para intercambiar resultados parciales entre segmentos durante una consulta." },
+    { "en": "Master Standby", "es": "Master en espera", "def": "Nodo master de respaldo que puede asumir el rol activo si el master principal falla." },
+    { "en": "Hash Distribution", "es": "Distribución por hash", "def": "Reparto de filas entre segmentos según el hash de una o varias columnas elegidas como clave." },
+    { "en": "Round-Robin Distribution", "es": "Distribución round-robin", "def": "Reparto secuencial y uniforme de filas entre segmentos, sin usar ninguna columna como clave." },
+    { "en": "Data Motion", "es": "Movimiento de datos", "def": "Transferencia de filas entre segmentos durante un JOIN cuyas columnas no coinciden con la clave de distribución." },
+    { "en": "Row-Oriented Storage", "es": "Almacenamiento por fila", "def": "Organización física donde los valores de una fila se almacenan contiguos; conviene a lecturas de muchas columnas por fila." },
+    { "en": "Column-Oriented Storage", "es": "Almacenamiento por columna", "def": "Organización física donde cada columna se almacena en su propio bloque; conviene a agregaciones sobre pocas columnas." },
+    { "en": "Bulk Load", "es": "Carga masiva", "def": "Ingesta de grandes volúmenes de datos en lote, en vez de inserciones fila por fila." },
+    { "en": "Resource Queue", "es": "Cola de recursos", "def": "Mecanismo que limita memoria y concurrencia disponible para un grupo de usuarios o consultas." },
+    { "en": "AnalyticDB for PostgreSQL", "es": "AnalyticDB for PostgreSQL", "def": "Nombre comercial actual del servicio originalmente lanzado como HybridDB for PostgreSQL." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ApsaraDB RDS?",
-      "options": [
-        "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability editio",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático."
-    },
-    {
-      "q": "¿Qué es <strong>HA Edition</strong> (Edición HA) en ApsaraDB RDS?",
-      "options": [
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "HA Edition (Edición HA): Primaria + standby síncrono en zona distinta con failover <60 s."
-    },
-    {
-      "q": "¿Qué es <strong>Basic Edition</strong> (Edición básica) en ApsaraDB RDS?",
-      "options": [
-        "Instancia única sin HA — solo dev/test.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Múltiples nodos, mayor SLA.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "Basic Edition (Edición básica): Instancia única sin HA — solo dev/test."
-    },
-    {
-      "q": "¿Qué es <strong>Enterprise Edition</strong> (Edición enterprise) en ApsaraDB RDS?",
-      "options": [
-        "Múltiples nodos, mayor SLA.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "Enterprise Edition (Edición enterprise): Múltiples nodos, mayor SLA."
-    },
-    {
-      "q": "¿Qué es <strong>Read-only Replica</strong> (Réplica de lectura) en ApsaraDB RDS?",
-      "options": [
-        "Hasta 5 réplicas asíncronas para escalar SELECT.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA."
-      ],
-      "answer": 0,
-      "explain": "Read-only Replica (Réplica de lectura): Hasta 5 réplicas asíncronas para escalar SELECT."
-    },
-    {
-      "q": "¿Qué es <strong>Parameter Group</strong> (Parameter Group) en ApsaraDB RDS?",
-      "options": [
-        "Configuración reutilizable del engine.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA."
-      ],
-      "answer": 0,
-      "explain": "Parameter Group (Parameter Group): Configuración reutilizable del engine."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ApsaraDB RDS, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ApsaraDB RDS en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB RDS, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ApsaraDB RDS es la elección típica:",
-      "options": [
-        "Backend transaccional de aplicaciones web/móviles",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Backend transaccional de aplicaciones web/móviles."
-    }
+    { "q": "¿Cuál es la diferencia fundamental entre un sistema OLTP y uno OLAP?", "options": ["Son exactamente el mismo tipo de carga con nombre distinto", "OLTP procesa muchas transacciones cortas sobre pocas filas; OLAP procesa pocas consultas que agregan grandes volúmenes de datos", "OLAP siempre es más rápido que OLTP en cualquier escenario", "OLTP solo existe en bases de datos NoSQL"], "answer": 1, "explain": "OLTP prioriza escritura rápida y consistencia por transacción; OLAP prioriza agregación eficiente sobre grandes volúmenes, aceptando mayor latencia por consulta." },
+    { "q": "¿Sobre qué motor de código abierto se construye HybridDB for PostgreSQL?", "options": ["InnoDB", "Greenplum", "RocksDB", "ClickHouse"], "answer": 1, "explain": "HybridDB for PostgreSQL hereda la arquitectura master + segmentos y el dialecto SQL de Greenplum." },
+    { "q": "¿Qué nombre comercial recibe actualmente el servicio que originalmente se lanzó como HybridDB for PostgreSQL?", "options": ["PolarDB for PostgreSQL", "AnalyticDB for PostgreSQL", "ApsaraDB for ClickHouse", "Data Lake Analytics"], "answer": 1, "explain": "El nombre comercial actual es AnalyticDB for PostgreSQL, aunque el examen puede referirse al servicio con cualquiera de los dos nombres." },
+    { "q": "¿Qué nodo del clúster recibe la consulta SQL y genera el plan de ejecución distribuido, sin almacenar los datos de negocio?", "options": ["Segment node", "Master node", "Interconnect", "Resource queue"], "answer": 1, "explain": "El master coordina la ejecución distribuida; los datos de las tablas de usuario residen en los segment nodes." },
+    { "q": "Una tabla se distribuye por hash usando una columna booleana como clave. ¿Qué problema es más probable que ocurra?", "options": ["Mejor compresión de los datos", "Desbalance de carga: las filas se concentran en muy pocos segmentos", "Aumento automático del número de master nodes", "Ninguno, es la práctica recomendada"], "answer": 1, "explain": "Una columna de baja cardinalidad como clave de distribución concentra las filas en pocos valores hash posibles, generando desbalance entre segmentos." },
+    { "q": "¿Qué ocurre cuando un JOIN se ejecuta sobre columnas que no coinciden con la clave de distribución de las tablas involucradas?", "options": ["La consulta falla siempre", "El motor debe mover datos entre segmentos (motion) para poder combinarlos, añadiendo costo de red", "Se ejecuta exactamente igual de rápido que si coincidiera", "Se cancela automáticamente la consulta"], "answer": 1, "explain": "Cuando la clave de distribución no coincide con la columna de JOIN, es necesario redistribuir datos entre segmentos, lo que añade costo de red a la consulta." },
+    { "q": "¿Qué tipo de almacenamiento conviene para un dashboard que agrega pocas columnas sobre miles de millones de filas?", "options": ["Almacenamiento por fila", "Almacenamiento por columna", "No hay diferencia de rendimiento entre ambos", "Solo aplica almacenamiento por fila en HybridDB for PostgreSQL"], "answer": 1, "explain": "El almacenamiento columnar permite leer solo las columnas necesarias para la agregación, reduciendo el I/O frente al almacenamiento por fila." },
+    { "q": "¿Cuál es la forma recomendada de ingestar grandes volúmenes de datos en HybridDB for PostgreSQL?", "options": ["Sentencias INSERT individuales fila por fila desde la aplicación", "Carga masiva (bulk load) desde OSS o herramientas de sincronización como DTS", "No es posible cargar datos en este motor", "Solo mediante la consola web, una fila a la vez"], "answer": 1, "explain": "El motor está optimizado para lotes grandes; insertar fila por fila es ineficiente frente a la carga masiva recomendada." },
+    { "q": "¿Para qué sirve una 'resource queue' en el clúster?", "options": ["Para aumentar automáticamente el número de segmentos", "Para limitar cuánta memoria y concurrencia puede consumir un grupo de usuarios o consultas", "Para comprimir los datos almacenados por columna", "Para cifrar el tráfico entre master y segmentos"], "answer": 1, "explain": "Las resource queues evitan que un reporte pesado acapare todo el clúster, permitiendo repartir recursos entre distintos grupos de usuarios." },
+    { "q": "Una aplicación necesita procesar miles de transacciones cortas concurrentes por segundo, cada una tocando pocas filas. ¿Qué motor es el adecuado?", "options": ["HybridDB for PostgreSQL / AnalyticDB for PostgreSQL", "Un motor OLTP como RDS o PolarDB", "Ambos son igual de adecuados para este patrón", "Ninguno de los dos puede manejar transacciones"], "answer": 1, "explain": "El patrón descrito es OLTP; el motor analítico OLAP de este curso no está diseñado para ese tipo de carga transaccional." },
+    { "q": "¿Qué garantiza el 'master standby' en la arquitectura del clúster?", "options": ["Duplica automáticamente todos los segment nodes", "Permite que un nodo master de respaldo asuma el rol activo si el master principal falla, evitando dejar el clúster inutilizable", "Reduce el costo de almacenamiento por columna", "Elimina la necesidad de definir una clave de distribución"], "answer": 1, "explain": "El master standby es el mecanismo de alta disponibilidad para el nodo master, que de otro modo sería un punto único de falla." },
+    { "q": "¿Qué determina directamente el grado de paralelismo disponible para ejecutar una consulta en el clúster?", "options": ["El número de master nodes", "El número de segment nodes", "El tipo de almacenamiento (fila o columna) elegido", "El nombre de la base de datos"], "answer": 1, "explain": "Cada segment node procesa su porción de los datos en paralelo; más segmentos disponibles significa mayor paralelismo real para la consulta." }
   ],
-  "exam_focus": "Preguntas: (a) ediciones y cuándo usar cada una, (b) PITR y ventana de retención, (c) whitelist + VPC + SSL, (d) escalado lectura vs escritura, (e) DTS para migración.",
+  "exam_focus": "El examen evalúa: (a) distinguir OLTP de OLAP y elegir el motor correcto según el escenario, (b) arquitectura master vs. segment nodes, (c) distribución por hash vs. round-robin y sus consecuencias de diseño, (d) almacenamiento por fila vs. por columna según el patrón de consulta, (e) carga masiva y resource queues como prácticas operativas correctas.",
   "official_intro": "This course starts from the comparison between OLTP and OLAP business types and then have a introduction to Greenplum database, which is quite widely used analytic type database in the world. Then there will be introduction about the features and operations of HybridDB for PostgreSQL, which is a database service based on Greenplum.",
-  "recommended_for": "Database Administrator,Cloud Architect",
+  "recommended_for": "Database Administrator, Cloud Architect",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-hybriddb-for-postgresql",
   "exam_meta": {
     "duration_min": 30,

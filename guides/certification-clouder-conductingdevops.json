@@ -2,417 +2,167 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-conductingdevops",
   "title_en": "Conducting DevOps practices on Alibaba Cloud",
-  "title_es": "Conducting DevOps practices en Alibaba Cloud",
+  "title_es": "Conducir Prácticas DevOps en Alibaba Cloud",
+  "title_es_html": "Conducir <em>Prácticas DevOps</em> en Alibaba Cloud",
   "duration_es": "40 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_conductingdevops",
-  "lead": "Guía completa en español para el curso «Conducting DevOps practices on Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad DevOps en Alibaba Cloud. Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Conducting DevOps practices on Alibaba Cloud» de Alibaba Cloud Academy: un curso práctico sobre cómo montar un flujo DevOps real combinando ECS, herramientas open source (Git, Jenkins) y servicios de Alibaba Cloud, en vez de solo definir el concepto de DevOps en abstracto. Cubre el ciclo completo de código a producción y las prácticas que separan un pipeline improvisado de uno confiable.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DevOps en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pipeline, Stage, Artifact, ACR, Trigger.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DevOps en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué es DevOps como cultura y práctica, más allá de «usar herramientas de automatización».",
+    "<strong>Construir</strong> un flujo de control de versiones con ramas y revisión de código como base de cualquier pipeline.",
+    "<strong>Configurar</strong> un servidor de integración continua (Jenkins sobre ECS) que compile y pruebe automáticamente cada cambio.",
+    "<strong>Empaquetar</strong> el artefacto resultante como imagen de contenedor y publicarlo en Container Registry (ACR).",
+    "<strong>Automatizar</strong> el despliegue hacia un entorno de destino (ECS o ACK) como parte del mismo flujo.",
+    "<strong>Aplicar</strong> buenas prácticas de pipeline: pruebas automatizadas, aprobaciones y rollback ante fallo.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre el ciclo DevOps en Alibaba Cloud."
   ],
-  "architecture": "Commit → GitLab/CodePipeline → build (imagen a ACR) → test unit + integration → security scan (SAST/DAST) → deploy a staging con canary → validation → prod → monitoreo ARMS. Feature flags para rollout controlado.",
+  "architecture": "Un desarrollador hace commit y push a una rama en un repositorio Git; un webhook dispara un job en Jenkins (corriendo sobre una instancia ECS) que ejecuta el pipeline: instalar dependencias, compilar, correr pruebas unitarias, y si todo pasa, construir una imagen Docker y publicarla en Container Registry (ACR) con un tag versionado. Un paso siguiente del pipeline despliega esa imagen —directamente sobre una instancia ECS con Docker, o programándola en un clúster ACK— primero en un entorno de staging para validación, y solo tras una aprobación (manual o automática por pruebas de humo) se promueve a producción. CloudMonitor y los logs del pipeline dan visibilidad de cada etapa; si el despliegue falla, el pipeline puede revertir automáticamente a la versión anterior.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DevOps en Alibaba Cloud",
-      "title_en": "Introduction to DevOps en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es DevOps (y qué no es)",
+      "title_en": "What DevOps Is (and Isn't)",
+      "intro": "Antes de instalar Jenkins hay que entender que DevOps es primero una forma de trabajar, y las herramientas son solo el medio para sostener esa forma de trabajar a escala.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DevOps en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>DevOps como cultura</strong>: elimina la separación tradicional entre el equipo que escribe código (Dev) y el que lo opera en producción (Ops), haciendo que el mismo equipo sea responsable de ambas cosas de principio a fin.",
+        "<strong>No es solo automatización</strong>: instalar un pipeline de CI/CD sin cambiar cómo colaboran los equipos —revisión de código, responsabilidad compartida sobre incidentes— automatiza un proceso roto más rápido, no lo arregla.",
+        "<strong>Objetivo central</strong>: reducir el tiempo entre «el código está listo» y «el código está sirviendo tráfico en producción de forma segura», sin sacrificar calidad ni estabilidad.",
+        "<strong>Feedback loop corto</strong>: cuanto antes se detecta un problema (en el commit, no en producción tres semanas después), más barato es corregirlo — de ahí la obsesión de DevOps por pruebas y despliegues frecuentes y pequeños.",
+        "<strong>En Alibaba Cloud</strong>: el curso combina ECS como infraestructura base, herramientas open source ya conocidas por el equipo (Git, Jenkins) y servicios gestionados (ACR, ACK) — no reemplaza las herramientas del equipo, las conecta a la nube."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "DevOps en Alibaba Cloud es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El examen distingue DevOps (cultura + prácticas) de CI/CD (la automatización técnica que las sostiene). CI/CD sin cambio cultural es automatización, no DevOps completo." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DevOps en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Control de versiones como base del flujo",
+      "title_en": "Version Control as the Foundation",
+      "intro": "Ningún pipeline automatizado tiene sentido si el punto de partida —el código fuente— no está versionado y organizado de forma que soporte cambios frecuentes y paralelos.",
       "points": [
-        "<strong>Patrón canónico</strong>: Commit → GitLab/CodePipeline → build (imagen a ACR) → test unit + integration → security scan (SAST/DAST) → deploy a staging con canary → validation → prod → monitoreo ARMS. Feature flags para rollout controlado.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Trunk-based / feature branches</strong>: los cambios se desarrollan en ramas cortas a partir de la rama principal y se integran con frecuencia, evitando ramas de larga vida que acumulan conflictos difíciles de resolver.",
+        "<strong>Pull Request / revisión de código</strong>: todo cambio pasa por revisión de al menos un compañero antes de fusionarse — no es burocracia, es la primera línea de defensa contra errores antes de que lleguen al pipeline.",
+        "<strong>El commit como disparador</strong>: cada push a la rama principal (o a una rama de feature, según el flujo) puede disparar automáticamente el pipeline de integración continua vía webhook.",
+        "<strong>Versionado semántico de artefactos</strong>: cada build debe generar un artefacto identificable de forma única (commit hash o versión semántica), nunca sobrescribir un artefacto anterior con el mismo nombre — la trazabilidad de qué código está en producción depende de esto.",
+        "<strong>.gitignore y secretos</strong>: credenciales, claves de API y archivos de configuración sensibles nunca se versionan en el repositorio — se inyectan en tiempo de build o despliegue desde un gestor de secretos."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DevOps en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe pérdida de trazabilidad sobre qué versión está en producción, la causa casi siempre es no versionar artefactos de forma única (usar 'latest' o sobrescribir builds)." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Integración continua con Jenkins",
+      "title_en": "Continuous Integration with Jenkins",
+      "intro": "La integración continua (CI) automatiza la validación de cada cambio antes de que se combine con el trabajo de los demás — el curso usa Jenkins sobre ECS como servidor de automatización.",
       "points": [
-        "<strong>Pipeline</strong> <em>(Pipeline)</em>: Definición del flujo CI/CD.",
-        "<strong>Stage</strong> <em>(Stage)</em>: Fase (build, test, deploy).",
-        "<strong>Artifact</strong> <em>(Artifact)</em>: JAR, imagen, binary generado.",
-        "<strong>Container Registry</strong> <em>(ACR)</em>: Registry de imágenes con scan integrado.",
-        "<strong>Trigger</strong> <em>(Trigger)</em>: Evento que dispara pipeline (push, PR, cron).",
-        "<strong>GitOps</strong> <em>(GitOps)</em>: Estado deseado en git; controller reconcilia.",
-        "<strong>Feature flag</strong> <em>(Feature Flag)</em>: Switch runtime para features."
+        "<strong>Jenkins sobre ECS</strong>: el curso instala Jenkins en una instancia ECS como servidor de CI, orquestando jobs que compilan, prueban y empaquetan el código en respuesta a eventos del repositorio.",
+        "<strong>Pipeline como código</strong>: definir el flujo de CI en un <code>Jenkinsfile</code> versionado junto al código (en vez de configurarlo manualmente en la UI) hace el pipeline reproducible, revisable y portable entre entornos.",
+        "<strong>Etapas típicas</strong>: <em>checkout</em> del código, <em>build</em> (compilar/instalar dependencias), <em>test</em> (pruebas unitarias y de integración), y solo si todas pasan, <em>package</em> (generar el artefacto o imagen).",
+        "<strong>Fallo rápido</strong>: si cualquier etapa falla, el pipeline se detiene inmediatamente y notifica al equipo — no tiene sentido construir una imagen a partir de código que no pasó las pruebas.",
+        "<strong>Agentes y paralelismo</strong>: Jenkins puede distribuir jobs entre varios agentes (otras instancias ECS) para ejecutar pruebas en paralelo y acortar el tiempo total del pipeline."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El propósito de CI no es solo compilar automáticamente — es detectar un cambio roto en minutos, mientras el contexto del cambio sigue fresco en la cabeza del desarrollador que lo hizo." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Del artefacto a la imagen: build y publicación en ACR",
+      "title_en": "From Artifact to Image: Build and Publish to ACR",
+      "intro": "En un flujo moderno el artefacto final del pipeline no es solo un binario suelto: es una imagen de contenedor versionada, lista para ejecutarse igual en cualquier entorno de destino.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Build de la imagen</strong>: el propio pipeline de Jenkins ejecuta <code>docker build</code> a partir del Dockerfile del repositorio, generando una imagen que empaqueta el artefacto compilado junto con su runtime.",
+        "<strong>Etiquetado versionado</strong>: cada imagen se etiqueta con el hash del commit o una versión semántica —nunca solo <code>latest</code>— para poder rastrear exactamente qué código corre en cada entorno.",
+        "<strong>Publicación en Container Registry (ACR)</strong>: el pipeline hace <code>docker push</code> hacia un repositorio privado de ACR, con escaneo de vulnerabilidades integrado que puede bloquear el pipeline si detecta severidades críticas.",
+        "<strong>Credenciales del pipeline</strong>: Jenkins se autentica contra ACR usando credenciales gestionadas en su propio almacén de secretos (o mejor, un rol RAM), nunca escribiendo el usuario/clave en texto plano en el Jenkinsfile.",
+        "<strong>La imagen como contrato</strong>: a partir de este punto, todo entorno (staging, producción) consume exactamente la misma imagen inmutable — elimina el clásico «funciona en staging pero no en producción» por diferencias de entorno."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "'La misma imagen se despliega en todos los entornos, solo cambia la configuración externa' es la respuesta correcta cuando el examen pregunta cómo evitar discrepancias entre staging y producción." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Despliegue continuo y promoción entre entornos",
+      "title_en": "Continuous Deployment and Environment Promotion",
+      "intro": "Publicar una imagen no es lo mismo que desplegarla en producción — este módulo cubre cómo mover esa imagen a través de entornos con controles crecientes de confianza.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Pipelines-as-code (YAML) versionados",
-        "<strong>Buenas prácticas</strong>: Security scan bloqueante en build",
-        "<strong>Buenas prácticas</strong>: Environments efímeros para PR",
-        "<strong>Buenas prácticas</strong>: Canary + rollback automático",
-        "<strong>Buenas prácticas</strong>: GitOps para K8s"
+        "<strong>Staging antes de producción</strong>: la imagen recién publicada se despliega primero en un entorno de staging que replica producción a menor escala, donde se corren pruebas de humo o de aceptación automatizadas.",
+        "<strong>Promoción con aprobación</strong>: pasar de staging a producción puede requerir una aprobación manual (un responsable revisa y confirma) o automática (si las pruebas de staging pasan, se promueve sin intervención humana) — la elección depende de la criticidad del sistema.",
+        "<strong>Despliegue hacia ECS o ACK</strong>: el mismo pipeline puede desplegar hacia una instancia ECS con Docker para cargas simples, o actualizar un Deployment de un clúster ACK para cargas que ya están orquestadas.",
+        "<strong>Ventanas de despliegue y feature flags</strong>: desplegar código nuevo no equivale a activarlo para todos los usuarios de inmediato — un feature flag permite separar el despliegue técnico de la activación de negocio.",
+        "<strong>Rollback automático</strong>: si las métricas post-despliegue (tasa de error, latencia) empeoran, el pipeline debe poder revertir automáticamente a la versión anterior sin esperar intervención manual a las 3 a.m."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Desplegar y liberar (release) son decisiones distintas: se puede desplegar código nuevo a producción sin activarlo para los usuarios, usando feature flags — reduce el riesgo de cada despliegue." }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de preguntas difíciles del examen sobre DevOps reflejan fallos reales de pipelines mal diseñados observados en producción.",
       "points": [
-        "<strong>Antipattern</strong>: Pipelines en UI sin versionar",
-        "<strong>Antipattern</strong>: Deploy directo a producción sin approval",
-        "<strong>Antipattern</strong>: Sin rollback strategy",
-        "<strong>Antipattern</strong>: Secrets en el pipeline en claro",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: configurar el pipeline manualmente en la interfaz de Jenkins sin versionarlo como código — no es reproducible ni auditable.",
+        "<strong>Antipatrón</strong>: desplegar directamente a producción sin pasar por staging ni pruebas automatizadas.",
+        "<strong>Antipatrón</strong>: credenciales de ACR o de despliegue escritas en texto plano dentro del Jenkinsfile o del repositorio.",
+        "<strong>Antipatrón</strong>: no tener una estrategia de rollback — un despliegue fallido queda atascado a medio camino sin plan de reversión.",
+        "<strong>Antipatrón</strong>: usar el tag 'latest' para desplegar, perdiendo trazabilidad de qué versión exacta está corriendo.",
+        "<strong>Regla de oro</strong>: ante dos opciones del examen, la correcta casi siempre añade una etapa de validación automatizada antes de tocar producción, nunca la que la omite para ir más rápido."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Identifica en qué etapa del flujo (versionado, CI, build/publish, CD) ocurre el problema descrito — cada etapa tiene su propio antipatrón característico que el examen reutiliza como distractor." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "CI/CD end-to-end para microservicios"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "GitOps con Flux/ArgoCD en ACK"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Security scanning integrado (ACR image scan)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Deploy automatizado a múltiples ambientes"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Rollback automático por SLO violations"
-    }
+    { "title": "Escenario 1", "text": "Pipeline CI/CD end-to-end: commit → Jenkins → build imagen → ACR → despliegue en ACK" },
+    { "title": "Escenario 2", "text": "Pull Request con revisión obligatoria antes de fusionar a la rama principal" },
+    { "title": "Escenario 3", "text": "Despliegue a staging con pruebas de humo automatizadas antes de promover a producción" },
+    { "title": "Escenario 4", "text": "Rollback automático activado por un aumento repentino en la tasa de errores post-despliegue" },
+    { "title": "Escenario 5", "text": "Feature flag que separa el despliegue técnico de la activación visible para usuarios" }
   ],
   "mistakes": [
-    "Pipelines en UI sin versionar",
-    "Deploy directo a producción sin approval",
-    "Sin rollback strategy",
-    "Secrets en el pipeline en claro"
+    "Configurar pipelines manualmente en la UI de Jenkins en vez de versionarlos como código (Jenkinsfile)",
+    "Desplegar directamente a producción sin pasar por staging ni pruebas automatizadas",
+    "Guardar credenciales de ACR o de despliegue en texto plano en el repositorio",
+    "No tener estrategia de rollback ante un despliegue fallido",
+    "Usar el tag 'latest' en vez de versionar cada imagen de forma única",
+    "Fusionar código sin revisión (Pull Request) antes de que llegue al pipeline"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cr GetInstance",
-      "desc": "Ver ACR"
-    },
-    {
-      "cmd": "Consola Yunxiao",
-      "desc": "Pipelines"
-    }
+    { "cmd": "git checkout -b feature/nueva-funcion", "desc": "Crear una rama de feature a partir de la rama principal" },
+    { "cmd": "docker build -t registry.cn-hangzhou.aliyuncs.com/ns/app:$(git rev-parse --short HEAD) .", "desc": "Construir una imagen etiquetada con el hash del commit" },
+    { "cmd": "docker push registry.cn-hangzhou.aliyuncs.com/ns/app:$(git rev-parse --short HEAD)", "desc": "Publicar la imagen versionada en Container Registry (ACR)" },
+    { "cmd": "kubectl set image deployment/api api=registry.cn-hangzhou.aliyuncs.com/ns/app:abc1234", "desc": "Actualizar el Deployment en ACK con la nueva imagen (despliegue continuo)" },
+    { "cmd": "kubectl rollout undo deployment/api", "desc": "Revertir un despliegue fallido a la versión anterior" }
   ],
   "glossary": [
-    {
-      "en": "Pipeline",
-      "es": "Pipeline",
-      "def": "Definición del flujo CI/CD."
-    },
-    {
-      "en": "Stage",
-      "es": "Stage",
-      "def": "Fase (build, test, deploy)."
-    },
-    {
-      "en": "Artifact",
-      "es": "Artifact",
-      "def": "JAR, imagen, binary generado."
-    },
-    {
-      "en": "ACR",
-      "es": "Container Registry",
-      "def": "Registry de imágenes con scan integrado."
-    },
-    {
-      "en": "Trigger",
-      "es": "Trigger",
-      "def": "Evento que dispara pipeline (push, PR, cron)."
-    },
-    {
-      "en": "GitOps",
-      "es": "GitOps",
-      "def": "Estado deseado en git; controller reconcilia."
-    },
-    {
-      "en": "Feature Flag",
-      "es": "Feature flag",
-      "def": "Switch runtime para features."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DevOps", "es": "DevOps", "def": "Cultura y práctica que integra desarrollo y operaciones para entregar software de forma rápida y confiable." },
+    { "en": "Continuous Integration (CI)", "es": "Integración continua", "def": "Automatizar la validación (build + pruebas) de cada cambio de código apenas se integra." },
+    { "en": "Continuous Deployment (CD)", "es": "Despliegue continuo", "def": "Automatizar el paso del artefacto validado hasta el entorno de destino, incluida producción." },
+    { "en": "Pipeline as Code", "es": "Pipeline como código", "def": "Definir el flujo de CI/CD en un archivo versionado (Jenkinsfile), reproducible y auditable." },
+    { "en": "Pull Request", "es": "Solicitud de fusión", "def": "Propuesta de cambio de código sujeta a revisión antes de integrarse a la rama principal." },
+    { "en": "Trunk-based development", "es": "Desarrollo basado en tronco", "def": "Ramas cortas integradas con frecuencia a la rama principal, evitando divergencias largas." },
+    { "en": "Jenkins", "es": "Jenkins", "def": "Servidor de automatización open source usado para orquestar jobs de CI/CD." },
+    { "en": "Webhook", "es": "Webhook", "def": "Notificación HTTP automática que dispara un pipeline al ocurrir un evento en el repositorio." },
+    { "en": "Container Registry (ACR)", "es": "Container Registry", "def": "Registry privado gestionado de Alibaba Cloud con escaneo de vulnerabilidades integrado." },
+    { "en": "Semantic versioning / commit tag", "es": "Etiquetado versionado", "def": "Identificar cada artefacto/imagen de forma única, nunca sobrescribir con el mismo tag." },
+    { "en": "Staging environment", "es": "Entorno de staging", "def": "Entorno que replica producción a menor escala, usado para validar antes de promover." },
+    { "en": "Smoke test", "es": "Prueba de humo", "def": "Verificación rápida y automatizada de que las funciones críticas siguen operativas tras un despliegue." },
+    { "en": "Feature flag", "es": "Interruptor de funcionalidad", "def": "Mecanismo que separa el despliegue técnico de la activación visible de una función para los usuarios." },
+    { "en": "Rollback", "es": "Reversión", "def": "Volver a la versión anterior de un despliegue tras detectar un problema." },
+    { "en": "RAM role (CI/CD)", "es": "Rol RAM para CI/CD", "def": "Identidad con permisos mínimos que el pipeline usa para autenticarse contra ACR/ACK, sin credenciales embebidas." },
+    { "en": "Artifact", "es": "Artefacto", "def": "Resultado empaquetado y versionado del build (binario o imagen de contenedor)." },
+    { "en": "Fail fast", "es": "Fallo rápido", "def": "Detener el pipeline en cuanto una etapa falla, en vez de continuar con un cambio inválido." },
+    { "en": "Deployment vs Release", "es": "Despliegue vs. liberación", "def": "Desplegar coloca el código nuevo en producción; liberar lo activa para los usuarios (a menudo vía feature flag)." },
+    { "en": "Jenkinsfile", "es": "Jenkinsfile", "def": "Archivo que define el pipeline de Jenkins como código, versionado junto al proyecto." },
+    { "en": "Vulnerability scanning", "es": "Escaneo de vulnerabilidades", "def": "Análisis automático de una imagen en busca de CVEs conocidas antes de permitir su despliegue." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DevOps en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → ob",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad."
-    },
-    {
-      "q": "¿Qué es <strong>Pipeline</strong> (Pipeline) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Pipeline (Pipeline): Definición del flujo CI/CD."
-    },
-    {
-      "q": "¿Qué es <strong>Stage</strong> (Stage) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Fase (build, test, deploy).",
-        "Definición del flujo CI/CD.",
-        "JAR, imagen, binary generado.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Stage (Stage): Fase (build, test, deploy)."
-    },
-    {
-      "q": "¿Qué es <strong>Artifact</strong> (Artifact) en DevOps en Alibaba Cloud?",
-      "options": [
-        "JAR, imagen, binary generado.",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Artifact (Artifact): JAR, imagen, binary generado."
-    },
-    {
-      "q": "¿Qué es <strong>ACR</strong> (Container Registry) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Registry de imágenes con scan integrado.",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado."
-      ],
-      "answer": 0,
-      "explain": "ACR (Container Registry): Registry de imágenes con scan integrado."
-    },
-    {
-      "q": "¿Qué es <strong>Trigger</strong> (Trigger) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Evento que dispara pipeline (push, PR, cron).",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado."
-      ],
-      "answer": 0,
-      "explain": "Trigger (Trigger): Evento que dispara pipeline (push, PR, cron)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DevOps en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DevOps en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DevOps en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DevOps en Alibaba Cloud es la elección típica:",
-      "options": [
-        "CI/CD end-to-end para microservicios",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: CI/CD end-to-end para microservicios."
-    }
+    { "q": "Según el curso, ¿qué distingue a DevOps de simplemente automatizar con CI/CD?", "options": ["No hay diferencia, son sinónimos", "DevOps es una cultura de responsabilidad compartida entre Dev y Ops; CI/CD es la automatización técnica que la sostiene", "DevOps solo aplica a equipos de más de 100 personas", "CI/CD reemplaza por completo la necesidad de cultura DevOps"], "answer": 1, "explain": "Automatizar un proceso sin cambiar cómo colaboran los equipos automatiza un problema cultural, no lo resuelve." },
+    { "q": "¿Por qué se recomienda usar ramas de feature cortas integradas con frecuencia (trunk-based) en vez de ramas de larga vida?", "options": ["Porque Git no admite ramas largas", "Porque evita acumular conflictos de fusión difíciles de resolver", "Porque las ramas largas son más rápidas de compilar", "No hay ninguna razón práctica"], "answer": 1, "explain": "Integrar con frecuencia reduce la divergencia entre ramas y los conflictos que se acumulan con ramas de larga vida." },
+    { "q": "¿Qué ocurre si una etapa de pruebas falla dentro de un pipeline de Jenkins bien diseñado?", "options": ["El pipeline continúa e ignora el fallo", "El pipeline se detiene inmediatamente y notifica al equipo, sin avanzar a build/publish", "Se reintenta automáticamente hasta 100 veces", "El código se despliega igual a producción"], "answer": 1, "explain": "El principio de fallo rápido detiene el pipeline en la primera etapa fallida, evitando construir o desplegar código no validado." },
+    { "q": "¿Por qué se etiqueta cada imagen construida con el hash del commit o una versión semántica, en vez de usar solo 'latest'?", "options": ["Es un requisito técnico obligatorio de Docker", "Para mantener trazabilidad de qué versión exacta del código está corriendo en cada entorno", "Para reducir el tamaño de la imagen", "'latest' no puede publicarse en ACR"], "answer": 1, "explain": "Un tag único por build permite rastrear y revertir con precisión qué código está desplegado en cada momento." },
+    { "q": "¿Cuál es la práctica correcta para que Jenkins se autentique contra Container Registry (ACR) al publicar una imagen?", "options": ["Escribir usuario y contraseña en texto plano en el Jenkinsfile", "Usar credenciales gestionadas en el almacén de secretos de Jenkins o un rol RAM con permisos mínimos", "Compartir la AccessKey de la cuenta raíz con todo el equipo", "No se requiere autenticación para publicar en ACR"], "answer": 1, "explain": "Las credenciales nunca deben quedar en texto plano en el código; se gestionan de forma segura y con mínimo privilegio." },
+    { "q": "¿Para qué sirve un entorno de staging en el flujo de despliegue continuo?", "options": ["Para almacenar backups de la base de datos", "Para validar el artefacto con pruebas automatizadas antes de promoverlo a producción", "Para reemplazar por completo el entorno de producción", "Para ejecutar solo pruebas manuales una vez al año"], "answer": 1, "explain": "Staging replica producción a menor escala y permite detectar problemas antes de que lleguen a los usuarios reales." },
+    { "q": "¿Qué permite hacer un feature flag en el contexto de despliegue continuo?", "options": ["Cifrar automáticamente el tráfico de la aplicación", "Separar el despliegue técnico del código de su activación visible para los usuarios", "Eliminar la necesidad de pruebas automatizadas", "Sustituir por completo a Container Registry"], "answer": 1, "explain": "Un feature flag permite desplegar código nuevo sin activarlo para todos los usuarios de inmediato, reduciendo el riesgo del despliegue." },
+    { "q": "Tras un despliegue, las métricas de tasa de error aumentan significativamente. ¿Qué debería hacer un pipeline bien diseñado?", "options": ["Ignorar las métricas y continuar", "Ejecutar un rollback automático a la versión anterior", "Esperar hasta el día siguiente para investigar", "Duplicar el número de réplicas sin investigar la causa"], "answer": 1, "explain": "Un pipeline maduro detecta la degradación por métricas y revierte automáticamente, sin depender de intervención manual inmediata." },
+    { "q": "¿Por qué configurar un pipeline manualmente en la interfaz web de Jenkins, sin versionarlo como código, se considera un antipatrón?", "options": ["Porque la interfaz web de Jenkins no funciona correctamente", "Porque no es reproducible, auditable ni revisable como el resto del código del proyecto", "Porque consume más CPU que un Jenkinsfile", "No es un antipatrón, es la práctica recomendada"], "answer": 1, "explain": "Un pipeline definido solo en la UI no queda versionado junto al código, perdiendo trazabilidad y reproducibilidad." },
+    { "q": "¿Qué diferencia existe entre 'desplegar' (deploy) y 'liberar' (release) un cambio, según el curso?", "options": ["Son términos intercambiables sin diferencia práctica", "Desplegar coloca el código nuevo en el entorno; liberar lo activa para los usuarios, a menudo vía feature flag", "Liberar ocurre siempre antes que desplegar", "Solo aplica a bases de datos, no a aplicaciones"], "answer": 1, "explain": "Separar despliegue de liberación permite llevar código a producción sin exponerlo de inmediato a todos los usuarios." },
+    { "q": "¿Cuál es el destino natural de la imagen construida por el pipeline antes de desplegarse en ACK?", "options": ["Object Storage Service (OSS)", "Container Registry (ACR)", "Resource Access Management (RAM)", "Server Load Balancer (SLB)"], "answer": 1, "explain": "ACR es el registry privado de Alibaba Cloud donde se publican las imágenes antes de que un clúster las descargue para desplegarlas." },
+    { "q": "¿Qué webhook dispara típicamente el inicio de un pipeline de integración continua?", "options": ["Un cambio en la configuración de DNS", "Un push o Pull Request sobre el repositorio de código", "Una alarma de CloudMonitor", "Un cambio en la política de facturación"], "answer": 1, "explain": "El evento de código (push o PR) es el disparador estándar que activa la ejecución automática del pipeline." },
+    { "q": "¿Por qué no tener una estrategia de rollback es un antipatrón grave en un pipeline de despliegue continuo?", "options": ["Porque Kubernetes no permite revertir despliegues", "Porque un despliegue fallido puede quedar atascado sin forma rápida de restaurar el servicio", "Porque aumenta automáticamente los costos de OSS", "No es relevante si el equipo prueba manualmente antes de cada despliegue"], "answer": 1, "explain": "Sin rollback definido, un despliegue problemático puede dejar el sistema en un estado degradado más tiempo del necesario." },
+    { "q": "En el flujo del curso, ¿qué papel cumple ECS respecto a Jenkins?", "options": ["ECS reemplaza completamente a Jenkins", "ECS aloja la instancia donde corre el servidor Jenkins que orquesta el pipeline", "ECS solo se usa para almacenar imágenes de contenedor", "No hay relación entre ECS y Jenkins en este curso"], "answer": 1, "explain": "El curso instala y opera Jenkins sobre una instancia ECS como servidor de automatización del pipeline." }
   ],
-  "exam_focus": "CI/CD stages, GitOps, ACR con scanning, canary + rollback, feature flags.",
+  "exam_focus": "El examen suele evaluar: (a) DevOps como cultura frente a solo automatización, (b) buenas prácticas de control de versiones y revisión de código, (c) etapas de un pipeline CI/CD y el principio de fallo rápido, (d) versionado de imágenes y publicación segura en ACR, (e) promoción entre entornos, feature flags y estrategias de rollback.",
   "official_intro": "What is DevOps? It’s a combination of cultural philosophies, practices, and tools that increases a team’s ability to rapidly deliver services. In this clouder course, you’ll learn how to conduct DevOps practices on Alibaba Cloud by using Alibaba Cloud services like ECS, some open source tools and GitHub.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_conductingdevops",

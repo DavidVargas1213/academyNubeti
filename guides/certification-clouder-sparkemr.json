@@ -3,414 +3,173 @@
   "course_id": "Curso Nº certification-clouder-sparkemr",
   "title_en": "Using Spark on E-MapReduce",
   "title_es": "Usar Spark en E-MapReduce",
+  "title_es_html": "Usar Spark en <em>E-MapReduce</em>",
   "duration_es": "51 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Computing",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_sparkemr",
-  "lead": "Guía completa en español para el curso «Using Spark on E-MapReduce» de Alibaba Cloud Academy. Cubre en profundidad E-MapReduce (EMR). E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Using Spark on E-MapReduce» de Alibaba Cloud Academy. Da por conocidos tanto Spark en modo local (Setup) como la arquitectura de clúster EMR (Master/Core/Task) y se centra en lo específico de ejecutar Spark dentro de un clúster EMR real: modos de despliegue sobre YARN, acceso a datos vía OSS y JindoFS, desarrollo interactivo con Zeppelin, ajuste de recursos y monitoreo de jobs en producción.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>E-MapReduce (EMR)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Master Node, Core Node, Task Node, JindoFS, YARN.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con E-MapReduce (EMR) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué ejecutar Spark dentro de E-MapReduce en vez de un clúster Standalone propio.",
+    "<strong>Distinguir</strong> los modos de despliegue client y cluster de Spark sobre YARN en un clúster EMR.",
+    "<strong>Configurar</strong> el acceso de Spark a datos en OSS, con y sin la aceleración de JindoFS.",
+    "<strong>Usar</strong> Zeppelin para desarrollo interactivo de notebooks Spark SQL dentro de EMR.",
+    "<strong>Ajustar</strong> los parámetros de recursos de un job Spark (executors, memoria, cores) en YARN.",
+    "<strong>Monitorear</strong> y automatizar jobs Spark en EMR con Spark History Server y DataWorks."
   ],
-  "architecture": "Cluster EMR con master HA + core nodes (HDFS) + task nodes (compute). Datos en OSS (JindoFS acelera acceso). Jobs Spark/Hive/Presto lanzados desde DataWorks. Auto-scaling task por cola/carga. Cluster efímero por job para cargas batch aisladas.",
+  "architecture": "Dentro de un clúster EMR, un job Spark se somete con spark-submit indicando --master yarn; el ResourceManager (en el nodo Master) recibe la solicitud, lanza un ApplicationMaster que negocia contenedores para los Executors entre los nodos Core y Task disponibles, y estos Executors leen y escriben datos típicamente desde OSS (el almacenamiento persistente recomendado) en vez del HDFS del clúster. JindoFS actúa como una capa de caché acelerada sobre OSS, reduciendo la latencia de acceso repetido a los mismos datos sin sacrificar la durabilidad y el desacople de OSS. Para desarrollo interactivo, Zeppelin corre como servicio adicional sobre el clúster, permitiendo ejecutar celdas de PySpark o Spark SQL contra el mismo clúster sin pasar por spark-submit. Todo el ciclo de vida del job queda registrado como una aplicación YARN, visible tanto en la interfaz de YARN como en el Spark History Server tras su finalización.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a E-MapReduce (EMR)",
-      "title_en": "Introduction to E-MapReduce (EMR)",
-      "intro": "E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué Spark en E-MapReduce y no en un clúster Standalone propio",
+      "title_en": "Why Spark on E-MapReduce Instead of a Self-Managed Standalone Cluster",
+      "intro": "El curso de Setup mostró Spark en modo local y mencionó Standalone como alternativa; este módulo explica por qué, en la práctica, la mayoría de las cargas de producción en Alibaba Cloud corren sobre EMR en vez de un clúster Standalone autogestionado.",
       "points": [
-        "<strong>Problema que resuelve</strong>: E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo E-MapReduce (EMR) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Multi-tenencia real</strong>: un clúster EMR corre YARN, que permite que Spark comparta el mismo clúster físico con Hive, Presto o Flink según la carga del momento — un clúster Standalone dedica sus máquinas exclusivamente a Spark.",
+        "<strong>Aprovisionamiento gestionado</strong>: EMR instala y configura la versión de Spark correspondiente, sus dependencias y su integración con OSS/JindoFS automáticamente, en vez de exigir instalación y actualización manuales en cada nodo.",
+        "<strong>Elasticidad de nodos Task</strong>: EMR permite añadir o quitar nodos Task (incluyendo instancias Spot) según la carga de trabajo de Spark, sin afectar el almacenamiento que reside en los nodos Core o, preferiblemente, en OSS.",
+        "<strong>Integración con el resto del ecosistema</strong>: RAM, VPC, CloudMonitor y DataWorks ya están conectados al clúster EMR por defecto, algo que un Standalone propio tendría que integrar manualmente pieza por pieza.",
+        "<strong>Cuándo Standalone sigue teniendo sentido</strong>: para un entorno muy simple, dedicado exclusivamente a Spark y sin necesidad de compartir recursos con otros motores, un Standalone puede ser más ligero de operar — pero deja de escalar bien cuando el número de cargas y equipos crece."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "E-MapReduce (EMR) es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La decisión entre EMR/YARN y Standalone rara vez es técnica pura — es una decisión de escala organizacional: cuantos más motores y equipos comparten el mismo clúster físico, más sentido tiene YARN dentro de EMR."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando E-MapReduce (EMR) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Modos de despliegue de Spark en EMR: client y cluster sobre YARN",
+      "title_en": "Spark Deployment Modes on EMR: Client and Cluster over YARN",
+      "intro": "Someter un job Spark contra un clúster EMR real exige decidir explícitamente dónde vive el Driver, una decisión con consecuencias prácticas sobre la fiabilidad del job.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster EMR con master HA + core nodes (HDFS) + task nodes (compute). Datos en OSS (JindoFS acelera acceso). Jobs Spark/Hive/Presto lanzados desde DataWorks. Auto-scaling task por cola/carga. Cluster efímero por job para cargas batch aisladas.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → E-MapReduce (EMR) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Nodo maestro</strong> <em>(Master Node)</em>: Ejecuta NameNode, ResourceManager, HiveServer.",
-        "<strong>Nodo core</strong> <em>(Core Node)</em>: DataNode + NodeManager: storage + compute.",
-        "<strong>Nodo task</strong> <em>(Task Node)</em>: Solo compute; ideal para spot.",
-        "<strong>JindoFS</strong> <em>(JindoFS)</em>: FS acelerado sobre OSS (cache).",
-        "<strong>YARN</strong> <em>(YARN)</em>: Gestor de recursos.",
-        "<strong>Cluster Templates</strong> <em>(Cluster Templates)</em>: Plantillas reproducibles.",
-        "<strong>EMR on ACK</strong> <em>(EMR on ACK)</em>: Spark/Flink corriendo dentro de ACK."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>--deploy-mode client</strong>: el Driver corre en la máquina que ejecuta <code>spark-submit</code> (por ejemplo, un nodo Master usado interactivamente, o una máquina externa conectada al clúster); es útil para desarrollo interactivo porque los logs y la salida aparecen directamente en esa terminal.",
+        "<strong>--deploy-mode cluster</strong>: el Driver se ejecuta dentro del propio clúster, gestionado como parte de la aplicación YARN — recomendado para jobs de producción de larga duración, porque el job no depende de que la máquina que lo sometió permanezca conectada.",
+        "<strong>Riesgo de client en producción</strong>: si la conexión de red hacia la máquina que sometió el job en modo client se corta, el Driver puede fallar y arrastrar al job completo, aunque los Executors dentro del clúster sigan sanos.",
+        "<strong>Configuración típica de producción</strong>: <code>spark-submit --master yarn --deploy-mode cluster --num-executors N --executor-memory Xg archivo.py</code>, sometido habitualmente desde un flujo de DataWorks en vez de una terminal manual.",
+        "<strong>Zeppelin como excepción</strong>: para desarrollo interactivo con notebooks (siguiente módulo), el modelo de ejecución es distinto al de spark-submit y no requiere elegir manualmente entre client/cluster de la misma forma."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe un job de producción de larga duración sometido de forma automatizada, la respuesta es --deploy-mode cluster; si describe desarrollo o depuración interactiva desde una terminal, client es aceptable."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Acceso a datos: OSS y JindoFS desde Spark",
+      "title_en": "Data Access: OSS and JindoFS from Spark",
+      "intro": "Dónde lee y escribe un job Spark tiene tanto impacto en el rendimiento como en la arquitectura general del clúster — este módulo cubre las dos formas principales de acceder a datos dentro de EMR.",
       "points": [
-        "<strong>Costo</strong>: Task nodes spot para batch — 70% ahorro",
-        "<strong>Buenas prácticas</strong>: OSS como storage principal, HDFS solo scratch",
-        "<strong>Buenas prácticas</strong>: JindoFS para caché caliente",
-        "<strong>Buenas prácticas</strong>: Cluster efímero por job",
-        "<strong>Buenas prácticas</strong>: Metastore compartido (DLF) entre clusters"
+        "<strong>Lectura/escritura directa en OSS</strong>: Spark puede leer y escribir directamente sobre rutas <code>oss://bucket/ruta</code> gracias al conector nativo integrado en EMR, sin copiar los datos al HDFS del clúster primero.",
+        "<strong>JindoFS como acelerador</strong>: JindoFS añade una capa de caché sobre OSS que reduce la latencia de accesos repetidos a los mismos datos (por ejemplo, una tabla consultada varias veces en un mismo pipeline), sin duplicar la responsabilidad de durabilidad, que sigue recayendo en OSS.",
+        "<strong>Formato de archivo recomendado</strong>: Parquet columnar particionado es el formato preferido para datos leídos por Spark en OSS, porque permite <em>partition pruning</em> (leer solo las particiones relevantes) y proyección de columnas, reduciendo el volumen de datos escaneado.",
+        "<strong>Evitar el problema de archivos pequeños</strong>: escribir salidas de Spark como muchísimos archivos diminutos en OSS degrada el rendimiento de lecturas posteriores; ajustar el número de particiones de salida (<code>coalesce</code>/<code>repartition</code>) antes de escribir mitiga el problema.",
+        "<strong>HDFS local como scratch</strong>: aunque los datos de negocio persistentes viven en OSS, el HDFS del clúster (en los nodos Core) puede usarse como espacio temporal para resultados intermedios de un pipeline dentro de la misma ejecución."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "OSS es la fuente de verdad persistente; JindoFS es una capa de caché de rendimiento sobre esa fuente, no un reemplazo. Perder la caché de JindoFS no implica pérdida de datos, porque estos siguen intactos en OSS."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Desarrollo interactivo: Zeppelin y Spark SQL en EMR",
+      "title_en": "Interactive Development: Zeppelin and Spark SQL on EMR",
+      "intro": "No todo el trabajo con Spark en EMR consiste en someter jobs batch programados — el análisis exploratorio y el desarrollo iterativo se apoyan en notebooks interactivos.",
       "points": [
-        "<strong>Antipattern</strong>: Todo en HDFS del cluster → dato atado al cluster",
-        "<strong>Antipattern</strong>: Sin autoscaling de task nodes",
-        "<strong>Antipattern</strong>: Sin metastore externo — pierdes schemas al borrar cluster",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Zeppelin</strong>: notebook web instalado como servicio adicional del clúster EMR, que permite escribir y ejecutar celdas de código (PySpark, Scala, Spark SQL) contra el mismo clúster de forma interactiva, sin pasar por spark-submit.",
+        "<strong>Sesión compartida</strong>: dentro de un mismo notebook, las celdas comparten el mismo SparkSession, permitiendo construir un análisis paso a paso e inspeccionar resultados intermedios antes de continuar.",
+        "<strong>Spark SQL interactivo</strong>: desde una celda de Zeppelin se pueden ejecutar consultas Spark SQL directamente sobre tablas registradas (incluyendo tablas de un metastore de Hive compartido), útil para exploración rápida sin escribir código Python/Scala completo.",
+        "<strong>Visualización integrada</strong>: Zeppelin incluye gráficos básicos generados directamente a partir del resultado de una celda, útil para validar rápidamente una transformación antes de formalizarla como job de producción.",
+        "<strong>De notebook a job de producción</strong>: el código validado en un notebook de Zeppelin típicamente se traslada a un script formal sometido con spark-submit (o programado desde DataWorks) para su ejecución recurrente y automatizada."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe «exploración interactiva de datos por parte de un analista» dentro de EMR, la respuesta apunta a Zeppelin; si describe «ejecución programada y recurrente de un pipeline», apunta a spark-submit orquestado por DataWorks."
+      }
+    },
+    {
+      "title_es": "5 · Ajuste de recursos de un job Spark en YARN",
+      "title_en": "Tuning Spark Job Resources on YARN",
+      "intro": "Un job Spark mal dimensionado puede fallar por falta de memoria o desperdiciar cómputo del clúster compartido — este módulo cubre los parámetros de recursos más determinantes para el rendimiento.",
+      "points": [
+        "<strong>--num-executors</strong>: número de procesos Executor solicitados a YARN; más executors permiten más paralelismo, pero también compiten por los mismos recursos del clúster con otras aplicaciones.",
+        "<strong>--executor-memory</strong>: memoria asignada a cada Executor; insuficiente memoria provoca fallos por falta de memoria (OOM) o degradación por derrames a disco durante el shuffle.",
+        "<strong>--executor-cores</strong>: número de núcleos por Executor, que determina cuántas tareas puede ejecutar en paralelo cada uno; demasiados cores por Executor puede generar contención de I/O dentro del mismo proceso.",
+        "<strong>--driver-memory</strong>: memoria del proceso Driver, relevante sobre todo cuando la aplicación recolecta (<code>collect()</code>) resultados grandes hacia el Driver o mantiene estructuras auxiliares extensas en memoria.",
+        "<strong>Dynamic Allocation</strong>: en vez de fijar un número estático de executors, YARN puede escalar dinámicamente el número de executors de un job Spark según su carga real durante la ejecución, aprovechando mejor un clúster compartido con cargas variables."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Un job que falla por falta de memoria no siempre necesita más memoria por Executor — a veces necesita más particiones (más paralelismo con datos más pequeños por tarea) en vez de Executors más grandes."
+      }
+    },
+    {
+      "title_es": "6 · Monitoreo y automatización de jobs Spark en EMR",
+      "title_en": "Monitoring and Automating Spark Jobs on EMR",
+      "intro": "Cerramos el curso con las herramientas para operar Spark en EMR de forma sostenible: saber qué pasó con un job terminado y cómo programarlo sin intervención manual.",
+      "points": [
+        "<strong>Spark UI en vivo</strong>: mientras un job corre, expone su propia interfaz web con el detalle de jobs, stages y tareas — accesible a través del proxy de aplicaciones de YARN dentro del clúster EMR.",
+        "<strong>Spark History Server</strong>: tras finalizar un job, su Spark UI deja de estar disponible en vivo; el History Server conserva los logs de eventos y permite reconstruir esa misma interfaz para diagnóstico posterior, indispensable para depurar jobs que ya terminaron (con éxito o con fallo).",
+        "<strong>Interfaz de YARN</strong>: complementa al Spark History Server mostrando el estado a nivel de aplicación YARN — útil para ver si el job fue rechazado por falta de recursos del clúster antes incluso de que Spark empezara a ejecutar tareas.",
+        "<strong>CloudMonitor</strong>: expone métricas de infraestructura del clúster (CPU, memoria, red de los nodos) que complementan la visión interna de Spark con el estado general del clúster compartido.",
+        "<strong>Automatización con DataWorks</strong>: en producción, un job Spark se programa como nodo dentro de un flujo de DataWorks, con dependencias sobre otros pasos del pipeline, reintentos automáticos y alertas ante fallo, en vez de someterse manualmente con spark-submit cada vez."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un job Spark que falló en EMR, el orden de diagnóstico recomendado es: estado de la aplicación en YARN (¿llegó a arrancar?) → Spark History Server (¿en qué stage falló y por qué?) → métricas de CloudMonitor (¿el clúster tenía recursos disponibles?)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data lake con Spark sobre OSS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Migración Hadoop on-premise → cloud"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "ML con PySpark distribuido"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Presto para queries interactivas"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Real-time con Flink en EMR"
-    }
+    { "title": "Escenario 1", "text": "ETL diario programado que no debe depender de una terminal conectada — spark-submit con --deploy-mode cluster orquestado desde DataWorks" },
+    { "title": "Escenario 2", "text": "Analista de negocio que explora una tabla nueva antes de formalizar un pipeline — notebook de Zeppelin con Spark SQL" },
+    { "title": "Escenario 3", "text": "Pipeline que consulta la misma tabla de OSS varias veces en la misma ejecución — habilitar JindoFS para acelerar el acceso repetido" },
+    { "title": "Escenario 4", "text": "Job que falla por falta de memoria al procesar una tabla muy grande — aumentar particiones antes que aumentar executor-memory a ciegas" },
+    { "title": "Escenario 5", "text": "Clúster compartido por varios equipos con cargas de trabajo variables durante el día — Dynamic Allocation de executors" },
+    { "title": "Escenario 6", "text": "Diagnóstico de un job que terminó hace una hora con estado fallido — Spark History Server para reconstruir su interfaz" }
   ],
   "mistakes": [
-    "Todo en HDFS del cluster → dato atado al cluster",
-    "Sin autoscaling de task nodes",
-    "Sin metastore externo — pierdes schemas al borrar cluster"
+    "Someter jobs de producción de larga duración con --deploy-mode client, arriesgando el job si se pierde la conexión de la máquina que lo sometió",
+    "Escribir la salida de Spark como miles de archivos diminutos en OSS, degradando el rendimiento de lecturas posteriores",
+    "Aumentar executor-memory como primera reacción ante un fallo por memoria, en vez de revisar el número de particiones",
+    "Confundir JindoFS con un reemplazo de OSS, en vez de entenderlo como una capa de caché sobre la misma fuente de verdad",
+    "Depurar directamente contra spark-submit en vez de usar Zeppelin para exploración interactiva rápida",
+    "No revisar el estado de la aplicación en YARN antes de asumir que el fallo fue estrictamente dentro de la lógica de Spark"
   ],
   "cli": [
-    {
-      "cmd": "aliyun emr CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "spark-submit --master yarn ...",
-      "desc": "Enviar job"
-    }
+    { "cmd": "spark-submit --master yarn --deploy-mode cluster --num-executors 6 --executor-memory 4g etl.py", "desc": "Someter un job Spark de producción contra el clúster EMR" },
+    { "cmd": "spark-submit --master yarn --deploy-mode client analisis.py", "desc": "Ejecutar un job interactivo desde el nodo Master con salida en la terminal" },
+    { "cmd": "yarn application -list", "desc": "Listar aplicaciones Spark/YARN en ejecución en el clúster" },
+    { "cmd": "yarn logs -applicationId application_xxxx_0001", "desc": "Consultar logs de una aplicación YARN finalizada" },
+    { "cmd": "spark-sql --master yarn -e \"select count(*) from ventas;\"", "desc": "Ejecutar una consulta Spark SQL puntual contra el clúster" }
   ],
   "glossary": [
-    {
-      "en": "Master Node",
-      "es": "Nodo maestro",
-      "def": "Ejecuta NameNode, ResourceManager, HiveServer."
-    },
-    {
-      "en": "Core Node",
-      "es": "Nodo core",
-      "def": "DataNode + NodeManager: storage + compute."
-    },
-    {
-      "en": "Task Node",
-      "es": "Nodo task",
-      "def": "Solo compute; ideal para spot."
-    },
-    {
-      "en": "JindoFS",
-      "es": "JindoFS",
-      "def": "FS acelerado sobre OSS (cache)."
-    },
-    {
-      "en": "YARN",
-      "es": "YARN",
-      "def": "Gestor de recursos."
-    },
-    {
-      "en": "Cluster Templates",
-      "es": "Cluster Templates",
-      "def": "Plantillas reproducibles."
-    },
-    {
-      "en": "EMR on ACK",
-      "es": "EMR on ACK",
-      "def": "Spark/Flink corriendo dentro de ACK."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "spark-submit", "es": "spark-submit", "def": "Comando estándar para someter una aplicación Spark contra un Cluster Manager, incluyendo YARN en EMR." },
+    { "en": "Deploy Mode: client", "es": "Modo client", "def": "El Driver corre en la máquina que sometió el job, fuera del clúster gestionado." },
+    { "en": "Deploy Mode: cluster", "es": "Modo cluster", "def": "El Driver corre dentro del propio clúster, gestionado como parte de la aplicación YARN." },
+    { "en": "ApplicationMaster", "es": "ApplicationMaster", "def": "Proceso de YARN específico de cada aplicación que negocia contenedores para los Executors." },
+    { "en": "JindoFS", "es": "JindoFS", "def": "Capa de caché acelerada sobre OSS, usada por Spark y otros motores en EMR para reducir latencia de acceso repetido." },
+    { "en": "Partition Pruning", "es": "Poda de particiones", "def": "Técnica de lectura que omite particiones irrelevantes según el filtro de la consulta." },
+    { "en": "Zeppelin", "es": "Zeppelin", "def": "Notebook web instalado sobre EMR para desarrollo interactivo con PySpark, Scala o Spark SQL." },
+    { "en": "Dynamic Allocation", "es": "Asignación dinámica", "def": "Mecanismo que escala el número de Executors de un job Spark según la carga real durante la ejecución." },
+    { "en": "Spark History Server", "es": "Spark History Server", "def": "Servicio que conserva los logs de eventos de jobs finalizados para reconstruir su interfaz de diagnóstico." },
+    { "en": "--executor-memory", "es": "--executor-memory", "def": "Parámetro que fija la memoria asignada a cada proceso Executor." },
+    { "en": "--num-executors", "es": "--num-executors", "def": "Parámetro que fija el número de Executors solicitados a YARN para el job." },
+    { "en": "coalesce/repartition", "es": "coalesce/repartition", "def": "Operaciones para ajustar el número de particiones de salida antes de escribir a OSS." },
+    { "en": "YARN ResourceManager", "es": "ResourceManager de YARN", "def": "Componente del nodo Master que asigna contenedores de recursos a las aplicaciones sometidas, incluyendo Spark." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Plataforma de orquestación usada para programar jobs Spark en EMR como parte de un flujo automatizado." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a E-MapReduce (EMR)?",
-      "options": [
-        "E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "E-MapReduce provee clusters Hadoop/Spark/Hive/Presto/Flink gestionados en Alibaba Cloud. Elástico, integrado con OSS como storage (separar compute/storage), y con DataWorks para orquestación."
-    },
-    {
-      "q": "¿Qué es <strong>Master Node</strong> (Nodo maestro) en E-MapReduce (EMR)?",
-      "options": [
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "Solo compute; ideal para spot.",
-        "FS acelerado sobre OSS (cache)."
-      ],
-      "answer": 0,
-      "explain": "Master Node (Nodo maestro): Ejecuta NameNode, ResourceManager, HiveServer."
-    },
-    {
-      "q": "¿Qué es <strong>Core Node</strong> (Nodo core) en E-MapReduce (EMR)?",
-      "options": [
-        "DataNode + NodeManager: storage + compute.",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "Solo compute; ideal para spot.",
-        "FS acelerado sobre OSS (cache)."
-      ],
-      "answer": 0,
-      "explain": "Core Node (Nodo core): DataNode + NodeManager: storage + compute."
-    },
-    {
-      "q": "¿Qué es <strong>Task Node</strong> (Nodo task) en E-MapReduce (EMR)?",
-      "options": [
-        "Solo compute; ideal para spot.",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "FS acelerado sobre OSS (cache)."
-      ],
-      "answer": 0,
-      "explain": "Task Node (Nodo task): Solo compute; ideal para spot."
-    },
-    {
-      "q": "¿Qué es <strong>JindoFS</strong> (JindoFS) en E-MapReduce (EMR)?",
-      "options": [
-        "FS acelerado sobre OSS (cache).",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "Solo compute; ideal para spot."
-      ],
-      "answer": 0,
-      "explain": "JindoFS (JindoFS): FS acelerado sobre OSS (cache)."
-    },
-    {
-      "q": "¿Qué es <strong>YARN</strong> (YARN) en E-MapReduce (EMR)?",
-      "options": [
-        "Gestor de recursos.",
-        "Ejecuta NameNode, ResourceManager, HiveServer.",
-        "DataNode + NodeManager: storage + compute.",
-        "Solo compute; ideal para spot."
-      ],
-      "answer": 0,
-      "explain": "YARN (YARN): Gestor de recursos."
-    },
-    {
-      "q": "Para maximizar disponibilidad con E-MapReduce (EMR), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar E-MapReduce (EMR) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con E-MapReduce (EMR), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde E-MapReduce (EMR) es la elección típica:",
-      "options": [
-        "Data lake con Spark sobre OSS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data lake con Spark sobre OSS."
-    }
+    { "q": "¿Por qué se prefiere --deploy-mode cluster para un job Spark de producción de larga duración en EMR?", "options": ["Porque es la única opción soportada por YARN", "Porque el Driver corre dentro del clúster y no depende de que la máquina que sometió el job permanezca conectada", "Porque consume menos memoria que el modo client", "Porque no requiere configurar num-executors"], "answer": 1, "explain": "En modo cluster, el Driver se ejecuta como parte de la aplicación YARN dentro del clúster, evitando que una desconexión de la máquina origen arrastre al job." },
+    { "q": "¿Qué papel cumple JindoFS respecto a OSS dentro de un clúster EMR?", "options": ["Reemplaza completamente a OSS como almacenamiento persistente", "Es una capa de caché que acelera el acceso repetido a datos que siguen viviendo de forma persistente en OSS", "Es un sistema de permisos alternativo a RAM", "Solo funciona con Hive, nunca con Spark"], "answer": 1, "explain": "JindoFS acelera el acceso a datos que residen en OSS, sin sustituir la durabilidad y persistencia que OSS provee." },
+    { "q": "¿Qué herramienta de EMR es la más adecuada para que un analista explore de forma interactiva una tabla nueva con Spark SQL?", "options": ["spark-submit en modo cluster", "Zeppelin", "Spark History Server", "yarn application -list"], "answer": 1, "explain": "Zeppelin ofrece notebooks interactivos para ejecutar Spark SQL/PySpark celda a celda, ideal para exploración rápida." },
+    { "q": "Un job Spark falla por falta de memoria al procesar una tabla muy grande. ¿Cuál suele ser la primera palanca recomendada antes de simplemente subir executor-memory?", "options": ["Reducir el número de nodos del clúster", "Aumentar el número de particiones para que cada tarea procese menos datos", "Cambiar el formato de salida a CSV", "Desactivar JindoFS"], "answer": 1, "explain": "Aumentar el paralelismo (más particiones, tareas más pequeñas) suele resolver problemas de memoria de forma más eficiente que simplemente asignar más memoria por Executor." },
+    { "q": "¿Qué formato de archivo es el recomendado para que Spark aproveche partition pruning y proyección de columnas al leer desde OSS?", "options": ["CSV sin particionar", "JSON de una sola línea por archivo", "Parquet columnar particionado", "Texto plano sin estructura"], "answer": 2, "explain": "Parquet particionado permite omitir particiones irrelevantes y leer solo las columnas necesarias, reduciendo el volumen de datos escaneado." },
+    { "q": "¿Dónde se puede reconstruir la interfaz de un job Spark que ya terminó su ejecución en EMR?", "options": ["Solo en la Spark UI en vivo, que sigue disponible indefinidamente", "En el Spark History Server, que conserva los logs de eventos tras la finalización", "En CloudMonitor exclusivamente", "No es posible revisar jobs ya finalizados"], "answer": 1, "explain": "El Spark History Server conserva los logs de eventos y permite reconstruir la interfaz de diagnóstico de un job ya finalizado." },
+    { "q": "¿Qué mecanismo permite que el número de Executors de un job Spark se ajuste automáticamente según la carga real durante su ejecución?", "options": ["Dynamic Allocation", "Partition Pruning", "JindoFS caching", "Deploy mode client"], "answer": 0, "explain": "Dynamic Allocation escala el número de Executors dinámicamente según la carga real del job, aprovechando mejor un clúster compartido." },
+    { "q": "¿Qué ventaja ofrece ejecutar Spark dentro de un clúster EMR (YARN) frente a un clúster Standalone dedicado exclusivamente a Spark?", "options": ["Standalone siempre es más rápido en cualquier escenario", "YARN permite que Spark comparta el mismo clúster físico con otros motores como Hive o Presto", "EMR no soporta Spark en absoluto", "Standalone no requiere instalar Spark"], "answer": 1, "explain": "YARN dentro de EMR habilita multi-tenencia real entre distintos motores sobre el mismo clúster físico, algo que un Standalone dedicado no ofrece." },
+    { "q": "Al escribir la salida de un job Spark hacia OSS, ¿qué problema provoca generar demasiados archivos diminutos?", "options": ["Ningún problema, OSS no tiene límite de objetos", "Degrada el rendimiento de lecturas posteriores sobre esos datos", "Impide que Spark lea Parquet", "Aumenta automáticamente el número de nodos Task"], "answer": 1, "explain": "Demasiados archivos pequeños incrementan el overhead de listar y abrir archivos en lecturas posteriores, degradando el rendimiento." },
+    { "q": "Un job Spark aparece como rechazado antes de que ejecute ninguna tarea. ¿Dónde conviene revisar primero la causa?", "options": ["Directamente en los logs de la aplicación de negocio", "En el estado de la aplicación dentro de la interfaz de YARN, para ver si fue rechazada por falta de recursos del clúster", "En Zeppelin", "En el metastore de Hive"], "answer": 1, "explain": "Si el job nunca llegó a ejecutar tareas de Spark, la causa suele estar a nivel de asignación de recursos en YARN, visible en su interfaz de aplicaciones." }
   ],
-  "exam_focus": "Master/Core/Task nodes, JindoFS y OSS, cluster efímero, EMR on ACK.",
+  "exam_focus": "El examen suele evaluar: (a) client vs. cluster como modo de despliegue y sus riesgos en producción, (b) el rol de JindoFS como caché sobre OSS, (c) cuándo usar Zeppelin frente a spark-submit orquestado, (d) los parámetros de ajuste de recursos (executors, memoria, cores) y Dynamic Allocation, (e) el orden de diagnóstico entre YARN, Spark History Server y CloudMonitor.",
   "official_intro": "This course is designed to help users who want to understand big data technology, as well as data processing through cloud products. Through learning, users can understand the functions and advantages of Spark, and can use Spark for data analysis in E-MapReduce.",
   "recommended_for": "Cloud server users, Big Data technology enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_sparkemr",

@@ -2,439 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-apsaradb-polardb",
   "title_en": "Alibaba Cloud ApsaraDB for PolarDB Technical Essentials",
-  "title_es": "Alibaba Cloud ApsaraDB para PolarDB Technical Essentials",
+  "title_es": "Fundamentos Técnicos de Alibaba Cloud ApsaraDB for PolarDB",
+  "title_es_html": "Fundamentos Técnicos de Alibaba Cloud <em>ApsaraDB for PolarDB</em>",
   "duration_es": "76 minutos",
   "level_es": "Principiante",
   "category_es": "Bases de Datos",
   "subcategory_es": "Relational Database",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-apsaradb-polardb",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud ApsaraDB for PolarDB Technical Essentials» de Alibaba Cloud Academy. Cubre en profundidad PolarDB. PolarDB es la base de datos cloud-native de Alibaba Cloud con arquitectura shared-storage. Compatible con MySQL, PostgreSQL y Oracle. Separa cómputo de almacenamiento permitiendo escalado en minutos, hasta 16 nodos y capacidad hasta 100 TB con failover en segundos. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre PolarDB, la base de datos relacional cloud-native de Alibaba Cloud. A diferencia de RDS (que replica físicamente cada disco completo), PolarDB separa cómputo de almacenamiento sobre un storage distribuido compartido, lo que le permite añadir réplicas de lectura en minutos sin copiar datos. Esta guía explica esa arquitectura y las decisiones de diseño que el examen evalúa.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>PolarDB</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Shared Storage, Cluster, Read-Write Node, Read-Only Node, Cluster Endpoint.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con PolarDB y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia arquitectónica entre PolarDB (shared-storage) y RDS (réplica física por instancia).",
+    "<strong>Distinguir</strong> el nodo Read-Write del cluster de los nodos Read-Only y sus respectivos endpoints.",
+    "<strong>Elegir</strong> entre PolarDB for MySQL, for PostgreSQL y for Oracle según el motor de origen a migrar.",
+    "<strong>Diseñar</strong> un patrón de escalado horizontal de lectura sin duplicar almacenamiento.",
+    "<strong>Aplicar</strong> PolarDB Serverless para cargas intermitentes o de desarrollo.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre la arquitectura shared-storage."
   ],
-  "architecture": "Un cluster PolarDB: 1 nodo primario (read-write) + hasta 15 réplicas (read-only) compartiendo el mismo almacenamiento distribuido. Añadir/quitar nodos no requiere copiar datos. Failover <10 s. Endpoint cluster (read-write) + endpoint read-only con balanceo automático.",
+  "architecture": "Un cluster PolarDB tiene un único nodo Read-Write (RW) que procesa todas las escrituras y hasta 15 nodos Read-Only (RO) que sirven lecturas; todos los nodos —incluido el RW— leen y escriben sobre el mismo volumen de almacenamiento distribuido (PolarStore), replicado en tres copias dentro de la zona. Como los RO no mantienen su propia copia física del dato, añadir o quitar un nodo de lectura es una operación de minutos, no de horas. Las aplicaciones se conectan vía el Cluster Endpoint (que balancea automáticamente las lecturas entre los RO) o el Primary Endpoint (siempre al nodo RW, para escrituras críticas o lecturas que exigen consistencia estricta). El log de redo se comparte entre RW y RO en vez de replicarse fila a fila, lo que reduce drásticamente el lag de réplica frente a una replicación lógica tradicional.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a PolarDB",
-      "title_en": "Introduction to PolarDB",
-      "intro": "PolarDB es la base de datos cloud-native de Alibaba Cloud con arquitectura shared-storage. Compatible con MySQL, PostgreSQL y Oracle. Separa cómputo de almacenamiento permitiendo escalado en minutos, hasta 16 nodos y capacidad hasta 100 TB con failover en segundos. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué existe PolarDB: el problema de separar cómputo de storage",
+      "title_en": "Why PolarDB Exists: Decoupling Compute from Storage",
+      "intro": "En una base de datos relacional tradicional —incluida RDS clásica— cada réplica de lectura mantiene su propia copia completa del disco. Escalar significa copiar terabytes. PolarDB nace para resolver exactamente ese cuello de botella.",
       "points": [
-        "<strong>Problema que resuelve</strong>: PolarDB es la base de datos cloud-native de Alibaba Cloud con arquitectura shared-storage.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo PolarDB se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de RDS clásica</strong>: cada réplica de solo lectura requiere su propio volumen de almacenamiento, replicado de forma asíncrona vía binlog; añadir una réplica nueva implica clonar el disco completo, lo que puede tardar horas en instancias grandes.",
+        "<strong>La solución de PolarDB</strong>: todos los nodos de un cluster comparten un único volumen de almacenamiento distribuido de baja latencia (red física de alta velocidad, no red estándar); un nodo nuevo simplemente empieza a leer el storage existente, sin copiarlo.",
+        "<strong>Consecuencia directa</strong>: el tiempo para añadir un nodo de lectura pasa de horas a minutos, y el almacenamiento no se multiplica por cada réplica —se paga una sola vez por los datos, sin importar cuántos nodos de lectura existan.",
+        "<strong>Compatibilidad de motor</strong>: PolarDB no es un motor nuevo desde cero; PolarDB for MySQL es compatible con el protocolo y comportamiento de MySQL, PolarDB for PostgreSQL con PostgreSQL, y PolarDB for Oracle ofrece compatibilidad de sintaxis para facilitar migraciones desde Oracle on-premise.",
+        "<strong>Cuándo elegir PolarDB sobre RDS</strong>: cargas con picos de lectura impredecibles que necesitan escalar rápido, o aplicaciones SaaS multi-tenant donde el volumen de datos crece más rápido que la necesidad de nodos adicionales."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "PolarDB es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen más común no es «¿qué es PolarDB?» sino «¿por qué escala más rápido que RDS?» — la respuesta siempre remite al almacenamiento compartido, no a que sea 'más rápido' en abstracto."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando PolarDB no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Anatomía de un cluster: nodos y endpoints",
+      "title_en": "Cluster Anatomy: Nodes and Endpoints",
+      "intro": "Entender qué hace cada tipo de nodo y a cuál endpoint conectarse es la base operativa de PolarDB, y una de las áreas donde el examen es más literal.",
       "points": [
-        "<strong>Patrón canónico</strong>: Un cluster PolarDB: 1 nodo primario (read-write) + hasta 15 réplicas (read-only) compartiendo el mismo almacenamiento distribuido. Añadir/quitar nodos no requiere copiar datos. Failover <10 s. Endpoint cluster (read-write) + endpoint read-only con balanceo automático.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → PolarDB (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Almacenamiento compartido</strong> <em>(Shared Storage)</em>: Todos los nodos ven el mismo storage — no replicación lógica.",
-        "<strong>Cluster</strong> <em>(Cluster)</em>: Conjunto de nodos con storage compartido.",
-        "<strong>Nodo primario</strong> <em>(Read-Write Node)</em>: Único que acepta escrituras.",
-        "<strong>Nodo de lectura</strong> <em>(Read-Only Node)</em>: Hasta 15; comparten storage con el primario.",
-        "<strong>Endpoint del cluster</strong> <em>(Cluster Endpoint)</em>: Load balancer para lecturas + write al primario.",
-        "<strong>Endpoint primario</strong> <em>(Primary Endpoint)</em>: Sólo primario; usar para writes críticos.",
-        "<strong>GDN</strong> <em>(Global Database Network)</em>: Multi-región con réplicas de lectura globales.",
-        "<strong>PolarDB Serverless</strong> <em>(Serverless PolarDB)</em>: Escala capacidad (PCU) automáticamente por carga."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Nodo Read-Write (RW)</strong>: único nodo que acepta sentencias de escritura (INSERT/UPDATE/DELETE/DDL) en el cluster; si falla, un nodo RO es promovido automáticamente a RW en segundos.",
+        "<strong>Nodos Read-Only (RO)</strong>: hasta 15 réplicas que sirven únicamente lecturas, escalando el throughput de SELECT de forma casi lineal sin duplicar almacenamiento.",
+        "<strong>Cluster Endpoint</strong>: dirección única que balancea automáticamente el tráfico de lectura entre los nodos RO disponibles (y enruta escrituras al RW); es el endpoint recomendado para la mayoría de las aplicaciones.",
+        "<strong>Primary Endpoint</strong>: apunta siempre y exclusivamente al nodo RW; se usa cuando la aplicación necesita garantizar que lee su propia escritura más reciente (evitando el lag de replicación del log compartido, que aunque es mínimo, no es cero).",
+        "<strong>Global Database Network (GDN)</strong>: extiende un cluster PolarDB con réplicas de solo lectura en otras regiones del mundo, útil para servir lecturas de baja latencia a usuarios globales sin replicar manualmente.",
+        "<strong>PolarDB Serverless</strong>: variante que ajusta automáticamente la capacidad de cómputo (medida en PCU) según la carga real, ideal para entornos de desarrollo o cargas con picos muy irregulares."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una aplicación que necesita leer inmediatamente lo que acaba de escribir, la respuesta es el Primary Endpoint, no el Cluster Endpoint."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Migración y compatibilidad de motores",
+      "title_en": "Migration and Engine Compatibility",
+      "intro": "Una parte importante del valor de PolarDB es reducir la fricción de migrar desde bases de datos on-premise, incluidas cargas históricamente atadas a Oracle.",
       "points": [
-        "<strong>Seguridad</strong>: TDE con KMS para reguladas",
-        "<strong>Buenas prácticas</strong>: Endpoint de cluster para la mayoría del tráfico — read/write split automático",
-        "<strong>Buenas prácticas</strong>: GDN cuando latencia de lectura global importa",
-        "<strong>Buenas prácticas</strong>: Serverless para cargas espinosas o dev"
+        "<strong>PolarDB for MySQL</strong>: compatible con el protocolo de red y el comportamiento de MySQL 5.6/5.7/8.0; las aplicaciones existentes suelen migrar cambiando solo el endpoint de conexión.",
+        "<strong>PolarDB for PostgreSQL</strong>: compatible con PostgreSQL, incluyendo extensiones populares del ecosistema; adecuado para cargas OLTP que ya usan el dialecto de PostgreSQL.",
+        "<strong>PolarDB for Oracle (PolarDB-O)</strong>: ofrece compatibilidad de sintaxis y comportamiento con Oracle a nivel de aplicación (PL/SQL, tipos de datos, funciones), pensado para reducir el costo de reescritura al migrar cargas Oracle on-premise, aunque no es una compatibilidad 1:1 total con todas las features propietarias de Oracle.",
+        "<strong>Migración con DTS</strong>: Data Transmission Service soporta migración con downtime mínimo desde MySQL, PostgreSQL u Oracle on-premise hacia el cluster PolarDB correspondiente, incluyendo una fase de sincronización incremental antes del corte final.",
+        "<strong>Distinción con PolarDB-X</strong>: PolarDB-X es un producto distinto orientado a sharding distribuido horizontal para volúmenes que exceden la capacidad de un solo cluster; PolarDB (a secas) resuelve escalado de lectura, no sharding de escritura."
+      ],
+      "keypoint": {
+        "label": "Memoriza",
+        "text": "El examen distingue con precisión PolarDB (shared-storage, escalado de lectura) de PolarDB-X (sharding distribuido) — no son el mismo producto ni resuelven el mismo problema."
+      }
+    },
+    {
+      "title_es": "4 · Alta disponibilidad y recuperación",
+      "title_en": "High Availability and Recovery",
+      "intro": "Gracias al almacenamiento compartido, la recuperación ante fallos de PolarDB es fundamentalmente distinta —y más rápida— que la de una arquitectura de réplica física tradicional.",
+      "points": [
+        "<strong>Failover del nodo RW</strong>: si el nodo Read-Write falla, un nodo RO existente se promueve a RW en cuestión de segundos porque ya tiene acceso al mismo storage compartido —no necesita reconstruir ni resincronizar datos.",
+        "<strong>Sin pérdida de datos en failover</strong>: como el almacenamiento es compartido y replicado en tres copias por diseño, la promoción de un nuevo RW no implica pérdida de transacciones confirmadas.",
+        "<strong>Backups</strong>: snapshots del volumen compartido a nivel de storage, más registros de log continuos que permiten restauración a un punto en el tiempo (PITR) dentro de la ventana de retención configurada.",
+        "<strong>Multi-zona</strong>: los nodos de un cluster PolarDB pueden distribuirse en distintas zonas de disponibilidad de la misma región para tolerar la caída de un data center completo.",
+        "<strong>Clonado rápido</strong>: crear un cluster de prueba a partir de un snapshot es una operación ligera porque no implica copiar físicamente el volumen completo de inmediato — se usa copy-on-write."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "En RDS, el failover implica un standby que ya tenía copia completa del disco; en PolarDB, el failover implica un RO que ya comparte el mismo disco. Distinto mecanismo, mismo objetivo."
+      }
+    },
+    {
+      "title_es": "5 · Casos de uso y cuándo NO usar PolarDB",
+      "title_en": "Use Cases and When Not to Use PolarDB",
+      "intro": "El examen espera que sepas justificar la elección de PolarDB frente a alternativas como RDS o PolarDB-X según el patrón de carga descrito.",
+      "points": [
+        "<strong>SaaS multi-tenant</strong>: crecimiento impredecible de lecturas por la incorporación de nuevos clientes, sin necesidad de reparticionar los datos.",
+        "<strong>Migración desde Oracle</strong>: reducir costo de licenciamiento manteniendo compatibilidad de aplicación vía PolarDB-O.",
+        "<strong>Read-heavy analytics ligero</strong>: reportes que consultan la misma base transaccional sin justificar un warehouse separado, escalando nodos RO según demanda.",
+        "<strong>Cuándo NO usarlo</strong>: cargas con volumen de escritura que excede lo que un único nodo RW puede procesar —ahí PolarDB-X (sharding) o rediseñar el modelo de datos es más apropiado.",
+        "<strong>Cuándo NO usarlo</strong>: cargas puramente analíticas con agregaciones pesadas sobre históricos completos —ahí AnalyticDB es la opción correcta, no una base transaccional aunque tenga réplicas rápidas."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "PolarDB resuelve un cuello de botella de <em>lectura</em>, no de <em>escritura</em>. Si el enunciado describe un cuello de botella de escritura a gran escala, la respuesta correcta apunta a sharding (PolarDB-X), no a añadir nodos RO."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Los distractores más frecuentes del examen sobre PolarDB confunden conceptos de RDS con los de PolarDB, o el rol de cada endpoint.",
       "points": [
-        "<strong>Antipattern</strong>: Confundir endpoint primario vs cluster — un cliente que solo usa primary desperdicia réplicas",
-        "<strong>Antipattern</strong>: Escalar verticalmente antes que añadir nodos de lectura",
-        "<strong>Antipattern</strong>: Ignorar que Oracle-compat tiene features Oracle mapeados pero no 1:1",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: usar solo el Primary Endpoint para todo el tráfico, incluidas lecturas que no necesitan consistencia estricta — desperdicia la capacidad de los nodos RO.",
+        "<strong>Antipatrón</strong>: asumir que escalar PolarDB requiere copiar datos, como en RDS — es exactamente lo que la arquitectura shared-storage evita.",
+        "<strong>Antipatrón</strong>: elegir PolarDB para una carga con cuello de botella de escritura, cuando el problema real requiere sharding horizontal.",
+        "<strong>Antipatrón</strong>: asumir compatibilidad 1:1 total con Oracle en PolarDB-O sin validar features propietarias específicas antes de migrar.",
+        "<strong>Regla de oro</strong>: cuando el examen mencione «escalar lecturas rápido sin duplicar almacenamiento», la respuesta casi siempre es PolarDB (nodos RO sobre storage compartido)."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Identifica primero si el cuello de botella descrito es de lectura o de escritura: PolarDB resuelve el primero con nodos RO; el segundo requiere una estrategia distinta (sharding, partición, o rediseño)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "SaaS multi-tenant con crecimiento impredecible"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Migración desde Oracle (versión compatible)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Aplicaciones OLTP con alta concurrencia"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Read-heavy workloads con 10+ réplicas"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "DR extremo con Global Database Network (multi-región activo-activo lectura)"
-    }
+    { "title": "Escenario 1", "text": "SaaS multi-tenant con crecimiento impredecible de usuarios — nodos RO añadidos en minutos" },
+    { "title": "Escenario 2", "text": "Migración desde Oracle on-premise reduciendo licenciamiento — PolarDB for Oracle (PolarDB-O)" },
+    { "title": "Escenario 3", "text": "Aplicación con picos de lectura en horario comercial — Cluster Endpoint balanceando entre RO" },
+    { "title": "Escenario 4", "text": "Servicio global con lectores en distintos continentes — Global Database Network (GDN)" },
+    { "title": "Escenario 5", "text": "Entorno de desarrollo con uso intermitente — PolarDB Serverless" },
+    { "title": "Escenario 6", "text": "Reporte que necesita leer su propia escritura inmediatamente — Primary Endpoint" }
   ],
   "mistakes": [
-    "Confundir endpoint primario vs cluster — un cliente que solo usa primary desperdicia réplicas",
-    "Escalar verticalmente antes que añadir nodos de lectura",
-    "Ignorar que Oracle-compat tiene features Oracle mapeados pero no 1:1"
+    "Enrutar todo el tráfico al Primary Endpoint, desperdiciando la capacidad de los nodos Read-Only",
+    "Asumir que escalar PolarDB implica copiar datos como en RDS clásica",
+    "Elegir PolarDB para un cuello de botella de escritura en vez de una estrategia de sharding",
+    "Asumir compatibilidad 1:1 con Oracle en PolarDB-O sin validar features propietarias",
+    "No distribuir los nodos del cluster en múltiples zonas de disponibilidad",
+    "Confundir PolarDB (escalado de lectura) con PolarDB-X (sharding distribuido)"
   ],
   "cli": [
-    {
-      "cmd": "aliyun polardb CreateDBCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "aliyun polardb CreateDBNodes --DBNodeCount 2",
-      "desc": "Añadir nodos"
-    },
-    {
-      "cmd": "aliyun polardb DescribeDBClusterEndpoints",
-      "desc": "Ver endpoints"
-    }
+    { "cmd": "aliyun polardb CreateDBCluster --DBType MySQL --DBVersion 8.0 --DBNodeClass polar.mysql.x4.large", "desc": "Crear un cluster PolarDB for MySQL" },
+    { "cmd": "aliyun polardb CreateDBNodes --DBClusterId pc-xxxxx --DBNode.1.TargetClass polar.mysql.x4.large", "desc": "Añadir un nodo Read-Only al cluster" },
+    { "cmd": "aliyun polardb DescribeDBClusterEndpoints --DBClusterId pc-xxxxx", "desc": "Consultar los endpoints (Cluster / Primary) disponibles" },
+    { "cmd": "aliyun polardb FailoverDBCluster --DBClusterId pc-xxxxx --TargetDBNodeId pi-xxxxx", "desc": "Forzar un failover manual a un nodo RO específico" },
+    { "cmd": "aliyun polardb DescribeDBClusterPerformance --DBClusterId pc-xxxxx --Key PolarDBDiskUsage", "desc": "Consultar métricas de uso de almacenamiento compartido" }
   ],
   "glossary": [
-    {
-      "en": "Shared Storage",
-      "es": "Almacenamiento compartido",
-      "def": "Todos los nodos ven el mismo storage — no replicación lógica."
-    },
-    {
-      "en": "Cluster",
-      "es": "Cluster",
-      "def": "Conjunto de nodos con storage compartido."
-    },
-    {
-      "en": "Read-Write Node",
-      "es": "Nodo primario",
-      "def": "Único que acepta escrituras."
-    },
-    {
-      "en": "Read-Only Node",
-      "es": "Nodo de lectura",
-      "def": "Hasta 15; comparten storage con el primario."
-    },
-    {
-      "en": "Cluster Endpoint",
-      "es": "Endpoint del cluster",
-      "def": "Load balancer para lecturas + write al primario."
-    },
-    {
-      "en": "Primary Endpoint",
-      "es": "Endpoint primario",
-      "def": "Sólo primario; usar para writes críticos."
-    },
-    {
-      "en": "Global Database Network",
-      "es": "GDN",
-      "def": "Multi-región con réplicas de lectura globales."
-    },
-    {
-      "en": "Serverless PolarDB",
-      "es": "PolarDB Serverless",
-      "def": "Escala capacidad (PCU) automáticamente por carga."
-    },
-    {
-      "en": "Cold Data Archive",
-      "es": "Archive de datos fríos",
-      "def": "Mueve particiones antiguas a OSS."
-    },
-    {
-      "en": "Parallel Query",
-      "es": "Parallel Query",
-      "def": "Paralelización de queries analíticas."
-    },
-    {
-      "en": "HTAP",
-      "es": "HTAP",
-      "def": "OLTP + OLAP en el mismo cluster."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Shared Storage", "es": "Almacenamiento compartido", "def": "Volumen distribuido de baja latencia que todos los nodos del cluster —RW y RO— leen y escriben simultáneamente." },
+    { "en": "Cluster", "es": "Cluster", "def": "Conjunto de nodos de cómputo (1 RW + hasta 15 RO) que comparten un mismo volumen de almacenamiento." },
+    { "en": "Read-Write Node (RW)", "es": "Nodo primario", "def": "Único nodo del cluster que acepta operaciones de escritura." },
+    { "en": "Read-Only Node (RO)", "es": "Nodo de lectura", "def": "Réplica que sirve únicamente lecturas, leyendo del mismo storage compartido que el nodo RW." },
+    { "en": "Cluster Endpoint", "es": "Endpoint del cluster", "def": "Dirección que balancea automáticamente lecturas entre nodos RO y enruta escrituras al RW." },
+    { "en": "Primary Endpoint", "es": "Endpoint primario", "def": "Dirección que apunta exclusivamente al nodo RW, usada cuando se requiere consistencia de lectura estricta." },
+    { "en": "PolarStore", "es": "PolarStore", "def": "Capa de almacenamiento distribuido de baja latencia sobre la que se construye el shared-storage de PolarDB." },
+    { "en": "Global Database Network (GDN)", "es": "Red de base de datos global", "def": "Extensión de un cluster PolarDB con réplicas de lectura en otras regiones del mundo." },
+    { "en": "PolarDB Serverless", "es": "PolarDB Serverless", "def": "Variante que ajusta automáticamente la capacidad de cómputo (PCU) según la carga real." },
+    { "en": "PCU (PolarDB Capacity Unit)", "es": "Unidad de capacidad PolarDB", "def": "Unidad de medida de cómputo usada para el escalado automático en PolarDB Serverless." },
+    { "en": "PolarDB-O", "es": "PolarDB for Oracle", "def": "Variante con compatibilidad de sintaxis y comportamiento Oracle, orientada a facilitar migraciones desde Oracle on-premise." },
+    { "en": "PolarDB-X", "es": "PolarDB-X", "def": "Producto distinto orientado a sharding distribuido horizontal, no a escalado de lectura sobre storage compartido." },
+    { "en": "Failover", "es": "Conmutación por error", "def": "Promoción automática de un nodo RO a RW ante la falla del nodo primario, posible en segundos por el storage compartido." },
+    { "en": "Point-in-Time Recovery (PITR)", "es": "Recuperación a un punto en el tiempo", "def": "Restauración del cluster al estado exacto de un instante dentro de la ventana de retención de backups." },
+    { "en": "Copy-on-Write Clone", "es": "Clon copy-on-write", "def": "Técnica de clonado ligero de un cluster a partir de un snapshot sin copiar físicamente el volumen completo de inmediato." },
+    { "en": "DTS (Data Transmission Service)", "es": "Servicio de transmisión de datos", "def": "Servicio de migración y sincronización de datos usado para mover cargas hacia PolarDB con downtime mínimo." },
+    { "en": "Zone / AZ", "es": "Zona de disponibilidad", "def": "Data center físicamente aislado dentro de una región; distribuir nodos en 2+ zonas mejora la tolerancia a fallos." },
+    { "en": "HTAP", "es": "HTAP", "def": "Procesamiento híbrido transaccional/analítico; PolarDB puede combinarse con motores columnares para consultas analíticas ligeras sobre el mismo dato." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a PolarDB?",
-      "options": [
-        "PolarDB es la base de datos cloud-native de Alibaba Cloud con arquitectura shared-storage. Compatible con MySQL, PostgreSQL y Oracle. Separa cómputo de almacenamiento permitiendo escalado en minutos, ",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "PolarDB es la base de datos cloud-native de Alibaba Cloud con arquitectura shared-storage. Compatible con MySQL, PostgreSQL y Oracle. Separa cómputo de almacenamiento permitiendo escalado en minutos, hasta 16 nodos y capacidad hasta 100 TB con failover en segundos."
-    },
-    {
-      "q": "¿Qué es <strong>Shared Storage</strong> (Almacenamiento compartido) en PolarDB?",
-      "options": [
-        "Todos los nodos ven el mismo storage — no replicación lógica.",
-        "Conjunto de nodos con storage compartido.",
-        "Único que acepta escrituras.",
-        "Hasta 15; comparten storage con el primario."
-      ],
-      "answer": 0,
-      "explain": "Shared Storage (Almacenamiento compartido): Todos los nodos ven el mismo storage — no replicación lógica."
-    },
-    {
-      "q": "¿Qué es <strong>Cluster</strong> (Cluster) en PolarDB?",
-      "options": [
-        "Conjunto de nodos con storage compartido.",
-        "Todos los nodos ven el mismo storage — no replicación lógica.",
-        "Único que acepta escrituras.",
-        "Hasta 15; comparten storage con el primario."
-      ],
-      "answer": 0,
-      "explain": "Cluster (Cluster): Conjunto de nodos con storage compartido."
-    },
-    {
-      "q": "¿Qué es <strong>Read-Write Node</strong> (Nodo primario) en PolarDB?",
-      "options": [
-        "Único que acepta escrituras.",
-        "Todos los nodos ven el mismo storage — no replicación lógica.",
-        "Conjunto de nodos con storage compartido.",
-        "Hasta 15; comparten storage con el primario."
-      ],
-      "answer": 0,
-      "explain": "Read-Write Node (Nodo primario): Único que acepta escrituras."
-    },
-    {
-      "q": "¿Qué es <strong>Read-Only Node</strong> (Nodo de lectura) en PolarDB?",
-      "options": [
-        "Hasta 15; comparten storage con el primario.",
-        "Todos los nodos ven el mismo storage — no replicación lógica.",
-        "Conjunto de nodos con storage compartido.",
-        "Único que acepta escrituras."
-      ],
-      "answer": 0,
-      "explain": "Read-Only Node (Nodo de lectura): Hasta 15; comparten storage con el primario."
-    },
-    {
-      "q": "¿Qué es <strong>Cluster Endpoint</strong> (Endpoint del cluster) en PolarDB?",
-      "options": [
-        "Load balancer para lecturas + write al primario.",
-        "Todos los nodos ven el mismo storage — no replicación lógica.",
-        "Conjunto de nodos con storage compartido.",
-        "Único que acepta escrituras."
-      ],
-      "answer": 0,
-      "explain": "Cluster Endpoint (Endpoint del cluster): Load balancer para lecturas + write al primario."
-    },
-    {
-      "q": "Para maximizar disponibilidad con PolarDB, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar PolarDB en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con PolarDB, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde PolarDB es la elección típica:",
-      "options": [
-        "SaaS multi-tenant con crecimiento impredecible",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: SaaS multi-tenant con crecimiento impredecible."
-    }
+    { "q": "¿Cuál es la diferencia arquitectónica fundamental entre PolarDB y una instancia RDS clásica con réplicas de lectura?", "options": ["PolarDB no admite SQL estándar", "En PolarDB todos los nodos comparten el mismo almacenamiento distribuido; en RDS cada réplica tiene su propia copia física del disco", "RDS es más rápido en todos los casos", "PolarDB no soporta failover automático"], "answer": 1, "explain": "El shared-storage es la diferencia central: PolarDB no necesita copiar el disco para añadir una réplica de lectura." },
+    { "q": "¿Cuántos nodos Read-Only puede tener como máximo un cluster PolarDB?", "options": ["3", "5", "15", "50"], "answer": 2, "explain": "Un cluster PolarDB admite hasta 15 nodos Read-Only además del nodo Read-Write." },
+    { "q": "Una aplicación necesita leer inmediatamente el dato que acaba de escribir, sin tolerar ningún lag de replicación. ¿Qué endpoint debe usar?", "options": ["Cluster Endpoint", "Primary Endpoint", "Cualquiera de los dos, son idénticos", "Global Database Network"], "answer": 1, "explain": "El Primary Endpoint apunta siempre al nodo RW, garantizando lectura de la escritura más reciente." },
+    { "q": "¿Por qué el failover en PolarDB es más rápido que en una arquitectura de réplica física tradicional?", "options": ["Porque PolarDB no valida transacciones", "Porque el nodo promovido ya tiene acceso al mismo storage compartido y no necesita resincronizar datos", "Porque PolarDB no usa redo log", "Porque los nodos RO están apagados hasta el failover"], "answer": 1, "explain": "Al compartir el almacenamiento, promover un RO a RW no requiere copiar ni resincronizar el disco." },
+    { "q": "¿Qué variante de PolarDB está orientada a facilitar migraciones desde Oracle on-premise?", "options": ["PolarDB for MySQL", "PolarDB for PostgreSQL", "PolarDB for Oracle (PolarDB-O)", "PolarDB-X"], "answer": 2, "explain": "PolarDB-O ofrece compatibilidad de sintaxis y comportamiento con Oracle a nivel de aplicación." },
+    { "q": "¿Qué diferencia a PolarDB-X de PolarDB (a secas)?", "options": ["Son el mismo producto con nombres distintos", "PolarDB-X resuelve sharding distribuido horizontal; PolarDB resuelve escalado de lectura sobre storage compartido", "PolarDB-X no soporta SQL", "PolarDB-X es solo para desarrollo, nunca para producción"], "answer": 1, "explain": "Son productos distintos: PolarDB-X shardea la escritura horizontalmente; PolarDB escala lecturas sin duplicar almacenamiento." },
+    { "q": "Un servicio SaaS multi-tenant tiene un crecimiento impredecible en el número de lecturas por la incorporación de nuevos clientes. ¿Qué característica de PolarDB responde mejor a este escenario?", "options": ["PolarDB-X con sharding manual", "La capacidad de añadir nodos Read-Only en minutos sin copiar almacenamiento", "Un backup diario adicional", "Deshabilitar el redo log compartido"], "answer": 1, "explain": "El escalado rápido de nodos RO sobre storage compartido es la respuesta directa a picos impredecibles de lectura." },
+    { "q": "¿Qué resuelve principalmente PolarDB Serverless?", "options": ["Sharding automático de escrituras", "Ajuste automático de la capacidad de cómputo (PCU) según la carga real, sin aprovisionar tamaño fijo", "Migración automática desde Oracle", "Replicación cross-región obligatoria"], "answer": 1, "explain": "PolarDB Serverless escala la capacidad de cómputo dinámicamente, ideal para cargas de desarrollo o muy irregulares." },
+    { "q": "Una carga transaccional tiene un cuello de botella de <strong>escritura</strong> que excede lo que un único nodo puede procesar. ¿Qué estrategia es la más apropiada?", "options": ["Añadir más nodos Read-Only al cluster PolarDB", "Evaluar sharding horizontal (p.ej. PolarDB-X) en vez de solo escalar lectura", "Aumentar el número de zonas de disponibilidad", "Cambiar el Cluster Endpoint por el Primary Endpoint"], "answer": 1, "explain": "PolarDB resuelve cuellos de botella de lectura; un cuello de botella de escritura requiere una estrategia de sharding distinto." },
+    { "q": "¿Qué extiende la Global Database Network (GDN) de PolarDB?", "options": ["El número máximo de nodos Read-Write", "Réplicas de solo lectura del cluster hacia otras regiones del mundo", "El tamaño máximo del almacenamiento compartido", "El número de zonas dentro de una misma región"], "answer": 1, "explain": "GDN añade réplicas de lectura en otras regiones para servir usuarios globales con baja latencia." },
+    { "q": "¿Qué mecanismo permite crear un cluster de prueba a partir de un snapshot de forma ligera en PolarDB?", "options": ["Replicación síncrona completa", "Copy-on-write clone", "Migración vía DTS", "Failover manual"], "answer": 1, "explain": "El clonado copy-on-write evita copiar físicamente el volumen completo de inmediato, haciendo el clonado casi instantáneo." },
+    { "q": "¿Cuál es un antipatrón común al operar PolarDB según este curso?", "options": ["Usar el Cluster Endpoint para la mayoría del tráfico de lectura", "Enrutar todo el tráfico —incluidas lecturas tolerantes a lag— al Primary Endpoint, desperdiciando los nodos RO", "Distribuir los nodos en múltiples zonas de disponibilidad", "Usar PolarDB-O para migrar desde Oracle"], "answer": 1, "explain": "Enviar todo el tráfico al Primary Endpoint anula el propósito de tener nodos Read-Only disponibles para balancear carga." }
   ],
-  "exam_focus": "Preguntas: (a) diferencias arquitectura vs RDS, (b) endpoint cluster vs primary, (c) escalado con shared storage, (d) GDN para multi-región, (e) compatibilidad Oracle.",
+  "exam_focus": "El examen evalúa: (a) diferencia arquitectónica shared-storage vs. réplica física de RDS, (b) Cluster Endpoint vs. Primary Endpoint, (c) por qué el failover es más rápido en PolarDB, (d) PolarDB vs. PolarDB-X, (e) cuándo el cuello de botella es de lectura (PolarDB) vs. de escritura (sharding).",
   "official_intro": "ApsaraDB for PolarDB is a cloud-native relational database compatible with MySQL, PostgreSQL, and Oracle. ApsaraDB for PolarDB provides the performance and availability of traditional enterprise databases and the flexibility and cost-effectiveness of open-source databases.Through this course, you will not only learn about Alibaba Cloud ApsaraDB for PolarDB design architect and applicable scenarios, but also by watching product console demos, you will be familiar with PolarDB major functions and operation details. For Whom Cloud Database Administrator, Cloud Database Operator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-apsaradb-polardb",
   "exam_meta": {

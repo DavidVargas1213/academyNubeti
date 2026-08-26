@@ -2,485 +2,187 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-dbs2",
   "title_en": "Alibaba Cloud Database Backup Service Technical Essentials",
-  "title_es": "Alibaba Base de Datos en la Nube Respaldo Servicio Technical Essentials",
+  "title_es": "Fundamentos Técnicos de Alibaba Cloud Database Backup Service",
+  "title_es_html": "Fundamentos Técnicos de Alibaba Cloud <em>Database Backup Service</em>",
   "duration_es": "80 minutos",
   "level_es": "Principiante",
   "category_es": "Bases de Datos",
   "subcategory_es": "Utility & Tools",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_dbs2",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Database Backup Service Technical Essentials» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre Database Backup Service (DBS), el servicio de respaldo continuo de Alibaba Cloud que protege bases de datos sin importar dónde vivan: RDS, PolarDB, una instancia MySQL en un data center propio o incluso una base de datos alojada en otro proveedor de nube. A diferencia del backup automático incluido en RDS (que solo cubre esa instancia), DBS centraliza la política de respaldo de toda la organización y permite restaurar a cualquier segundo dentro de la ventana de retención, sin importar el origen.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia entre el backup nativo de RDS y un servicio de respaldo centralizado como DBS.",
+    "<strong>Distinguir</strong> el backup físico (snapshot del disco) del backup lógico (dump de datos) y cuándo usar cada uno.",
+    "<strong>Configurar</strong> un plan de backup con full inicial + captura continua de logs para lograr recuperación a un punto en el tiempo (PITR).",
+    "<strong>Aplicar</strong> DBS sobre fuentes heterogéneas: bases on-premise, otras nubes, y motores como MySQL, PostgreSQL, SQL Server, Oracle, MongoDB, Redis y PolarDB.",
+    "<strong>Diseñar</strong> una estrategia de restauración cross-región y cross-cuenta para recuperación ante desastres.",
+    "<strong>Evitar</strong> los errores de configuración más comunes al centralizar backups de múltiples orígenes.",
+    "<strong>Responder</strong> con confianza las preguntas de certificación sobre DBS."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "DBS se conecta a la fuente de datos —una instancia RDS, un MySQL on-premise detrás de un gateway, o una base de datos en otra nube— mediante un agente ligero o conexión directa por red (VPN/Express Connect si el origen no es público). Un plan de backup ejecuta una captura full inicial (snapshot físico o dump lógico según el motor) y luego captura de forma continua los logs de transacciones (binlog en MySQL, WAL en PostgreSQL, redo log en Oracle). Los backups se almacenan cifrados en un Backup Vault respaldado por OSS, con política de retención configurable. Para restaurar, DBS reconstruye el estado de la base combinando el último full anterior al punto solicitado con el replay de los logs incrementales hasta el segundo exacto (PITR), pudiendo restaurar hacia una instancia nueva en la misma región, en otra región o incluso en otra cuenta de Alibaba Cloud.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema que resuelve DBS: backup fragmentado",
+      "title_en": "Why Database Backup Service Exists",
+      "intro": "La mayoría de las organizaciones no tienen un solo motor de base de datos ni un solo lugar donde viven sus datos: hay RDS en la nube, un SQL Server heredado en un data center propio, y quizás una base de datos en otro proveedor tras una adquisición. DBS nace para dar una única política de backup a todo ese panorama.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema del backup nativo</strong>: el backup automático de RDS es excelente, pero solo cubre esa instancia RDS específica — una base MySQL on-premise o en otra nube no tiene ese respaldo, y cada equipo termina inventando su propio script de <code>mysqldump</code> con distinta calidad y retención.",
+        "<strong>DBS como capa unificada</strong>: DBS es un servicio independiente que respalda datos sin importar si el origen es RDS, PolarDB, una instancia autogestionada en ECS, un servidor físico en las instalaciones del cliente, o una base en otro proveedor de nube — todo bajo la misma política, retención y consola.",
+        "<strong>No reemplaza el backup nativo, lo complementa</strong>: en instancias RDS críticas es común usar el backup automático de RDS para restauraciones rápidas locales, y DBS para retención de largo plazo, cumplimiento normativo y recuperación ante desastres cross-región.",
+        "<strong>Modelo de conexión agentless o con agente</strong>: para fuentes en la nube de Alibaba con conectividad de red, DBS se conecta directo; para fuentes on-premise o en otra nube, se despliega un gateway ligero que envía los datos de forma segura sin exponer la base a internet.",
+        "<strong>Motores soportados</strong>: MySQL, PostgreSQL, SQL Server, Oracle, MongoDB, Redis, PolarDB y MariaDB, entre otros — el catálogo de motores soportados es uno de los mayores diferenciadores frente a depender del backup propietario de cada servicio."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Bases de Datos en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen más frecuente no es «¿qué hace DBS?» sino «¿por qué no basta con el backup nativo de RDS?» — la respuesta siempre remite a centralizar múltiples orígenes heterogéneos bajo una sola política."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Backup físico vs. backup lógico",
+      "title_en": "Physical vs. Logical Backup",
+      "intro": "DBS puede capturar los datos de dos formas fundamentalmente distintas, y el examen espera que sepas cuándo aplica cada una según el motor y el objetivo de la restauración.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Backup físico</strong>: copia los archivos de datos tal cual están en disco (equivalente a un snapshot del motor); es más rápido de generar y restaurar en volúmenes grandes, pero típicamente requiere restaurar en una instancia con el mismo motor y versión compatible.",
+        "<strong>Backup lógico</strong>: exporta los datos como sentencias SQL o un formato estructurado independiente del almacenamiento físico (similar a <code>mysqldump</code> o <code>pg_dump</code>); es más portable entre versiones y motores compatibles, pero más lento de restaurar en bases grandes.",
+        "<strong>Elección por defecto</strong>: DBS selecciona automáticamente el método más eficiente según el motor de origen, aunque algunos escenarios (como migrar entre versiones muy distintas) fuerzan preferir el modo lógico por su portabilidad.",
+        "<strong>Captura continua de logs</strong>: independientemente del tipo de backup full, DBS captura de forma continua el log de transacciones del motor (binlog, WAL, redo log) entre un full y el siguiente, lo que habilita la recuperación a un punto en el tiempo exacto y no solo al momento del último full.",
+        "<strong>Impacto en el origen</strong>: la captura de logs está diseñada para tener un impacto mínimo en el rendimiento de la base productiva, a diferencia de un <code>mysqldump</code> manual que puede bloquear tablas o consumir I/O significativo durante la ventana de backup."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado pregunta por portabilidad entre motores o versiones distintas → backup lógico. Si pregunta por velocidad de restauración en volúmenes grandes del mismo motor → backup físico."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Plan de backup y recuperación a un punto en el tiempo",
+      "title_en": "Backup Plans and Point-in-Time Recovery",
+      "intro": "Un plan de backup en DBS no es una copia única: es una política continua que combina una base (full) con una cadena de cambios incrementales, diseñada para poder «rebobinar» la base de datos a casi cualquier instante.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Full inicial</strong>: primera captura completa de los datos al activar el plan; sirve como línea base sobre la cual se aplican los cambios posteriores.",
+        "<strong>Captura incremental de logs</strong>: entre un full y el siguiente, DBS registra continuamente el log de transacciones del motor, permitiendo reconstruir el estado exacto de la base en cualquier segundo dentro de ese rango.",
+        "<strong>Point-in-Time Recovery (PITR)</strong>: al restaurar, se elige el timestamp exacto deseado; DBS localiza el full anterior más cercano y reproduce los logs incrementales hasta ese instante — el mismo mecanismo, aplicado ahora de forma uniforme sin importar si el origen era RDS o un servidor físico.",
+        "<strong>Retención configurable</strong>: la política define cuántos días o meses se conservan los backups, con opciones de retención extendida para cumplimiento normativo (auditorías, regulaciones sectoriales) más allá de lo que ofrece por defecto el backup nativo de la base de origen.",
+        "<strong>Backup Vault</strong>: los datos capturados se almacenan cifrados en un almacén dedicado respaldado por OSS, desacoplado del ciclo de vida de la instancia de origen — borrar la instancia original no borra los backups ya capturados en el vault."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "PITR en DBS funciona igual sin importar el origen: full más reciente anterior al timestamp + replay de logs incrementales. Esa uniformidad —independiente del motor— es la ventaja frente a depender de la restauración nativa de cada servicio."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Conectar fuentes heterogéneas: on-premise y multi-nube",
+      "title_en": "Connecting Heterogeneous Sources: On-Premises and Multi-Cloud",
+      "intro": "El caso de uso que distingue a DBS de un backup nativo es proteger bases de datos que no viven en Alibaba Cloud, manteniendo la misma política y consola central.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Bases en Alibaba Cloud (RDS, PolarDB, ECS autogestionado)</strong>: conexión directa dentro de la VPC, sin necesidad de exponer la base a internet.",
+        "<strong>Bases on-premise</strong>: se instala un gateway/agente ligero en la red del cliente que establece una conexión saliente segura hacia DBS, evitando abrir puertos entrantes en el firewall corporativo — el patrón inverso al de un backup tradicional que necesitaría acceso directo a la base.",
+        "<strong>Bases en otras nubes</strong>: mismo patrón de gateway, permitiendo consolidar backups de una arquitectura multi-nube o de instancias adquiridas por fusión/adquisición bajo una sola política sin migrar primero los datos.",
+        "<strong>Conectividad privada</strong>: para bases sensibles, la conexión puede establecerse sobre Express Connect o una VPN dedicada en vez de internet público, reduciendo la superficie de exposición.",
+        "<strong>Restauración cruzada</strong>: un backup capturado desde una base on-premise puede restaurarse directamente hacia una instancia RDS o PolarDB en la nube, siendo esta una ruta de migración práctica además de un mecanismo de respaldo."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario describe 'proteger una base de datos que vive fuera de Alibaba Cloud sin exponerla a internet', la respuesta es DBS con gateway de conexión saliente, no un backup nativo del motor de origen."
+      }
+    },
+    {
+      "title_es": "5 · Restauración y recuperación ante desastres",
+      "title_en": "Restore and Disaster Recovery",
+      "intro": "Un backup que nunca se ha probado a restaurar no es un backup confiable — este módulo cubre las distintas formas en que DBS permite recuperar los datos y por qué probar el proceso es tan importante como configurarlo.",
+      "points": [
+        "<strong>Restaurar a una instancia nueva</strong>: la forma más segura de validar un backup — crea una instancia independiente en vez de sobrescribir la original, evitando poner en riesgo el sistema productivo durante la prueba.",
+        "<strong>Restauración cross-región</strong>: al replicar el Backup Vault hacia otra región, es posible restaurar en una región distinta a la de origen si la región primaria sufre una interrupción — la base de una estrategia de recuperación ante desastres (DR) real.",
+        "<strong>Restauración cross-cuenta</strong>: permite restaurar un backup capturado bajo una cuenta de Alibaba Cloud hacia una instancia en otra cuenta, útil en escenarios de separación de entornos (producción vs. auditoría) o cuando la cuenta original queda inaccesible.",
+        "<strong>Restauración parcial</strong>: en algunos motores es posible restaurar solo bases de datos o tablas específicas en vez de la instancia completa, reduciendo el tiempo de recuperación cuando el incidente afectó únicamente un subconjunto de los datos.",
+        "<strong>Simulacros periódicos</strong>: la buena práctica —y lo que el examen espera como respuesta correcta ante 'cómo garantizar que un backup sirve'— es ejecutar restauraciones de prueba periódicas, no asumir que la existencia del backup garantiza la recuperación."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Un plan de backup sin una prueba de restauración documentada es, en la práctica, una promesa no verificada. El examen valora explícitamente la práctica de 'restore drills' periódicos."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad, costo y errores comunes",
+      "title_en": "Security, Cost and Common Mistakes",
+      "intro": "Centralizar los backups de toda una organización en un solo servicio concentra también el riesgo si no se protege correctamente — este módulo cierra con las prácticas de seguridad y los antipatrones que el examen suele evaluar.",
+      "points": [
+        "<strong>Cifrado</strong>: los datos se cifran en tránsito (TLS) hacia el Backup Vault y en reposo dentro de OSS; para cumplimiento estricto, las claves pueden gestionarse con KMS en vez de las claves gestionadas por defecto.",
+        "<strong>Control de acceso</strong>: los permisos para crear, ver o restaurar planes de backup deben asignarse vía roles RAM de mínimo privilegio — no todo el equipo de desarrollo necesita poder restaurar sobre una instancia productiva.",
+        "<strong>Costo</strong>: se factura por volumen de datos respaldado y por duración de la retención; retención excesiva en fuentes de bajo valor incrementa el costo sin beneficio real, por lo que la política de retención debe ajustarse por criticidad de los datos, no aplicarse igual a todo.",
+        "<strong>Antipatrón</strong>: usar la misma retención corta por defecto (p.ej. 7 días) para datos sujetos a auditoría o requisitos regulatorios que exigen meses o años de historial.",
+        "<strong>Antipatrón</strong>: no configurar replicación cross-región del Backup Vault para cargas críticas, dejando el plan de DR incompleto ante la caída de una región completa.",
+        "<strong>Antipatrón</strong>: nunca ejecutar un simulacro de restauración — el backup existe en teoría pero nadie sabe cuánto tarda ni si realmente funciona bajo presión."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de examen sobre DBS, identifica primero si el escenario es sobre <em>dónde vive la fuente</em> (RDS vs. on-premise vs. otra nube), <em>qué tan atrás hay que poder restaurar</em> (retención y PITR), o <em>qué tan rápido hay que recuperarse</em> (restauración cross-región para DR)."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Empresa con SQL Server on-premise heredado sin estrategia de backup moderna — gateway DBS con captura continua de logs" },
+    { "title": "Escenario 2", "text": "Cumplimiento normativo que exige retener backups de transacciones por 3 años — plan DBS con retención extendida" },
+    { "title": "Escenario 3", "text": "Recuperación ante desastres si la región primaria de RDS falla completamente — Backup Vault replicado cross-región" },
+    { "title": "Escenario 4", "text": "Fusión empresarial con bases de datos en un proveedor de nube distinto — DBS como capa de backup unificada durante la transición" },
+    { "title": "Escenario 5", "text": "Auditoría interna que exige demostrar que los backups son restaurables — restauración de prueba a instancia nueva" },
+    { "title": "Escenario 6", "text": "Incidente que corrompió una sola tabla a las 14:32 — restauración PITR al segundo exacto anterior al incidente" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Aplicar la misma retención corta a datos con requisitos de cumplimiento normativo distintos",
+    "No replicar el Backup Vault a otra región en cargas críticas para recuperación ante desastres",
+    "Nunca ejecutar un simulacro de restauración para validar que el backup realmente funciona",
+    "Restaurar directamente sobre la instancia productiva en vez de validar primero en una instancia nueva",
+    "Exponer la base on-premise a internet en vez de usar el gateway de conexión saliente",
+    "Asignar permisos amplios de restauración a todo el equipo en vez de roles RAM de mínimo privilegio"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "aliyun dbs DescribeBackupPlanList --RegionId cn-hangzhou", "desc": "Listar planes de backup configurados" },
+    { "cmd": "aliyun dbs CreateBackupPlan --BackupPlanName plan1 --SourceEndpointInstanceType RDS --SourceEndpointInstanceId rm-xxxxx", "desc": "Crear un plan de backup sobre una instancia RDS" },
+    { "cmd": "aliyun dbs DescribeRestoreStepList --BackupPlanId bp-xxxxx", "desc": "Consultar el progreso de una restauración" },
+    { "cmd": "aliyun dbs DescribeBackupSetInfo --BackupPlanId bp-xxxxx --RestoreTime '2026-08-14T14:30:00Z'", "desc": "Ubicar el backup set correspondiente a un punto en el tiempo" },
+    { "cmd": "aliyun dbs ModifyBackupObjects --BackupPlanId bp-xxxxx --BackupObjects '{\"schema\":\"ventas\"}'", "desc": "Restringir el backup a un esquema o base de datos específica" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Backup Plan", "es": "Plan de backup", "def": "Política continua que combina un full inicial con captura incremental de logs, con retención configurable." },
+    { "en": "Backup Vault", "es": "Almacén de backup", "def": "Repositorio cifrado, respaldado por OSS, donde DBS almacena los backups desacoplados del ciclo de vida de la fuente." },
+    { "en": "Physical Backup", "es": "Backup físico", "def": "Copia de los archivos de datos tal cual en disco; rápido de restaurar en el mismo motor y versión." },
+    { "en": "Logical Backup", "es": "Backup lógico", "def": "Exportación de los datos como sentencias o formato estructurado, portable entre versiones y motores compatibles." },
+    { "en": "Point-in-Time Recovery (PITR)", "es": "Recuperación a un punto en el tiempo", "def": "Restauración al estado exacto de un segundo específico, combinando el full anterior con el replay de logs." },
+    { "en": "Gateway / Agent", "es": "Gateway de conexión", "def": "Componente ligero que establece una conexión saliente segura desde una fuente on-premise o multi-nube hacia DBS." },
+    { "en": "Cross-Region Restore", "es": "Restauración cross-región", "def": "Recuperación de datos en una región distinta a la de origen, base de una estrategia de recuperación ante desastres." },
+    { "en": "Cross-Account Restore", "es": "Restauración cross-cuenta", "def": "Recuperación de un backup hacia una instancia en una cuenta de Alibaba Cloud distinta a la de origen." },
+    { "en": "Retention Policy", "es": "Política de retención", "def": "Duración configurable durante la cual se conservan los backups antes de expirar." },
+    { "en": "Restore Drill", "es": "Simulacro de restauración", "def": "Prueba periódica de restaurar un backup para validar que realmente es recuperable dentro de un tiempo aceptable." },
+    { "en": "Binlog / WAL / Redo Log", "es": "Log de transacciones", "def": "Registro continuo de cambios del motor de base de datos usado para reconstruir el estado entre dos backups full." },
+    { "en": "KMS", "es": "KMS", "def": "Servicio de gestión de claves usado para cifrar los backups con claves controladas por el cliente." },
+    { "en": "RAM", "es": "RAM", "def": "Servicio de identidad y permisos de Alibaba Cloud; controla quién puede crear, ver o restaurar planes de backup." },
+    { "en": "Full Backup", "es": "Backup completo", "def": "Captura inicial completa de los datos, línea base sobre la que se aplican los cambios incrementales posteriores." },
+    { "en": "Partial Restore", "es": "Restauración parcial", "def": "Recuperación de solo una base de datos o tabla específica, en vez de la instancia completa." },
+    { "en": "Multi-Cloud Backup", "es": "Backup multi-nube", "def": "Consolidación de la política de respaldo de bases de datos alojadas en distintos proveedores de nube bajo un solo servicio." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Cuál es la diferencia principal entre el backup automático nativo de RDS y Database Backup Service (DBS)?", "options": ["Son exactamente el mismo servicio con nombre distinto", "DBS puede centralizar el respaldo de bases fuera de RDS: on-premise, otras nubes y distintos motores, bajo una sola política", "El backup nativo de RDS es más caro que DBS en todos los casos", "DBS solo funciona con bases de datos NoSQL"], "answer": 1, "explain": "DBS extiende la protección más allá de una instancia RDS específica, cubriendo fuentes heterogéneas bajo una política centralizada." },
+    { "q": "Un equipo necesita migrar datos entre dos versiones muy distintas de un motor de base de datos. ¿Qué tipo de backup es preferible por su portabilidad?", "options": ["Backup físico", "Backup lógico", "Ninguno de los dos permite migrar entre versiones", "Solo un snapshot de disco"], "answer": 1, "explain": "El backup lógico exporta datos en un formato independiente del almacenamiento físico, lo que facilita la portabilidad entre versiones o motores compatibles." },
+    { "q": "¿Qué combina DBS para lograr una recuperación a un punto en el tiempo (PITR)?", "options": ["Solo el backup full más reciente, sin logs", "El full anterior más cercano al timestamp deseado, más el replay de los logs de transacciones incrementales", "Una copia manual ejecutada por el administrador", "Solo los logs, sin ningún full de referencia"], "answer": 1, "explain": "PITR reconstruye el estado exacto combinando el último full anterior al punto deseado con el replay de los logs capturados de forma continua." },
+    { "q": "¿Cómo se conecta DBS a una base de datos que vive en un data center on-premise, sin exponerla a internet?", "options": ["Abriendo el puerto de la base de datos a 0.0.0.0/0", "Mediante un gateway/agente que establece una conexión saliente segura hacia DBS", "No es posible respaldar bases on-premise con DBS", "Copiando manualmente los archivos por FTP cada noche"], "answer": 1, "explain": "El gateway establece una conexión saliente desde la red del cliente, evitando abrir puertos entrantes en el firewall corporativo." },
+    { "q": "¿Qué habilita la restauración cross-región de un backup capturado con DBS?", "options": ["Reduce el costo de almacenamiento del backup", "Permite recuperar los datos en una región distinta si la región de origen sufre una interrupción, como parte de un plan de recuperación ante desastres", "Es obligatoria para todos los planes de backup sin excepción", "Solo aplica a bases de datos NoSQL"], "answer": 1, "explain": "La restauración cross-región es la base de una estrategia de disaster recovery cuando la región primaria completa deja de estar disponible." },
+    { "q": "¿Cuál es la forma más segura de validar que un backup realmente es restaurable?", "options": ["Confiar en que existe sin probarlo nunca", "Restaurarlo directamente sobre la instancia productiva original", "Restaurarlo hacia una instancia nueva independiente como simulacro periódico", "Eliminar la instancia original para forzar la prueba"], "answer": 2, "explain": "Restaurar hacia una instancia nueva valida el proceso sin arriesgar el sistema productivo, y hacerlo periódicamente confirma que el backup sigue siendo recuperable." },
+    { "q": "Una empresa necesita retener los backups de transacciones financieras durante 3 años por regulación. ¿Qué configuración de DBS aplica?", "options": ["Dejar la retención por defecto de 7 días para todas las fuentes por igual", "Configurar una política de retención extendida específica para esa fuente crítica", "Desactivar el backup para reducir costos", "Usar solo backup lógico sin logs incrementales"], "answer": 1, "explain": "La retención debe ajustarse por criticidad y requisitos de cumplimiento de cada fuente, no aplicarse de forma uniforme con el valor por defecto." },
+    { "q": "¿Qué motores de base de datos puede proteger DBS, según este curso?", "options": ["Únicamente MySQL en instancias RDS", "MySQL, PostgreSQL, SQL Server, Oracle, MongoDB, Redis, PolarDB y MariaDB, entre otros", "Solo bases de datos NoSQL", "Solo bases de datos alojadas fuera de Alibaba Cloud"], "answer": 1, "explain": "DBS soporta un catálogo amplio de motores relacionales y no relacionales, tanto en la nube como fuera de ella." },
+    { "q": "¿Qué diferencia al backup físico del backup lógico en cuanto a velocidad de restauración en volúmenes grandes del mismo motor?", "options": ["El backup lógico siempre es más rápido en cualquier escenario", "El backup físico suele restaurar más rápido porque copia los archivos de datos directamente, sin reconstruir sentencia por sentencia", "No hay diferencia de velocidad entre ambos", "El backup físico solo funciona con bases de menos de 1 GB"], "answer": 1, "explain": "El backup físico copia los archivos de datos tal cual, lo que resulta más rápido de restaurar en volúmenes grandes dentro del mismo motor y versión." },
+    { "q": "¿Qué logra la restauración cross-cuenta en DBS?", "options": ["Cambia automáticamente el motor de base de datos de origen", "Permite restaurar un backup capturado bajo una cuenta hacia una instancia en otra cuenta de Alibaba Cloud", "Elimina la necesidad de cifrado en tránsito", "Solo está disponible para bases on-premise"], "answer": 1, "explain": "Es útil para separar entornos o recuperar datos cuando la cuenta original queda inaccesible, restaurando hacia una cuenta distinta." },
+    { "q": "¿Qué antipatrón describe mejor no replicar el Backup Vault a otra región en una carga crítica?", "options": ["Es una buena práctica recomendada siempre", "Deja el plan de recuperación ante desastres incompleto ante la caída de la región completa", "Reduce el riesgo de pérdida de datos", "No tiene ningún impacto en la estrategia de DR"], "answer": 1, "explain": "Sin replicación cross-región del vault, la falla de la región primaria puede dejar sin acceso también a los backups almacenados allí." },
+    { "q": "¿Dónde se almacenan los backups capturados por DBS, y qué ocurre si se elimina la instancia de origen?", "options": ["En un Backup Vault cifrado respaldado por OSS, desacoplado del ciclo de vida de la instancia original", "Dentro del mismo disco de la instancia de origen, y se pierden si esta se elimina", "En la memoria RAM del servidor, temporalmente", "Solo se conservan mientras la instancia de origen esté encendida"], "answer": 0, "explain": "El Backup Vault es independiente de la instancia de origen; eliminar la instancia original no borra los backups ya capturados." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen evalúa: (a) por qué DBS complementa (no reemplaza) el backup nativo de servicios como RDS, (b) backup físico vs. lógico según el escenario, (c) mecanismo de PITR combinando full + logs incrementales, (d) conexión a fuentes on-premise/multi-nube vía gateway, (e) restauración cross-región/cross-cuenta como base de un plan de recuperación ante desastres.",
   "official_intro": "Database Backup (DBS) is a secure and cost-efficient solution for continuous data protection. The service offers strong protection for data stored in multiple environments, such as enterprise data centers, hybrid clouds, public clouds, and third-party cloud vendors. Through this course, you will not only learn about Alibaba Cloud DBS technical essentials and applicable scenarios, but also by watching product console demos, you will be familiar with DBS major functions and operation details. For Whom Cloud Database Administrator, Cloud Database Operator",
-  "source_url": "https://edu.alibabacloud.com/certification/clouder_dbs2"
+  "recommended_for": "Cloud Database Administrator, Cloud Database Operator",
+  "source_url": "https://edu.alibabacloud.com/certification/clouder_dbs2",
+  "exam_meta": {
+    "duration_min": 30,
+    "attempts": "2 Times",
+    "type": "Online",
+    "language": "English"
+  }
 }

@@ -2,485 +2,191 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-ecs-purchasing",
   "title_en": "Alibaba Cloud ECS Product Purchasing Options",
-  "title_es": "Alibaba Cloud ECS Opciones de Compra del Producto",
+  "title_es": "Opciones de Compra de Productos ECS de Alibaba Cloud",
+  "title_es_html": "Opciones de <em>Compra de Productos ECS</em> de Alibaba Cloud",
   "duration_es": "20 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_ecs_purchasing",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud ECS Product Purchasing Options» de Alibaba Cloud Academy. Cubre en profundidad Elastic Compute Service (ECS). ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Alibaba Cloud ECS Product Purchasing Options» de Alibaba Cloud Academy. A diferencia de «ECS Cost Control» (que gobierna el gasto ya comprometido en el tiempo), este curso se enfoca en el momento exacto de la decisión de compra: qué opción elegir en el asistente de creación de una instancia según el patrón de carga, el horizonte de compromiso y la tolerancia a interrupciones.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Elastic Compute Service (ECS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Instance type, Region, Zone (AZ), Image, Snapshot.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Elastic Compute Service (ECS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Enumerar</strong> las opciones de compra disponibles en el asistente de creación de ECS y su lógica de precio.",
+    "<strong>Diferenciar</strong> Pay-As-You-Go, Subscription, Preemptible Instance, Reserved Instance y Savings Plan en el momento de comprar (no después).",
+    "<strong>Configurar</strong> una Preemptible Instance entendiendo el precio de mercado, el período de protección y el evento de reclamo.",
+    "<strong>Elegir</strong> la modalidad de pago de una Reserved Instance (All Upfront, Partial Upfront, No Upfront) según el flujo de caja disponible.",
+    "<strong>Aplicar</strong> un framework de decisión simple para mapear patrón de carga → opción de compra correcta.",
+    "<strong>Evitar</strong> los errores más comunes al comprometerse con una opción de compra inadecuada al patrón real de uso."
   ],
-  "architecture": "Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
+  "architecture": "La decisión de compra ocurre una sola vez, en el asistente de creación de la instancia, pero condiciona el costo durante toda su vida útil. El framework recomendado evalúa tres preguntas en orden: (1) ¿la carga es predecible y de largo plazo? — si sí, Subscription o Reserved Instance/Savings Plan; (2) ¿la carga tolera interrupciones con minutos de aviso? — si sí, Preemptible Instance al precio de mercado; (3) si ninguna de las anteriores aplica, Pay-As-You-Go es el valor por defecto seguro. Una misma arquitectura combina las tres: instancias core en Reserved Instance, capacidad elástica de picos en Pay-As-You-Go detrás de un Auto Scaling Group, y trabajo batch en Preemptible Instance.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Elastic Compute Service (ECS)",
-      "title_en": "Introduction to Elastic Compute Service (ECS)",
-      "intro": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El menú de opciones de compra de ECS",
+      "title_en": "Overview of ECS Purchasing Options",
+      "intro": "El asistente de creación de una instancia ECS presenta varias opciones de facturación en la misma pantalla. Antes de elegir, hay que entender qué pregunta responde cada una.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Elastic Compute Service (ECS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Pay-As-You-Go</strong>: sin compromiso, facturación por hora/segundo; la opción por defecto cuando no se sabe aún cuánto durará la carga.",
+        "<strong>Subscription</strong>: compra anticipada mensual o anual de la instancia completa, con descuento frente a Pay-As-You-Go a cambio de comprometerse a mantenerla ese período.",
+        "<strong>Preemptible Instance</strong>: se compra al precio de mercado (hasta 90% más barato que Pay-As-You-Go), aceptando que Alibaba Cloud puede reclamarla si necesita la capacidad.",
+        "<strong>Reserved Instance</strong>: no es una instancia que se lance directamente — es un compromiso de 1 o 3 años que se aplica como descuento sobre instancias Pay-As-You-Go existentes o futuras que coincidan en familia y región.",
+        "<strong>Savings Plan</strong>: alternativa más flexible a la Reserved Instance, con compromiso de gasto por hora en vez de por familia específica de instancia."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Elastic Compute Service (ECS) es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Todas estas opciones coexisten en la misma cuenta — la pregunta del examen casi nunca es «¿cuál es la mejor opción?» en abstracto, sino «¿cuál es la mejor opción PARA este escenario específico?»."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Elastic Compute Service (ECS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Pay-As-You-Go vs. Subscription: la primera decisión",
+      "title_en": "Pay-As-You-Go vs Subscription",
+      "intro": "Es la bifurcación más básica del asistente de compra: ¿pagar solo por lo que se usa, o comprometerse por adelantado a cambio de un mejor precio?",
       "points": [
-        "<strong>Patrón canónico</strong>: Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Elastic Compute Service (ECS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Tipo de instancia</strong> <em>(Instance type)</em>: Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "<strong>Región</strong> <em>(Region)</em>: Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "<strong>Zona de disponibilidad</strong> <em>(Zone (AZ))</em>: Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "<strong>Imagen</strong> <em>(Image)</em>: Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "<strong>Snapshot</strong> <em>(Snapshot)</em>: Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "<strong>Grupo de seguridad</strong> <em>(Security Group)</em>: Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG.",
-        "<strong>VPC / VSwitch</strong> <em>(VPC / VSwitch)</em>: Red virtual privada + subredes por zona donde se despliega la ENI.",
-        "<strong>Elastic Network Interface</strong> <em>(ENI)</em>: Tarjeta de red virtual. Una instancia puede tener varias."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Pay-As-You-Go</strong> es ideal cuando la duración de la carga es incierta: un entorno de prueba, un proyecto piloto, o una carga cuyo perfil de tráfico aún no se conoce.",
+        "<strong>Subscription</strong> conviene cuando ya se sabe que la instancia va a operar de forma continua durante meses o años — el ahorro típico frente a Pay-As-You-Go equivalente crece cuanto más largo es el compromiso.",
+        "<strong>Cambiar de PayG a Subscription</strong> es posible sin recrear la instancia; lo inverso (de Subscription a PayG) generalmente no lo es sin liberar y volver a crear el recurso.",
+        "<strong>Costo hundido</strong>: una instancia Subscription se sigue facturando esté encendida o apagada durante el período contratado — a diferencia de PayG, donde detener la instancia con StopCharging reduce el cobro de cómputo."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Cuando el enunciado dice «aún no sabemos cuánto va a durar este proyecto» o «fase de prueba de concepto», la respuesta casi siempre es Pay-As-You-Go, nunca Subscription ni Reserved Instance."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Preemptible Instance: precio de mercado y aviso de interrupción",
+      "title_en": "Preemptible Instance",
+      "intro": "La opción más económica del menú también es la de mayor riesgo operativo — el curso dedica un módulo completo a entender sus reglas antes de usarla en producción.",
       "points": [
-        "<strong>HA</strong>: Usar instancias en al menos 2 zonas detrás de un SLB para HA",
-        "<strong>HA</strong>: Habilitar snapshots automáticos diarios de discos críticos",
-        "<strong>HA</strong>: Usar imágenes custom con hardening pre-aplicado en vez de configurar cada instancia manualmente",
-        "<strong>Seguridad</strong>: Nunca usar la cuenta raíz para operar ECS — crear usuarios RAM con roles específicos",
-        "<strong>Costo</strong>: Combinar Reserved Instances (baseline) + pay-as-you-go (picos) + spot (batch) para minimizar costo",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups siguiendo mínimo privilegio (denegar todo por defecto)",
-        "<strong>Buenas prácticas</strong>: Instrumentar con CloudMonitor + alertas para CPU/memoria/disco antes de que falle"
+        "<strong>Precio de mercado</strong>: fluctúa según oferta y demanda de capacidad en esa zona; al comprar se define un precio límite (o se acepta el precio de mercado directamente) por encima del cual la instancia no se ejecuta.",
+        "<strong>Período de protección contra interrupción</strong>: al crear la instancia se puede fijar un período (por ejemplo, 1 hora) durante el cual Alibaba Cloud garantiza que no será reclamada, útil para trabajos cortos que necesitan terminar sin interrupciones.",
+        "<strong>Evento de reclamo</strong>: pasado el período de protección, si Alibaba Cloud necesita la capacidad, notifica con unos minutos de aviso antes de detener o liberar la instancia — el código debe manejar ese evento para guardar el progreso.",
+        "<strong>Diseño resiliente obligatorio</strong>: cualquier carga sobre Preemptible Instance debe poder perder la instancia en cualquier momento sin pérdida de datos — checkpoints frecuentes, colas de trabajo reintentables, o almacenamiento de estado fuera de la instancia.",
+        "<strong>Casos ideales</strong>: renderizado por lotes, procesamiento de big data tolerante a fallos, entornos de CI/CD, entrenamiento de modelos con checkpoints — nunca bases de datos primarias o servicios con estado sin réplica."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El período de protección reduce el riesgo de interrupción a corto plazo, pero NO lo elimina a largo plazo — una Preemptible Instance nunca debe tratarse como una instancia permanente."
+      }
+    },
+    {
+      "title_es": "4 · Reserved Instance: comprometerse a cambio de descuento",
+      "title_en": "Reserved Instance",
+      "intro": "La Reserved Instance introduce un matiz que suele confundirse en el examen: no se «lanza» una RI como se lanza una instancia — se compra un compromiso que luego se aplica automáticamente.",
+      "points": [
+        "<strong>No es una instancia física</strong>: es un compromiso de descuento que Alibaba Cloud aplica automáticamente sobre el consumo Pay-As-You-Go que coincide en familia, tamaño, región y sistema operativo.",
+        "<strong>Horizonte de 1 o 3 años</strong>: a mayor plazo de compromiso, mayor descuento — pero también mayor riesgo si la arquitectura cambia antes de que expire.",
+        "<strong>Modalidades de pago</strong>: <em>All Upfront</em> (pago total al inicio, mayor descuento), <em>Partial Upfront</em> (pago parcial + cuota reducida), <em>No Upfront</em> (sin pago inicial, cuota mensual, menor descuento) — la elección depende del flujo de caja disponible, no solo del descuento nominal.",
+        "<strong>Alcance específico</strong>: si la carga cambia de familia de instancia o se mueve a otra región, la RI deja de aplicar — es menos flexible que un Savings Plan equivalente.",
+        "<strong>Combinable con Auto Scaling</strong>: se compra RI para cubrir la capacidad mínima garantizada del grupo de auto-escalado, dejando que PayG cubra los picos por encima de ese mínimo."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado menciona flujo de caja limitado pero necesidad de descuento a largo plazo, la respuesta suele ser Reserved Instance con pago <em>Partial Upfront</em> o <em>No Upfront</em>, no All Upfront."
+      }
+    },
+    {
+      "title_es": "5 · Savings Plan como alternativa flexible",
+      "title_en": "Saving Plan",
+      "intro": "Cuando la rigidez de la Reserved Instance es un problema —por ejemplo, porque el equipo migra de familia de instancia con frecuencia— el Savings Plan ofrece el mismo tipo de ahorro con menos ataduras.",
+      "points": [
+        "<strong>Compromiso por gasto, no por recurso</strong>: se contrata un monto de $/hora en vez de una familia de instancia específica; el descuento sigue al consumo elegible, cambie o no de tipo de instancia.",
+        "<strong>Menor fricción operativa</strong>: no hay que coordinar con el equipo de arquitectura cada vez que se compra un Savings Plan, porque no depende de qué instancia exacta se use.",
+        "<strong>Trade-off</strong>: por esa misma flexibilidad, el descuento marginal de un Savings Plan puede ser ligeramente menor que el de una RI perfectamente alineada con la carga real.",
+        "<strong>Momento de decidir</strong>: conviene evaluarlo en el mismo momento de compra que la Reserved Instance — ambos son alternativas mutuamente excluyentes para cubrir la misma carga base, no complementarias entre sí sobre el mismo recurso."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Reserved Instance optimiza el descuento cuando la arquitectura es estable; Savings Plan optimiza la flexibilidad cuando la arquitectura evoluciona. El examen espera que reconozcas cuál escenario describe el enunciado."
+      }
+    },
+    {
+      "title_es": "6 · Framework de decisión en el momento de comprar",
+      "title_en": "Purchasing Decision Framework",
+      "intro": "El curso cierra con un método simple para no dudar frente al asistente de compra: tres preguntas, en orden, que resuelven la mayoría de los escenarios de examen.",
+      "points": [
+        "<strong>Pregunta 1 — ¿Es predecible y de largo plazo?</strong> Si sí, evaluar Subscription (instancia completa) o Reserved Instance/Savings Plan (descuento sobre PayG existente) según si ya se tiene o no la instancia corriendo.",
+        "<strong>Pregunta 2 — ¿Tolera interrupciones?</strong> Si la carga puede perderse y reiniciarse sin daño (batch, CI/CD, renderizado), Preemptible Instance es la opción más económica.",
+        "<strong>Pregunta 3 — ¿Ninguna de las anteriores aplica?</strong> Pay-As-You-Go es el valor por defecto seguro mientras se recopila más información sobre el patrón real de uso.",
+        "<strong>Combinar, no elegir una sola</strong>: una arquitectura de producción típica usa RI para el núcleo estable, PayG para el margen elástico y Preemptible para el batch — las tres preguntas se responden por componente, no por cuenta completa."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "<strong>Predecible → comprometer. Interrumpible → Preemptible. Incierto → Pay-As-You-Go.</strong> En ese orden, resuelve casi cualquier pregunta de opción de compra del examen."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "7 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de las preguntas difíciles de este curso presentan un escenario con una restricción oculta (flujo de caja, tolerancia a fallos, horizonte de tiempo) que descarta 2 de las 4 opciones de inmediato.",
       "points": [
-        "<strong>Antipattern</strong>: Poner instancias productivas en una sola zona → caída total si la zona falla",
-        "<strong>Antipattern</strong>: Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-        "<strong>Antipattern</strong>: Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-        "<strong>Antipattern</strong>: No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-        "<strong>Antipattern</strong>: Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-        "<strong>Antipattern</strong>: Preemptible en producción crítica sin plan de reintento",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: comprar Subscription para una carga cuyo horizonte real es de semanas, no meses — el compromiso no llega a amortizarse.",
+        "<strong>Antipatrón</strong>: usar Preemptible Instance para un servicio con estado sin checkpoints ni réplicas — la interrupción implica pérdida de datos.",
+        "<strong>Antipatrón</strong>: elegir All Upfront en una Reserved Instance cuando el enunciado menciona restricciones de flujo de caja — ahí corresponde Partial o No Upfront.",
+        "<strong>Antipatrón</strong>: comprar una Reserved Instance cuando la arquitectura cambia de familia de instancia con frecuencia — un Savings Plan sería más flexible.",
+        "<strong>Antipatrón</strong>: dejar toda la cuenta en Pay-As-You-Go de forma indefinida una vez que el patrón de carga ya es predecible — se pierde el descuento disponible sin necesidad."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee el enunciado buscando la restricción oculta: horizonte de tiempo, tolerancia a interrupción y flujo de caja son las tres variables que el examen manipula para forzar una única respuesta correcta."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Sitios web y APIs con tráfico variable (auto-escalado)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Renderizado de video / cargas GPU-intensivas (familia gn)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis batch nocturno (spot instances con hasta 90% descuento)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "SAP y aplicaciones enterprise (familia re con memoria alta)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Entornos de desarrollo/pruebas (pay-as-you-go, apagado nocturno)"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Escritorios virtuales y bastion hosts"
-    }
+    { "title": "Escenario 1", "text": "Prueba de concepto de 3 semanas de duración incierta — Pay-As-You-Go" },
+    { "title": "Escenario 2", "text": "Backend estable de un producto ya en mercado, 3 años de horizonte — Reserved Instance a 3 años" },
+    { "title": "Escenario 3", "text": "Renderizado de video por lotes tolerante a interrupción — Preemptible Instance con checkpoints" },
+    { "title": "Escenario 4", "text": "Startup con poco flujo de caja pero carga predecible a 1 año — Reserved Instance con pago No Upfront" },
+    { "title": "Escenario 5", "text": "Equipo que migra de familia de instancia cada trimestre — Savings Plan en vez de Reserved Instance" },
+    { "title": "Escenario 6", "text": "Auto Scaling Group con mínimo garantizado + picos estacionales — RI para el mínimo, PayG para los picos" }
   ],
   "mistakes": [
-    "Poner instancias productivas en una sola zona → caída total si la zona falla",
-    "Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-    "Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-    "No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-    "Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-    "Preemptible en producción crítica sin plan de reintento"
+    "Comprar Subscription para una carga cuyo horizonte real es de semanas, no meses",
+    "Usar Preemptible Instance para un servicio con estado sin checkpoints ni réplicas",
+    "Elegir All Upfront con restricciones de flujo de caja explícitas en el enunciado",
+    "Comprar Reserved Instance cuando la arquitectura cambia de familia de instancia con frecuencia",
+    "Dejar toda la cuenta en Pay-As-You-Go de forma indefinida pese a tener un patrón de carga ya predecible"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs DescribeInstances",
-      "desc": "Listar instancias ECS en la región actual"
-    },
-    {
-      "cmd": "aliyun ecs RunInstances --ImageId ... --InstanceType ecs.g6.large",
-      "desc": "Crear instancia"
-    },
-    {
-      "cmd": "aliyun ecs StopInstance --InstanceId i-xxxxx --StoppedMode StopCharging",
-      "desc": "Detener sin cobrar"
-    },
-    {
-      "cmd": "aliyun ecs CreateSnapshot --DiskId d-xxxxx",
-      "desc": "Crear snapshot de disco"
-    },
-    {
-      "cmd": "aliyun ecs ModifyInstanceAttribute --InstanceId ... --Password ...",
-      "desc": "Cambiar credenciales"
-    }
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.g6.large --InstanceChargeType PostPaid", "desc": "Crear una instancia Pay-As-You-Go" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.g6.large --InstanceChargeType PrePaid --Period 12", "desc": "Crear una instancia Subscription de 12 meses" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.c6.large --SpotStrategy SpotAsPriceGo", "desc": "Crear una Preemptible Instance al precio de mercado" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.c6.large --SpotStrategy SpotWithPriceLimit --SpotPriceLimit 0.15", "desc": "Crear una Preemptible Instance con precio límite definido" },
+    { "cmd": "aliyun ecs DescribeInstanceTypes --InstanceTypeFamily ecs.g6", "desc": "Consultar especificaciones de una familia antes de comprometer una Reserved Instance" }
   ],
   "glossary": [
-    {
-      "en": "Instance type",
-      "es": "Tipo de instancia",
-      "def": "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "en": "Zone (AZ)",
-      "es": "Zona de disponibilidad",
-      "def": "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "en": "Image",
-      "es": "Imagen",
-      "def": "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "en": "Snapshot",
-      "es": "Snapshot",
-      "def": "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG."
-    },
-    {
-      "en": "VPC / VSwitch",
-      "es": "VPC / VSwitch",
-      "def": "Red virtual privada + subredes por zona donde se despliega la ENI."
-    },
-    {
-      "en": "ENI",
-      "es": "Elastic Network Interface",
-      "def": "Tarjeta de red virtual. Una instancia puede tener varias."
-    },
-    {
-      "en": "Elastic IP (EIP)",
-      "es": "IP elástica",
-      "def": "IP pública estática, se puede desasociar y reasociar."
-    },
-    {
-      "en": "Pay-as-you-go",
-      "es": "Pago por uso",
-      "def": "Facturación por segundo/hora sin compromiso. Ideal para cargas variables."
-    },
-    {
-      "en": "Subscription",
-      "es": "Suscripción",
-      "def": "Compra anticipada mensual/anual con 15-40% descuento."
-    },
-    {
-      "en": "Reserved Instance",
-      "es": "Instancia reservada",
-      "def": "Descuento adicional a cambio de compromiso 1-3 años."
-    },
-    {
-      "en": "Preemptible / Spot",
-      "es": "Preemptible",
-      "def": "Hasta 90% descuento; puede terminarse con 5 min de aviso."
-    },
-    {
-      "en": "Savings Plan",
-      "es": "Plan de ahorro",
-      "def": "Compromiso de $/hora aplicable a cualquier familia."
-    },
-    {
-      "en": "Auto Scaling Group",
-      "es": "Grupo de auto-escalado",
-      "def": "Ajusta capacidad según políticas de CPU/tiempo/eventos."
-    },
-    {
-      "en": "Cloud-init / User Data",
-      "es": "User Data",
-      "def": "Script que se ejecuta al arrancar la instancia (bootstrap)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Pay-As-You-Go", "es": "Pago por uso", "def": "Facturación por hora/segundo sin compromiso; opción por defecto ante incertidumbre de duración." },
+    { "en": "Subscription", "es": "Suscripción", "def": "Compra anticipada de la instancia completa por mes o año, con descuento frente a PayG." },
+    { "en": "Preemptible Instance", "es": "Instancia preferente/Spot", "def": "Instancia al precio de mercado, hasta 90% más barata, sujeta a reclamo por Alibaba Cloud con aviso previo." },
+    { "en": "No-interruption protection period", "es": "Período de protección contra interrupción", "def": "Ventana configurable durante la cual una Preemptible Instance no puede ser reclamada tras su creación." },
+    { "en": "Spot price limit", "es": "Precio límite de mercado", "def": "Umbral máximo definido por el usuario por encima del cual la Preemptible Instance no continúa ejecutándose." },
+    { "en": "Reserved Instance (RI)", "es": "Instancia reservada", "def": "Compromiso de 1-3 años que descuenta automáticamente consumo PayG de la misma familia, región y SO." },
+    { "en": "All Upfront", "es": "Pago total anticipado", "def": "Modalidad de pago de RI con el mayor descuento; se paga el 100% al momento de la compra." },
+    { "en": "Partial Upfront", "es": "Pago parcial anticipado", "def": "Modalidad intermedia de pago de RI: parte al inicio, resto en cuotas reducidas." },
+    { "en": "No Upfront", "es": "Sin pago anticipado", "def": "Modalidad de pago de RI sin desembolso inicial, con cuota mensual y menor descuento total." },
+    { "en": "Savings Plan", "es": "Plan de ahorro", "def": "Compromiso de gasto por hora, más flexible que la RI porque no ata el descuento a una familia específica." },
+    { "en": "Auto Scaling Group", "es": "Grupo de auto-escalado", "def": "Conjunto de reglas que crea/destruye instancias según demanda; se combina con RI para el mínimo garantizado." },
+    { "en": "Checkpoint", "es": "Punto de control", "def": "Guardado periódico del progreso de un trabajo, esencial para cargas que corren sobre Preemptible Instances." },
+    { "en": "Instance family", "es": "Familia de instancia", "def": "Agrupación de tipos con perfil similar de vCPU/memoria; determina el alcance exacto de una Reserved Instance." },
+    { "en": "StopCharging", "es": "Modo de ahorro al detener", "def": "Opción de instancias PayG que deja de cobrar cómputo al detenerlas, sin afectar el almacenamiento." },
+    { "en": "Reclaim event", "es": "Evento de reclamo", "def": "Notificación que recibe una Preemptible Instance minutos antes de ser detenida o liberada por Alibaba Cloud." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Elastic Compute Service (ECS)?",
-      "options": [
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud."
-    },
-    {
-      "q": "¿Qué es <strong>Instance type</strong> (Tipo de instancia) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Instance type (Tipo de instancia): Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "q": "¿Qué es <strong>Region</strong> (Región) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Region (Región): Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "q": "¿Qué es <strong>Zone (AZ)</strong> (Zona de disponibilidad) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Zone (AZ) (Zona de disponibilidad): Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "q": "¿Qué es <strong>Image</strong> (Imagen) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Image (Imagen): Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "q": "¿Qué es <strong>Snapshot</strong> (Snapshot) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Snapshot (Snapshot): Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Elastic Compute Service (ECS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Elastic Compute Service (ECS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Elastic Compute Service (ECS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Elastic Compute Service (ECS) es la elección típica:",
-      "options": [
-        "Sitios web y APIs con tráfico variable (auto-escalado)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Sitios web y APIs con tráfico variable (auto-escalado)."
-    }
+    { "q": "¿Cuál es la diferencia fundamental entre comprar una Subscription y aplicar una Reserved Instance?", "options": ["Son términos intercambiables para lo mismo", "Subscription compra la instancia completa por adelantado; Reserved Instance es un descuento que se aplica sobre consumo PayG existente o futuro", "Reserved Instance solo aplica a discos, no a instancias", "Subscription no permite elegir la familia de instancia"], "answer": 1, "explain": "Con Subscription pagas la instancia directamente; con RI compras un compromiso que Alibaba Cloud aplica automáticamente como descuento sobre PayG." },
+    { "q": "¿Qué garantiza el 'período de protección contra interrupción' de una Preemptible Instance?", "options": ["Que la instancia nunca será reclamada", "Que durante esa ventana inicial la instancia no será reclamada, aunque después del período sí puede serlo", "Que el precio nunca cambiará", "Que la instancia se convierte automáticamente en Subscription"], "answer": 1, "explain": "El período de protección solo cubre una ventana inicial; pasado ese tiempo, la instancia puede ser reclamada con aviso previo." },
+    { "q": "Una carga necesita descuento a largo plazo pero la empresa tiene flujo de caja limitado este trimestre. ¿Qué modalidad de pago de Reserved Instance es más adecuada?", "options": ["All Upfront", "Partial Upfront o No Upfront", "Solo Pay-As-You-Go", "Preemptible Instance"], "answer": 1, "explain": "Cuando el flujo de caja es limitado, las modalidades con menor o ningún pago inicial permiten obtener descuento sin comprometer capital de golpe." },
+    { "q": "¿Por qué un Savings Plan puede ser preferible a una Reserved Instance cuando el equipo cambia de familia de instancia con frecuencia?", "options": ["Porque el Savings Plan siempre es más barato en términos absolutos", "Porque el descuento del Savings Plan sigue al consumo elegible sin importar la familia exacta usada", "Porque la Reserved Instance no permite ningún tipo de descuento", "Porque el Savings Plan no requiere ningún compromiso de tiempo"], "answer": 1, "explain": "La RI pierde cobertura si cambia la familia de instancia; el Savings Plan mantiene el descuento porque no depende de un recurso específico." },
+    { "q": "Un proceso de renderizado por lotes puede reiniciarse sin pérdida de datos gracias a checkpoints frecuentes. ¿Qué opción de compra maximiza el ahorro para esta carga?", "options": ["Subscription anual", "Reserved Instance a 3 años", "Preemptible Instance", "All Upfront Reserved Instance"], "answer": 2, "explain": "Una carga tolerante a interrupción con capacidad de reintento es el caso ideal para Preemptible Instance, la opción más económica del menú." },
+    { "q": "Según el framework de decisión del curso, ¿cuál es la primera pregunta a responder al elegir una opción de compra?", "options": ["¿Cuánto cuesta la instancia más grande disponible?", "¿Es la carga predecible y de largo plazo?", "¿Qué color tiene la consola?", "¿Cuántas regiones tiene Alibaba Cloud?"], "answer": 1, "explain": "El framework evalúa primero previsibilidad y horizonte de tiempo, antes de considerar tolerancia a interrupción u opción por defecto." },
+    { "q": "¿Qué ocurre si se detiene una instancia Subscription antes de que termine su período contratado?", "options": ["Deja de facturarse por completo", "Se sigue facturando igual, porque el período ya fue pagado por adelantado", "Se convierte automáticamente en Pay-As-You-Go", "Se libera automáticamente"], "answer": 1, "explain": "Subscription cobra el período completo independientemente de si la instancia está encendida o apagada." },
+    { "q": "¿Cuál es un caso de uso INADECUADO para una Preemptible Instance?", "options": ["Un pipeline de CI/CD que reintenta automáticamente ante fallos", "Un proceso de renderizado con checkpoints cada 5 minutos", "Una base de datos primaria sin réplicas ni backups automatizados", "Un job de entrenamiento de modelos con guardado periódico"], "answer": 2, "explain": "Una base de datos primaria sin réplicas no puede tolerar la pérdida súbita de la instancia; requiere un modelo de facturación estable." },
+    { "q": "¿Qué opción de compra es la más adecuada para un entorno de prueba de concepto cuya duración aún no se conoce?", "options": ["Reserved Instance a 3 años", "Subscription anual", "Pay-As-You-Go", "All Upfront"], "answer": 2, "explain": "Ante incertidumbre sobre la duración, Pay-As-You-Go evita comprometerse a un período que podría no cumplirse." },
+    { "q": "¿Qué elemento define el costo de una Preemptible Instance en comparación con Pay-As-You-Go?", "options": ["Un precio fijo idéntico a PayG", "El precio de mercado, que fluctúa según oferta y demanda de capacidad en la zona", "El precio de una Subscription anual", "No tiene relación con el precio de PayG"], "answer": 1, "explain": "Preemptible Instance se factura al precio de mercado vigente, que puede ser hasta 90% menor que Pay-As-You-Go." },
+    { "q": "Una arquitectura combina Reserved Instance para el núcleo, Pay-As-You-Go para picos y Preemptible para batch. ¿Qué principio del curso ilustra esto?", "options": ["Que solo debe usarse un modelo de facturación por cuenta", "Que las tres preguntas del framework se responden por componente, no por cuenta completa", "Que Reserved Instance siempre es innecesaria si hay Auto Scaling", "Que Preemptible Instance debe evitarse siempre en producción"], "answer": 1, "explain": "El framework se aplica componente por componente: cada parte de la arquitectura puede tener su propia opción de compra óptima." },
+    { "q": "¿Qué desventaja tiene específicamente una Reserved Instance frente a un Savings Plan?", "options": ["No ofrece ningún descuento", "Es más rígida: pierde cobertura si cambia la familia, tamaño o región de la instancia", "No se puede comprar a 1 año, solo a 3", "Requiere detener la instancia cada mes"], "answer": 1, "explain": "La RI está atada a características específicas del recurso; el Savings Plan es más flexible ante cambios de arquitectura." },
+    { "q": "¿Qué significa que una Preemptible Instance reciba un 'evento de reclamo'?", "options": ["Que el precio bajó automáticamente", "Que Alibaba Cloud notifica minutos antes de detener o liberar la instancia por necesitar la capacidad", "Que la instancia se convirtió en Subscription", "Que se aplicó un descuento adicional"], "answer": 1, "explain": "El evento de reclamo es la notificación previa a que la instancia sea detenida o liberada; el diseño de la aplicación debe manejarlo." },
+    { "q": "¿Cuál es el 'valor por defecto seguro' del framework de decisión cuando ninguna de las condiciones anteriores aplica claramente?", "options": ["Reserved Instance a 3 años", "Preemptible Instance", "Pay-As-You-Go", "Savings Plan"], "answer": 2, "explain": "Ante incertidumbre y falta de información suficiente, Pay-As-You-Go es la opción que no compromete de más ni asume riesgo de interrupción." }
   ],
-  "exam_focus": "Preguntas típicas: (a) qué familia elegir para X carga, (b) diferencias entre región/zona, (c) modelos de facturación óptimos según patrón de uso, (d) diseño HA multi-AZ, (e) permisos con RAM roles.",
+  "exam_focus": "El examen evalúa: (a) mapear correctamente un escenario descrito a la opción de compra óptima (PayG/Subscription/Preemptible/RI/Savings Plan), (b) entender el mecanismo de precio y protección de Preemptible Instance, (c) elegir la modalidad de pago de RI (All/Partial/No Upfront) según flujo de caja, (d) distinguir cuándo RI es mejor que Savings Plan y viceversa, (e) reconocer que una arquitectura real combina varias opciones por componente.",
   "official_intro": "This course mainly introduces the ECS Purchasing Options, including ECS Purchasing Options, Preemptible Instance, Reserved Instance, Saving Plan and Cost Optimization.",
   "recommended_for": "Solution Architect, System Operator and Developer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_ecs_purchasing",

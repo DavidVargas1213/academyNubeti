@@ -2,423 +2,192 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-strdatamig",
   "title_en": "Structured Data Migration",
-  "title_es": "Structured Datos Migración",
+  "title_es": "Migración de Datos Estructurados",
+  "title_es_html": "Migración de <em>Datos Estructurados</em>",
   "duration_es": "58 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Cloud Migration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_strdatamig",
-  "lead": "Guía completa en español para el curso «Structured Data Migration» de Alibaba Cloud Academy. Cubre en profundidad Migración a Alibaba Cloud. Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Structured Data Migration» de Alibaba Cloud Academy. Este curso es el más conceptual del bloque de migración: en vez de centrarse en un proveedor origen específico, explica qué es un dato estructurado, qué opciones de almacenamiento estructurado ofrece Alibaba Cloud, y cómo aplicar Data Transmission Service (DTS) de forma general para mover bases de datos relacionales (MySQL, SQL Server, Oracle) hacia la nube, sin importar si el origen es on-premise, virtualizado o gestionado.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Migración a Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: SMC, DTS, OSSImport, Cloud Migration Hub, CADT.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Migración a Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Definir</strong> qué es un dato estructurado y en qué se diferencia de un dato semi-estructurado o no estructurado.",
+    "<strong>Comparar</strong> las opciones de almacenamiento estructurado de Alibaba Cloud: ApsaraDB for RDS, PolarDB y almacenes analíticos como AnalyticDB.",
+    "<strong>Aplicar</strong> la metodología general de migración de datos estructurados con DTS, independientemente del origen.",
+    "<strong>Mapear</strong> tipos de datos y convenciones de esquema entre el motor origen y el motor destino.",
+    "<strong>Elegir</strong> entre migración fría (batch, exportar/importar) y migración en caliente (sincronización continua) según la tolerancia a downtime.",
+    "<strong>Verificar</strong> la integridad y consistencia de los datos tras completar la migración.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre migración de datos estructurados."
   ],
-  "architecture": "Assess (CADT análisis) → Plan (6R por app) → SMC replica VMs → DTS sincroniza DBs → OSS import archivos → cutover (DNS switch) → optimize (right-sizing, reservas). Backup con HBR previo al cutover.",
+  "architecture": "Origen estructurado (MySQL/SQL Server/Oracle, on-premise, en VM propia, o gestionado) → Análisis de esquema: tablas, tipos de datos, índices, claves foráneas y procedimientos almacenados → decisión de destino según patrón de acceso: ApsaraDB for RDS para carga transaccional estándar, PolarDB para cargas que necesitan escalar lectura/escritura de forma nativa en la nube, AnalyticDB si el destino final es analítico en vez de transaccional → DTS ejecuta Structure Migration (esquema) → Full Migration (copia completa) → Incremental Migration (cambios continuos vía binlog/WAL, opcional si se tolera downtime) → validación de conteos y checksums → cutover con la aplicación apuntando al nuevo motor.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Migración a Alibaba Cloud",
-      "title_en": "Introduction to Migración a Alibaba Cloud",
-      "intro": "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es un dato estructurado",
+      "title_en": "What is structured data",
+      "intro": "Antes de hablar de herramientas de migración, el curso siienta las bases: no todos los datos son iguales, y la estrategia de migración correcta depende directamente de qué tipo de dato se está moviendo.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Migración a Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Dato estructurado</strong>: organizado en un esquema fijo de filas y columnas con tipos de datos definidos (un empleado, un pedido, una transacción) — el dominio de las bases de datos relacionales tradicionales (MySQL, SQL Server, Oracle, PostgreSQL).",
+        "<strong>Dato semi-estructurado</strong>: tiene cierta organización (JSON, XML, logs con campos reconocibles) pero sin un esquema rígido impuesto por adelantado — típicamente almacenado en bases NoSQL orientadas a documento.",
+        "<strong>Dato no estructurado</strong>: sin un modelo de filas/columnas en absoluto (imágenes, video, archivos de texto libre) — el dominio de OSS y no del alcance de este curso.",
+        "<strong>Por qué importa la distinción</strong>: un dato estructurado tiene un esquema (tablas, columnas, tipos, relaciones) que debe migrarse ANTES que los datos mismos, y ese esquema puede no traducirse de forma exacta entre motores distintos — algo que no ocurre al mover un archivo binario a OSS."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Migración a Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es solo «¿qué herramienta usar?» sino «¿de qué tipo de dato se trata?». Estructurado implica esquema, tipos y relaciones que deben preservarse; eso condiciona toda la estrategia posterior."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Migración a Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Opciones de almacenamiento estructurado en Alibaba Cloud",
+      "title_en": "Structured storage options on Alibaba Cloud",
+      "intro": "Migrar datos estructurados implica primero elegir dónde van a vivir en Alibaba Cloud — y no todas las opciones son intercambiables entre sí.",
       "points": [
-        "<strong>Patrón canónico</strong>: Assess (CADT análisis) → Plan (6R por app) → SMC replica VMs → DTS sincroniza DBs → OSS import archivos → cutover (DNS switch) → optimize (right-sizing, reservas). Backup con HBR previo al cutover.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Migración a Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Server Migration Center</strong> <em>(SMC)</em>: Replica VMs on-prem → imágenes ECS.",
-        "<strong>Data Transmission Service</strong> <em>(DTS)</em>: Migración de bases.",
-        "<strong>OSSImport</strong> <em>(OSSImport)</em>: Herramienta para migrar archivos a OSS.",
-        "<strong>Migration Hub</strong> <em>(Cloud Migration Hub)</em>: Consola central de proyecto.",
-        "<strong>Cloud Architect Design Tool</strong> <em>(CADT)</em>: Herramienta de diseño y assessment.",
-        "<strong>6R Framework</strong> <em>(6R)</em>: Rehost, Replatform, Refactor, Repurchase, Retire, Retain.",
-        "<strong>Hybrid Backup Recovery</strong> <em>(HBR)</em>: Backup on-prem + cloud.",
-        "<strong>Cutover</strong> <em>(Cutover)</em>: Corte del tráfico al ambiente nuevo."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>ApsaraDB for RDS</strong>: base de datos relacional gestionada clásica (MySQL, SQL Server, PostgreSQL, MariaDB) — el destino por defecto para la mayoría de cargas transaccionales estructuradas que ya usan un motor relacional estándar.",
+        "<strong>PolarDB</strong>: base de datos relacional cloud-native compatible con MySQL/PostgreSQL/Oracle, que separa cómputo de almacenamiento para escalar lectura de forma casi instantánea — preferible cuando la carga transaccional crecerá rápido o necesita múltiples réplicas de lectura.",
+        "<strong>AnalyticDB</strong>: almacén analítico (OLAP) para datos estructurados que se consultarán masivamente con agregaciones complejas — el destino correcto cuando el objetivo final no es servir una aplicación transaccional sino alimentar reportes y dashboards.",
+        "<strong>Elegir el destino correcto</strong>: mover una base de datos transaccional (OLTP) hacia un almacén pensado para analítica (OLAP) sin evaluar el patrón de acceso es un error de diseño común — el tipo de motor destino debe coincidir con el patrón de lectura/escritura real de la aplicación."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una carga transaccional con muchas escrituras pequeñas → RDS o PolarDB. Si describe consultas analíticas agregadas sobre grandes volúmenes → AnalyticDB. Confundir ambos casos es un distractor frecuente."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Metodología general de migración con DTS",
+      "title_en": "General migration methodology with DTS",
+      "intro": "Independientemente de si el origen es un servidor físico, una VM o incluso otra instancia en la nube, Data Transmission Service sigue el mismo flujo estructurado en tres fases predecibles.",
       "points": [
-        "<strong>Costo</strong>: Right-sizing post-migración",
-        "<strong>Buenas prácticas</strong>: Assessment antes de mover — no migrar todo por defecto",
-        "<strong>Buenas prácticas</strong>: Piloto con 1 app no crítica primero",
-        "<strong>Buenas prácticas</strong>: DTS 3-fase para bases",
-        "<strong>Buenas prácticas</strong>: Ventana de cutover corta con rollback"
+        "<strong>Structure Migration</strong>: DTS lee el esquema del origen (tablas, columnas, tipos de datos, índices, claves) y lo recrea en el destino antes de mover un solo registro.",
+        "<strong>Full Migration</strong>: copia completa de todos los registros existentes al momento de iniciar — el tiempo que toma depende del volumen de datos y del ancho de banda disponible entre origen y destino.",
+        "<strong>Incremental Migration (opcional)</strong>: si la carga no puede detenerse durante la migración, DTS aplica los cambios posteriores a la Full Migration en tiempo real, leyendo el log de transacciones del motor origen (binlog en MySQL, WAL en PostgreSQL, redo log en Oracle).",
+        "<strong>Migración sin fase incremental</strong>: si la aplicación puede tolerar una ventana de mantenimiento, es válido y más simple ejecutar solo Structure + Full Migration con la aplicación detenida, evitando la complejidad de sincronizar cambios en vivo."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "El flujo Structure → Full → (Incremental opcional) es el esqueleto de cualquier migración de datos estructurados con DTS, sin importar si el origen es on-premise, otra VM o un servicio gestionado."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Migración fría frente a migración en caliente",
+      "title_en": "Cold migration vs hot migration",
+      "intro": "No toda migración de datos estructurados necesita sincronización en tiempo real — elegir entre migración fría y en caliente depende directamente de cuánto downtime puede tolerar el negocio.",
       "points": [
-        "<strong>Antipattern</strong>: Migrar sin assessment",
-        "<strong>Antipattern</strong>: Lift-and-shift de todo sin refactorizar los quick wins",
-        "<strong>Antipattern</strong>: Cutover sin plan de rollback",
-        "<strong>Antipattern</strong>: No optimizar costo post-migración",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Migración fría (batch)</strong>: se detiene la escritura en el origen, se exportan los datos (dump SQL, herramienta nativa del motor, o DTS sin fase incremental), se importan en el destino, y se reinicia la aplicación apuntando al nuevo motor. Simple, pero implica downtime proporcional al volumen de datos.",
+        "<strong>Migración en caliente (online)</strong>: la aplicación sigue escribiendo en el origen mientras DTS sincroniza continuamente los cambios hacia el destino, reduciendo el downtime final a los minutos que toma el corte (cutover), no a lo que tarda la copia completa.",
+        "<strong>Cuándo usar cada una</strong>: una base de datos pequeña con ventana de mantenimiento nocturna disponible puede migrarse en frío sin complicaciones; una base de datos crítica 24/7 de gran volumen casi siempre requiere migración en caliente con DTS incremental.",
+        "<strong>Costo de complejidad</strong>: la migración en caliente exige verificar retención de binlog/WAL en el origen y monitorear el lag de sincronización — pasos que la migración fría simplemente no necesita."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado dice 'la base de datos no puede detenerse' o 'el negocio opera 24/7', la respuesta es migración en caliente con DTS incremental; si dice 'existe una ventana de mantenimiento aceptable', la migración fría simple es válida y más simple de operar."
+      }
+    },
+    {
+      "title_es": "5 · Mapeo de tipos de datos y esquema",
+      "title_en": "Data type and schema mapping",
+      "intro": "Cuando el motor origen y el motor destino no son exactamente el mismo (o incluso entre distintas versiones del mismo motor), hay que revisar cómo se traducen los tipos de datos — un paso que se subestima con frecuencia.",
+      "points": [
+        "<strong>Tipos numéricos y de fecha</strong>: la precisión de un <code>DECIMAL</code> o el manejo de zonas horarias en un <code>TIMESTAMP</code> puede variar entre motores — una conversión automática mal validada introduce errores de redondeo o desfases de hora silenciosos.",
+        "<strong>Charset y collation</strong>: un origen con un charset distinto al del destino (p.ej. <code>latin1</code> frente a <code>utf8mb4</code>) puede corromper caracteres especiales o emojis si no se define explícitamente antes de migrar.",
+        "<strong>Procedimientos almacenados y triggers</strong>: la lógica de negocio escrita dentro del propio motor de base de datos no siempre se migra automáticamente con DTS y a veces requiere reescritura manual en el destino.",
+        "<strong>Claves foráneas e índices</strong>: deben validarse después de la Full Migration para confirmar que las relaciones entre tablas siguen siendo consistentes y que los índices necesarios para el rendimiento de la aplicación existen en el destino."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Migrar datos estructurados no es solo copiar filas: es preservar el contrato completo del esquema —tipos, relaciones, charset y lógica embebida— que la aplicación asume implícitamente."
+      }
+    },
+    {
+      "title_es": "6 · Validación de integridad post-migración",
+      "title_en": "Post-migration integrity validation",
+      "intro": "Ninguna migración de datos estructurados se considera terminada sin una verificación explícita de que el destino contiene exactamente lo que debería, ni una fila de más ni una de menos.",
+      "points": [
+        "<strong>Conteo de filas por tabla</strong>: comparar el número de registros entre origen y destino es la validación más básica, pero insuficiente por sí sola para detectar corrupción de datos dentro de una fila.",
+        "<strong>Checksums o hashes</strong>: comparar un checksum calculado sobre el contenido de cada tabla detecta discrepancias de valor que un simple conteo no vería.",
+        "<strong>Pruebas funcionales de la aplicación</strong>: además de validar los datos en crudo, correr los flujos críticos de la aplicación contra el destino confirma que el esquema migrado realmente sostiene el comportamiento esperado.",
+        "<strong>Ventana de comparación en migración en caliente</strong>: en migraciones con fase incremental, la validación final solo tiene sentido una vez el lag de sincronización llegó a cero — comparar mientras el destino todavía está actualizándose genera falsos positivos de discrepancia."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Un conteo de filas igual entre origen y destino NO garantiza integridad de datos por sí solo — el examen espera que reconozcas que también hace falta verificar contenido (checksums) y comportamiento (pruebas funcionales)."
+      }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Las preguntas más conceptuales del examen sobre este curso combinan la teoría de tipos de dato con decisiones prácticas de migración — dominar ambas caras es la clave.",
+      "points": [
+        "<strong>Antipatrón</strong>: tratar datos estructurados y no estructurados con la misma estrategia de migración, ignorando que el esquema exige un paso adicional que un archivo no necesita.",
+        "<strong>Antipatrón</strong>: migrar una carga transaccional hacia un almacén analítico (o viceversa) sin evaluar el patrón de acceso real de la aplicación.",
+        "<strong>Antipatrón</strong>: asumir migración fría para una base de datos que en realidad no puede detenerse, generando downtime no planeado.",
+        "<strong>Antipatrón</strong>: no revisar charset, collation ni tipos numéricos entre motores distintos, provocando corrupción silenciosa de datos.",
+        "<strong>Antipatrón</strong>: validar la migración solo con un conteo de filas, sin checksums ni pruebas funcionales.",
+        "<strong>Regla de oro</strong>: ante dos estrategias de migración plausibles, elige siempre la que incluye mapeo explícito de esquema y validación de integridad más allá del simple conteo."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante cualquier pregunta del examen, identifica primero si el dato descrito es estructurado, semi-estructurado o no estructurado — esa clasificación determina qué herramienta y qué validaciones son relevantes para la respuesta correcta."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Lift-and-shift de data center on-premise"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Migración desde otro cloud (AWS/Azure)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración de bases con mínima downtime (DTS)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Migración de unstructured data (OSSImport)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Migración híbrida (algunas cargas quedan on-prem)"
-    }
+    { "title": "Escenario 1", "text": "Base de datos MySQL on-premise con ventana de mantenimiento nocturna disponible — migración fría simple" },
+    { "title": "Escenario 2", "text": "Sistema transaccional crítico 24/7 que no puede detenerse — migración en caliente con DTS incremental" },
+    { "title": "Escenario 3", "text": "Base de datos Oracle con procedimientos almacenados complejos migrando hacia PolarDB — requiere revisión manual de lógica embebida" },
+    { "title": "Escenario 4", "text": "Datos transaccionales que además alimentan reportes pesados — separar OLTP en RDS/PolarDB de la copia analítica en AnalyticDB" },
+    { "title": "Escenario 5", "text": "Migración con caracteres especiales/emojis que se corrompen — revisión de charset y collation antes del corte" },
+    { "title": "Escenario 6", "text": "Auditoría de integridad post-migración combinando conteo de filas, checksums y pruebas funcionales" }
   ],
   "mistakes": [
-    "Migrar sin assessment",
-    "Lift-and-shift de todo sin refactorizar los quick wins",
-    "Cutover sin plan de rollback",
-    "No optimizar costo post-migración"
+    "Tratar datos estructurados y no estructurados con la misma estrategia de migración",
+    "Migrar una carga transaccional hacia un almacén analítico sin evaluar el patrón de acceso real",
+    "Asumir migración fría para una base de datos que en realidad no puede detenerse",
+    "No revisar charset, collation ni tipos numéricos entre motores distintos",
+    "Validar la migración solo con un conteo de filas, sin checksums ni pruebas funcionales",
+    "No migrar ni revisar procedimientos almacenados y triggers que contienen lógica de negocio"
   ],
   "cli": [
-    {
-      "cmd": "aliyun smc CreateReplicationJob",
-      "desc": "Migrar VM"
-    },
-    {
-      "cmd": "aliyun dts CreateMigrationJob",
-      "desc": "Migrar DB"
-    }
+    { "cmd": "aliyun dts CreateMigrationJob --SourceEndpoint.EngineName MySQL --DestinationEndpoint.EngineName MySQL", "desc": "Crear un job de migración estructurada con DTS" },
+    { "cmd": "mysqldump -h origen -u usuario -p basedatos > backup.sql", "desc": "Exportar un dump para una migración fría manual" },
+    { "cmd": "mysql -h destino -u usuario -p basedatos < backup.sql", "desc": "Importar el dump en el motor destino (ApsaraDB for RDS)" },
+    { "cmd": "aliyun dts DescribeMigrationJobs --MigrationJobId dtsxxxxx", "desc": "Consultar el estado y lag de la migración incremental" },
+    { "cmd": "aliyun rds DescribeDatabases --DBInstanceId rm-xxxxx", "desc": "Verificar las bases de datos y charset en la instancia RDS destino" },
+    { "cmd": "aliyun dts DescribeDataCompareReport --DtsJobId dtsxxxxx", "desc": "Revisar el reporte de verificación de integridad tras la migración" }
   ],
   "glossary": [
-    {
-      "en": "SMC",
-      "es": "Server Migration Center",
-      "def": "Replica VMs on-prem → imágenes ECS."
-    },
-    {
-      "en": "DTS",
-      "es": "Data Transmission Service",
-      "def": "Migración de bases."
-    },
-    {
-      "en": "OSSImport",
-      "es": "OSSImport",
-      "def": "Herramienta para migrar archivos a OSS."
-    },
-    {
-      "en": "Cloud Migration Hub",
-      "es": "Migration Hub",
-      "def": "Consola central de proyecto."
-    },
-    {
-      "en": "CADT",
-      "es": "Cloud Architect Design Tool",
-      "def": "Herramienta de diseño y assessment."
-    },
-    {
-      "en": "6R",
-      "es": "6R Framework",
-      "def": "Rehost, Replatform, Refactor, Repurchase, Retire, Retain."
-    },
-    {
-      "en": "HBR",
-      "es": "Hybrid Backup Recovery",
-      "def": "Backup on-prem + cloud."
-    },
-    {
-      "en": "Cutover",
-      "es": "Cutover",
-      "def": "Corte del tráfico al ambiente nuevo."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Structured Data", "es": "Dato estructurado", "def": "Dato organizado en un esquema fijo de filas, columnas y tipos definidos, típico de bases relacionales." },
+    { "en": "Semi-structured Data", "es": "Dato semi-estructurado", "def": "Dato con cierta organización (JSON, XML) pero sin esquema rígido impuesto de antemano." },
+    { "en": "Unstructured Data", "es": "Dato no estructurado", "def": "Dato sin modelo de filas/columnas, como imágenes, video o texto libre; típicamente almacenado en OSS." },
+    { "en": "Schema", "es": "Esquema", "def": "Definición de tablas, columnas, tipos de datos, índices y relaciones de una base de datos." },
+    { "en": "ApsaraDB for RDS", "es": "ApsaraDB for RDS", "def": "Base de datos relacional gestionada clásica de Alibaba Cloud (MySQL, SQL Server, PostgreSQL, MariaDB)." },
+    { "en": "PolarDB", "es": "PolarDB", "def": "Base de datos relacional cloud-native que separa cómputo de almacenamiento para escalar lectura rápidamente." },
+    { "en": "AnalyticDB", "es": "AnalyticDB", "def": "Almacén analítico (OLAP) para datos estructurados consultados con agregaciones complejas a gran escala." },
+    { "en": "OLTP", "es": "OLTP", "def": "Procesamiento transaccional en línea: muchas operaciones de lectura/escritura pequeñas y frecuentes." },
+    { "en": "OLAP", "es": "OLAP", "def": "Procesamiento analítico en línea: consultas agregadas sobre grandes volúmenes de datos." },
+    { "en": "Structure Migration", "es": "Migración de estructura", "def": "Fase de DTS que recrea el esquema del origen en el destino antes de mover los datos." },
+    { "en": "Full Migration", "es": "Migración completa", "def": "Copia completa de los registros existentes al momento de iniciar la migración." },
+    { "en": "Incremental Migration", "es": "Migración incremental", "def": "Aplicación en tiempo real de los cambios posteriores a la Full Migration, vía log de transacciones." },
+    { "en": "Cold Migration", "es": "Migración fría", "def": "Migración con la aplicación detenida: exportar, importar y reiniciar apuntando al nuevo destino." },
+    { "en": "Hot Migration", "es": "Migración en caliente", "def": "Migración con la aplicación activa, sincronizando cambios continuamente hasta un corte breve." },
+    { "en": "Data Type Mapping", "es": "Mapeo de tipos de datos", "def": "Traducción de tipos numéricos, de fecha y texto entre el motor origen y el motor destino." },
+    { "en": "Charset / Collation", "es": "Charset / Collation", "def": "Codificación de caracteres y reglas de comparación de texto; una discrepancia entre origen y destino puede corromper datos." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Migración a Alibaba Cloud?",
-      "options": [
-        "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurcha",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba provee un kit completo: SMC (Server Migration Center) para VMs, DTS para bases, OSSImport para datos no estructurados, DBS para backups, y frameworks 6R (Rehost, Replatform, Refactor, Repurchase, Retire, Retain) para estrategia."
-    },
-    {
-      "q": "¿Qué es <strong>SMC</strong> (Server Migration Center) en Migración a Alibaba Cloud?",
-      "options": [
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "SMC (Server Migration Center): Replica VMs on-prem → imágenes ECS."
-    },
-    {
-      "q": "¿Qué es <strong>DTS</strong> (Data Transmission Service) en Migración a Alibaba Cloud?",
-      "options": [
-        "Migración de bases.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Herramienta para migrar archivos a OSS.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "DTS (Data Transmission Service): Migración de bases."
-    },
-    {
-      "q": "¿Qué es <strong>OSSImport</strong> (OSSImport) en Migración a Alibaba Cloud?",
-      "options": [
-        "Herramienta para migrar archivos a OSS.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Consola central de proyecto."
-      ],
-      "answer": 0,
-      "explain": "OSSImport (OSSImport): Herramienta para migrar archivos a OSS."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Migration Hub</strong> (Migration Hub) en Migración a Alibaba Cloud?",
-      "options": [
-        "Consola central de proyecto.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS."
-      ],
-      "answer": 0,
-      "explain": "Cloud Migration Hub (Migration Hub): Consola central de proyecto."
-    },
-    {
-      "q": "¿Qué es <strong>CADT</strong> (Cloud Architect Design Tool) en Migración a Alibaba Cloud?",
-      "options": [
-        "Herramienta de diseño y assessment.",
-        "Replica VMs on-prem → imágenes ECS.",
-        "Migración de bases.",
-        "Herramienta para migrar archivos a OSS."
-      ],
-      "answer": 0,
-      "explain": "CADT (Cloud Architect Design Tool): Herramienta de diseño y assessment."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Migración a Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Migración a Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Migración a Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Migración a Alibaba Cloud es la elección típica:",
-      "options": [
-        "Lift-and-shift de data center on-premise",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Lift-and-shift de data center on-premise."
-    }
+    { "q": "¿Cuál es la característica definitoria de un dato estructurado según el curso?", "options": ["No tiene ningún tipo de organización", "Está organizado en un esquema fijo de filas, columnas y tipos de datos definidos", "Solo puede almacenarse en OSS", "Siempre es un archivo de imagen o video"], "answer": 1, "explain": "Un dato estructurado sigue un esquema predefinido de tablas, columnas y tipos, a diferencia de datos semi-estructurados o no estructurados." },
+    { "q": "¿Qué opción de almacenamiento estructurado de Alibaba Cloud es la más adecuada para consultas analíticas agregadas sobre grandes volúmenes de datos?", "options": ["ApsaraDB for RDS", "AnalyticDB", "OSS", "PolarDB exclusivamente para OLTP"], "answer": 1, "explain": "AnalyticDB está diseñado para cargas OLAP con agregaciones complejas, a diferencia de RDS/PolarDB orientados a OLTP." },
+    { "q": "¿Cuál es la primera fase que ejecuta DTS al migrar datos estructurados, antes de mover cualquier registro?", "options": ["Incremental Migration", "Structure Migration", "Data Verification", "Cutover"], "answer": 1, "explain": "Structure Migration recrea el esquema (tablas, columnas, tipos, índices) en el destino antes de copiar los datos." },
+    { "q": "Una base de datos no puede detenerse bajo ninguna circunstancia porque opera 24/7. ¿Qué estrategia de migración es la adecuada?", "options": ["Migración fría con exportación/importación manual", "Migración en caliente con DTS ejecutando la fase incremental", "No migrar la base de datos nunca", "Migración solo de la estructura, sin los datos"], "answer": 1, "explain": "La migración en caliente permite que la aplicación siga escribiendo mientras DTS sincroniza los cambios, reduciendo el downtime al corte final." },
+    { "q": "¿Qué riesgo específico aparece al migrar entre motores con charset o collation distintos?", "options": ["Ninguno, el charset no afecta la migración", "Corrupción de caracteres especiales o emojis si no se define explícitamente el charset destino", "Los índices se duplican automáticamente", "El motor destino rechaza la conexión"], "answer": 1, "explain": "Un charset incompatible entre origen y destino puede corromper silenciosamente texto con caracteres especiales." },
+    { "q": "¿Por qué un conteo de filas igual entre origen y destino no garantiza por sí solo la integridad de la migración?", "options": ["Porque los conteos de filas siempre son incorrectos", "Porque puede haber discrepancias en el contenido de las filas que un conteo no detecta, por lo que también se necesitan checksums", "Porque DTS no permite contar filas", "Porque el conteo de filas solo aplica a datos no estructurados"], "answer": 1, "explain": "El conteo confirma cantidad, pero no calidad del contenido; los checksums detectan discrepancias de valor dentro de las filas." },
+    { "q": "¿Qué elemento del esquema origen requiere frecuentemente revisión o reescritura manual porque no siempre se migra automáticamente con DTS?", "options": ["Los nombres de las columnas", "Los procedimientos almacenados y triggers con lógica de negocio embebida", "El nombre de la base de datos", "El puerto de conexión"], "answer": 1, "explain": "La lógica embebida en procedimientos almacenados y triggers no siempre se traduce automáticamente entre motores distintos." },
+    { "q": "Un equipo migra una carga transaccional con muchas escrituras pequeñas hacia un almacén pensado para agregaciones analíticas masivas. ¿Qué problema describe esto?", "options": ["Una decisión de destino acertada", "Un error de diseño: el motor destino no coincide con el patrón de acceso real de la aplicación", "Un requisito obligatorio de DTS", "Una optimización de costos válida"], "answer": 1, "explain": "Mover una carga OLTP hacia un almacén OLAP sin evaluar el patrón de acceso es un antipatrón señalado explícitamente por el curso." },
+    { "q": "¿Cuándo tiene sentido usar migración fría (batch) en vez de migración en caliente?", "options": ["Nunca, la migración fría está obsoleta", "Cuando existe una ventana de mantenimiento aceptable para el negocio", "Solo para datos no estructurados", "Solo cuando el volumen de datos es superior a 1 TB"], "answer": 1, "explain": "Si el negocio tolera downtime durante una ventana de mantenimiento, la migración fría es válida y más simple de operar que la en caliente." },
+    { "q": "En una migración en caliente con DTS, ¿en qué momento tiene sentido ejecutar la validación final de integridad?", "options": ["Inmediatamente al iniciar la Full Migration", "Solo una vez que el lag de la migración incremental llegó a cero", "Nunca es necesario validar", "Antes de iniciar la Structure Migration"], "answer": 1, "explain": "Comparar datos mientras el destino todavía se está sincronizando genera falsos positivos de discrepancia." },
+    { "q": "¿Qué diferencia a PolarDB de ApsaraDB for RDS como destino de una migración estructurada?", "options": ["No hay ninguna diferencia entre ambos", "PolarDB separa cómputo de almacenamiento para escalar lectura más rápido, útil cuando la carga transaccional crecerá mucho", "RDS solo admite datos no estructurados", "PolarDB es exclusivamente para analítica OLAP"], "answer": 1, "explain": "PolarDB está pensado como evolución cloud-native de la base relacional tradicional, con escalado de lectura más ágil que RDS clásico." },
+    { "q": "¿Qué tipo de dato queda fuera del alcance de este curso y se gestiona típicamente con OSS en vez de con DTS?", "options": ["Datos estructurados en tablas relacionales", "Datos no estructurados como imágenes o video", "Datos de una tabla con clave primaria", "Registros de una base de datos MySQL"], "answer": 1, "explain": "El curso se centra en datos estructurados; los datos no estructurados (imágenes, video) se migran típicamente con OSSImport hacia OSS." },
+    { "q": "¿Qué log de transacciones consulta DTS para la fase incremental cuando el motor origen es PostgreSQL?", "options": ["Binlog", "WAL (Write-Ahead Log)", "Redo log", "Access log"], "answer": 1, "explain": "PostgreSQL usa WAL como su log de transacciones; MySQL usa binlog y Oracle usa redo log para el mismo propósito." }
   ],
-  "exam_focus": "6R framework, DTS 3 fases, SMC, cutover strategy, OSSImport.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar dato estructurado de semi-estructurado y no estructurado, (b) elegir el motor destino correcto (RDS/PolarDB/AnalyticDB) según patrón OLTP u OLAP, (c) el flujo Structure → Full → Incremental de DTS, (d) migración fría vs en caliente según tolerancia a downtime, (e) validación de integridad más allá del simple conteo de filas.",
   "official_intro": "Most applications use structured database software for data storage, such as: My SQL, SQL Server, Oracle. This course introduces the basic concepts of structured data storage, storage modes, and data migrations, focusing on how to use the Alibaba Cloud data migration service and DTS(Data Transmission Service) for structured data migration to the cloud.",
   "recommended_for": "This training is for people who have basic Linux and database experience",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_strdatamig",

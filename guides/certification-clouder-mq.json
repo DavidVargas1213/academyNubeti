@@ -2,428 +2,165 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-mq",
   "title_en": "An Introduction of Alibaba Cloud Message Queue",
-  "title_es": "An Introducción of Alibaba Cloud Message Queue",
+  "title_es": "Introducción a Message Queue de Alibaba Cloud",
+  "title_es_html": "Introducción a <em>Message Queue</em> de Alibaba Cloud",
   "duration_es": "48 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_mq",
-  "lead": "Guía completa en español para el curso «An Introduction of Alibaba Cloud Message Queue» de Alibaba Cloud Academy. Cubre en profundidad Message Queue for Kafka / RocketMQ / MNS. Alibaba Cloud ofrece 3 mensajerías gestionadas: Message Queue for Kafka (compatible Apache Kafka), RocketMQ (native Alibaba, transaccional y ordenado) y MNS (simple queue/topic tipo SQS/SNS). Elegir según protocolo, throughput y semántica requerida. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «An Introduction of Alibaba Cloud Message Queue» de Alibaba Cloud Academy: los fundamentos de la mensajería asíncrona y cómo Alibaba Cloud los implementa en tres servicios distintos —Message Queue for Apache Kafka, RocketMQ y MNS (Message Service)— cada uno pensado para un patrón de uso diferente. El curso enseña primero por qué desacoplar sistemas con una cola, y luego cuándo elegir cada uno de los tres.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Message Queue for Kafka / RocketMQ / MNS</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Topic, Partition, Consumer Group, Offset, Retention.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Message Queue for Kafka / RocketMQ / MNS y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema de acoplamiento resuelve introducir una cola de mensajes entre dos sistemas.",
+    "<strong>Distinguir</strong> el modelo punto a punto (cola) del modelo publicación-suscripción (topic).",
+    "<strong>Explicar</strong> las garantías de entrega — at-most-once, at-least-once, exactly-once — y sus implicaciones prácticas.",
+    "<strong>Comparar</strong> Message Queue for Kafka, RocketMQ y MNS según protocolo, throughput, orden y semántica transaccional.",
+    "<strong>Diseñar</strong> el número de particiones y consumer groups de un topic según el paralelismo requerido.",
+    "<strong>Aplicar</strong> colas de mensajes muertos (dead-letter queue) para aislar mensajes que fallan repetidamente.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre mensajería en Alibaba Cloud."
   ],
-  "architecture": "Productores (apps, DTS CDC, Flume) → topic Kafka particionado → consumidores en groups: Flink stream processing → sinks a MaxCompute, ClickHouse, Elasticsearch. Schemas registrados en Schema Registry.",
+  "architecture": "Un productor publica mensajes en un Topic (Kafka/RocketMQ) o una Queue (MNS); el broker los almacena de forma durable y ordenada dentro de cada partición. Uno o más consumidores, organizados en un Consumer Group, se reparten las particiones del topic para procesar mensajes en paralelo — cada partición es consumida por un único miembro del grupo a la vez, garantizando orden dentro de esa partición. El consumidor confirma (commit) el offset solo después de procesar exitosamente un mensaje; si falla antes de confirmar, el mensaje se reentrega. Mensajes que fallan repetidamente se enrutan a una cola de mensajes muertos (DLQ) para inspección manual, en vez de bloquear indefinidamente el procesamiento del resto del topic.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Message Queue for Kafka / RocketMQ / MNS",
-      "title_en": "Introduction to Message Queue for Kafka / RocketMQ / MNS",
-      "intro": "Alibaba Cloud ofrece 3 mensajerías gestionadas: Message Queue for Kafka (compatible Apache Kafka), RocketMQ (native Alibaba, transaccional y ordenado) y MNS (simple queue/topic tipo SQS/SNS). Elegir según protocolo, throughput y semántica requerida. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué desacoplar sistemas con una cola de mensajes",
+      "title_en": "Why Decouple Systems with a Message Queue",
+      "intro": "Antes de comparar Kafka, RocketMQ y MNS hay que entender el problema que la mensajería resuelve: la dependencia directa y síncrona entre un sistema que produce trabajo y otro que lo consume.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud ofrece 3 mensajerías gestionadas: Message Queue for Kafka (compatible Apache Kafka), RocketMQ (native Alibaba, transaccional y ordenado) y MNS (simple queue/topic tipo SQS/SNS).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Message Queue for Kafka / RocketMQ / MNS se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de la llamada directa</strong>: si el servicio A llama directamente al servicio B para que procese algo, A queda acoplado a la disponibilidad y velocidad de B — si B está caído o lento, A también lo está.",
+        "<strong>Desacoplamiento temporal</strong>: con una cola de por medio, A publica el mensaje y continúa de inmediato; B lo procesa cuando puede, incluso si estuvo caído momentos antes — el mensaje espera en la cola sin perderse.",
+        "<strong>Desacoplamiento de carga</strong>: si llegan picos de trabajo mucho más rápido de lo que B puede procesar, la cola absorbe el pico como buffer, evitando que B se sature o caiga por sobrecarga directa.",
+        "<strong>Múltiples consumidores de un mismo evento</strong>: con el modelo de publicación-suscripción, varios sistemas distintos pueden reaccionar al mismo evento (un pedido creado) sin que el productor necesite conocer ni llamar a cada uno explícitamente.",
+        "<strong>Costo del desacoplamiento</strong>: a cambio de esta resiliencia se gana complejidad operativa — hay que operar el broker, diseñar la semántica de reintentos y aceptar que la consistencia entre A y B ya no es inmediata sino eventual."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Message Queue for Kafka / RocketMQ / MNS es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Una cola de mensajes no es solo 'una forma más de comunicación' — es una decisión deliberada de intercambiar consistencia inmediata por resiliencia ante fallos y picos de carga." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Message Queue for Kafka / RocketMQ / MNS no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Punto a punto frente a publicación-suscripción",
+      "title_en": "Point-to-Point vs Publish-Subscribe",
+      "intro": "No toda mensajería resuelve el mismo problema — el patrón elegido depende de si el mensaje debe procesarse una única vez o por múltiples interesados independientes.",
       "points": [
-        "<strong>Patrón canónico</strong>: Productores (apps, DTS CDC, Flume) → topic Kafka particionado → consumidores en groups: Flink stream processing → sinks a MaxCompute, ClickHouse, Elasticsearch. Schemas registrados en Schema Registry.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Punto a punto (cola clásica)</strong>: cada mensaje es consumido y procesado por exactamente un consumidor entre varios competidores — útil para repartir trabajo (procesar pedidos) entre varias instancias de un mismo servicio sin duplicar el procesamiento.",
+        "<strong>Publicación-suscripción (topic)</strong>: cada mensaje puede ser recibido por múltiples suscriptores independientes, cada uno procesándolo para su propio propósito — útil cuando varios sistemas distintos deben reaccionar al mismo evento.",
+        "<strong>Consumer Group como el mecanismo que unifica ambos modelos</strong>: en Kafka/RocketMQ, un topic con un único Consumer Group se comporta como punto a punto (los miembros se reparten los mensajes); el mismo topic con varios Consumer Groups distintos se comporta como publicación-suscripción (cada grupo recibe todos los mensajes de forma independiente).",
+        "<strong>MNS</strong>: ofrece explícitamente ambos primitivos por separado — Queue para punto a punto y Topic para publicación-suscripción, con una API más simple orientada a integraciones tipo SQS/SNS.",
+        "<strong>Elegir el patrón según el escenario</strong>: repartir el procesamiento de una cola de trabajo → punto a punto; notificar a varios sistemas independientes de un mismo evento de negocio → publicación-suscripción."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Message Queue for Kafka / RocketMQ / MNS (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe que 'varios sistemas distintos necesitan enterarse del mismo evento', la respuesta es publicación-suscripción (topic con varios Consumer Groups); si describe 'repartir trabajo entre varias instancias', es punto a punto." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Garantías de entrega: at-most-once, at-least-once, exactly-once",
+      "title_en": "Delivery Guarantees",
+      "intro": "Qué tan seguro es que un mensaje se procese —ni de más ni de menos— depende de decisiones concretas de configuración, no de una propiedad automática del sistema de mensajería.",
       "points": [
-        "<strong>Topic</strong> <em>(Topic)</em>: Flujo lógico de mensajes.",
-        "<strong>Partition</strong> <em>(Partition)</em>: Unidad de paralelismo y orden.",
-        "<strong>Consumer group</strong> <em>(Consumer Group)</em>: Grupo de consumidores que se reparten particiones.",
-        "<strong>Offset</strong> <em>(Offset)</em>: Posición en la partición.",
-        "<strong>Retention</strong> <em>(Retention)</em>: Tiempo o tamaño antes de borrar mensajes.",
-        "<strong>Exactly-once</strong> <em>(Exactly-once)</em>: Semántica con transacciones + idempotent producer.",
-        "<strong>Schema Registry</strong> <em>(Schema Registry)</em>: Registro central de schemas (Avro/Protobuf).",
-        "<strong>RocketMQ ordenado</strong> <em>(RocketMQ Ordered)</em>: Cola con orden por sharding key."
+        "<strong>At-most-once</strong>: el mensaje se entrega como máximo una vez, pero puede perderse si el consumidor falla antes de procesarlo — resultado de confirmar (commit) el offset antes de procesar, priorizando velocidad sobre completitud.",
+        "<strong>At-least-once</strong>: el mensaje se garantiza que se procesa al menos una vez, pero puede reentregar el mismo mensaje si el consumidor falla después de procesar pero antes de confirmar — el modo por defecto y más común en la práctica.",
+        "<strong>Exactly-once</strong>: el mensaje se procesa efectivamente una sola vez, sin pérdida ni duplicación — requiere coordinación adicional (productor idempotente + transacciones) y tiene mayor costo de rendimiento; en Kafka se logra con productor idempotente y transacciones explícitas.",
+        "<strong>Idempotencia del consumidor como red de seguridad práctica</strong>: dado que at-least-once es el modo más común, diseñar el consumidor para que procesar el mismo mensaje dos veces no cause un efecto duplicado (p.ej. usando un ID de mensaje para deduplicar) suele ser más simple que implementar exactly-once real.",
+        "<strong>Elegir según el costo del error</strong>: perder una notificación de 'me gusta' es tolerable (at-most-once aceptable); perder o duplicar un cargo de pago no lo es (exactly-once o idempotencia estricta necesaria)."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "At-least-once es la garantía por defecto más usada en producción — no porque sea la 'mejor', sino porque combinarla con un consumidor idempotente suele ser más simple y barato que garantizar exactly-once real de extremo a extremo." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Comparar Kafka, RocketMQ y MNS",
+      "title_en": "Comparing Kafka, RocketMQ and MNS",
+      "intro": "Alibaba Cloud ofrece tres servicios de mensajería gestionados con propósitos distintos — el examen espera que sepas cuál elegir según protocolo, throughput y semántica requerida por el escenario.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Message Queue for Apache Kafka</strong>: compatible con el ecosistema Kafka estándar (clientes, Kafka Connect, Flink) — la elección natural cuando ya existe tooling o experiencia con Kafka, o se necesita altísimo throughput para streaming e ingesta de datos a gran escala.",
+        "<strong>RocketMQ</strong>: desarrollado originalmente por Alibaba y nativo de su ecosistema — ofrece mensajería transaccional (two-phase commit ligado a la lógica de negocio) y orden estricto garantizado por sharding key, ideal para eventos de negocio como pedidos y pagos.",
+        "<strong>MNS (Message Service)</strong>: la opción más simple, tipo SQS/SNS, sin necesidad de gestionar particiones ni consumer groups explícitamente — adecuada para integraciones sencillas, notificaciones y desacoplar microservicios sin requisitos avanzados de orden o throughput extremo.",
+        "<strong>Orden de mensajes</strong>: Kafka garantiza orden dentro de una partición; RocketMQ ofrece colas ordenadas explícitas por sharding key con una semántica más directa para 'todos los eventos de este pedido en orden'; MNS no está diseñado para garantizar orden estricto.",
+        "<strong>Transaccionalidad ligada a negocio</strong>: RocketMQ destaca en mensajes transaccionales (publicar un mensaje solo si una operación de base de datos asociada tuvo éxito) — un caso de uso muy específico donde supera a las otras dos opciones."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "«Ya usamos Kafka Connect / necesitamos throughput extremo» → Message Queue for Kafka. «Necesitamos orden estricto por pedido o mensajes transaccionales ligados a una operación de negocio» → RocketMQ. «Solo necesitamos desacoplar de forma simple» → MNS." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Particiones, consumer groups y paralelismo",
+      "title_en": "Partitions, Consumer Groups and Parallelism",
+      "intro": "El número de particiones de un topic determina el techo real de paralelismo de consumo — una decisión de diseño que hay que tomar con intención, no dejar en el valor por defecto.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Particiones = paralelismo objetivo",
-        "<strong>Buenas prácticas</strong>: Consumer groups por caso de uso",
-        "<strong>Buenas prácticas</strong>: Retention según tolerancia a reprocesamiento",
-        "<strong>Buenas prácticas</strong>: Idempotent producer + transactions para exactly-once",
-        "<strong>Buenas prácticas</strong>: Schema Registry obligatorio en producción"
+        "<strong>Partición como unidad de paralelismo</strong>: cada partición de un topic solo puede ser consumida por un miembro de un Consumer Group a la vez — si el topic tiene 4 particiones, como máximo 4 instancias del consumidor pueden procesar en paralelo simultáneamente.",
+        "<strong>Más consumidores que particiones no ayuda</strong>: si hay más instancias de consumidor que particiones, las instancias sobrantes quedan ociosas sin recibir ningún mensaje — el número de particiones debe planificarse según el paralelismo objetivo real.",
+        "<strong>Orden solo dentro de una partición</strong>: Kafka/RocketMQ garantizan orden de mensajes dentro de una misma partición, no entre particiones distintas — si el orden global importa (todos los eventos de un mismo pedido en secuencia), esos mensajes deben enviarse siempre a la misma partición usando una clave consistente (p.ej. el ID del pedido).",
+        "<strong>Rebalanceo</strong>: cuando un consumidor se une o abandona un Consumer Group, las particiones se reasignan automáticamente entre los miembros restantes — durante ese rebalanceo puede haber una breve pausa en el procesamiento.",
+        "<strong>Retention</strong>: el tiempo o tamaño que un mensaje permanece disponible en el topic antes de eliminarse, independiente de si ya fue consumido — determina cuánto se puede 'rebobinar' para reprocesar mensajes históricos."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario pide 'procesar en orden todos los eventos de un mismo pedido, sin importar el paralelismo global', la clave de particionamiento debe ser el ID del pedido, para que siempre caigan en la misma partición." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Colas de mensajes muertos y errores comunes",
+      "title_en": "Dead-Letter Queues and Common Mistakes",
+      "intro": "Un mensaje que falla repetidamente no debe bloquear indefinidamente el procesamiento del resto — este módulo cierra con el mecanismo de aislamiento de fallos y los antipatrones más citados del examen.",
       "points": [
-        "<strong>Antipattern</strong>: 1 partición para todo → sin paralelismo",
-        "<strong>Antipattern</strong>: Consumers con offset commit antes de procesar → pérdida",
-        "<strong>Antipattern</strong>: Sin monitoreo de lag",
-        "<strong>Antipattern</strong>: RocketMQ transaccional confundido con Kafka semántica",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Dead-Letter Queue (DLQ)</strong>: cola de destino para mensajes que superan un número máximo de reintentos fallidos — permite inspeccionar manualmente por qué fallaron sin bloquear el procesamiento normal del topic o cola original.",
+        "<strong>Sin DLQ, un mensaje 'envenenado' bloquea el resto</strong>: si el consumidor reintenta indefinidamente el mismo mensaje fallido sin descartarlo ni aislarlo, los mensajes posteriores en esa partición quedan atascados detrás de él.",
+        "<strong>Monitoreo de lag del consumidor</strong>: la diferencia entre el último offset producido y el último confirmado por el consumidor (consumer lag) es la métrica clave para saber si el consumo está atrasándose respecto a la producción — sin monitorearla, un backlog creciente pasa desapercibido hasta que es crítico.",
+        "<strong>Antipatrón: una sola partición para todo</strong>: elimina cualquier posibilidad de paralelismo real en el consumo, sin importar cuántas instancias de consumidor se agreguen.",
+        "<strong>Antipatrón: confirmar el offset antes de procesar</strong>: convierte la garantía en at-most-once sin darse cuenta, arriesgando pérdida de mensajes ante un fallo justo después del commit."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante un escenario de mensajería en el examen, identifica primero el patrón (punto a punto vs. pub-sub), luego la garantía de entrega necesaria, y solo después decide entre Kafka, RocketMQ o MNS según protocolo, orden y transaccionalidad." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Event-driven microservices (RocketMQ transaccional)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Ingesta de logs a escala (Kafka)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Notificaciones push (MNS)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CDC pipelines a data lake"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Order events con orden garantizado (RocketMQ)"
-    }
+    { "title": "Escenario 1", "text": "Ingesta de logs a gran escala con herramientas del ecosistema Kafka ya existentes — Message Queue for Kafka" },
+    { "title": "Escenario 2", "text": "Procesamiento de pedidos con orden estricto y mensajería transaccional ligada a la base de datos — RocketMQ" },
+    { "title": "Escenario 3", "text": "Notificación simple entre dos microservicios sin requisitos de orden ni throughput extremo — MNS" },
+    { "title": "Escenario 4", "text": "Varios sistemas (facturación, analítica, notificaciones) reaccionando al mismo evento de 'pedido creado' — publicación-suscripción" },
+    { "title": "Escenario 5", "text": "Aislar mensajes que fallan repetidamente en una DLQ para inspección manual sin bloquear el topic" }
   ],
   "mistakes": [
-    "1 partición para todo → sin paralelismo",
-    "Consumers con offset commit antes de procesar → pérdida",
-    "Sin monitoreo de lag",
-    "RocketMQ transaccional confundido con Kafka semántica"
+    "Usar una sola partición para todo el topic, eliminando cualquier paralelismo real de consumo",
+    "Confirmar (commit) el offset antes de procesar el mensaje, degradando la garantía a at-most-once sin darse cuenta",
+    "No monitorear el consumer lag, dejando pasar desapercibido un backlog creciente",
+    "No definir una Dead-Letter Queue, permitiendo que un mensaje envenenado bloquee el resto de la partición",
+    "Elegir MNS para un caso que requiere orden estricto por clave o mensajería transaccional",
+    "Confundir RocketMQ transaccional con la semántica exactly-once de Kafka, que se logran de forma distinta"
   ],
   "cli": [
-    {
-      "cmd": "aliyun alikafka DescribeInstance",
-      "desc": "Ver instancia Kafka"
-    },
-    {
-      "cmd": "kafka-console-consumer --topic --from-beginning",
-      "desc": "Consumir"
-    }
+    { "cmd": "aliyun alikafka DescribeInstanceList", "desc": "Listar instancias de Message Queue for Kafka" },
+    { "cmd": "aliyun alikafka DescribeTopic --InstanceId <id> --Topic pedidos", "desc": "Ver detalle de particiones de un topic" },
+    { "cmd": "kafka-consumer-groups --describe --group grupo-pedidos --bootstrap-server <endpoint>", "desc": "Ver el consumer lag de un Consumer Group" },
+    { "cmd": "aliyun ons ConsumerGetTopicList --ProducerId <id>", "desc": "Listar topics disponibles para un consumidor en RocketMQ" },
+    { "cmd": "aliyun mns SendMessage --QueueName notificaciones --MessageBody '{}'", "desc": "Publicar un mensaje en una cola simple de MNS" }
   ],
   "glossary": [
-    {
-      "en": "Topic",
-      "es": "Topic",
-      "def": "Flujo lógico de mensajes."
-    },
-    {
-      "en": "Partition",
-      "es": "Partition",
-      "def": "Unidad de paralelismo y orden."
-    },
-    {
-      "en": "Consumer Group",
-      "es": "Consumer group",
-      "def": "Grupo de consumidores que se reparten particiones."
-    },
-    {
-      "en": "Offset",
-      "es": "Offset",
-      "def": "Posición en la partición."
-    },
-    {
-      "en": "Retention",
-      "es": "Retention",
-      "def": "Tiempo o tamaño antes de borrar mensajes."
-    },
-    {
-      "en": "Exactly-once",
-      "es": "Exactly-once",
-      "def": "Semántica con transacciones + idempotent producer."
-    },
-    {
-      "en": "Schema Registry",
-      "es": "Schema Registry",
-      "def": "Registro central de schemas (Avro/Protobuf)."
-    },
-    {
-      "en": "RocketMQ Ordered",
-      "es": "RocketMQ ordenado",
-      "def": "Cola con orden por sharding key."
-    },
-    {
-      "en": "RocketMQ Transactional",
-      "es": "RocketMQ transaccional",
-      "def": "Two-phase commit para consistencia con DB."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Topic", "es": "Topic", "def": "Flujo lógico de mensajes al que producen productores y del que leen consumidores." },
+    { "en": "Queue (MNS)", "es": "Cola (MNS)", "def": "Primitivo punto a punto de MNS: cada mensaje lo consume un único destinatario." },
+    { "en": "Partition", "es": "Partición", "def": "Subdivisión de un topic que determina el paralelismo máximo de consumo y garantiza orden interno." },
+    { "en": "Consumer Group", "es": "Grupo de consumidores", "def": "Conjunto de consumidores que se reparten las particiones de un topic para procesar en paralelo." },
+    { "en": "Offset", "es": "Offset", "def": "Posición de un mensaje dentro de una partición, usada para rastrear qué se ha consumido." },
+    { "en": "Retention", "es": "Retención", "def": "Tiempo o tamaño que un mensaje permanece disponible antes de eliminarse del topic." },
+    { "en": "At-most-once", "es": "A lo sumo una vez", "def": "Garantía de entrega donde un mensaje puede perderse pero nunca duplicarse." },
+    { "en": "At-least-once", "es": "Al menos una vez", "def": "Garantía de entrega donde un mensaje puede duplicarse pero nunca perderse." },
+    { "en": "Exactly-once", "es": "Exactamente una vez", "def": "Garantía de entrega sin pérdida ni duplicación, lograda con productor idempotente y transacciones." },
+    { "en": "Dead-Letter Queue (DLQ)", "es": "Cola de mensajes muertos", "def": "Destino para mensajes que agotan sus reintentos fallidos, aislándolos del flujo normal." },
+    { "en": "Consumer lag", "es": "Retraso del consumidor", "def": "Diferencia entre el último mensaje producido y el último confirmado por el consumidor." },
+    { "en": "Message Queue for Apache Kafka", "es": "Message Queue for Kafka", "def": "Servicio gestionado de Alibaba Cloud compatible con el ecosistema Apache Kafka." },
+    { "en": "RocketMQ", "es": "RocketMQ", "def": "Mensajería nativa de Alibaba con soporte de orden estricto y mensajes transaccionales ligados a negocio." },
+    { "en": "MNS (Message Service)", "es": "MNS", "def": "Servicio de mensajería simple de Alibaba Cloud, tipo SQS/SNS, con Queue y Topic como primitivos separados." },
+    { "en": "Sharding key", "es": "Clave de partición", "def": "Valor usado para decidir a qué partición se envía un mensaje, clave para garantizar orden relativo." },
+    { "en": "Transactional message", "es": "Mensaje transaccional", "def": "Mensaje publicado condicionalmente al éxito de una operación de negocio asociada (two-phase commit)." },
+    { "en": "Rebalance", "es": "Rebalanceo", "def": "Reasignación automática de particiones entre consumidores al unirse o salir un miembro del grupo." },
+    { "en": "Idempotent consumer", "es": "Consumidor idempotente", "def": "Consumidor diseñado para que procesar el mismo mensaje más de una vez no cause efectos duplicados." },
+    { "en": "Publish-Subscribe", "es": "Publicación-suscripción", "def": "Patrón donde múltiples suscriptores independientes reciben una copia del mismo mensaje." },
+    { "en": "Point-to-Point", "es": "Punto a punto", "def": "Patrón donde cada mensaje es consumido por exactamente un consumidor entre varios competidores." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Message Queue for Kafka / RocketMQ / MNS?",
-      "options": [
-        "Alibaba Cloud ofrece 3 mensajerías gestionadas: Message Queue for Kafka (compatible Apache Kafka), RocketMQ (native Alibaba, transaccional y ordenado) y MNS (simple queue/topic tipo SQS/SNS). Elegir s",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud ofrece 3 mensajerías gestionadas: Message Queue for Kafka (compatible Apache Kafka), RocketMQ (native Alibaba, transaccional y ordenado) y MNS (simple queue/topic tipo SQS/SNS). Elegir según protocolo, throughput y semántica requerida."
-    },
-    {
-      "q": "¿Qué es <strong>Topic</strong> (Topic) en Message Queue for Kafka / RocketMQ / MNS?",
-      "options": [
-        "Flujo lógico de mensajes.",
-        "Unidad de paralelismo y orden.",
-        "Grupo de consumidores que se reparten particiones.",
-        "Posición en la partición."
-      ],
-      "answer": 0,
-      "explain": "Topic (Topic): Flujo lógico de mensajes."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partition) en Message Queue for Kafka / RocketMQ / MNS?",
-      "options": [
-        "Unidad de paralelismo y orden.",
-        "Flujo lógico de mensajes.",
-        "Grupo de consumidores que se reparten particiones.",
-        "Posición en la partición."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partition): Unidad de paralelismo y orden."
-    },
-    {
-      "q": "¿Qué es <strong>Consumer Group</strong> (Consumer group) en Message Queue for Kafka / RocketMQ / MNS?",
-      "options": [
-        "Grupo de consumidores que se reparten particiones.",
-        "Flujo lógico de mensajes.",
-        "Unidad de paralelismo y orden.",
-        "Posición en la partición."
-      ],
-      "answer": 0,
-      "explain": "Consumer Group (Consumer group): Grupo de consumidores que se reparten particiones."
-    },
-    {
-      "q": "¿Qué es <strong>Offset</strong> (Offset) en Message Queue for Kafka / RocketMQ / MNS?",
-      "options": [
-        "Posición en la partición.",
-        "Flujo lógico de mensajes.",
-        "Unidad de paralelismo y orden.",
-        "Grupo de consumidores que se reparten particiones."
-      ],
-      "answer": 0,
-      "explain": "Offset (Offset): Posición en la partición."
-    },
-    {
-      "q": "¿Qué es <strong>Retention</strong> (Retention) en Message Queue for Kafka / RocketMQ / MNS?",
-      "options": [
-        "Tiempo o tamaño antes de borrar mensajes.",
-        "Flujo lógico de mensajes.",
-        "Unidad de paralelismo y orden.",
-        "Grupo de consumidores que se reparten particiones."
-      ],
-      "answer": 0,
-      "explain": "Retention (Retention): Tiempo o tamaño antes de borrar mensajes."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Message Queue for Kafka / RocketMQ / MNS, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Message Queue for Kafka / RocketMQ / MNS en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Message Queue for Kafka / RocketMQ / MNS, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Message Queue for Kafka / RocketMQ / MNS es la elección típica:",
-      "options": [
-        "Event-driven microservices (RocketMQ transaccional)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Event-driven microservices (RocketMQ transaccional)."
-    }
+    { "q": "¿Qué problema resuelve principalmente introducir una cola de mensajes entre dos sistemas?", "options": ["Elimina por completo la necesidad de bases de datos", "Desacopla la disponibilidad y velocidad del productor de las del consumidor", "Garantiza automáticamente que nunca habrá errores en ningún sistema", "Reemplaza la necesidad de un balanceador de carga"], "answer": 1, "explain": "La cola permite que el productor continúe sin esperar al consumidor, absorbiendo picos de carga y fallos temporales." },
+    { "q": "¿Qué diferencia al patrón punto a punto del patrón publicación-suscripción?", "options": ["Son exactamente lo mismo con nombres distintos", "En punto a punto un mensaje lo procesa un único consumidor; en publicación-suscripción varios suscriptores independientes reciben el mismo mensaje", "Publicación-suscripción solo existe en RocketMQ", "Punto a punto no puede implementarse con Kafka"], "answer": 1, "explain": "El primero reparte trabajo entre competidores; el segundo notifica a múltiples interesados independientes del mismo evento." },
+    { "q": "¿Qué garantía de entrega corre el riesgo de PERDER un mensaje si el consumidor falla antes de procesarlo?", "options": ["At-least-once", "At-most-once", "Exactly-once", "Ninguna garantía tiene ese riesgo"], "answer": 1, "explain": "At-most-once confirma el offset antes de procesar, por lo que un fallo posterior puede perder el mensaje sin reentregarlo." },
+    { "q": "¿Por qué at-least-once es la garantía más común en producción, según el curso?", "options": ["Porque es la única garantía que existe técnicamente", "Porque combinarla con un consumidor idempotente suele ser más simple y barato que lograr exactly-once real", "Porque siempre pierde menos mensajes que exactly-once", "Porque no requiere ningún tipo de configuración especial"], "answer": 1, "explain": "At-least-once con deduplicación del lado del consumidor es una solución práctica más simple que coordinar exactly-once de extremo a extremo." },
+    { "q": "Una empresa ya usa herramientas del ecosistema Kafka (Kafka Connect, clientes existentes) y necesita throughput muy alto. ¿Qué servicio de Alibaba Cloud es el más apropiado?", "options": ["MNS", "Message Queue for Apache Kafka", "RocketMQ exclusivamente", "Ninguno de los anteriores admite alto throughput"], "answer": 1, "explain": "La compatibilidad con el ecosistema Kafka existente y el alto throughput son las razones típicas para elegir Message Queue for Kafka." },
+    { "q": "¿Qué caso de uso destaca especialmente a RocketMQ frente a Kafka y MNS?", "options": ["Compatibilidad exclusiva con Kafka Connect", "Mensajes transaccionales ligados a una operación de negocio y orden estricto por sharding key", "Ser la única opción con particiones", "No tener ningún caso de uso diferenciado"], "answer": 1, "explain": "RocketMQ ofrece mensajería transaccional (two-phase commit ligado al negocio) como una de sus ventajas más citadas." },
+    { "q": "Un topic tiene 4 particiones y un Consumer Group tiene 6 instancias activas. ¿Qué ocurre con las 2 instancias sobrantes?", "options": ["Procesan el doble de mensajes que las demás", "Quedan ociosas, sin recibir ningún mensaje, porque cada partición solo la consume un miembro a la vez", "El topic crea automáticamente 2 particiones adicionales", "Se produce un error y el Consumer Group deja de funcionar"], "answer": 1, "explain": "El número de particiones es el techo real de paralelismo; consumidores adicionales sin partición disponible quedan sin trabajo." },
+    { "q": "Se necesita garantizar que todos los eventos de un mismo pedido se procesen en el orden exacto en que ocurrieron. ¿Qué decisión de diseño lo logra?", "options": ["Usar una clave de partición (sharding key) consistente basada en el ID del pedido", "Aumentar el número de particiones al máximo posible", "Usar MNS en vez de Kafka o RocketMQ", "No es posible garantizar orden en ningún sistema de mensajería"], "answer": 0, "explain": "Enviar siempre los eventos del mismo pedido a la misma partición, usando su ID como clave, preserva el orden relativo entre ellos." },
+    { "q": "¿Para qué sirve una Dead-Letter Queue (DLQ)?", "options": ["Para almacenar mensajes de mayor prioridad que el resto", "Para aislar mensajes que fallan repetidamente, sin bloquear el procesamiento normal del resto del topic", "Para duplicar automáticamente todos los mensajes del topic", "Para eliminar permanentemente mensajes sin posibilidad de inspección"], "answer": 1, "explain": "La DLQ permite inspeccionar manualmente por qué un mensaje falló repetidamente, sin que bloquee el flujo normal." },
+    { "q": "¿Qué mide el 'consumer lag' y por qué es importante monitorearlo?", "options": ["El tiempo de vida útil del broker", "La diferencia entre el último mensaje producido y el último confirmado por el consumidor, indicando si el consumo se está atrasando", "El número total de particiones del topic", "El costo mensual del servicio de mensajería"], "answer": 1, "explain": "Un lag creciente indica que el consumo no da abasto con la producción, señal temprana de un backlog problemático." },
+    { "q": "¿Por qué confirmar (commit) el offset antes de procesar el mensaje es un antipatrón?", "options": ["No es un antipatrón, es la práctica recomendada", "Degrada la garantía a at-most-once, arriesgando pérdida de mensajes si el consumidor falla justo después del commit", "Provoca que el mensaje se duplique automáticamente", "Aumenta el costo de la instancia de mensajería"], "answer": 1, "explain": "Confirmar antes de procesar significa que un fallo posterior deja el mensaje como 'ya procesado' sin haberlo estado realmente." },
+    { "q": "¿Qué opción de mensajería es la más simple y adecuada para una integración básica entre dos microservicios sin requisitos de orden estricto?", "options": ["Message Queue for Kafka con configuración avanzada de particiones", "MNS (Message Service)", "RocketMQ transaccional", "Ninguna, siempre se requiere Kafka"], "answer": 1, "explain": "MNS ofrece una API simple tipo SQS/SNS, adecuada quirúrgicamente para integraciones sencillas sin necesidad de gestionar particiones." },
+    { "q": "¿Qué ocurre durante un 'rebalanceo' en un Consumer Group?", "options": ["Se eliminan permanentemente todos los mensajes del topic", "Las particiones se reasignan automáticamente entre los consumidores restantes cuando uno se une o abandona el grupo", "El topic se convierte automáticamente en una cola punto a punto", "El productor deja de poder publicar mensajes"], "answer": 1, "explain": "El rebalanceo redistribuye las particiones entre los miembros activos del grupo, pudiendo causar una breve pausa en el procesamiento." }
   ],
-  "exam_focus": "Kafka vs RocketMQ vs MNS, particiones y consumer groups, exactly-once, orden.",
+  "exam_focus": "El examen suele evaluar: (a) por qué desacoplar sistemas con mensajería y su costo en consistencia, (b) punto a punto vs. publicación-suscripción según el escenario, (c) garantías de entrega (at-most/at-least/exactly-once) y sus implicaciones, (d) elegir entre Kafka, RocketMQ y MNS según protocolo/orden/transaccionalidad, (e) particiones, consumer groups, DLQ y consumer lag.",
   "official_intro": "This course is designed to help businesses that want to use Message Queue services, as well as cloud computing engineers and enthusiasts who want to understand and learn Message Queue technology. By learning this course, you can fully understand what is Message Queue and how to use Alibaba Cloud MQ, which can provide reference for practical application.",
   "recommended_for": "Cloud server users, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_mq",

@@ -2,485 +2,210 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-sechardening",
   "title_en": "Cloud Servers Security Strengthening",
-  "title_es": "Cloud Servidores Seguridad Strengthening",
+  "title_es": "Fortalecimiento de la Seguridad de Servidores en la Nube",
+  "title_es_html": "Fortalecimiento de la Seguridad de <em>Servidores en la Nube</em>",
   "duration_es": "70 minutos",
   "level_es": "Intermedio",
   "category_es": "Seguridad",
   "subcategory_es": "Seguridad en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_sechardening",
-  "lead": "Guía completa en español para el curso «Cloud Servers Security Strengthening» de Alibaba Cloud Academy. Cubre en profundidad Elastic Compute Service (ECS). ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre el fortalecimiento de la seguridad DENTRO del sistema operativo de un host en la nube: firewall interno, gestión de usuarios y privilegios, endurecimiento de SSH, gestión de parches y comparación contra una línea base de configuración segura. No trata sobre el perímetro de red ni sobre productos de detección externos, sino sobre lo que hay que configurar correctamente dentro del propio ECS para que esas capas externas tengan algo sólido que proteger.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Elastic Compute Service (ECS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Instance type, Region, Zone (AZ), Image, Snapshot.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Elastic Compute Service (ECS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Justificar</strong> por qué el firewall interno del sistema operativo complementa al Security Group en vez de duplicarlo innecesariamente.",
+    "<strong>Configurar</strong> la gestión de usuarios del sistema operativo: cuentas por defecto, políticas de contraseña y bloqueo del login root/Administrator directo.",
+    "<strong>Aplicar</strong> el principio de mínimo privilegio a nivel de archivo mediante permisos y propietarios correctos, evitando permisos abiertos como 777.",
+    "<strong>Endurecer</strong> el acceso SSH deshabilitando autenticación por contraseña, login root directo y limitando intentos de conexión.",
+    "<strong>Priorizar</strong> la gestión de parches del sistema operativo como la medida que cierra la superficie de ataque más explotada en la práctica.",
+    "<strong>Interpretar</strong> un baseline check contra CIS Benchmark y traducir cada desviación en una acción de hardening concreta.",
+    "<strong>Reducir</strong> la superficie de ataque de un host deshabilitando servicios innecesarios y revisando parámetros de kernel relevantes para seguridad."
   ],
-  "architecture": "Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
+  "architecture": "El hardening de un host en la nube se construye en capas que viven todas DENTRO de la instancia, complementando —no sustituyendo— al Security Group perimetral: (1) un firewall interno (iptables/nftables o firewalld en Linux, Windows Firewall en Windows) que filtra tráfico incluso si el atacante ya está dentro de la misma VPC; (2) gestión de usuarios y privilegios, con cuentas nominales, contraseñas robustas y login root/Administrator deshabilitado en favor de sudo/UAC auditado; (3) permisos de archivo y cuentas de servicio siguiendo mínimo privilegio; (4) SSH endurecido con autenticación por llave; (5) un proceso de parcheo continuo del sistema operativo y sus dependencias; y (6) una línea base de configuración segura (CIS Benchmark) contra la que Security Center compara periódicamente el estado real del host, señalando desviaciones que las capas anteriores deben corregir.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Elastic Compute Service (ECS)",
-      "title_en": "Introduction to Elastic Compute Service (ECS)",
-      "intro": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Defensa en profundidad: firewall interno y Security Group",
+      "title_en": "Defense in Depth: Host Firewall and Security Group",
+      "intro": "El Security Group de Alibaba Cloud filtra tráfico a nivel de tarjeta de red, fuera de la instancia. El firewall interno del sistema operativo filtra dentro de ella. Entender por qué ambas capas son necesarias —y no una redundancia inútil— es el punto de partida de este curso.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Elastic Compute Service (ECS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Security Group</strong> actúa antes de que el tráfico llegue al sistema operativo; si un atacante ya se movió lateralmente dentro de la misma VPC (por ejemplo, desde otra instancia comprometida), el Security Group entre esas dos instancias puede no estar restringiendo ese tráfico interno.",
+        "<strong>Firewall interno</strong> (iptables/nftables en Linux, Windows Firewall en Windows) filtra dentro del propio host, por lo que sigue protegiendo aunque la capa de red haya sido mal configurada o evadida.",
+        "<strong>iptables/nftables</strong>: reglas organizadas en cadenas (INPUT/OUTPUT/FORWARD) con política por defecto DROP, permitiendo explícitamente solo los puertos y orígenes necesarios para la función del host.",
+        "<strong>firewalld</strong> en distribuciones como Alibaba Cloud Linux o RHEL gestiona zonas y servicios predefinidos, resultando más manejable operativamente que administrar reglas de iptables directamente.",
+        "<strong>Windows Firewall con seguridad avanzada</strong> permite reglas de entrada/salida específicas por programa, puerto o perfil de red (dominio/privado/público).",
+        "<strong>Auditoría de reglas activas</strong>: tener un firewall interno instalado no aporta nada si sus reglas están vacías o en modo permitir-todo; el hardening exige revisar periódicamente qué reglas están realmente en vigor."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Elastic Compute Service (ECS) es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Security Group y firewall interno no compiten: el primero reduce la exposición desde fuera de la instancia, el segundo limita el daño si un atacante ya está dentro de la red. Es <em>defensa en profundidad</em>, no duplicación."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Elastic Compute Service (ECS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Gestión de usuarios del sistema operativo",
+      "title_en": "Operating System User Management",
+      "intro": "Muchas imágenes base y despliegues apresurados dejan cuentas y configuraciones de usuario que un atacante puede aprovechar sin necesitar ninguna vulnerabilidad de software. Esta lección cubre cómo cerrar esa puerta antes de que se convierta en un incidente.",
       "points": [
-        "<strong>Patrón canónico</strong>: Una arquitectura típica ECS consiste en: (1) una VPC con al menos dos VSwitches en zonas distintas, (2) grupos de auto-escalado que crean instancias ECS bajo demanda, (3) un SLB al frente distribuyendo tráfico, (4) RDS como base de datos multi-AZ, (5) OSS para archivos estáticos y backups, (6) CloudMonitor recolectando métricas y (7) RAM controlando permisos por rol.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Elastic Compute Service (ECS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Tipo de instancia</strong> <em>(Instance type)</em>: Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "<strong>Región</strong> <em>(Region)</em>: Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "<strong>Zona de disponibilidad</strong> <em>(Zone (AZ))</em>: Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "<strong>Imagen</strong> <em>(Image)</em>: Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "<strong>Snapshot</strong> <em>(Snapshot)</em>: Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "<strong>Grupo de seguridad</strong> <em>(Security Group)</em>: Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG.",
-        "<strong>VPC / VSwitch</strong> <em>(VPC / VSwitch)</em>: Red virtual privada + subredes por zona donde se despliega la ENI.",
-        "<strong>Elastic Network Interface</strong> <em>(ENI)</em>: Tarjeta de red virtual. Una instancia puede tener varias."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Eliminar o deshabilitar cuentas por defecto</strong>: usuarios de prueba dejados por una imagen, cuentas de software preinstalado sin uso, o cuentas de un despliegue anterior que nadie revisó al dar de baja.",
+        "<strong>Forzar una política de contraseñas robusta</strong>: longitud mínima, complejidad, expiración periódica e historial que impida reutilizar contraseñas recientes.",
+        "<strong>Deshabilitar el login directo de root/Administrator</strong>: obliga a que cualquier acceso administrativo pase primero por una cuenta nominal y luego escale privilegios de forma explícita.",
+        "<strong>Escalado auditado</strong>: sudo en Linux registra en log quién ejecutó qué comando con privilegios elevados; UAC en Windows exige confirmación explícita antes de una acción administrativa — ambos dejan rastro que el login root directo no deja.",
+        "<strong>Cuentas nominales, nunca compartidas</strong>: cada operador humano debe tener su propia cuenta; una cuenta genérica de administrador compartida por el equipo hace imposible atribuir una acción a una persona concreta.",
+        "<strong>Revisión periódica de cuentas activas</strong>: un proceso de baja de personal que no revoca el acceso al sistema operativo deja una cuenta huérfana activa como puerta de entrada silenciosa."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Cuando el enunciado describe una cuenta que nadie recuerda haber creado o un login root directo habilitado, la respuesta esperada es siempre <em>gestión de usuarios</em>, no un producto de detección externo."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Gestión de privilegios y permisos de archivos",
+      "title_en": "Privilege Management and File Permissions",
+      "intro": "El mínimo privilegio no termina en la capa de identidad de la cuenta cloud (RAM): también aplica, con el mismo rigor, dentro del propio sistema de archivos del host. Un permiso mal puesto puede anular todo el resto del hardening.",
       "points": [
-        "<strong>HA</strong>: Usar instancias en al menos 2 zonas detrás de un SLB para HA",
-        "<strong>HA</strong>: Habilitar snapshots automáticos diarios de discos críticos",
-        "<strong>HA</strong>: Usar imágenes custom con hardening pre-aplicado en vez de configurar cada instancia manualmente",
-        "<strong>Seguridad</strong>: Nunca usar la cuenta raíz para operar ECS — crear usuarios RAM con roles específicos",
-        "<strong>Costo</strong>: Combinar Reserved Instances (baseline) + pay-as-you-go (picos) + spot (batch) para minimizar costo",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups siguiendo mínimo privilegio (denegar todo por defecto)",
-        "<strong>Buenas prácticas</strong>: Instrumentar con CloudMonitor + alertas para CPU/memoria/disco antes de que falle"
+        "<strong>Principio de mínimo privilegio a nivel de archivo</strong>: cada usuario o proceso debe tener únicamente los permisos de lectura, escritura o ejecución estrictamente necesarios sobre cada archivo o directorio.",
+        "<strong>Permisos correctos con chmod/chown</strong>: evitar 777 (lectura/escritura/ejecución para todos) en cualquier archivo o directorio sensible — es uno de los hallazgos más comunes en cualquier auditoría de hardening.",
+        "<strong>Cuentas de servicio separadas</strong>: cada proceso (servidor web, motor de base de datos, aplicación) debe ejecutarse bajo su propia cuenta de servicio con privilegios mínimos, nunca como root/Administrator.",
+        "<strong>Archivos sensibles con propietario y permisos restrictivos</strong>: configuración, claves privadas y binarios del sistema deben ser ilegibles para cualquier usuario que no los necesite — una clave privada legible por todos anula su propósito.",
+        "<strong>Revisión de bits SUID/SGID en Linux</strong>: un binario con estos bits activados se ejecuta con los privilegios de su propietario (a menudo root) sin importar quién lo invoque, lo que lo convierte en una vía de escalado de privilegios si no se controla.",
+        "<strong>Umask por defecto</strong>: determina los permisos con los que se crean los archivos nuevos; un umask permisivo hereda el problema de exposición a cada archivo creado después, sin que nadie lo note."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Un Security Group perfecto y un firewall interno bien configurado no compensan un archivo de configuración con credenciales legible por cualquier usuario del sistema."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Endurecimiento de SSH",
+      "title_en": "SSH Hardening",
+      "intro": "SSH suele ser el único punto de administración remota de un host Linux, lo que lo convierte también en el objetivo más constante de escaneo y fuerza bruta automatizados. Endurecerlo correctamente es una de las medidas de mayor impacto por esfuerzo invertido.",
       "points": [
-        "<strong>Antipattern</strong>: Poner instancias productivas en una sola zona → caída total si la zona falla",
-        "<strong>Antipattern</strong>: Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-        "<strong>Antipattern</strong>: Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-        "<strong>Antipattern</strong>: No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-        "<strong>Antipattern</strong>: Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-        "<strong>Antipattern</strong>: Preemptible en producción crítica sin plan de reintento",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Deshabilitar autenticación por contraseña</strong> (PasswordAuthentication no) en favor de autenticación por par de llaves pública/privada, eliminando el vector de fuerza bruta contra contraseñas.",
+        "<strong>Deshabilitar el login root directo</strong> (PermitRootLogin no): obliga a conectarse con un usuario nominal y escalar con sudo, dejando el mismo rastro de auditoría descrito en la gestión de usuarios.",
+        "<strong>Cambiar el puerto por defecto</strong> reduce el ruido de escaneo automatizado masivo dirigido al puerto 22, aunque es una medida complementaria —no la defensa principal— frente a la autenticación por llave.",
+        "<strong>Limitar intentos de conexión fallidos</strong> (MaxAuthTries de sshd, o una herramienta de bloqueo de IP tras varios fallos) frena la fuerza bruta persistente incluso si algún vector de contraseña quedara activo por error.",
+        "<strong>Restringir qué usuarios o grupos pueden conectarse</strong> (AllowUsers/AllowGroups) reduce la superficie disponible incluso si una cuenta del sistema tuviera una configuración débil.",
+        "<strong>Combinar con el Security Group</strong>: SSH debe ser alcanzable únicamente desde rangos de IP conocidos a nivel de red, además de estar endurecido a nivel de host — de nuevo, defensa en profundidad."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Ante un escenario de fuerza bruta contra SSH, la respuesta más completa combina <em>autenticación por llave + PermitRootLogin no + límite de intentos</em>, no solo una de las tres medidas por separado."
+      }
+    },
+    {
+      "title_es": "5 · Gestión de parches y actualizaciones",
+      "title_en": "Patch and Update Management",
+      "intro": "La mayoría de los compromisos reales explotan vulnerabilidades conocidas y ya parcheadas por el proveedor, no vulnerabilidades de día cero. Mantener el sistema actualizado es, en la práctica, la medida de hardening con mejor relación costo-beneficio.",
+      "points": [
+        "<strong>Ventana de exposición</strong>: el tiempo entre la publicación de un parche y su aplicación real es el período de mayor riesgo — cuanto más lento el proceso de parcheo, más tiempo queda un CVE público como amenaza activa contra el host.",
+        "<strong>Actualizar el kernel y los paquetes del sistema operativo</strong> cierra la superficie de ataque más común: vulnerabilidades documentadas públicamente que ya tienen corrección disponible.",
+        "<strong>Parcheo del kernel sin reinicio</strong> (cuando la distribución lo soporta) permite aplicar actualizaciones críticas de seguridad sin la ventana de indisponibilidad de un reinicio completo.",
+        "<strong>Dependencias de aplicación</strong> (librerías, runtimes, frameworks) requieren el mismo rigor que el sistema operativo — una librería desactualizada es tan explotable como un kernel sin parchear.",
+        "<strong>Probar antes de desplegar en producción</strong>: un proceso de parcheo sin entorno de prueba previo genera resistencia organizacional a parchear con frecuencia, lo que a largo plazo deja más vulnerabilidades abiertas que un parche ocasional mal probado.",
+        "<strong>Automatización vía Security Center</strong>: el módulo de gestión de vulnerabilidades detecta parches faltantes en el sistema operativo y puede aplicarlos de forma remota, sin depender de que cada host se revise manualmente por SSH."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El examen distingue entre detectar una vulnerabilidad (Security Center la señala) y cerrarla (aplicar el parche correspondiente). Detectar sin parchear no reduce el riesgo real."
+      }
+    },
+    {
+      "title_es": "6 · Baseline de configuración segura (CIS Benchmark)",
+      "title_en": "Secure Configuration Baseline (CIS Benchmark)",
+      "intro": "Ninguna de las medidas anteriores es útil si no hay una forma sistemática de verificar que sigue vigente en toda la flota de instancias. Un baseline de configuración segura resuelve exactamente ese problema.",
+      "points": [
+        "<strong>CIS Benchmark</strong> es una referencia de la industria (Center for Internet Security) que define configuraciones recomendadas por sistema operativo, desde políticas de contraseña hasta permisos de archivos críticos y servicios que deberían estar deshabilitados.",
+        "<strong>Baseline check</strong>: Security Center compara la configuración real de cada host contra ese conjunto de reglas y reporta cada desviación como un hallazgo accionable, en vez de dejar al operador adivinar qué revisar manualmente en cada instancia.",
+        "<strong>Priorización por severidad</strong>: no todas las desviaciones representan el mismo riesgo — un baseline check maduro clasifica los hallazgos para que el equipo corrija primero lo más crítico, no lo más fácil.",
+        "<strong>El hallazgo es el síntoma, el hardening es la cura</strong>: un baseline check que reporta 'root login habilitado' o 'servicio innecesario expuesto' remite directamente a las lecciones de gestión de usuarios y reducción de superficie de este mismo curso.",
+        "<strong>Línea base, no techo</strong>: cumplir el 100% del CIS Benchmark es un punto de partida razonable, no una garantía de que el host esté libre de riesgo — sigue siendo necesario mantener parches al día y monitoreo activo.",
+        "<strong>Re-evaluación periódica</strong>: la configuración de un host se desvía del baseline con el tiempo por cambios manuales o despliegues apresurados; el chequeo debe repetirse periódicamente, no ejecutarse una sola vez al aprovisionar."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el examen menciona 'comparar la configuración del host contra una línea base conocida', la respuesta es <em>baseline check (CIS Benchmark) vía Security Center</em>, distinto de detectar malware o de mitigar tráfico de red."
+      }
+    },
+    {
+      "title_es": "7 · Reducción de superficie: servicios innecesarios y parámetros de kernel",
+      "title_en": "Attack Surface Reduction: Unnecessary Services and Kernel Parameters",
+      "intro": "El hardening es, en gran medida, un ejercicio de eliminar lo que no aporta valor. Cada servicio activo y cada parámetro de kernel sin revisar es una superficie de ataque adicional, incluso dentro de una red que ya se considera interna.",
+      "points": [
+        "<strong>Deshabilitar servicios y puertos innecesarios</strong>: un host que solo sirve una aplicación web no necesita tener corriendo un servicio de impresión, FTP o telnet heredado de la imagen base.",
+        "<strong>Cada servicio activo es superficie adicional</strong>, incluso dentro de la red interna — un atacante que ya obtuvo acceso lateral dentro de la VPC puede aprovechar un servicio innecesario que solo estaba expuesto a esa red, no a internet.",
+        "<strong>Auditoría de puertos en escucha</strong>: listar qué procesos escuchan en qué puertos localmente es el primer paso para decidir qué deshabilitar; no basta con confiar en la documentación de la imagen base.",
+        "<strong>Protección contra SYN flood a nivel de host</strong> (SYN cookies del kernel) complementa la mitigación de red, absorbiendo picos pequeños sin depender exclusivamente de un servicio Anti-DDoS externo para cada intento menor.",
+        "<strong>ASLR (Address Space Layout Randomization)</strong> dificulta que un exploit prediga direcciones de memoria, mitigando ciertas clases de vulnerabilidades de corrupción de memoria; normalmente viene activado por defecto y no debe deshabilitarse por conveniencia de depuración.",
+        "<strong>Regla general</strong>: cada componente que no aporta valor a la función específica del servidor solo aporta riesgo — reducir superficie no requiere una vulnerabilidad conocida para justificarse."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La reducción de superficie no espera a que aparezca una vulnerabilidad concreta: deshabilitar lo innecesario es una medida preventiva permanente, no una respuesta a un incidente."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Sitios web y APIs con tráfico variable (auto-escalado)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Renderizado de video / cargas GPU-intensivas (familia gn)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis batch nocturno (spot instances con hasta 90% descuento)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "SAP y aplicaciones enterprise (familia re con memoria alta)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Entornos de desarrollo/pruebas (pay-as-you-go, apagado nocturno)"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Escritorios virtuales y bastion hosts"
-    }
+    { "title": "Escenario 1", "text": "Un host recién aprovisionado desde una imagen pública conserva una cuenta de prueba del proveedor con contraseña por defecto, detectada en el primer baseline check" },
+    { "title": "Escenario 2", "text": "Un servidor con SSH accesible solo desde IPs corporativas a nivel de Security Group sigue permitiendo autenticación por contraseña y login root directo — la capa de red no compensa un SSH sin endurecer" },
+    { "title": "Escenario 3", "text": "Un proceso de parcheo manual retrasa semanas la aplicación de una actualización crítica del kernel, dejando expuesta una vulnerabilidad ya pública" },
+    { "title": "Escenario 4", "text": "Un archivo de configuración con credenciales de base de datos queda con permisos 777 tras un despliegue apresurado, legible por cualquier cuenta del sistema" },
+    { "title": "Escenario 5", "text": "Security Center reporta decenas de desviaciones del CIS Benchmark en una flota de instancias que nunca fue auditada desde su creación" },
+    { "title": "Escenario 6", "text": "Un servicio FTP heredado de la imagen base sigue escuchando en un host que solo debería servir tráfico HTTPS, ampliando la superficie sin necesidad" }
   ],
   "mistakes": [
-    "Poner instancias productivas en una sola zona → caída total si la zona falla",
-    "Dejar puertos 22/3389 abiertos a 0.0.0.0/0 → ataques de fuerza bruta",
-    "Usar solo pay-as-you-go para cargas 24/7 → hasta 60% de sobrecosto",
-    "No etiquetar recursos → imposible atribuir costos por proyecto/equipo",
-    "Confiar snapshots como único backup (siguen atados a la región) — replicar a OSS cross-region",
-    "Preemptible en producción crítica sin plan de reintento"
+    "Confiar únicamente en el Security Group y no configurar ningún firewall interno dentro del host",
+    "Dejar habilitado el login root/Administrator directo en vez de exigir escalado vía sudo/UAC con auditoría",
+    "Usar permisos 777 para que algo funcione en vez de investigar el permiso mínimo real necesario",
+    "Postergar la aplicación de parches críticos por miedo a romper producción, sin mantener un entorno de prueba previo",
+    "Tratar el baseline check como un reporte que se lee una vez y se archiva, sin remediar los hallazgos",
+    "Dejar servicios heredados de la imagen base (FTP, telnet, impresión) corriendo sin evaluar si son necesarios para la función del host"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs DescribeInstances",
-      "desc": "Listar instancias ECS en la región actual"
-    },
-    {
-      "cmd": "aliyun ecs RunInstances --ImageId ... --InstanceType ecs.g6.large",
-      "desc": "Crear instancia"
-    },
-    {
-      "cmd": "aliyun ecs StopInstance --InstanceId i-xxxxx --StoppedMode StopCharging",
-      "desc": "Detener sin cobrar"
-    },
-    {
-      "cmd": "aliyun ecs CreateSnapshot --DiskId d-xxxxx",
-      "desc": "Crear snapshot de disco"
-    },
-    {
-      "cmd": "aliyun ecs ModifyInstanceAttribute --InstanceId ... --Password ...",
-      "desc": "Cambiar credenciales"
-    }
+    { "cmd": "aliyun sas DescribeBaselineList", "desc": "Listar los checks de línea base (CIS Benchmark) aplicados por Security Center a la flota de instancias" },
+    { "cmd": "aliyun sas DescribeCheckWarningSummary", "desc": "Consultar el resumen de desviaciones detectadas frente a la línea base de configuración segura" },
+    { "cmd": "aliyun ecs ModifySecurityGroupRule --SecurityGroupId sg-xxxxx --PortRange 22/22 --SourceCidrIp 203.0.113.0/24", "desc": "Restringir el Security Group a IPs corporativas conocidas como complemento del firewall interno" },
+    { "cmd": "aliyun sas DescribeVulList --Type sys", "desc": "Consultar vulnerabilidades del sistema operativo pendientes de parchear en las instancias" },
+    { "cmd": "aliyun sas FixVulList --VulRecordIds vul-xxxxx", "desc": "Aplicar de forma remota el parche correspondiente a las vulnerabilidades seleccionadas" },
+    { "cmd": "aliyun ecs RunCommand --Type RunShellScript --InstanceId i-xxxxx --CommandContent auditoria.sh", "desc": "Ejecutar un script de auditoría (usuarios, permisos, servicios activos) remotamente sin abrir SSH adicional" }
   ],
   "glossary": [
-    {
-      "en": "Instance type",
-      "es": "Tipo de instancia",
-      "def": "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "en": "Zone (AZ)",
-      "es": "Zona de disponibilidad",
-      "def": "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "en": "Image",
-      "es": "Imagen",
-      "def": "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "en": "Snapshot",
-      "es": "Snapshot",
-      "def": "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de ENI. Reglas de entrada/salida por puerto/CIDR/SG."
-    },
-    {
-      "en": "VPC / VSwitch",
-      "es": "VPC / VSwitch",
-      "def": "Red virtual privada + subredes por zona donde se despliega la ENI."
-    },
-    {
-      "en": "ENI",
-      "es": "Elastic Network Interface",
-      "def": "Tarjeta de red virtual. Una instancia puede tener varias."
-    },
-    {
-      "en": "Elastic IP (EIP)",
-      "es": "IP elástica",
-      "def": "IP pública estática, se puede desasociar y reasociar."
-    },
-    {
-      "en": "Pay-as-you-go",
-      "es": "Pago por uso",
-      "def": "Facturación por segundo/hora sin compromiso. Ideal para cargas variables."
-    },
-    {
-      "en": "Subscription",
-      "es": "Suscripción",
-      "def": "Compra anticipada mensual/anual con 15-40% descuento."
-    },
-    {
-      "en": "Reserved Instance",
-      "es": "Instancia reservada",
-      "def": "Descuento adicional a cambio de compromiso 1-3 años."
-    },
-    {
-      "en": "Preemptible / Spot",
-      "es": "Preemptible",
-      "def": "Hasta 90% descuento; puede terminarse con 5 min de aviso."
-    },
-    {
-      "en": "Savings Plan",
-      "es": "Plan de ahorro",
-      "def": "Compromiso de $/hora aplicable a cualquier familia."
-    },
-    {
-      "en": "Auto Scaling Group",
-      "es": "Grupo de auto-escalado",
-      "def": "Ajusta capacidad según políticas de CPU/tiempo/eventos."
-    },
-    {
-      "en": "Cloud-init / User Data",
-      "es": "User Data",
-      "def": "Script que se ejecuta al arrancar la instancia (bootstrap)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Hardening", "es": "Fortalecimiento / endurecimiento", "def": "Conjunto de medidas de configuración que reducen la superficie de ataque y cierran vectores de compromiso conocidos dentro de un sistema." },
+    { "en": "Defense in depth", "es": "Defensa en profundidad", "def": "Estrategia de seguridad que combina múltiples capas independientes (red, host, aplicación) para que el fallo de una no exponga todo el sistema." },
+    { "en": "CIS Benchmark", "es": "CIS Benchmark", "def": "Conjunto de recomendaciones de configuración segura por sistema operativo, publicado por el Center for Internet Security, usado como referencia de la industria." },
+    { "en": "Baseline check", "es": "Comprobación de línea base", "def": "Proceso que compara la configuración real de un host contra un estándar (como CIS Benchmark) y reporta cada desviación encontrada." },
+    { "en": "Host-based firewall", "es": "Firewall interno del host", "def": "Firewall que se ejecuta dentro del propio sistema operativo (iptables/nftables, firewalld, Windows Firewall), independiente del Security Group perimetral." },
+    { "en": "iptables / nftables", "es": "iptables / nftables", "def": "Herramientas de filtrado de paquetes a nivel de kernel Linux, organizadas en cadenas de reglas por dirección de tráfico." },
+    { "en": "firewalld", "es": "firewalld", "def": "Gestor de firewall dinámico en distribuciones Linux basado en zonas y servicios predefinidos, capa de abstracción sobre nftables/iptables." },
+    { "en": "Least privilege (file-level)", "es": "Mínimo privilegio a nivel de archivo", "def": "Principio por el cual cada usuario o proceso recibe solo los permisos de archivo estrictamente necesarios para su función." },
+    { "en": "chmod / chown", "es": "chmod / chown", "def": "Comandos Unix para modificar permisos y propietario de archivos y directorios respectivamente." },
+    { "en": "SUID / SGID", "es": "SUID / SGID", "def": "Bits especiales de permiso en Linux que hacen que un binario se ejecute con los privilegios de su propietario o grupo, independientemente de quién lo invoque." },
+    { "en": "Service account", "es": "Cuenta de servicio", "def": "Cuenta de sistema dedicada a ejecutar un proceso específico con privilegios mínimos, separada de las cuentas de operadores humanos." },
+    { "en": "Root/Administrator direct login", "es": "Login directo de root/Administrator", "def": "Acceso administrativo sin pasar por una cuenta nominal previa; deshabilitarlo obliga a escalar privilegios de forma auditada." },
+    { "en": "sudo", "es": "sudo", "def": "Mecanismo Linux que permite a un usuario nominal ejecutar comandos con privilegios elevados de forma controlada y auditable." },
+    { "en": "UAC (User Account Control)", "es": "Control de cuentas de usuario", "def": "Mecanismo de Windows que exige confirmación explícita antes de ejecutar una acción que requiere privilegios administrativos." },
+    { "en": "SSH key-based authentication", "es": "Autenticación SSH por llave", "def": "Método de acceso SSH basado en un par de claves criptográficas en vez de contraseña, que elimina el vector de fuerza bruta contra contraseñas." },
+    { "en": "Password policy", "es": "Política de contraseñas", "def": "Conjunto de reglas (longitud, complejidad, expiración, historial) que fuerzan contraseñas más resistentes a ataques de adivinación." },
+    { "en": "Default account", "es": "Cuenta por defecto", "def": "Usuario preexistente en una imagen o instalación estándar, a menudo con credenciales conocidas públicamente si no se elimina o deshabilita." },
+    { "en": "Attack surface", "es": "Superficie de ataque", "def": "Conjunto total de puntos (servicios, puertos, cuentas, permisos) por los que un atacante podría intentar comprometer un sistema." },
+    { "en": "SYN cookies", "es": "SYN cookies", "def": "Mecanismo de kernel que mitiga ataques SYN flood a nivel de host sin necesitar reservar memoria para cada conexión semi-abierta." },
+    { "en": "ASLR (Address Space Layout Randomization)", "es": "Aleatorización del espacio de direcciones", "def": "Técnica de kernel que aleatoriza las direcciones de memoria usadas por un proceso, dificultando la explotación de vulnerabilidades de corrupción de memoria." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Elastic Compute Service (ECS)?",
-      "options": [
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamiento intensivo), permite escalar horizontal y verticalmente, y se integra nativamente con VPC, SLB, RDS, OSS y prácticamente todo el catálogo de Alibaba Cloud."
-    },
-    {
-      "q": "¿Qué es <strong>Instance type</strong> (Tipo de instancia) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Instance type (Tipo de instancia): Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño."
-    },
-    {
-      "q": "¿Qué es <strong>Region</strong> (Región) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Region (Región): Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms."
-    },
-    {
-      "q": "¿Qué es <strong>Zone (AZ)</strong> (Zona de disponibilidad) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-      ],
-      "answer": 0,
-      "explain": "Zone (AZ) (Zona de disponibilidad): Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-    },
-    {
-      "q": "¿Qué es <strong>Image</strong> (Imagen) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Image (Imagen): Plantilla de SO + software. Tipos: pública, custom, marketplace, compartida."
-    },
-    {
-      "q": "¿Qué es <strong>Snapshot</strong> (Snapshot) en Elastic Compute Service (ECS)?",
-      "options": [
-        "Copia incremental puntual del disco. Base para crear imágenes custom y restaurar.",
-        "Familias: c (cómputo), r (memoria), g (general), gn (GPU), i (NVMe local), re (SAP). Sufijos como .large indican tamaño.",
-        "Área geográfica; contiene múltiples zonas independientes. Latencia inter-región >20 ms.",
-        "Data center aislado dentro de una región. Diseñar Multi-AZ para HA."
-      ],
-      "answer": 0,
-      "explain": "Snapshot (Snapshot): Copia incremental puntual del disco. Base para crear imágenes custom y restaurar."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Elastic Compute Service (ECS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Elastic Compute Service (ECS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Elastic Compute Service (ECS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Elastic Compute Service (ECS) es la elección típica:",
-      "options": [
-        "Sitios web y APIs con tráfico variable (auto-escalado)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Sitios web y APIs con tráfico variable (auto-escalado)."
-    }
+    { "q": "¿Por qué tener un firewall interno dentro del sistema operativo no es redundante si ya existe un Security Group a nivel de red?", "options": ["Porque el Security Group no existe realmente en Alibaba Cloud", "Porque el firewall interno sigue protegiendo aunque un atacante ya se haya movido lateralmente dentro de la misma VPC o la capa de red esté mal configurada", "Porque el firewall interno reemplaza por completo al Security Group", "Porque solo Windows necesita firewall interno"], "answer": 1, "explain": "Ambas capas cubren escenarios de fallo distintos: el Security Group filtra desde fuera de la instancia, el firewall interno protege incluso ante movimiento lateral dentro de la red." },
+    { "q": "¿Cuál es la primera medida de gestión de usuarios que debería aplicarse a un host recién aprovisionado desde una imagen pública?", "options": ["Instalar un antivirus", "Eliminar o deshabilitar cuentas por defecto o de prueba dejadas por la imagen", "Cambiar el nombre de la instancia", "Habilitar el login root directo para simplificar el acceso"], "answer": 1, "explain": "Las cuentas por defecto o de prueba son un vector de compromiso conocido si no se eliminan o deshabilitan antes de pasar a producción." },
+    { "q": "¿Qué diferencia al escalado de privilegios vía sudo/UAC del login root/Administrator directo?", "options": ["No hay ninguna diferencia práctica", "sudo/UAC deja un registro auditable de qué usuario ejecutó qué acción con privilegios elevados, mientras que el login root directo no distingue quién actuó", "El login root directo es más seguro porque es más rápido", "sudo solo funciona en Windows"], "answer": 1, "explain": "El valor de sudo/UAC está en la trazabilidad: cada acción administrativa queda asociada a una cuenta nominal, no a una cuenta compartida sin rastro." },
+    { "q": "Un archivo de configuración con credenciales tiene permisos 777. ¿Qué principio de hardening se está violando?", "options": ["Defensa en profundidad", "Mínimo privilegio a nivel de archivo", "Gestión de parches", "Baseline check"], "answer": 1, "explain": "Permisos 777 otorgan lectura, escritura y ejecución a cualquier usuario del sistema, contradiciendo directamente el principio de mínimo privilegio." },
+    { "q": "¿Por qué es riesgoso un binario Linux con el bit SUID activado y sin revisar?", "options": ["Porque ocupa más espacio en disco", "Porque se ejecuta con los privilegios de su propietario (a menudo root) sin importar quién lo invoque, lo que puede permitir escalado de privilegios", "Porque impide que el sistema arranque", "Porque solo afecta a servicios de red"], "answer": 1, "explain": "Un binario SUID mal controlado permite que cualquier usuario que lo ejecute obtenga temporalmente los privilegios del propietario del archivo." },
+    { "q": "¿Cuál es la medida de endurecimiento SSH que elimina directamente el vector de fuerza bruta contra contraseñas?", "options": ["Cambiar el puerto por defecto", "Deshabilitar la autenticación por contraseña en favor de llaves pública/privada", "Aumentar el tamaño de la instancia", "Instalar un WAF"], "answer": 1, "explain": "Al deshabilitar PasswordAuthentication y exigir autenticación por llave, un ataque de fuerza bruta contra contraseñas deja de ser viable." },
+    { "q": "¿Qué logra específicamente deshabilitar PermitRootLogin en la configuración de sshd?", "options": ["Bloquea todo acceso SSH al host", "Obliga a conectarse con un usuario nominal y escalar privilegios de forma auditada en vez de entrar directamente como root", "Cambia automáticamente el puerto de SSH", "Desactiva el firewall interno"], "answer": 1, "explain": "PermitRootLogin no impide el login root directo, forzando el mismo flujo auditado de escalado vía sudo descrito en la gestión de usuarios." },
+    { "q": "¿Por qué cambiar el puerto por defecto de SSH no debe considerarse la defensa principal contra ataques?", "options": ["Porque es ilegal cambiar el puerto de SSH", "Porque solo reduce el ruido de escaneo automatizado masivo; un atacante dirigido puede encontrar el puerto real igualmente", "Porque rompe la compatibilidad con todos los clientes SSH", "Porque aumenta el costo de la instancia"], "answer": 1, "explain": "Cambiar el puerto es una medida complementaria de bajo esfuerzo, útil contra escaneo masivo, pero no sustituye la autenticación por llave ni el resto de medidas." },
+    { "q": "¿Por qué la gestión de parches del sistema operativo se considera la medida de hardening con mejor relación costo-beneficio?", "options": ["Porque siempre es gratuita", "Porque la mayoría de compromisos reales explotan vulnerabilidades conocidas y ya parcheadas por el proveedor, no vulnerabilidades de día cero", "Porque elimina la necesidad de firewall interno", "Porque reemplaza a la gestión de usuarios"], "answer": 1, "explain": "Cerrar vulnerabilidades ya documentadas y con parche disponible reduce la superficie de ataque más explotada en incidentes reales." },
+    { "q": "¿Qué representa la 'ventana de exposición' en la gestión de parches?", "options": ["El tiempo que tarda en arrancar una instancia", "El período entre la publicación de un parche y su aplicación real en el host, durante el cual la vulnerabilidad ya pública sigue explotable", "El tiempo que dura un ataque DDoS", "El plazo de garantía del SLA de Alibaba Cloud"], "answer": 1, "explain": "Cuanto más lento el proceso de parcheo, más tiempo permanece abierta una vulnerabilidad que ya es de conocimiento público." },
+    { "q": "¿Qué hace exactamente un baseline check contra CIS Benchmark ejecutado por Security Center?", "options": ["Elimina malware activo en la instancia", "Compara la configuración real del host contra un conjunto de reglas de configuración segura y reporta cada desviación encontrada", "Cifra automáticamente todos los discos", "Bloquea el tráfico DDoS antes de llegar al host"], "answer": 1, "explain": "El baseline check es una comparación de configuración, no una herramienta de detección de malware ni de mitigación de tráfico de red." },
+    { "q": "Security Center reporta que el host tiene 'root login habilitado' como hallazgo de baseline check. ¿Qué lección de este curso resuelve directamente ese hallazgo?", "options": ["Gestión de parches", "Gestión de usuarios del sistema operativo", "Reducción de servicios innecesarios", "Parámetros de kernel"], "answer": 1, "explain": "El hallazgo del baseline check es un síntoma; la corrección real —deshabilitar el login root directo— pertenece a la gestión de usuarios." },
+    { "q": "¿Por qué cumplir el 100% de un CIS Benchmark no debe interpretarse como garantía total de que un host está libre de riesgo?", "options": ["Porque el CIS Benchmark no existe realmente", "Porque es una línea base de configuración, no sustituye mantener parches al día ni monitoreo activo continuo", "Porque el CIS Benchmark solo aplica a bases de datos", "Porque cumplirlo desactiva automáticamente el firewall interno"], "answer": 1, "explain": "El baseline es un punto de partida razonable; el riesgo real depende también de factores dinámicos como parches pendientes y comportamiento anómalo." },
+    { "q": "Un host que solo sirve tráfico HTTPS mantiene corriendo un servicio FTP heredado de la imagen base. ¿Cuál es la acción de hardening correcta?", "options": ["Dejarlo activo porque no afecta el rendimiento", "Deshabilitar el servicio FTP porque no aporta valor a la función del servidor y amplía la superficie de ataque", "Cambiar el puerto del servicio FTP", "Migrar el servicio FTP a otra instancia"], "answer": 1, "explain": "Cualquier servicio que no sea necesario para la función del host debe deshabilitarse, incluso si hoy no representa una vulnerabilidad conocida." },
+    { "q": "¿Qué mitigan las SYN cookies a nivel de kernel del host?", "options": ["Ataques de phishing", "El agotamiento de la tabla de conexiones semi-abiertas durante un SYN flood", "La corrupción de memoria en procesos vulnerables", "El robo de AccessKeys"], "answer": 1, "explain": "Las SYN cookies permiten al kernel manejar conexiones TCP semi-abiertas sin reservar memoria para cada una, absorbiendo picos pequeños de SYN flood a nivel de host." }
   ],
-  "exam_focus": "Preguntas típicas: (a) qué familia elegir para X carga, (b) diferencias entre región/zona, (c) modelos de facturación óptimos según patrón de uso, (d) diseño HA multi-AZ, (e) permisos con RAM roles.",
+  "exam_focus": "El examen evalúa hardening DENTRO del sistema operativo del host, no el perímetro de red ni la detección externa: distinguir el rol complementario del firewall interno frente al Security Group, aplicar correctamente la gestión de usuarios (cuentas por defecto, login root directo, sudo/UAC), el mínimo privilegio a nivel de archivo, el endurecimiento de SSH, la priorización de la gestión de parches, la interpretación de un baseline check contra CIS Benchmark, y la reducción de superficie mediante servicios innecesarios y parámetros de kernel como SYN cookies y ASLR.",
   "official_intro": "For the security measures of the host on the cloud, we need to consider more factors, such as the configuration of the firewall inside the host, as well as various settings related to operating system user management and privilege management. Only by understanding and correctly configuring the security settings inside these hosts you can better cooperate with various cloud security products. This course is designed to help you better understand these security setup and learn how to properly configure them to maximize the security hardening of hosts on the cloud.",
   "recommended_for": "Cloud Host Security Administrator, Cloud host Operation and Maintenance Personnel, Network Security Administrator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_sechardening",

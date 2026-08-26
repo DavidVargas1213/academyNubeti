@@ -2,464 +2,222 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-java",
   "title_en": "JAVA Coding Standards In Alibaba Group",
-  "title_es": "JAVA Coding Standards In Alibaba Group",
+  "title_es": "Estándares de Codificación Java en Alibaba Group",
+  "title_es_html": "Estándares de <em>Codificación Java</em> en Alibaba Group",
   "duration_es": "90 minutos",
   "level_es": "Avanzado",
   "category_es": "Otros",
   "subcategory_es": "IT Fundamental",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_java",
-  "lead": "Guía completa en español para el curso «JAVA Coding Standards In Alibaba Group» de Alibaba Cloud Academy. Cubre en profundidad ApsaraDB RDS. RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre el manual de estilo interno de Alibaba para Java —conocido públicamente como «Alibaba Java Coding Guidelines»— y su plugin de análisis estático P3C. No es un curso de sintaxis básica: asume que ya programas en Java y se centra en las reglas de nomenclatura, concurrencia, colecciones, manejo de excepciones, logging y arquitectura por capas que Alibaba exige en su código de producción a gran escala. Cada regla se explica con el incidente o riesgo real que la motivó, porque así es como se pregunta en el examen.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ApsaraDB RDS</em>.",
-    "<strong>Dominar</strong> los conceptos clave: HA Edition, Basic Edition, Enterprise Edition, Read-only Replica, Parameter Group.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ApsaraDB RDS y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> el origen y los tres niveles de severidad (Mandatory, Recommended, Reference) del manual de estilo Java de Alibaba.",
+    "<strong>Aplicar</strong> las convenciones de nomenclatura para paquetes, clases, métodos, variables y constantes.",
+    "<strong>Detectar</strong> errores clásicos de programación orientada a objetos: comparaciones con equals() inseguras, la caché de Integer, y equals()/hashCode() inconsistentes.",
+    "<strong>Configurar</strong> pools de hilos y colecciones concurrentes de forma segura, evitando los antipatrones que causan fugas de memoria u OutOfMemoryError.",
+    "<strong>Diseñar</strong> el manejo de excepciones y el logging siguiendo las convenciones de SLF4J y las reglas contra capturas silenciosas.",
+    "<strong>Reconocer</strong> la arquitectura por capas (Controller/Service/Manager/DAO) y los objetos DTO/VO/DO/BO del manual.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder identificando qué regla del manual previene cada síntoma descrito."
   ],
-  "architecture": "Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ApsaraDB RDS",
-      "title_en": "Introduction to ApsaraDB RDS",
-      "intro": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué Alibaba estandarizó su código Java",
+      "title_en": "Why Alibaba Standardized Its Java Code",
+      "intro": "El manual de estilo Java de Alibaba —publicado externamente como «Alibaba Java Coding Guidelines»— no nació como un ejercicio de estética, sino como una respuesta a incidentes reales de producción a la escala de Alibaba, incluyendo los picos de tráfico de eventos como el 11.11 (Double 11). Entender su origen ayuda a recordar por qué cada regla existe.",
       "points": [
-        "<strong>Problema que resuelve</strong>: RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ApsaraDB RDS se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Origen práctico</strong>: cada regla del manual está asociada, directa o indirectamente, a un problema real observado en producción —fugas de memoria, NullPointerException intermitentes, deadlocks— no a preferencias de estilo personal.",
+        "<strong>Tres niveles de severidad</strong>: <em>Mandatory (强制)</em> — su violación es motivo de rechazo en code review; <em>Recommended (推荐)</em> — se espera seguirla salvo justificación explícita; <em>Reference (参考)</em> — buena práctica a considerar según el contexto.",
+        "<strong>P3C</strong>: el plugin de análisis estático de código (disponible para IntelliJ IDEA y Eclipse) que automatiza la primera pasada de revisión, resaltando violaciones al manual mientras se escribe el código, antes de llegar al code review humano.",
+        "<strong>Alcance del manual</strong>: nomenclatura, constantes, formato, programación orientada a objetos, colecciones, concurrencia, control de flujo, comentarios, manejo de excepciones, logging, convenciones de MySQL y arquitectura de proyecto.",
+        "<strong>Filosofía central</strong>: priorizar la legibilidad y la previsibilidad del comportamiento en equipos grandes por encima del estilo individual — el código se lee muchas más veces de las que se escribe."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ApsaraDB RDS es una pieza fundamental de Otros en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen suele distinguir entre lo que es <em>Mandatory</em> (bloquea el review) y lo que es solo <em>Recommended</em>. Memorizar en qué categoría cae una regla es más rentable para el examen que memorizar el detalle exacto de cada una."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ApsaraDB RDS no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Convenciones de nomenclatura",
+      "title_en": "Naming Conventions",
+      "intro": "Las reglas de nomenclatura resuelven un problema muy concreto: que cualquier ingeniero, al leer un nombre, sepa inmediatamente qué tipo de elemento es y qué rol cumple, sin tener que abrir la definición.",
       "points": [
-        "<strong>Patrón canónico</strong>: Instancia HA: primaria en zona A + standby síncrono en zona B → failover automático <60 s. 0-5 réplicas de solo lectura para escalar SELECT. DTS para migrar y replicar heterogéneo. Backups full diarios + logs binarios cada 5 min para PITR. Whitelist restringe IPs; SSL para tránsito; TDE en reposo.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ApsaraDB RDS (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Edición HA</strong> <em>(HA Edition)</em>: Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "<strong>Edición básica</strong> <em>(Basic Edition)</em>: Instancia única sin HA — solo dev/test.",
-        "<strong>Edición enterprise</strong> <em>(Enterprise Edition)</em>: Múltiples nodos, mayor SLA.",
-        "<strong>Réplica de lectura</strong> <em>(Read-only Replica)</em>: Hasta 5 réplicas asíncronas para escalar SELECT.",
-        "<strong>Parameter Group</strong> <em>(Parameter Group)</em>: Configuración reutilizable del engine.",
-        "<strong>Backup automático</strong> <em>(Automated Backup)</em>: Full diario + binlogs incrementales. Retención 7-730 días.",
-        "<strong>Point-in-Time Recovery</strong> <em>(PITR)</em>: Restaura al segundo exacto dentro del rango de retención.",
-        "<strong>Whitelist</strong> <em>(Whitelist)</em>: Lista de IPs/SG autorizados. Sin esto, nadie conecta."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Paquetes</strong>: siempre en minúsculas, sin guiones bajos, siguiendo el dominio invertido (p.ej. <code>com.alibaba.module.biz</code>).",
+        "<strong>Clases</strong>: UpperCamelCase (PascalCase); sufijos como DTO, VO, DO y BO se usan de forma consistente para indicar la capa o el rol del objeto.",
+        "<strong>Métodos, variables y parámetros</strong>: lowerCamelCase, nunca snake_case ni notación húngara con prefijos de tipo.",
+        "<strong>Constantes</strong>: UPPER_SNAKE_CASE completo, nunca mezclado con minúsculas ni con guiones.",
+        "<strong>Campos booleanos en POJOs</strong>: se desaconseja el prefijo <code>is</code> en el nombre del campo (usar <code>deleted</code> en vez de <code>isDeleted</code>), porque algunos frameworks de serialización generan el getter de forma inconsistente con ese prefijo y provocan errores de mapeo.",
+        "<strong>Nombres con significado</strong>: prohibidas las abreviaturas ambiguas o los nombres de una sola letra fuera de bucles muy cortos — el nombre debe explicar la intención sin necesitar un comentario adicional."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe un campo booleano en un POJO que causa un error de serialización JSON inesperado, la causa casi siempre es el prefijo <code>is</code> mal gestionado por el framework — es una pregunta clásica del manual."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Constantes y formato de código",
+      "title_en": "Constants and Code Formatting",
+      "intro": "El formato no es cuestión de gusto: cada regla de formato del manual existe para reducir errores de fusión (merge) y facilitar el code review cuando decenas de ingenieros trabajan sobre la misma base de código.",
       "points": [
-        "<strong>HA</strong>: HA Edition en producción — siempre",
-        "<strong>HA</strong>: PITR probado — hacer un drill de restauración trimestral",
-        "<strong>Seguridad</strong>: TDE + KMS para datos regulados (PCI, HIPAA)",
-        "<strong>Buenas prácticas</strong>: Whitelist con IPs privadas o Security Groups, no 0.0.0.0/0",
-        "<strong>Buenas prácticas</strong>: SSL obligatorio para conexiones desde fuera de la VPC",
-        "<strong>Buenas prácticas</strong>: Réplicas de lectura para BI/reportes — no golpear la primaria"
+        "<strong>Prohibidos los «magic numbers»</strong>: cualquier número con significado de negocio (límites, códigos de estado, timeouts) debe declararse como una constante con nombre.",
+        "<strong>Constantes agrupadas por dominio</strong>: preferir clases como <code>OrderConstant</code> en vez de amontonar todas las constantes en una única clase gigante <code>Constants</code>.",
+        "<strong>Llaves obligatorias</strong>: usar siempre llaves <code>{}</code> incluso en bloques de una sola línea (if/for/while), para evitar errores al añadir código después.",
+        "<strong>Indentación consistente</strong>: nunca mezclar tabs y espacios; mantener una indentación uniforme para que el diff en control de versiones sea legible.",
+        "<strong>Sin imports con comodín</strong>: evitar <code>import java.util.*</code> y mantener los imports agrupados de forma consistente para minimizar conflictos de fusión.",
+        "<strong>Una declaración por línea</strong>: evitar declarar varias variables en la misma línea aunque el lenguaje lo permita."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Cada regla de formato existe para reducir errores de fusión y acelerar el code review en equipos grandes trabajando sobre el mismo código base — no es estética por sí sola."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Reglas de programación orientada a objetos",
+      "title_en": "OOP Programming Rules",
+      "intro": "Esta sección concentra algunos de los bugs más sutiles y recurrentes en código Java de producción: comparaciones inseguras, autoboxing mal entendido y contratos de equals()/hashCode() rotos.",
       "points": [
-        "<strong>Antipattern</strong>: Basic Edition en producción — sin failover ni SLA",
-        "<strong>Antipattern</strong>: Whitelist 0.0.0.0/0 — DB expuesta a internet",
-        "<strong>Antipattern</strong>: Reportes pesados en la primaria — degradan transacciones",
-        "<strong>Antipattern</strong>: No monitorear IOPS/CPU — el motor se satura sin alerta",
-        "<strong>Antipattern</strong>: Retención de backup demasiado corta (default 7 días)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>equals() defensivo</strong>: al comparar un valor conocido no nulo contra una variable que podría ser null, invocar equals sobre el literal conocido (p.ej. <code>ESTADO_ACTIVO.equals(status)</code>) en vez de sobre la variable, para evitar un NullPointerException.",
+        "<strong>Caché de Integer</strong>: la JVM cachea internamente los valores <code>Integer</code> entre -128 y 127; comparar objetos <code>Integer</code> fuera de ese rango con <code>==</code> en vez de <code>equals()</code> produce bugs sutiles e intermitentes que solo aparecen con ciertos valores.",
+        "<strong>equals() y hashCode() van juntos</strong>: si se sobreescribe uno, se debe sobreescribir el otro — de lo contrario, colecciones como HashMap o HashSet se comportan de forma inconsistente.",
+        "<strong>Sobrecarga (overloading) prudente</strong>: evitar firmas de método ambiguas donde el autoboxing pueda resolver a la sobrecarga incorrecta en tiempo de compilación.",
+        "<strong>Inmutabilidad cuando sea posible</strong>: preferir objetos inmutables para los objetos de valor (DTO/VO) — reducen errores de estado compartido en entornos concurrentes.",
+        "<strong>Estáticos y herencia</strong>: no usar un campo estático de una subclase para «sobreescribir» un campo estático del padre — los campos estáticos no participan en polimorfismo, y esto genera confusión."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "La comparación con <code>==</code> entre dos objetos Integer fuera del rango -128..127 es un distractor clásico: el examen espera que reconozcas que puede devolver false aunque los valores numéricos sean idénticos."
+      }
+    },
+    {
+      "title_es": "5 · Colecciones y concurrencia",
+      "title_en": "Collections and Concurrency",
+      "intro": "Las reglas de concurrencia del manual existen para prevenir exactamente el tipo de incidente que más teme un equipo de plataforma: un OutOfMemoryError o un deadlock bajo el pico de tráfico más alto del año.",
+      "points": [
+        "<strong>Capacidad inicial explícita</strong>: al crear un ArrayList o HashMap cuyo tamaño aproximado se conoce de antemano, especificar la capacidad inicial evita redimensionamientos internos costosos.",
+        "<strong>ArrayList vs. LinkedList</strong>: ArrayList es la opción por defecto para acceso aleatorio frecuente; LinkedList solo se justifica cuando predominan inserciones/eliminaciones en los extremos.",
+        "<strong>Prohibidos los métodos factory de Executors</strong> (p.ej. <code>Executors.newFixedThreadPool</code>) en producción: sus colas internas pueden ser ilimitadas y agotar la memoria bajo carga; se exige instanciar <code>ThreadPoolExecutor</code> explícitamente, definiendo tamaño de cola, política de rechazo y nombre de los hilos.",
+        "<strong>Colecciones concurrentes</strong>: usar <code>ConcurrentHashMap</code> en vez de sincronizar manualmente un HashMap compartido entre hilos.",
+        "<strong>Menor contención cuando sea posible</strong>: preferir estructuras de bajo bloqueo (p.ej. <code>AtomicInteger</code>) sobre un <code>synchronized</code> de grano grueso cuando el caso de uso lo permite.",
+        "<strong>Limpieza de ThreadLocal</strong>: llamar explícitamente a <code>remove()</code> al terminar de usar un valor de ThreadLocal en entornos con pool de hilos reutilizados, para evitar fugas de memoria o fuga de datos entre peticiones distintas."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Prohibir los métodos factory de Executors no es una preferencia de estilo: es una lección aprendida de incidentes reales de OutOfMemoryError bajo picos de tráfico en producción."
+      }
+    },
+    {
+      "title_es": "6 · Control de flujo, comentarios y manejo de excepciones",
+      "title_en": "Control Flow, Comments and Exception Handling",
+      "intro": "Un manejo de excepciones descuidado es una de las causas más frecuentes de incidentes difíciles de diagnosticar: errores que ocurrieron hace minutos, pero de los que no queda ningún rastro en los logs.",
+      "points": [
+        "<strong>Cláusulas de guarda</strong>: preferir retornos tempranos (guard clauses) sobre anidar múltiples niveles de if, manteniendo baja la complejidad ciclomática del método.",
+        "<strong>Excepciones para casos excepcionales</strong>: una excepción debe representar una condición verdaderamente anómala, no un mecanismo habitual de control de flujo.",
+        "<strong>Captura específica, no genérica</strong>: evitar un <code>catch (Exception e)</code> silencioso que oculta errores reales; capturar el tipo más específico posible y decidir explícitamente si se registra, se relanza o se traduce a otra excepción.",
+        "<strong>Cierre garantizado de recursos</strong>: todo recurso que implemente Closeable (streams, conexiones) debe cerrarse con try-with-resources o en un bloque finally.",
+        "<strong>Comentarios con intención</strong>: los comentarios deben explicar el «por qué», no repetir lo que el código ya dice; usar Javadoc en métodos públicos de APIs compartidas por otros equipos.",
+        "<strong>TODO/FIXME rastreables</strong>: cualquier comentario de trabajo pendiente debe incluir autor y fecha, y no quedar huérfano indefinidamente en el código."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Un bloque <code>catch (Exception e) {}</code> vacío —una excepción tragada en silencio— es uno de los antipatrones más citados del manual, y casi siempre es la opción incorrecta en una pregunta de examen."
+      }
+    },
+    {
+      "title_es": "7 · Logging y convenciones de base de datos",
+      "title_en": "Logging and Database Conventions",
+      "intro": "Logging y convenciones de MySQL comparten un mismo objetivo dentro del manual: mantener un rendimiento predecible cuando el sistema opera a gran escala, recortando trabajo innecesario en el camino caliente de la aplicación.",
+      "points": [
+        "<strong>SLF4J como fachada</strong>: el código de aplicación debe depender de la API de SLF4J, no de una implementación concreta (Log4j2/Logback), para poder cambiar el backend de logging sin tocar el código de negocio.",
+        "<strong>Placeholders, no concatenación</strong>: usar el estilo con marcadores de posición <code>{}</code> en vez de concatenar strings en cada llamada de log, evitando el costo de formatear el mensaje cuando el nivel está deshabilitado.",
+        "<strong>Prohibido System.out.println</strong> en código de producción: no pasa por el pipeline de logging estructurado ni se puede filtrar por nivel o enviar a un sistema centralizado.",
+        "<strong>Convenciones de tablas MySQL</strong>: nombres de tabla en snake_case y singular, clave primaria autoincremental de tipo entero grande sin signo, y columnas de auditoría de creación/modificación presentes en toda tabla de negocio.",
+        "<strong>Evitar SELECT *</strong>: listar explícitamente las columnas necesarias reduce el tráfico de red y evita romper el código cuando se añade una columna nueva a la tabla.",
+        "<strong>Índices deliberados</strong>: cada índice se justifica por un patrón de consulta real; el manual desaconseja el uso extendido de claves foráneas a nivel de base de datos en sistemas de alta concurrencia, delegando la integridad referencial a la capa de aplicación por razones de rendimiento y escalabilidad operativa."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El hilo conductor de esta sección es el rendimiento a escala: placeholders en logs, evitar SELECT * y evitar claves foráneas recortan trabajo innecesario en cada petición cuando el sistema procesa millones de ellas."
+      }
+    },
+    {
+      "title_es": "8 · Arquitectura de proyecto, seguridad y estrategia de examen",
+      "title_en": "Project Architecture, Security and Exam Strategy",
+      "intro": "El último módulo conecta las reglas individuales con la arquitectura completa de un proyecto Java típico en Alibaba, y con la forma en que el examen suele plantear sus preguntas.",
+      "points": [
+        "<strong>Arquitectura por capas</strong>: Controller (recibe la petición) → Service (orquesta la lógica de negocio) → Manager (opcional, encapsula lógica reutilizable o de integración) → DAO (acceso a datos) — cada capa solo debe invocar a la inmediatamente inferior.",
+        "<strong>DTO / VO / DO / BO</strong>: el manual distingue el objeto de transferencia entre capas (DTO), el objeto de presentación (VO), el objeto que mapea la tabla (DO) y el objeto de lógica de negocio (BO) — mezclar sus responsabilidades es un antipatrón frecuente.",
+        "<strong>Validación de entrada</strong>: toda entrada proveniente del cliente (API pública) debe validarse explícitamente en el servidor, sin confiar únicamente en la validación del lado del cliente.",
+        "<strong>Datos sensibles</strong>: nunca loguear contraseñas, tokens ni números de tarjeta en texto plano; enmascarar (desensibilizar) datos personales en logs e interfaces de soporte.",
+        "<strong>El manual como control de calidad continuo</strong>: está pensado para aplicarse en cada code review, no solo al escribir el código por primera vez — P3C automatiza la primera pasada de esa revisión.",
+        "<strong>Estrategia de examen</strong>: ante una pregunta que describe un síntoma (NPE intermitente, fuga de memoria, OOM bajo carga, bug de serialización JSON), identifica primero qué regla del manual lo previene antes de mirar las opciones."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Cuando dos opciones parezcan igualmente válidas, elige la que reduce el riesgo a escala —miles de instancias, millones de peticiones— porque esa es la lente con la que Alibaba redactó cada regla del manual."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Backend transaccional de aplicaciones web/móviles"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ERP/CRM con requisitos de HA y PITR"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Migración lift-and-shift desde MySQL/PG on-premise"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Read scaling con read-only replicas para reportes"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Test/dev con clones rápidos a partir de snapshots"
-    }
+    { "title": "Escenario 1", "text": "Code review de un microservicio de pagos — aplicar el checklist Mandatory antes de aprobar el merge" },
+    { "title": "Escenario 2", "text": "Depuración de un NullPointerException intermitente — sospechar de una comparación equals() invertida" },
+    { "title": "Escenario 3", "text": "Incidente de OutOfMemoryError bajo un pico de tráfico — rastrear un pool de hilos sin límite de cola creado con Executors" },
+    { "title": "Escenario 4", "text": "Auditoría previa a una certificación de compliance — verificar que no haya contraseñas ni tokens en los logs de aplicación" },
+    { "title": "Escenario 5", "text": "Onboarding de un desarrollador junior — instalar el plugin P3C para que el IDE marque violaciones mientras escribe código" },
+    { "title": "Escenario 6", "text": "Diseño de un nuevo módulo de dominio — definir DTO, VO, DO y BO desde el inicio para mantener la separación de capas" }
   ],
   "mistakes": [
-    "Basic Edition en producción — sin failover ni SLA",
-    "Whitelist 0.0.0.0/0 — DB expuesta a internet",
-    "Reportes pesados en la primaria — degradan transacciones",
-    "No monitorear IOPS/CPU — el motor se satura sin alerta",
-    "Retención de backup demasiado corta (default 7 días)"
+    "Comparar dos objetos Integer con == fuera del rango de caché (-128 a 127)",
+    "Crear pools de hilos con Executors.newFixedThreadPool/newCachedThreadPool sin límite acotado de cola",
+    "Capturar Exception de forma genérica y tragarla en un bloque catch vacío",
+    "Concatenar strings en llamadas de log en vez de usar placeholders {}",
+    "Usar SELECT * en consultas SQL de producción",
+    "Prefijar campos booleanos de un POJO con 'is', rompiendo la serialización JSON en algunos frameworks"
   ],
   "cli": [
-    {
-      "cmd": "aliyun rds CreateDBInstance",
-      "desc": "Crear instancia RDS"
-    },
-    {
-      "cmd": "aliyun rds ModifySecurityIps --SecurityIps 10.0.0.0/24",
-      "desc": "Whitelist"
-    },
-    {
-      "cmd": "aliyun rds CreateBackup",
-      "desc": "Backup on-demand"
-    },
-    {
-      "cmd": "aliyun rds RestoreDBInstance --RestoreTime ...",
-      "desc": "Restauración PITR"
-    }
+    { "cmd": "mvn com.alibaba.p3c:p3c-pmd:2.1.1:pmd", "desc": "Ejecutar el análisis estático P3C sobre el proyecto vía Maven" },
+    { "cmd": "mvn checkstyle:check", "desc": "Verificar el formato de código contra las reglas configuradas" },
+    { "cmd": "git diff --check", "desc": "Detectar espacios en blanco al final de línea antes de un commit" },
+    { "cmd": "mvn -T 4 clean verify", "desc": "Compilar y ejecutar pruebas en paralelo antes de abrir un merge request" },
+    { "cmd": "javac -Xlint:all Order.java", "desc": "Compilar con todas las advertencias del compilador activadas" }
   ],
   "glossary": [
-    {
-      "en": "HA Edition",
-      "es": "Edición HA",
-      "def": "Primaria + standby síncrono en zona distinta con failover <60 s."
-    },
-    {
-      "en": "Basic Edition",
-      "es": "Edición básica",
-      "def": "Instancia única sin HA — solo dev/test."
-    },
-    {
-      "en": "Enterprise Edition",
-      "es": "Edición enterprise",
-      "def": "Múltiples nodos, mayor SLA."
-    },
-    {
-      "en": "Read-only Replica",
-      "es": "Réplica de lectura",
-      "def": "Hasta 5 réplicas asíncronas para escalar SELECT."
-    },
-    {
-      "en": "Parameter Group",
-      "es": "Parameter Group",
-      "def": "Configuración reutilizable del engine."
-    },
-    {
-      "en": "Automated Backup",
-      "es": "Backup automático",
-      "def": "Full diario + binlogs incrementales. Retención 7-730 días."
-    },
-    {
-      "en": "PITR",
-      "es": "Point-in-Time Recovery",
-      "def": "Restaura al segundo exacto dentro del rango de retención."
-    },
-    {
-      "en": "Whitelist",
-      "es": "Whitelist",
-      "def": "Lista de IPs/SG autorizados. Sin esto, nadie conecta."
-    },
-    {
-      "en": "Account Privilege",
-      "es": "Privilegios de cuenta",
-      "def": "Roles: read/write/DDL/DML granulares."
-    },
-    {
-      "en": "SSL",
-      "es": "SSL",
-      "def": "Cifrado en tránsito; certificado descargable."
-    },
-    {
-      "en": "TDE",
-      "es": "Transparent Data Encryption",
-      "def": "Cifrado en reposo integrado con KMS."
-    },
-    {
-      "en": "Slow Query Log",
-      "es": "Log de queries lentas",
-      "def": "Diagnóstico automático de rendimiento."
-    },
-    {
-      "en": "DTS",
-      "es": "Data Transmission Service",
-      "def": "Migración y replicación entre motores."
-    },
-    {
-      "en": "Auto Scaling Storage",
-      "es": "Storage auto-scaling",
-      "def": "Aumenta disco automáticamente si se llena."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Mandatory", "es": "Obligatorio", "def": "Nivel de severidad más alto del manual; su violación es motivo de rechazo en code review." },
+    { "en": "Recommended", "es": "Recomendado", "def": "Regla que se espera seguir salvo justificación explícita del equipo." },
+    { "en": "Reference", "es": "Referencia", "def": "Buena práctica a considerar según el contexto, el nivel más flexible del manual." },
+    { "en": "P3C", "es": "P3C", "def": "Plugin de análisis estático (IntelliJ/Eclipse) que detecta violaciones al manual mientras se escribe código." },
+    { "en": "POJO", "es": "POJO", "def": "Plain Old Java Object: clase simple de datos sin dependencias de framework." },
+    { "en": "DTO", "es": "DTO", "def": "Data Transfer Object: objeto usado para transferir datos entre capas de la aplicación." },
+    { "en": "VO", "es": "VO", "def": "View Object: objeto orientado a la presentación/respuesta al cliente." },
+    { "en": "DO", "es": "DO", "def": "Data Object: objeto que mapea directamente una fila de una tabla de base de datos." },
+    { "en": "BO", "es": "BO", "def": "Business Object: objeto que encapsula lógica y estado de negocio." },
+    { "en": "NPE", "es": "NullPointerException", "def": "Excepción lanzada al invocar un método o acceder a un campo sobre una referencia null." },
+    { "en": "Integer Cache", "es": "Caché de Integer", "def": "Mecanismo de la JVM que reutiliza instancias de Integer entre -128 y 127; comparar con == fuera de ese rango es inseguro." },
+    { "en": "ThreadPoolExecutor", "es": "ThreadPoolExecutor", "def": "Clase para instanciar pools de hilos con control explícito de cola, tamaño y política de rechazo." },
+    { "en": "ConcurrentHashMap", "es": "ConcurrentHashMap", "def": "Mapa seguro para acceso concurrente sin necesidad de sincronización manual externa." },
+    { "en": "SLF4J", "es": "SLF4J", "def": "Fachada de logging que desacopla el código de aplicación de la implementación concreta del logger." },
+    { "en": "try-with-resources", "es": "try-with-resources", "def": "Construcción de Java que cierra automáticamente recursos Closeable al salir del bloque." },
+    { "en": "Magic Number", "es": "Número mágico", "def": "Valor numérico con significado de negocio embebido directamente en el código, en vez de una constante nombrada." },
+    { "en": "Guard Clause", "es": "Cláusula de guarda", "def": "Retorno temprano que evita anidar múltiples niveles de condicionales." },
+    { "en": "Layered Architecture", "es": "Arquitectura por capas", "def": "Patrón Controller → Service → Manager → DAO donde cada capa solo invoca a la inmediatamente inferior." },
+    { "en": "ThreadLocal", "es": "ThreadLocal", "def": "Mecanismo para asociar datos a un hilo específico; debe limpiarse con remove() en pools de hilos reutilizados." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ApsaraDB RDS?",
-      "options": [
-        "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability editio",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "RDS es base de datos relacional totalmente gestionada (MySQL, PostgreSQL, SQL Server, MariaDB). Alibaba Cloud maneja parches, backups, monitoreo, failover, replicación. Ofrece High-Availability edition con réplica en zona distinta y failover automático."
-    },
-    {
-      "q": "¿Qué es <strong>HA Edition</strong> (Edición HA) en ApsaraDB RDS?",
-      "options": [
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "HA Edition (Edición HA): Primaria + standby síncrono en zona distinta con failover <60 s."
-    },
-    {
-      "q": "¿Qué es <strong>Basic Edition</strong> (Edición básica) en ApsaraDB RDS?",
-      "options": [
-        "Instancia única sin HA — solo dev/test.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Múltiples nodos, mayor SLA.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "Basic Edition (Edición básica): Instancia única sin HA — solo dev/test."
-    },
-    {
-      "q": "¿Qué es <strong>Enterprise Edition</strong> (Edición enterprise) en ApsaraDB RDS?",
-      "options": [
-        "Múltiples nodos, mayor SLA.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Hasta 5 réplicas asíncronas para escalar SELECT."
-      ],
-      "answer": 0,
-      "explain": "Enterprise Edition (Edición enterprise): Múltiples nodos, mayor SLA."
-    },
-    {
-      "q": "¿Qué es <strong>Read-only Replica</strong> (Réplica de lectura) en ApsaraDB RDS?",
-      "options": [
-        "Hasta 5 réplicas asíncronas para escalar SELECT.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA."
-      ],
-      "answer": 0,
-      "explain": "Read-only Replica (Réplica de lectura): Hasta 5 réplicas asíncronas para escalar SELECT."
-    },
-    {
-      "q": "¿Qué es <strong>Parameter Group</strong> (Parameter Group) en ApsaraDB RDS?",
-      "options": [
-        "Configuración reutilizable del engine.",
-        "Primaria + standby síncrono en zona distinta con failover <60 s.",
-        "Instancia única sin HA — solo dev/test.",
-        "Múltiples nodos, mayor SLA."
-      ],
-      "answer": 0,
-      "explain": "Parameter Group (Parameter Group): Configuración reutilizable del engine."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ApsaraDB RDS, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ApsaraDB RDS en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ApsaraDB RDS, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ApsaraDB RDS es la elección típica:",
-      "options": [
-        "Backend transaccional de aplicaciones web/móviles",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Backend transaccional de aplicaciones web/móviles."
-    }
+    { "q": "¿Qué distingue a una regla 'Mandatory' de una 'Recommended' en el manual de estilo Java de Alibaba?", "options": ["Mandatory es obligatoria y bloquea el code review; Recommended se espera seguir salvo justificación", "Son sinónimos, ambas son opcionales", "Recommended es más estricta que Mandatory", "Mandatory solo aplica a proyectos de código abierto"], "answer": 0, "explain": "El manual define tres niveles de severidad; Mandatory bloquea el review, Recommended se sigue salvo justificación, y Reference es la más flexible." },
+    { "q": "Un desarrollador compara una variable que puede ser null contra un valor conocido usando equals(). ¿Cuál es la forma segura recomendada por el manual?", "options": ["Invocar equals() sobre la variable que puede ser null", "Invocar equals() sobre el valor/literal conocido no nulo, pasando la variable como argumento", "Usar == en vez de equals()", "No comparar nunca strings en Java"], "answer": 1, "explain": "Invocar equals() sobre el valor conocido no nulo evita un NullPointerException si la variable resulta ser null." },
+    { "q": "¿Por qué comparar dos objetos Integer con == puede dar resultados inesperados fuera del rango -128 a 127?", "options": ["Porque Integer no implementa equals()", "Porque la JVM solo cachea (reutiliza) objetos Integer dentro de ese rango; fuera de él == compara referencias distintas", "Porque Integer es un tipo primitivo", "Porque Java no permite comparar Integers con =="], "answer": 1, "explain": "Dentro del rango de caché, dos Integer con el mismo valor pueden ser la misma referencia; fuera de él, son objetos distintos aunque el valor numérico coincida." },
+    { "q": "¿Cuál es el problema principal de crear pools de hilos con los métodos factory de Executors en producción, según el manual?", "options": ["Es una sintaxis obsoleta que ya no compila", "Su cola interna puede ser ilimitada, arriesgando un OutOfMemoryError bajo carga", "No soporta más de 10 hilos simultáneos", "Requiere una licencia adicional de Alibaba"], "answer": 1, "explain": "El manual exige instanciar ThreadPoolExecutor explícitamente con una cola acotada, precisamente para evitar ese riesgo de memoria." },
+    { "q": "¿Qué antipatrón representa un bloque catch (Exception e) {} vacío?", "options": ["Es la forma correcta de manejar errores no críticos", "Traga silenciosamente el error, ocultando la causa raíz de un fallo", "Mejora el rendimiento al evitar logging", "Es requerido por el estándar de Alibaba"], "answer": 1, "explain": "Una excepción capturada y descartada sin registro deja al equipo sin ninguna pista para diagnosticar el fallo real." },
+    { "q": "Según las convenciones de nomenclatura del manual, ¿cómo deben nombrarse las constantes en Java?", "options": ["camelCase", "UPPER_SNAKE_CASE", "PascalCase", "kebab-case"], "answer": 1, "explain": "Las constantes se escriben completamente en mayúsculas separadas por guiones bajos, nunca mezcladas con minúsculas." },
+    { "q": "¿Por qué el manual desaconseja el prefijo 'is' en campos booleanos de un POJO (p.ej. isDeleted)?", "options": ["Porque Java no permite ese prefijo en absoluto", "Porque algunos frameworks de serialización pueden generar el getter de forma inconsistente y causar errores de mapeo", "Porque ralentiza la JVM de forma medible", "Porque solo aplica a campos estáticos"], "answer": 1, "explain": "El prefijo is puede interactuar mal con la generación automática de getters/setters de ciertos frameworks, causando bugs de (de)serialización." },
+    { "q": "¿Qué debe usarse en los mensajes de log en vez de concatenar strings, según el manual?", "options": ["Placeholders {} de SLF4J", "System.out.println", "StringBuilder manual siempre", "El logging no debe hacerse en producción"], "answer": 0, "explain": "Los placeholders evitan el costo de formatear el mensaje cuando el nivel de log correspondiente está deshabilitado." },
+    { "q": "¿Qué recomienda el manual respecto al uso de SELECT * en consultas SQL de producción?", "options": ["Usarlo siempre por simplicidad", "Evitarlo y listar explícitamente las columnas necesarias", "Solo usarlo en tablas con menos de 10 filas", "Es obligatorio para que el ORM funcione"], "answer": 1, "explain": "Listar columnas explícitas reduce el tráfico de red y evita romper el código cuando se añaden columnas nuevas a la tabla." },
+    { "q": "En la arquitectura por capas descrita por el manual, ¿qué capa es responsable de orquestar la lógica de negocio?", "options": ["Controller", "Service", "DAO", "VO"], "answer": 1, "explain": "Controller recibe la petición, Service orquesta la lógica de negocio, y DAO se limita al acceso a datos." },
+    { "q": "¿Qué herramienta de Alibaba automatiza la detección de violaciones al manual directamente dentro del IDE?", "options": ["Checkstyle exclusivamente", "P3C (Alibaba Java Coding Guidelines plugin)", "JUnit", "Maven Surefire"], "answer": 1, "explain": "P3C es el plugin oficial que resalta violaciones al manual mientras se escribe el código, antes del code review humano." },
+    { "q": "¿Cuál es la razón principal por la que el manual desaconseja el uso extendido de claves foráneas a nivel de base de datos en sistemas de alta concurrencia?", "options": ["Las claves foráneas no existen en MySQL", "Impacto en rendimiento y escalabilidad operativa a gran escala; la integridad se delega a la capa de aplicación", "Son inherentemente inseguras", "Aumentan el tamaño del binario compilado"], "answer": 1, "explain": "A gran escala, las claves foráneas a nivel de motor de base de datos pueden limitar el rendimiento y la flexibilidad operativa, por lo que el manual delega esa integridad a la aplicación." },
+    { "q": "¿Qué tipo de objeto debe usarse para transferir datos entre capas de una aplicación, distinto del objeto que mapea la tabla de base de datos?", "options": ["El mismo DO para todo, sin distinción de capas", "DTO", "Solo tipos primitivos, nunca objetos", "El ResultSet crudo del driver JDBC"], "answer": 1, "explain": "El manual distingue explícitamente DTO (transferencia entre capas) de DO (mapeo de tabla) para evitar mezclar responsabilidades." },
+    { "q": "Un pool de hilos reutilizado usa ThreadLocal para guardar contexto de una petición HTTP. ¿Qué riesgo existe si no se llama a remove() al finalizar?", "options": ["Ninguno, se limpia automáticamente al terminar el hilo", "Fuga de memoria o fuga de datos entre peticiones distintas que reutilizan el mismo hilo", "El programa deja de compilar", "Mejora el rendimiento de forma notable"], "answer": 1, "explain": "Como los hilos del pool se reutilizan, un ThreadLocal sin limpiar puede filtrar datos de una petición anterior a la siguiente que use el mismo hilo." }
   ],
-  "exam_focus": "Preguntas: (a) ediciones y cuándo usar cada una, (b) PITR y ventana de retención, (c) whitelist + VPC + SSL, (d) escalado lectura vs escritura, (e) DTS para migración.",
+  "exam_focus": "El examen suele evaluar: (a) distinguir reglas Mandatory de Recommended, (b) identificar la causa raíz de bugs clásicos (NPE por equals() invertido, caché de Integer, catch vacío), (c) por qué se prohíben ciertos patrones de concurrencia (Executors sin cola acotada), (d) convenciones de logging/SQL y su motivo de rendimiento, (e) la arquitectura por capas y los objetos DTO/VO/DO/BO.",
   "official_intro": "As one of the most popular programming languages, Java's usage in cloud application development is also very high. This certification exam is based on Alibaba's Java Coding Guidelines.",
   "recommended_for": "Java Developers",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_java",

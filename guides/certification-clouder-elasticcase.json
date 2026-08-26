@@ -2,423 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-elasticcase",
   "title_en": "Alibaba Cloud Elastic Architecture and Case Study",
-  "title_es": "Alibaba Cloud Elástico Architecture y Case Study",
+  "title_es": "Arquitectura Elástica de Alibaba Cloud y Casos de Estudio",
+  "title_es_html": "Arquitectura Elástica de Alibaba Cloud y <em>Casos de Estudio</em>",
   "duration_es": "59 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_elasticcase",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Elastic Architecture and Case Study» de Alibaba Cloud Academy. Cubre en profundidad Arquitectura Alibaba Cloud. Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud Elastic Architecture and Case Study» de Alibaba Cloud Academy. El curso se centra en cuatro servicios concretos que hacen posible una arquitectura elástica —Auto Scaling, CDN, VPC y ApsaraDB for Tair (compatible con Redis) / Memcache— y en casos de estudio clásicos que muestran cómo combinarlos para absorber picos de tráfico sin sobreaprovisionar de forma permanente.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Arquitectura Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Well-Architected, Multi-region, Multi-AZ, Elastic, Fault Tolerance.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Arquitectura Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué significa 'elasticidad' en la nube y por qué es distinta de simplemente 'tener más servidores'.",
+    "<strong>Configurar</strong> un Auto Scaling Group con reglas de escalado basadas en métricas y en calendario.",
+    "<strong>Aplicar</strong> CDN para descargar tráfico estático del origen y reducir latencia a usuarios distribuidos geográficamente.",
+    "<strong>Diseñar</strong> la segmentación de red con VPC que soporta una arquitectura elástica multi-capa.",
+    "<strong>Distinguir</strong> cuándo usar ApsaraDB for Tair (Redis-compatible) frente a Memcache como capa de caché.",
+    "<strong>Analizar</strong> casos de estudio clásicos de picos de tráfico y extraer el patrón arquitectónico reutilizable.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre arquitectura elástica."
   ],
-  "architecture": "Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+  "architecture": "Usuario → CDN (cachea contenido estático cerca del usuario, reduce carga al origen) → SLB (distribuye tráfico dinámico restante) → Auto Scaling Group de instancias ECS dentro de una VPC con subredes en 2+ zonas (crece y decrece según métricas de CPU/tráfico o un calendario programado) → capa de caché con ApsaraDB for Tair/Memcache (absorbe lecturas repetidas antes de golpear la base de datos) → base de datos (RDS/PolarDB) como última capa, protegida de los picos por las capas anteriores.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Arquitectura Alibaba Cloud",
-      "title_en": "Introduction to Arquitectura Alibaba Cloud",
-      "intro": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué significa elasticidad en la nube",
+      "title_en": "What Elasticity Means",
+      "intro": "Antes de entrar en los servicios concretos, el curso aclara el concepto central: elasticidad no es 'tener capacidad de sobra', sino 'ajustar la capacidad automáticamente según la demanda real'.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Arquitectura Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Elasticidad vs. escalabilidad</strong>: escalabilidad es la capacidad de crecer cuando se necesita; elasticidad añade la capacidad de <em>también decrecer</em> automáticamente cuando la demanda baja, evitando pagar por capacidad ociosa.",
+        "<strong>El problema del sobreaprovisionamiento fijo</strong>: dimensionar la infraestructura para el pico más alto esperado (p.ej. una campaña de ventas) significa pagar ese tamaño máximo los 365 días del año, aunque el pico dure solo unas horas.",
+        "<strong>El problema del subaprovisionamiento</strong>: dimensionar para el tráfico promedio deja el sistema sin capacidad cuando el tráfico se dispara, causando caídas justo en el momento de mayor oportunidad de negocio.",
+        "<strong>La solución elástica</strong>: combinar servicios que crecen y decrecen automáticamente (Auto Scaling), que descargan tráfico antes de llegar al origen (CDN), y que absorben lecturas repetidas (caché) — de forma que la infraestructura 'respira' con la demanda real en vez de estar fija en un tamaño."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Arquitectura Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen distingue con cuidado <em>escalabilidad</em> (poder crecer) de <em>elasticidad</em> (crecer Y decrecer automáticamente según demanda real, optimizando costo)."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Arquitectura Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Auto Scaling: el motor de la elasticidad de cómputo",
+      "title_en": "Auto Scaling (ESS)",
+      "intro": "Auto Scaling (Elastic Scaling Service) es el servicio que ajusta el número de instancias ECS automáticamente. El curso cubre sus dos modos principales de disparo.",
       "points": [
-        "<strong>Patrón canónico</strong>: Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Arquitectura Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Well-Architected</strong> <em>(Well-Architected)</em>: 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "<strong>Multi-región</strong> <em>(Multi-region)</em>: Despliegue en varias regiones para DR/latencia.",
-        "<strong>Multi-AZ</strong> <em>(Multi-AZ)</em>: Múltiples zonas dentro de región.",
-        "<strong>Elástico</strong> <em>(Elastic)</em>: Auto-scale según demanda.",
-        "<strong>Tolerancia a fallos</strong> <em>(Fault Tolerance)</em>: Diseño que sobrevive a fallos parciales.",
-        "<strong>Blast radius</strong> <em>(Blast Radius)</em>: Alcance de una falla.",
-        "<strong>Chaos engineering</strong> <em>(Chaos Engineering)</em>: Introducir fallos controlados para validar resiliencia.",
-        "<strong>Landing zone</strong> <em>(Landing Zone)</em>: Baseline de cuenta lista para cargas."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Scaling Group</strong>: el conjunto de instancias gestionado, con un mínimo y máximo de instancias definido — Auto Scaling nunca escala por debajo del mínimo ni por encima del máximo configurado.",
+        "<strong>Scaling Configuration</strong>: la plantilla que define cómo se crea cada instancia nueva (imagen, tipo, red, Security Group) — cuando el grupo necesita crecer, usa esta plantilla para lanzar instancias idénticas.",
+        "<strong>Reglas basadas en métricas</strong>: escalar hacia arriba cuando CPU promedio supera un umbral (p.ej. 70% durante 5 minutos) y hacia abajo cuando baja de otro umbral — reactivo a la demanda real en tiempo casi real.",
+        "<strong>Reglas basadas en calendario (scheduled)</strong>: escalar en un horario conocido de antemano (p.ej. antes de una campaña de medianoche) sin esperar a que la métrica lo detecte — útil cuando el pico es predecible y se quiere capacidad lista de antemano.",
+        "<strong>Health check e integración con SLB</strong>: las instancias nuevas se registran automáticamente en el Server Load Balancer y las que fallan un chequeo de salud se retiran y reemplazan sin intervención manual.",
+        "<strong>Cooldown period</strong>: tiempo de espera tras un evento de escalado antes de permitir otro, para evitar que el grupo oscile creciendo y decreciendo repetidamente ante fluctuaciones momentáneas de la métrica."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona un pico <em>predecible</em> (campaña programada), la respuesta es escalado por calendario; si menciona un pico <em>impredecible</em>, la respuesta es escalado basado en métricas."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · CDN: elasticidad antes de llegar al origen",
+      "title_en": "CDN for Traffic Offload",
+      "intro": "El curso posiciona CDN no solo como 'aceleración', sino como la primera línea de defensa que reduce cuánto tráfico realmente necesita escalar la capa de cómputo.",
       "points": [
-        "<strong>HA</strong>: Multi-AZ default, multi-región para tier-1",
-        "<strong>HA</strong>: Chaos engineering en pre-prod",
-        "<strong>Buenas prácticas</strong>: Elasticidad automática (HPA + Cluster Autoscaler + Auto Scaling ECS)",
-        "<strong>Buenas prácticas</strong>: Blast radius pequeño (celdas independientes)",
-        "<strong>Buenas prácticas</strong>: Landing zone estándar antes de cargar"
+        "<strong>Cacheo en el borde (edge)</strong>: contenido estático (imágenes, CSS, JS, video) se sirve desde nodos CDN geográficamente cercanos al usuario, sin tocar el origen en cada solicitud repetida.",
+        "<strong>Reducción de carga sobre Auto Scaling</strong>: cuanto más tráfico absorbe CDN, menos picos de tráfico llegan realmente hasta el Auto Scaling Group — esto reduce cuántas instancias adicionales se necesitan durante un pico, ahorrando costo.",
+        "<strong>TTL (Time To Live)</strong>: el tiempo que un objeto permanece cacheado en el borde antes de revalidar contra el origen — un TTL mal ajustado puede servir contenido desactualizado (muy alto) o generar demasiadas solicitudes al origen (muy bajo).",
+        "<strong>Invalidación de caché</strong>: cuando el contenido cambia antes de que expire el TTL natural, se puede forzar la purga de la caché del borde para que la próxima solicitud recupere la versión actualizada del origen.",
+        "<strong>Contenido dinámico</strong>: CDN también puede acelerar contenido dinámico (DCDN) optimizando la ruta de red hacia el origen, aunque el beneficio de descarga de carga es mucho menor que con contenido estático cacheable."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "CDN no es solo 'velocidad para el usuario' — es una herramienta de <em>elasticidad indirecta</em>: cuanto más absorbe el borde, menos necesita escalar el origen durante un pico."
+      }
+    },
+    {
+      "title_es": "4 · VPC como base de red de la arquitectura elástica",
+      "title_en": "VPC as the Network Foundation",
+      "intro": "Ninguna de las piezas anteriores funciona de forma aislada — todas viven dentro de una red virtual privada cuyo diseño determina cómo se comunican y qué tan resiliente es el conjunto.",
+      "points": [
+        "<strong>Aislamiento lógico</strong>: la VPC provee un espacio de direcciones IP privado exclusivo para la cuenta, separado de otros clientes de Alibaba Cloud, base de cualquier diseño de seguridad posterior.",
+        "<strong>Subredes por zona (VSwitch)</strong>: distribuir las instancias del Auto Scaling Group en VSwitches de distintas zonas de disponibilidad dentro de la misma VPC permite que el grupo siga funcionando si una zona completa falla.",
+        "<strong>Tablas de rutas y Security Groups</strong>: controlan qué tráfico puede fluir entre capas (por ejemplo, que solo la capa de aplicación pueda hablar con la capa de caché y base de datos, nunca directamente desde internet).",
+        "<strong>NAT Gateway</strong>: permite que instancias sin IP pública en subredes privadas salgan a internet (para actualizaciones, por ejemplo) sin exponer un puerto de entrada directo desde internet hacia ellas.",
+        "<strong>Peering y CEN</strong>: cuando la arquitectura elástica crece a múltiples VPCs o regiones, VPC Peering o Cloud Enterprise Network (CEN) conectan esas redes sin pasar por internet público."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "El Auto Scaling Group distribuido en una sola zona sigue siendo vulnerable a una falla de esa zona — el diseño correcto siempre reparte las instancias entre 2 o más VSwitches en zonas distintas."
+      }
+    },
+    {
+      "title_es": "5 · Caché elástica: ApsaraDB for Tair frente a Memcache",
+      "title_en": "Tair (Redis-compatible) vs. Memcache",
+      "intro": "La capa de caché es la que protege a la base de datos de picos de lectura repetida. El curso compara las dos opciones que cubre explícitamente.",
+      "points": [
+        "<strong>ApsaraDB for Tair (compatible con Redis)</strong>: soporta estructuras de datos ricas (strings, hashes, listas, sets, sorted sets), persistencia opcional a disco, replicación y clustering — apto tanto para caché simple como para casos de uso más avanzados (contadores, colas, rankings).",
+        "<strong>Memcache</strong>: modelo de caché más simple, puramente en memoria, clave-valor plano sin estructuras complejas ni persistencia — más ligero para el caso de uso más básico de 'cachear el resultado de una consulta'.",
+        "<strong>Cuándo elegir Tair sobre Memcache</strong>: cuando se necesita algo más que un caché plano — por ejemplo, un ranking en tiempo real (sorted set), un contador atómico compartido, o persistencia para no perder el estado del caché ante un reinicio.",
+        "<strong>Cuándo Memcache puede bastar</strong>: cargas de trabajo de caché puro y simple, sin necesidad de estructuras de datos avanzadas ni persistencia, donde la simplicidad operativa es la prioridad.",
+        "<strong>Rol en la elasticidad</strong>: al absorber lecturas repetidas antes de que lleguen a la base de datos, la capa de caché reduce cuánto debe escalar verticalmente la base de datos durante un pico de tráfico — es, junto con CDN, una pieza que reduce la necesidad de escalar las capas más costosas."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Si el enunciado menciona <em>estructuras de datos avanzadas o persistencia</em>, la respuesta es Tair (Redis-compatible); si menciona solo <em>caché simple clave-valor</em>, Memcache también es una opción válida."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Casos de estudio clásicos y estrategia de examen",
+      "title_en": "Classic Case Studies and Exam Strategy",
+      "intro": "El curso cierra combinando las piezas anteriores en patrones de caso de estudio reconocibles, típicos de preguntas de examen basadas en escenario.",
       "points": [
-        "<strong>Antipattern</strong>: Single-AZ en producción tier-1",
-        "<strong>Antipattern</strong>: Sin auto-scale — capacity planning manual",
-        "<strong>Antipattern</strong>: Blast radius global (un servicio caído cae todo)",
-        "<strong>Antipattern</strong>: Sin ejercicios DR",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Caso 'campaña de ventas con pico conocido'</strong>: combina escalado por calendario (capacidad lista antes del pico) con CDN para el catálogo de productos (imágenes) y Tair como caché de inventario/carrito — la base de datos rara vez ve el pico directo.",
+        "<strong>Caso 'contenido viral impredecible'</strong>: un artículo o video se vuelve popular sin aviso — aquí el escalado basado en métricas (no calendario) es el que responde, junto con CDN absorbiendo la mayoría de las solicitudes de contenido estático.",
+        "<strong>Caso 'aplicación con tráfico estable pero variable por hora del día'</strong>: escalado basado en métricas con umbrales ajustados finamente, más una capa de caché dimensionada para el promedio, no para el pico absoluto.",
+        "<strong>Antipatrón común</strong>: escalar solo la capa de cómputo (ECS) sin escalar ni proteger la capa de datos — un Auto Scaling Group grande sigue enviando toda su carga a una base de datos de tamaño fijo, que se convierte en el nuevo cuello de botella.",
+        "<strong>Estrategia de examen</strong>: identifica primero si el pico del escenario es <em>predecible o no</em> (determina el tipo de regla de Auto Scaling), y luego revisa qué capas (CDN, caché) pueden absorber tráfico antes de que llegue a la capa más cara de escalar."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Una arquitectura elástica correcta nunca depende de una sola capa — combina <em>CDN (borde) + Auto Scaling (cómputo) + caché (Tair/Memcache) + base de datos protegida</em>, cada una absorbiendo parte del pico."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "E-commerce con picos estacionales (Double 11 pattern)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "SaaS multi-tenant global"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Fintech con requerimientos compliance"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "IoT + real-time analytics"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Media con content delivery global"
-    }
+    { "title": "Escenario 1", "text": "Campaña de ventas con fecha y hora conocidas de antemano — escalado por calendario + CDN + caché de inventario" },
+    { "title": "Escenario 2", "text": "Contenido que se vuelve viral sin aviso previo — escalado basado en métricas de CPU/tráfico" },
+    { "title": "Escenario 3", "text": "Aplicación con tráfico variable por hora del día pero patrón repetible — escalado por métricas con umbrales ajustados" },
+    { "title": "Escenario 4", "text": "Ranking de jugadores en tiempo real que se actualiza constantemente — Tair (sorted set) en vez de Memcache" },
+    { "title": "Escenario 5", "text": "Sitio con gran volumen de imágenes y video servido a usuarios globales — CDN como primera capa de descarga" }
   ],
   "mistakes": [
-    "Single-AZ en producción tier-1",
-    "Sin auto-scale — capacity planning manual",
-    "Blast radius global (un servicio caído cae todo)",
-    "Sin ejercicios DR"
+    "Dimensionar la infraestructura para el pico máximo esperado todo el año, pagando capacidad ociosa la mayor parte del tiempo",
+    "Escalar solo la capa de cómputo (ECS) sin proteger la base de datos con una capa de caché",
+    "Colocar todas las instancias del Auto Scaling Group en una sola zona de disponibilidad",
+    "Usar escalado basado en calendario para un pico verdaderamente impredecible",
+    "Configurar un TTL de CDN demasiado alto para contenido que cambia con frecuencia, sirviendo datos desactualizados"
   ],
   "cli": [
-    {
-      "cmd": "Consulta Well-Architected Review",
-      "desc": "Framework"
-    },
-    {
-      "cmd": "aliyun sae CreateApplication",
-      "desc": "App SAE"
-    }
+    { "cmd": "aliyun ess CreateScalingGroup --MinSize 2 --MaxSize 10 --VSwitchIds vsw-a,vsw-b", "desc": "Crear un Scaling Group multi-zona con capacidad mínima y máxima" },
+    { "cmd": "aliyun ess CreateScalingRule --ScalingGroupId asg-xxxxx --AdjustmentType TotalCapacity --AdjustmentValue 5", "desc": "Definir una regla de escalado" },
+    { "cmd": "aliyun ess CreateScheduledTask --ScheduledAction asg-scale-up --LaunchTime 2026-11-11T00:00:00Z", "desc": "Programar un escalado por calendario antes de una campaña" },
+    { "cmd": "aliyun cdn RefreshObjectCaches --ObjectPath https://cdn.example.com/banner.jpg --ObjectType File", "desc": "Invalidar la caché de CDN para un objeto actualizado" },
+    { "cmd": "aliyun r-kvstore DescribeInstances --RegionId cn-hangzhou", "desc": "Listar instancias de ApsaraDB for Tair (Redis-compatible)" }
   ],
   "glossary": [
-    {
-      "en": "Well-Architected",
-      "es": "Well-Architected",
-      "def": "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "en": "Multi-region",
-      "es": "Multi-región",
-      "def": "Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "en": "Multi-AZ",
-      "es": "Multi-AZ",
-      "def": "Múltiples zonas dentro de región."
-    },
-    {
-      "en": "Elastic",
-      "es": "Elástico",
-      "def": "Auto-scale según demanda."
-    },
-    {
-      "en": "Fault Tolerance",
-      "es": "Tolerancia a fallos",
-      "def": "Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "en": "Blast Radius",
-      "es": "Blast radius",
-      "def": "Alcance de una falla."
-    },
-    {
-      "en": "Chaos Engineering",
-      "es": "Chaos engineering",
-      "def": "Introducir fallos controlados para validar resiliencia."
-    },
-    {
-      "en": "Landing Zone",
-      "es": "Landing zone",
-      "def": "Baseline de cuenta lista para cargas."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Elasticity", "es": "Elasticidad", "def": "Capacidad de crecer y decrecer automáticamente según la demanda real, evitando capacidad ociosa." },
+    { "en": "Scalability", "es": "Escalabilidad", "def": "Capacidad de crecer cuando se necesita más capacidad, sin implicar necesariamente decrecer automáticamente." },
+    { "en": "Auto Scaling (ESS)", "es": "Escalado automático", "def": "Servicio que ajusta el número de instancias ECS de un grupo según reglas de métricas o calendario." },
+    { "en": "Scaling Group", "es": "Grupo de escalado", "def": "Conjunto de instancias gestionado por Auto Scaling con un mínimo y máximo de tamaño configurado." },
+    { "en": "Scaling Configuration", "es": "Configuración de escalado", "def": "Plantilla que define cómo se crea cada instancia nueva dentro de un Scaling Group." },
+    { "en": "Scheduled scaling", "es": "Escalado por calendario", "def": "Regla de escalado disparada en un horario predefinido, útil para picos predecibles." },
+    { "en": "Metric-based scaling", "es": "Escalado basado en métricas", "def": "Regla de escalado disparada al cruzar un umbral de CPU, tráfico u otra métrica, útil para picos impredecibles." },
+    { "en": "Cooldown period", "es": "Periodo de enfriamiento", "def": "Tiempo de espera tras un evento de escalado antes de permitir otro, para evitar oscilaciones." },
+    { "en": "CDN", "es": "CDN", "def": "Red de nodos de borde que cachea contenido cerca del usuario, reduciendo latencia y carga sobre el origen." },
+    { "en": "TTL (Time To Live)", "es": "TTL", "def": "Tiempo que un objeto permanece cacheado en el borde de CDN antes de revalidar contra el origen." },
+    { "en": "Cache invalidation / purge", "es": "Invalidación de caché", "def": "Forzar la eliminación de un objeto cacheado antes de que expire su TTL natural." },
+    { "en": "VPC", "es": "VPC", "def": "Red virtual privada aislada donde se despliegan todos los recursos de la arquitectura elástica." },
+    { "en": "VSwitch", "es": "VSwitch", "def": "Subred dentro de una VPC, asociada a una zona de disponibilidad específica." },
+    { "en": "NAT Gateway", "es": "Puerta de enlace NAT", "def": "Permite salida a internet desde instancias sin IP pública, sin exponer un puerto de entrada." },
+    { "en": "ApsaraDB for Tair", "es": "Tair", "def": "Servicio de caché en memoria de Alibaba Cloud compatible con Redis, con estructuras de datos avanzadas y persistencia opcional." },
+    { "en": "Memcache", "es": "Memcache", "def": "Servicio de caché en memoria puramente clave-valor, más simple y sin persistencia, para casos de caché básico." },
+    { "en": "Server Load Balancer (SLB)", "es": "SLB", "def": "Balanceador que distribuye tráfico entre las instancias del Auto Scaling Group, integrado con health checks." },
+    { "en": "Health check", "es": "Chequeo de salud", "def": "Verificación periódica que determina si una instancia sigue apta para recibir tráfico; falla implica reemplazo automático." },
+    { "en": "CEN (Cloud Enterprise Network)", "es": "CEN", "def": "Servicio para federar múltiples VPCs y regiones en una red lógica única sin pasar por internet público." },
+    { "en": "Overprovisioning", "es": "Sobreaprovisionamiento", "def": "Antipatrón de dimensionar infraestructura de forma fija para el pico máximo, pagando capacidad ociosa la mayor parte del tiempo." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Arquitectura Alibaba Cloud?",
-      "options": [
-        "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga."
-    },
-    {
-      "q": "¿Qué es <strong>Well-Architected</strong> (Well-Architected) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Well-Architected (Well-Architected): 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-region</strong> (Multi-región) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Despliegue en varias regiones para DR/latencia.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-region (Multi-región): Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-AZ</strong> (Multi-AZ) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Múltiples zonas dentro de región.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-AZ (Multi-AZ): Múltiples zonas dentro de región."
-    },
-    {
-      "q": "¿Qué es <strong>Elastic</strong> (Elástico) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Auto-scale según demanda.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Elastic (Elástico): Auto-scale según demanda."
-    },
-    {
-      "q": "¿Qué es <strong>Fault Tolerance</strong> (Tolerancia a fallos) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Diseño que sobrevive a fallos parciales.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Fault Tolerance (Tolerancia a fallos): Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Arquitectura Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Arquitectura Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Arquitectura Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Arquitectura Alibaba Cloud es la elección típica:",
-      "options": [
-        "E-commerce con picos estacionales (Double 11 pattern)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: E-commerce con picos estacionales (Double 11 pattern)."
-    }
+    { "q": "¿Cuál es la diferencia principal entre escalabilidad y elasticidad?", "options": ["Son sinónimos exactos", "Escalabilidad es poder crecer; elasticidad añade la capacidad de decrecer automáticamente también, optimizando costo", "Elasticidad solo aplica a bases de datos", "Escalabilidad solo aplica a redes"], "answer": 1, "explain": "La elasticidad incorpora el ajuste automático en ambas direcciones (crecer y decrecer) según la demanda real, no solo la capacidad de crecer." },
+    { "q": "Una campaña de ventas tiene fecha y hora exactas conocidas de antemano. ¿Qué tipo de regla de Auto Scaling es la más adecuada para tener capacidad lista antes del pico?", "options": ["Escalado basado en métricas exclusivamente", "Escalado por calendario (scheduled)", "No usar Auto Scaling en este caso", "Escalado manual únicamente el día del evento"], "answer": 1, "explain": "Cuando el pico es predecible en fecha y hora, el escalado por calendario permite tener capacidad lista de antemano en vez de esperar a que la métrica lo detecte." },
+    { "q": "¿Por qué se considera que CDN aporta 'elasticidad indirecta' a la arquitectura?", "options": ["Porque CDN reemplaza completamente a Auto Scaling", "Porque al absorber tráfico de contenido estático en el borde, reduce cuánto debe escalar la capa de cómputo del origen durante un pico", "Porque CDN aumenta la carga sobre el origen", "Porque CDN solo funciona con bases de datos"], "answer": 1, "explain": "Cuanto más tráfico absorbe CDN antes de llegar al origen, menos necesita crecer el Auto Scaling Group durante un pico, ahorrando costo." },
+    { "q": "¿Qué riesgo corre un Auto Scaling Group cuyas instancias están todas en una sola zona de disponibilidad?", "options": ["Ningún riesgo adicional", "Una falla de esa zona completa deja sin capacidad al grupo entero", "El grupo escala más rápido en una sola zona", "No se puede usar CDN con una sola zona"], "answer": 1, "explain": "Distribuir las instancias en 2+ zonas (VSwitches distintos) es necesario para tolerar la falla de una zona completa." },
+    { "q": "¿Cuál es la diferencia clave entre ApsaraDB for Tair y Memcache?", "options": ["Son exactamente el mismo servicio con otro nombre", "Tair soporta estructuras de datos avanzadas (hashes, sorted sets) y persistencia opcional; Memcache es un caché clave-valor simple sin persistencia", "Memcache soporta más estructuras de datos que Tair", "Tair no puede usarse como caché"], "answer": 1, "explain": "Tair (compatible con Redis) ofrece estructuras de datos ricas y persistencia; Memcache es más simple, puramente en memoria." },
+    { "q": "Un ranking de jugadores en tiempo real necesita actualizarse constantemente con ordenamiento por puntaje. ¿Qué servicio de caché es el más adecuado?", "options": ["Memcache, por su simplicidad", "ApsaraDB for Tair, usando la estructura sorted set", "Ninguno, debe consultarse siempre la base de datos", "CDN"], "answer": 1, "explain": "Un ranking ordenado por puntaje es el caso de uso clásico de un sorted set, estructura disponible en Tair (Redis-compatible) pero no en Memcache." },
+    { "q": "¿Qué es el 'cooldown period' en Auto Scaling?", "options": ["El tiempo que tarda una instancia en apagarse por completo", "El tiempo de espera tras un evento de escalado antes de permitir otro, evitando oscilaciones", "El tiempo de vida de un objeto en CDN", "El tiempo de retención de logs"], "answer": 1, "explain": "El cooldown evita que el grupo escale hacia arriba y abajo repetidamente ante fluctuaciones momentáneas de la métrica monitoreada." },
+    { "q": "¿Qué antipatrón describe escalar solo la capa de cómputo (ECS) sin proteger la base de datos?", "options": ["Es la práctica recomendada siempre", "La base de datos se convierte en el nuevo cuello de botella al recibir toda la carga generada por más instancias de cómputo", "No tiene ningún efecto en el sistema", "Reduce automáticamente el costo total"], "answer": 1, "explain": "Sin una capa de caché u otra protección, más instancias de cómputo simplemente generan más carga directa sobre una base de datos de tamaño fijo." },
+    { "q": "¿Qué función cumple un NAT Gateway en la VPC de una arquitectura elástica?", "options": ["Balancea tráfico entre instancias", "Permite que instancias sin IP pública salgan a internet sin exponer un puerto de entrada directo", "Cachea contenido estático", "Reemplaza a Auto Scaling"], "answer": 1, "explain": "El NAT Gateway habilita tráfico saliente desde subredes privadas sin necesidad de asignar IP pública ni abrir puertos de entrada a esas instancias." },
+    { "q": "¿Qué riesgo tiene configurar un TTL de CDN demasiado alto para contenido que cambia con frecuencia?", "options": ["El origen recibe demasiado tráfico", "Los usuarios pueden ver contenido desactualizado hasta que el TTL expire o se invalide manualmente", "El contenido se elimina automáticamente", "No hay ningún riesgo"], "answer": 1, "explain": "Un TTL muy alto retiene contenido obsoleto en el borde por más tiempo del deseado, a menos que se fuerce una invalidación manual." },
+    { "q": "Según el caso de estudio de 'contenido viral impredecible', ¿qué tipo de escalado responde mejor?", "options": ["Escalado por calendario, definido con semanas de anticipación", "Escalado basado en métricas, que reacciona en tiempo casi real al aumento de tráfico", "No es necesario ningún tipo de escalado", "Solo escalado manual"], "answer": 1, "explain": "Cuando el pico no se puede predecir con antelación, el escalado basado en métricas es el que puede reaccionar a tiempo." },
+    { "q": "¿Qué combinación de piezas describe mejor una arquitectura elástica bien diseñada, según el curso?", "options": ["Solo una base de datos grande sin ninguna otra capa", "CDN en el borde + Auto Scaling en cómputo + caché (Tair/Memcache) + base de datos protegida, cada una absorbiendo parte del pico", "Únicamente Auto Scaling sin ninguna otra pieza", "Solo VPC sin cómputo elástico"], "answer": 1, "explain": "El curso enfatiza que ninguna capa por sí sola resuelve la elasticidad — se necesita la combinación de las cuatro piezas trabajando juntas." }
   ],
-  "exam_focus": "5 pilares Well-Architected, Multi-AZ vs Multi-Region, Elastic patterns, Double 11 lessons.",
+  "exam_focus": "El examen suele evaluar: (a) la diferencia entre elasticidad y escalabilidad, (b) escalado por calendario frente a escalado basado en métricas según el escenario, (c) el rol de CDN como reductor indirecto de carga sobre el cómputo, (d) diseño multi-zona con VPC/VSwitch para Auto Scaling, (e) cuándo elegir Tair frente a Memcache según la necesidad de estructuras de datos o persistencia.",
   "official_intro": "Through this course, you will learn the core services of Alibaba Cloud Elastic Architecture (Auto Scaling, CDN, VPC, ApsaraDB for Tair (Redis® OSS-Compatible), and Memcache. By studying some classic use cases, you can understand how to build an elastic architecture in Alibaba Cloud.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_elasticcase",

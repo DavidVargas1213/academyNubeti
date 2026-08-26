@@ -2,477 +2,185 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-applicationsecurity",
   "title_en": "Protect Your Web Application on Alibaba Cloud",
-  "title_es": "Protect Your Web Aplicación en Alibaba Cloud",
+  "title_es": "Protege tu Aplicación Web en Alibaba Cloud",
+  "title_es_html": "Protege tu <em>Aplicación Web</em> en Alibaba Cloud",
   "duration_es": "85 minutos",
   "level_es": "Intermedio",
   "category_es": "Seguridad",
   "subcategory_es": "Seguridad en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_applicationsecurity",
-  "lead": "Guía completa en español para el curso «Protect Your Web Application on Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre cómo proteger una aplicación web en producción en Alibaba Cloud: despliegue de WAF, defensa contra manipulación de contenido (tampering), mitigación de ataques CC y gestión de riesgo de negocio (bots, fraude, scraping). Va más allá de «bloquear ataques» hacia una postura operativa completa de seguridad de aplicación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problemas de seguridad de aplicación web resuelve WAF y cuáles quedan fuera de su alcance.",
+    "<strong>Comparar</strong> los modos de acceso de WAF (CNAME/proxy transparente vs. modo cluster de reenvío) y cuándo usar cada uno.",
+    "<strong>Configurar</strong> protección contra manipulación de sitios web (web tampering) para detectar y revertir cambios no autorizados.",
+    "<strong>Diseñar</strong> reglas de mitigación de ataques CC (Challenge Collapsar) a nivel de aplicación, distintas de la protección DDoS de red.",
+    "<strong>Aplicar</strong> gestión de riesgo de negocio: bot management, device fingerprinting y control de scraping/fraude.",
+    "<strong>Combinar</strong> WAF con virtual patching para mitigar vulnerabilidades conocidas mientras se prepara un parche definitivo.",
+    "<strong>Responder</strong> con confianza preguntas de certificación sobre postura de seguridad de aplicaciones expuestas a internet."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "El tráfico público hacia la aplicación web se resuelve primero hacia WAF (vía CNAME o en modo cluster de reenvío), que filtra tráfico malicioso antes de reenviarlo al origen real. El módulo de web tampering protection toma una instantánea de referencia del contenido publicado y compara periódicamente el contenido servido, revirtiendo automáticamente cualquier cambio no autorizado. El módulo de gestión de riesgo de negocio analiza patrones de comportamiento (frecuencia, device fingerprint, headless browser detection) para distinguir bots maliciosos de usuarios reales, incluso cuando el tráfico no dispara reglas clásicas de WAF. Todo el tráfico bloqueado y permitido se registra para análisis posterior en SLS/CloudMonitor.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué protege y qué NO protege un WAF",
+      "title_en": "What a WAF Protects — and What It Doesn't",
+      "intro": "Antes de configurar reglas hay que entender el alcance real de WAF: filtra tráfico HTTP/HTTPS malicioso a nivel de aplicación, pero no sustituye buenas prácticas de desarrollo seguro ni protege contra todo tipo de riesgo de negocio.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Lo que WAF SÍ cubre</strong>: inyección SQL, XSS, path traversal, tráfico de bots conocidos, ataques CC básicos, y vulnerabilidades del OWASP Top 10 mediante reglas gestionadas y actualizadas por el proveedor.",
+        "<strong>Lo que WAF NO cubre por sí solo</strong>: lógica de negocio defectuosa (p.ej. un descuento aplicable dos veces), fugas de datos por permisos mal configurados en el backend, o vulnerabilidades de día cero sin firma conocida.",
+        "<strong>Virtual patching</strong>: cuando se descubre una vulnerabilidad crítica en la aplicación (p.ej. un CVE en una librería), WAF puede bloquear los patrones de explotación conocidos mientras el equipo de desarrollo prepara y despliega el parche real — mitigación temporal, no solución definitiva.",
+        "<strong>Falsos positivos</strong>: reglas demasiado agresivas pueden bloquear tráfico legítimo (formularios con caracteres especiales, integraciones de terceros); el ajuste fino de reglas es un trabajo continuo, no una configuración de una sola vez.",
+        "<strong>Relación con el desarrollo seguro</strong>: WAF es una capa de defensa perimetral complementaria, no un sustituto de validación de entradas, parametrización de queries y control de acceso correctos en el código de la aplicación."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "WAF reduce el riesgo de explotación de vulnerabilidades conocidas en producción, pero una aplicación con código inseguro sigue siendo vulnerable a ataques que no coinciden con ninguna firma."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Modos de acceso y despliegue de WAF",
+      "title_en": "WAF Access Modes and Deployment",
+      "intro": "Cómo se conecta el tráfico a WAF determina la complejidad operativa y el nivel de transparencia para el resto de la arquitectura.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Modo CNAME (proxy transparente)</strong>: se apunta el registro DNS del dominio hacia un CNAME que provee WAF; todo el tráfico pasa por WAF de forma transparente sin cambiar la infraestructura del origen — el modo más común para sitios ya en producción.",
+        "<strong>Modo cluster de reenvío (transparent forwarding)</strong>: WAF se despliega como un clúster dedicado que intercepta el tráfico a nivel de red, útil en escenarios donde no se puede modificar el DNS del dominio o se requiere aislamiento de red más estricto.",
+        "<strong>Certificados TLS</strong>: WAF suele terminar la conexión TLS del cliente, lo que le permite inspeccionar el contenido cifrado antes de reenviarlo al origen — requiere cargar el certificado del dominio en la consola de WAF.",
+        "<strong>Protección de la IP origen</strong>: al igual que con Anti-DDoS, si la IP real del servidor de aplicación queda expuesta, un atacante puede saltarse WAF por completo atacando directamente esa IP.",
+        "<strong>Modo de solo detección (monitor mode)</strong>: durante el despliegue inicial conviene activar reglas en modo «solo registrar» antes de bloquear, para medir falsos positivos sin afectar tráfico real."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona que no se puede modificar el DNS del dominio, la respuesta correcta suele ser el modo cluster de reenvío, no el modo CNAME."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Protección contra manipulación del sitio (Web Tampering)",
+      "title_en": "Web Tampering Protection",
+      "intro": "Un atacante que logra comprometer el servidor de origen (por ejemplo, subiendo un webshell) suele modificar el contenido publicado — desde un simple defacement hasta insertar código malicioso invisible para el usuario. Este módulo detecta y revierte esos cambios automáticamente.",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>Línea base (baseline)</strong>: se toma una instantánea de referencia del contenido legítimo de páginas críticas (portada, login, checkout).",
+        "<strong>Comparación periódica</strong>: el sistema compara el contenido servido en producción contra la línea base a intervalos configurables, detectando cualquier desviación no autorizada.",
+        "<strong>Reversión automática (auto-recovery)</strong>: al detectar una manipulación, WAF puede servir automáticamente la versión legítima cacheada en lugar del contenido modificado, minimizando el tiempo de exposición.",
+        "<strong>Alertas</strong>: cada detección de tampering dispara una notificación al equipo de seguridad, ya que suele ser señal de un compromiso más profundo del servidor (no solo del contenido web).",
+        "<strong>Alcance limitado</strong>: protege contenido servido vía HTTP/HTTPS a través de WAF; no reemplaza la investigación forense necesaria para encontrar y cerrar la vía de entrada del atacante en el servidor."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "La detección de tampering es un síntoma, no la causa. Si se dispara una alerta, el paso siguiente obligatorio es investigar cómo el atacante obtuvo acceso de escritura al servidor de origen."
+      }
+    },
+    {
+      "title_es": "4 · Mitigación de ataques CC a nivel de aplicación",
+      "title_en": "Application-Level CC Attack Mitigation",
+      "intro": "Los ataques CC (Challenge Collapsar) dirigen tráfico aparentemente legítimo hacia endpoints costosos de procesar. A diferencia de la protección de red de Anti-DDoS, aquí la mitigación ocurre a nivel de aplicación y requiere entender el comportamiento normal del tráfico del sitio.",
+      "points": [
+        "<strong>Reglas de frecuencia (rate-based rules)</strong>: bloquean o desafían a una IP/sesión que excede un número de peticiones por segundo hacia una URL específica.",
+        "<strong>JS challenge / cookie validation</strong>: se exige al cliente ejecutar JavaScript o aceptar una cookie antes de servir contenido, filtrando bots simples que no ejecutan JS.",
+        "<strong>CAPTCHA como último recurso</strong>: se activa solo cuando el tráfico supera un umbral de sospecha, para no degradar la experiencia de usuarios legítimos de forma innecesaria.",
+        "<strong>Precisión de las reglas</strong>: reglas demasiado agresivas en endpoints de alto tráfico legítimo (como una API pública muy usada) generan falsos positivos que bloquean usuarios reales — el ajuste debe basarse en el comportamiento histórico real del sitio.",
+        "<strong>Diferencia con Anti-DDoS</strong>: Anti-DDoS mitiga volumen de red (Gbps); la mitigación CC a nivel WAF entiende contexto de aplicación (qué URL, con qué frecuencia, con qué patrón de sesión) — ambas capas son necesarias, no intercambiables."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado describe tráfico HTTP legítimo en apariencia pero concentrado en un endpoint específico con volumen anómalo, la solución es una regla de mitigación CC en WAF, no un ajuste de Anti-DDoS."
+      }
+    },
+    {
+      "title_es": "5 · Gestión de riesgo de negocio: bots, fraude y scraping",
+      "title_en": "Business Risk Management: Bots, Fraud, and Scraping",
+      "intro": "Más allá de los ataques técnicos clásicos, muchas aplicaciones web enfrentan abuso de negocio: bots que compran inventario limitado antes que humanos, scraping masivo de catálogos, o credential stuffing con contraseñas filtradas. Este módulo cubre esas amenazas específicas.",
+      "points": [
+        "<strong>Device fingerprinting</strong>: identifica un dispositivo/navegador por características técnicas (no solo IP), permitiendo detectar el mismo actor detrás de múltiples IPs o sesiones.",
+        "<strong>Bot management</strong>: clasifica el tráfico entre bots «buenos» (motores de búsqueda legítimos), bots maliciosos conocidos y tráfico sospechoso sin firma, aplicando políticas distintas a cada categoría.",
+        "<strong>Credential stuffing</strong>: ataque que prueba masivamente combinaciones de usuario/contraseña filtradas en otras brechas contra el formulario de login — se mitiga con rate limiting agresivo en /login y detección de patrones de fuerza bruta distribuida.",
+        "<strong>Scraping de catálogo/precios</strong>: bots que extraen sistemáticamente contenido o precios de un sitio de e-commerce para uso competitivo — se detecta por patrones de navegación no humanos (velocidad, orden secuencial de URLs).",
+        "<strong>Compra automatizada (scalping)</strong>: bots diseñados para agotar inventario limitado (lanzamientos, entradas) antes que usuarios humanos — requiere combinar CAPTCHA, colas virtuales y detección de comportamiento."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El riesgo de negocio no siempre «rompe» la aplicación técnicamente — un bot de scraping o scalping puede operar sin generar un solo error 500, y aun así causar daño económico real."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Las preguntas del examen sobre seguridad de aplicaciones suelen construirse sobre configuraciones incompletas: WAF activado pero mal ajustado, o protección de red sin protección de aplicación.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: activar WAF en modo bloqueo directo sin pasar antes por un período de solo detección, generando falsos positivos que afectan usuarios reales.",
+        "<strong>Antipatrón</strong>: dejar la IP origen del servidor accesible, permitiendo que un atacante evite WAF por completo.",
+        "<strong>Antipatrón</strong>: confiar en WAF genérico sin reglas específicas de mitigación CC para endpoints de negocio críticos (login, checkout, búsqueda).",
+        "<strong>Antipatrón</strong>: no configurar web tampering protection en páginas críticas, retrasando la detección de un compromiso del servidor de origen.",
+        "<strong>Antipatrón</strong>: ignorar el riesgo de negocio (scraping, scalping, credential stuffing) por considerarlo «no un ataque real», cuando genera pérdidas económicas medibles.",
+        "<strong>Regla de oro</strong>: cuando el examen combina un problema técnico (inyección, XSS) con uno de negocio (bots, fraude), casi siempre requiere WAF + gestión de riesgo de negocio juntos, no uno solo."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Distingue si la pregunta describe una vulnerabilidad técnica clásica (WAF/virtual patching) o un patrón de abuso de negocio (bot management/device fingerprint) — la respuesta correcta depende de esa distinción."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Sitio de e-commerce activa web tampering protection en la página de checkout tras detectar un intento previo de defacement" },
+    { "title": "Escenario 2", "text": "API pública sufre credential stuffing masivo contra /login — rate limiting agresivo + bot management" },
+    { "title": "Escenario 3", "text": "Lanzamiento de producto limitado sufre scalping automatizado — CAPTCHA + colas virtuales + device fingerprint" },
+    { "title": "Escenario 4", "text": "Vulnerabilidad crítica reportada en una librería de terceros se mitiga con virtual patching mientras se prepara el parche" },
+    { "title": "Escenario 5", "text": "Competidor hace scraping sistemático del catálogo de precios — reglas de detección de patrones de navegación no humana" },
+    { "title": "Escenario 6", "text": "Migración de dominio sin poder cambiar DNS obliga a usar WAF en modo cluster de reenvío" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Activar reglas de bloqueo de WAF sin período previo de solo detección, generando falsos positivos en producción",
+    "Dejar la IP origen del servidor expuesta, permitiendo evadir WAF por completo",
+    "No configurar reglas de mitigación CC específicas para endpoints de negocio críticos",
+    "Omitir web tampering protection en páginas sensibles como login y checkout",
+    "Subestimar el riesgo de negocio (scraping, scalping, credential stuffing) por no ser un ataque técnico clásico",
+    "Depender solo de CAPTCHA sin combinar rate limiting ni device fingerprinting"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun waf-openapi DescribeDomains", "desc": "Listar dominios protegidos por WAF" },
+    { "cmd": "aliyun waf-openapi ModifyDomain --Domain example.com --HttpsPorts 443", "desc": "Configurar el puerto HTTPS de un dominio en WAF" },
+    { "cmd": "aliyun waf-openapi DescribeProtectionModuleStatus", "desc": "Consultar el estado de los módulos de protección (WAF, CC, tampering)" },
+    { "cmd": "aliyun waf-openapi ModifyProtectionModuleStatus --ModuleStatus close", "desc": "Cambiar un módulo a modo solo detección" },
+    { "cmd": "aliyun waf-openapi DescribeDomainRuleGroup", "desc": "Consultar el conjunto de reglas activo para un dominio" },
+    { "cmd": "aliyun sas DescribeWebLockStatus", "desc": "Consultar el estado de web tampering protection en Security Center" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "WAF", "es": "Firewall de aplicaciones web", "def": "Filtro de capa 7 que inspecciona tráfico HTTP/HTTPS contra ataques de aplicación como inyección SQL y XSS." },
+    { "en": "Virtual Patching", "es": "Parche virtual", "def": "Regla de WAF que bloquea patrones de explotación de una vulnerabilidad conocida mientras se prepara el parche real." },
+    { "en": "CNAME Mode", "es": "Modo CNAME", "def": "Acceso transparente de WAF vía registro DNS, sin modificar la infraestructura del origen." },
+    { "en": "Transparent Forwarding", "es": "Cluster de reenvío", "def": "Modo de despliegue de WAF que intercepta tráfico a nivel de red sin depender de cambios DNS." },
+    { "en": "Web Tampering Protection", "es": "Protección contra manipulación web", "def": "Detecta y revierte cambios no autorizados en el contenido publicado comparándolo con una línea base." },
+    { "en": "Baseline", "es": "Línea base", "def": "Instantánea de referencia del contenido legítimo usada para detectar manipulaciones." },
+    { "en": "CC Attack", "es": "Ataque Challenge Collapsar", "def": "Ataque de capa 7 dirigido a endpoints costosos de procesar con tráfico aparentemente legítimo." },
+    { "en": "Rate-based Rule", "es": "Regla basada en frecuencia", "def": "Regla de WAF que limita peticiones por IP/sesión hacia una URL en una ventana de tiempo." },
+    { "en": "JS Challenge", "es": "Desafío JavaScript", "def": "Exige ejecutar JavaScript en el cliente antes de servir contenido, filtrando bots simples." },
+    { "en": "Device Fingerprinting", "es": "Huella de dispositivo", "def": "Identificación de un dispositivo/navegador por características técnicas, más allá de su IP." },
+    { "en": "Bot Management", "es": "Gestión de bots", "def": "Clasificación y control diferenciado de tráfico de bots buenos, maliciosos y no identificados." },
+    { "en": "Credential Stuffing", "es": "Relleno de credenciales", "def": "Prueba masiva de combinaciones usuario/contraseña filtradas contra un formulario de login." },
+    { "en": "Scraping", "es": "Extracción automatizada", "def": "Extracción sistemática de contenido o precios de un sitio mediante bots." },
+    { "en": "Scalping", "es": "Compra automatizada", "def": "Bots diseñados para agotar inventario limitado antes que usuarios humanos." },
+    { "en": "Monitor Mode", "es": "Modo de solo detección", "def": "Configuración de WAF que registra coincidencias de reglas sin bloquear tráfico, usada para ajuste fino." },
+    { "en": "OWASP Top 10", "es": "OWASP Top 10", "def": "Lista de referencia de los riesgos de seguridad más críticos en aplicaciones web." },
+    { "en": "TLS Termination", "es": "Terminación TLS", "def": "Punto donde se descifra la conexión TLS del cliente, permitiendo a WAF inspeccionar el tráfico." },
+    { "en": "False Positive", "es": "Falso positivo", "def": "Bloqueo incorrecto de tráfico legítimo por una regla de seguridad demasiado agresiva." },
+    { "en": "Origin IP", "es": "IP origen", "def": "Dirección real del servidor de aplicación; su exposición directa permite evadir WAF." },
+    { "en": "Security Center (SAS)", "es": "Security Center", "def": "Servicio de Alibaba Cloud que integra detección de compromisos de host, incluida web tampering." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Cuál de las siguientes NO es una capacidad cubierta directamente por WAF?", "options": ["Inyección SQL", "Cross-Site Scripting (XSS)", "Lógica de negocio defectuosa en el backend", "Path traversal"], "answer": 2, "explain": "WAF filtra tráfico malicioso a nivel de aplicación, pero no corrige errores de lógica de negocio en el código." },
+    { "q": "¿Qué modo de acceso de WAF es más adecuado cuando no se puede modificar el registro DNS del dominio?", "options": ["Modo CNAME", "Modo cluster de reenvío (transparent forwarding)", "Modo solo detección", "Modo virtual patching"], "answer": 1, "explain": "El modo cluster de reenvío intercepta tráfico a nivel de red sin depender de cambios en el DNS del dominio." },
+    { "q": "¿Qué es 'virtual patching' en el contexto de WAF?", "options": ["Actualizar automáticamente el sistema operativo del servidor", "Bloquear los patrones de explotación de una vulnerabilidad conocida mientras se prepara el parche real de la aplicación", "Cifrar el tráfico HTTPS", "Generar certificados SSL automáticamente"], "answer": 1, "explain": "Virtual patching es una mitigación temporal a nivel de WAF, no un reemplazo del parche definitivo en el código." },
+    { "q": "¿Qué hace la protección de web tampering al detectar una modificación no autorizada del contenido?", "options": ["Elimina el sitio web completo", "Puede servir automáticamente la versión legítima cacheada en lugar del contenido modificado", "Bloquea todo el tráfico hacia el dominio permanentemente", "Envía un correo al atacante"], "answer": 1, "explain": "El auto-recovery sirve la versión legítima de referencia mientras se investiga y corrige la causa raíz del compromiso." },
+    { "q": "Un endpoint de búsqueda recibe tráfico HTTP aparentemente legítimo pero con volumen anómalo concentrado en esa URL. ¿Qué mecanismo de WAF es el más adecuado?", "options": ["Ajustar el umbral de mitigation de Anti-DDoS", "Una regla de mitigación CC basada en frecuencia (rate-based rule)", "Desactivar HTTPS", "Aumentar el tamaño de la instancia ECS"], "answer": 1, "explain": "Las reglas basadas en frecuencia a nivel de WAF son la mitigación correcta para ataques CC dirigidos a endpoints específicos." },
+    { "q": "¿Qué técnica permite identificar al mismo actor detrás de múltiples IPs o sesiones distintas?", "options": ["Rate limiting", "Device fingerprinting", "TLS termination", "Web tampering protection"], "answer": 1, "explain": "El device fingerprinting identifica un dispositivo por características técnicas, más allá de su dirección IP." },
+    { "q": "¿Qué describe mejor un ataque de 'credential stuffing'?", "options": ["Inundar el servidor con paquetes UDP", "Probar masivamente combinaciones de usuario/contraseña filtradas en otras brechas contra un formulario de login", "Modificar el contenido de una página web", "Escanear puertos abiertos del servidor"], "answer": 1, "explain": "Credential stuffing reutiliza credenciales filtradas en brechas previas para intentar acceso no autorizado." },
+    { "q": "¿Por qué se recomienda activar nuevas reglas de WAF en modo solo detección antes de bloquear?", "options": ["Porque el modo bloqueo consume más CPU", "Para medir y corregir falsos positivos antes de afectar tráfico real de usuarios legítimos", "Porque es obligatorio por ley", "Porque el modo detección es más barato"], "answer": 1, "explain": "El período de solo detección permite ajustar las reglas sin bloquear accidentalmente tráfico legítimo." },
+    { "q": "Un competidor extrae sistemáticamente el catálogo de precios de un sitio de e-commerce mediante bots. ¿Cómo se llama este tipo de abuso?", "options": ["Web tampering", "Scraping", "SYN flood", "Credential stuffing"], "answer": 1, "explain": "El scraping es la extracción automatizada y sistemática de contenido de un sitio web." },
+    { "q": "¿Por qué dejar expuesta la IP origen del servidor anula parcialmente la protección de WAF?", "options": ["No la anula, WAF sigue funcionando igual", "Porque un atacante puede atacar directamente esa IP y evitar por completo el filtrado de WAF", "Porque aumenta la latencia del sitio", "Porque WAF requiere que la IP origen sea pública"], "answer": 1, "explain": "Si la IP origen es alcanzable directamente, el tráfico puede evitar el filtrado de WAF por completo." },
+    { "q": "¿Qué combinación de medidas es más efectiva contra bots diseñados para agotar el inventario de un lanzamiento limitado (scalping)?", "options": ["Solo aumentar el precio del producto", "CAPTCHA, colas virtuales y detección de comportamiento no humano", "Desactivar el sitio web temporalmente", "Solo bloquear direcciones IP de China"], "answer": 1, "explain": "El scalping requiere una combinación de fricción (CAPTCHA), gestión de demanda (colas) y detección de patrones de bot." },
+    { "q": "¿Cuál es la diferencia principal entre la mitigación de Anti-DDoS y la mitigación de ataques CC en WAF?", "options": ["Son exactamente lo mismo", "Anti-DDoS opera sobre volumen de red (Gbps); WAF entiende contexto de aplicación (URL, frecuencia, sesión)", "WAF solo protege bases de datos", "Anti-DDoS reemplaza completamente a WAF"], "answer": 1, "explain": "Ambas capas son complementarias: una filtra volumen de red, la otra entiende el comportamiento a nivel de aplicación." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen evalúa distinguir el alcance real de WAF frente a riesgos de negocio (bots, scraping, credential stuffing), elegir el modo de acceso correcto según restricciones de infraestructura, y reconocer cuándo aplicar virtual patching, web tampering protection o mitigación CC según el escenario descrito.",
   "official_intro": "Understand application security and common network attacks. You will master the core skills of application security on the cloud, including how to access Alibaba Cloud WAF, avoid tampering with websites, prevent CC attacks, and conduct business risk management.",
   "recommended_for": "Cloud security administrators and operators",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_applicationsecurity",

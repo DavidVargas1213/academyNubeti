@@ -2,404 +2,179 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-ridinganalysis",
   "title_en": "Riding Analysis of Shared Bicycles",
-  "title_es": "Riding Analysis of Shared Bicycles",
+  "title_es": "Análisis de Uso de Bicicletas Compartidas",
+  "title_es_html": "Análisis de Uso de <em>Bicicletas Compartidas</em>",
   "duration_es": "82 minutos",
   "level_es": "Intermedio",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Analytics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_ridinganalysis",
-  "lead": "Guía completa en español para el curso «Riding Analysis of Shared Bicycles» de Alibaba Cloud Academy. Cubre en profundidad Quick BI. Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/PowerBI. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Riding Analysis of Shared Bicycles» de Alibaba Cloud Academy, un caso de estudio completo de analítica de big data: cómo MaxCompute (almacenamiento y cómputo masivo), DataWorks (orquestación de pipelines ETL) y Quick BI (visualización) se combinan para resolver un problema real de negocio — decidir dónde redistribuir bicicletas compartidas antes de que la demanda las agote en unas zonas y sobren en otras.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Quick BI</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Data Source, Dataset, Workbook, Row-level Security, Portal.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Quick BI y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué un sistema de bicicletas compartidas genera un problema de datos y no solo un problema logístico.",
+    "<strong>Describir</strong> el rol de MaxCompute como lago de datos a escala de exabytes para procesar el histórico de viajes.",
+    "<strong>Diseñar</strong> un pipeline de ETL en DataWorks que limpia, transforma y agrega datos crudos de viajes en tablas listas para análisis.",
+    "<strong>Aplicar</strong> métodos de análisis (clustering geoespacial, series de tiempo, predicción de demanda) al caso de bicicletas compartidas.",
+    "<strong>Construir</strong> dashboards en Quick BI que traducen datos crudos en decisiones operativas (dónde reubicar bicicletas).",
+    "<strong>Definir</strong> los indicadores clave (KPIs) que una empresa de bicicletas compartidas usa para medir su negocio.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre esta arquitectura de analítica de big data."
   ],
-  "architecture": "Fuentes de datos conectadas → data model (dimensiones + medidas) → workbooks/dashboards → distribución por email, web embed o app móvil. Row-level security por rol RAM. Cache automática.",
+  "architecture": "Cada viaje genera un registro crudo (bicicleta, usuario, coordenadas GPS de inicio/fin, marca de tiempo, duración) que se ingesta en MaxCompute, el motor de almacenamiento y cómputo masivo de Alibaba Cloud, organizado en tablas particionadas por fecha para consultas eficientes sobre miles de millones de filas. DataWorks orquesta los pipelines de ETL sobre esos datos: nodos programados que limpian coordenadas inválidas, agregan viajes por zona/hora y calculan métricas intermedias, con dependencias explícitas entre pasos (un DAG) y monitoreo de calidad de datos. Sobre las tablas resultantes, Quick BI conecta como fuente de datos, modela Datasets con dimensiones (zona, hora, tipo de bicicleta) y medidas (número de viajes, duración promedio), y expone Workbooks con mapas de calor de densidad de uso, series de tiempo de demanda por hora y dashboards operativos consumidos por los equipos de logística que deciden dónde reubicar bicicletas.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Quick BI",
-      "title_en": "Introduction to Quick BI",
-      "intro": "Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/PowerBI. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El caso de negocio: bicicletas compartidas como sistema de datos",
+      "title_en": "The Business Case: Shared Bicycles as a Data System",
+      "intro": "Antes de hablar de MaxCompute o Quick BI, hay que entender el problema real: un sistema de bicicletas compartidas sin analítica termina con bicicletas paradas donde nadie las necesita y escasez donde sí — cada viaje es, sobre todo, un dato.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Quick BI se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema operativo</strong>: la demanda de bicicletas no es uniforme en el espacio ni en el tiempo — hay picos en estaciones de metro por la mañana y en zonas residenciales por la noche. Sin datos, la reubicación de bicicletas se hace a ciegas.",
+        "<strong>Los datos que genera cada viaje</strong>: identificador de bicicleta, identificador de usuario (anonimizado), coordenadas GPS de inicio y fin, marca de tiempo, duración y distancia recorrida.",
+        "<strong>Volumen</strong>: una flota de cientos de miles de bicicletas en una ciudad grande genera millones de registros de viaje por día — un volumen que excede lo que una base de datos transaccional tradicional puede analizar de forma eficiente.",
+        "<strong>El objetivo del análisis</strong>: convertir ese volumen de datos crudos en decisiones operativas concretas — dónde reubicar bicicletas, cuántas unidades necesita cada zona, en qué horario intervenir.",
+        "<strong>Por qué es un caso de big data y no solo de BI tradicional</strong>: el volumen y la necesidad de procesamiento geoespacial y temporal exigen un motor de cómputo distribuido (MaxCompute), no solo una hoja de cálculo o un reporte estático."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Quick BI es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El valor de negocio no está en el dato individual de un viaje, sino en el patrón agregado: dónde y cuándo se concentra la demanda. Esa es la pregunta que toda la arquitectura del curso está diseñada para responder." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Quick BI no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · MaxCompute: el lago de datos para big data",
+      "title_en": "MaxCompute: The Big Data Lake",
+      "intro": "MaxCompute es el motor de almacenamiento y cómputo masivo de Alibaba Cloud, diseñado para procesar volúmenes de datos que van de terabytes a exabytes — la base sobre la que se construye todo el análisis del caso de bicicletas.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes de datos conectadas → data model (dimensiones + medidas) → workbooks/dashboards → distribución por email, web embed o app móvil. Row-level security por rol RAM. Cache automática.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Almacenamiento + cómputo desacoplados</strong>: MaxCompute separa dónde se guardan los datos de la capacidad de cómputo que los procesa, permitiendo escalar cada uno de forma independiente según la carga.",
+        "<strong>SQL familiar</strong>: las consultas se escriben en un dialecto SQL (similar a Hive) que cualquier analista con conocimientos de bases de datos relacionales puede aprender rápido, sin necesidad de programar en Java o Python para tareas básicas.",
+        "<strong>Particionamiento</strong>: las tablas de viajes se particionan típicamente por fecha (y a veces por ciudad), de forma que una consulta sobre «los viajes de ayer» solo lee esa partición en vez de escanear todo el histórico — clave tanto para el rendimiento como para el costo.",
+        "<strong>Modelo de facturación</strong>: se paga por almacenamiento usado más por cómputo consumido (por consulta o por unidades de cómputo reservadas), lo que hace viable analizar años de historial sin mantener un clúster propio encendido 24/7.",
+        "<strong>Integración con el resto del ecosistema</strong>: MaxCompute no vive aislado — DataWorks lo orquesta, y herramientas como Quick BI o Hologres lo consultan para servir resultados con baja latencia."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Quick BI (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «procesar miles de millones de registros históricos con SQL de forma económica», la respuesta es MaxCompute — no una base de datos relacional tradicional como RDS." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · DataWorks: orquestación de pipelines ETL",
+      "title_en": "DataWorks: ETL Pipeline Orchestration",
+      "intro": "Los datos crudos de viajes no llegan limpios ni agregados — DataWorks es la capa que programa, encadena y vigila las tareas que los transforman en tablas listas para análisis.",
       "points": [
-        "<strong>Data source</strong> <em>(Data Source)</em>: Conexión a base de datos o dataset.",
-        "<strong>Dataset</strong> <em>(Dataset)</em>: Modelo lógico con dimensiones/medidas.",
-        "<strong>Workbook</strong> <em>(Workbook)</em>: Dashboard o reporte.",
-        "<strong>RLS</strong> <em>(Row-level Security)</em>: Filtrado por identidad del usuario.",
-        "<strong>Portal</strong> <em>(Portal)</em>: Sitio unificado de dashboards.",
-        "<strong>Data preparation</strong> <em>(Data Preparation)</em>: ETL ligero antes de análisis."
+        "<strong>Workspace y proyectos</strong>: DataWorks organiza el trabajo en espacios de proyecto donde conviven los nodos de ETL, las tablas de MaxCompute y los permisos del equipo de datos.",
+        "<strong>Nodos y dependencias (DAG)</strong>: cada paso del pipeline (limpiar coordenadas inválidas, unir viajes con el catálogo de estaciones, agregar por hora/zona) es un nodo, y las dependencias entre nodos forman un grafo dirigido — un nodo no corre hasta que sus predecesores terminan con éxito.",
+        "<strong>Programación (scheduling)</strong>: los pipelines corren en horarios definidos (p.ej. cada hora, o cada madrugada para el resumen del día anterior), sin intervención manual.",
+        "<strong>Calidad de datos</strong>: DataWorks permite definir reglas de calidad (p.ej. «ninguna coordenada fuera del rango de la ciudad», «ningún viaje con duración negativa») que alertan antes de que un dato corrupto contamine un dashboard.",
+        "<strong>De dato crudo a tabla de análisis</strong>: el resultado típico de un pipeline en este caso es una tabla agregada por zona geográfica y franja horaria, con el número de viajes iniciados y finalizados — la unidad mínima que Quick BI necesita para construir un mapa de calor."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "MaxCompute es el motor que ejecuta el procesamiento; DataWorks es quien decide cuándo, en qué orden y bajo qué condiciones de calidad se ejecuta cada paso." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Métodos y algoritmos de análisis aplicados al caso",
+      "title_en": "Analysis Methods and Algorithms Applied to the Case",
+      "intro": "Con los datos limpios y agregados, entra en juego el análisis propiamente dicho: qué técnicas convierten «millones de puntos GPS» en «hay que mover 40 bicicletas a esta esquina antes de las 8 a.m.».",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Clustering geoespacial</strong>: algoritmos como K-means agrupan las coordenadas de inicio/fin de viaje en «zonas calientes» (hotspots) de alta demanda, sin necesidad de definir manualmente los límites de cada zona.",
+        "<strong>Mapas de calor (heatmap)</strong>: la visualización resultante del clustering — más densidad de color donde se concentran más viajes — es la forma más rápida de comunicar dónde actuar a un equipo de logística no técnico.",
+        "<strong>Análisis de series de tiempo</strong>: agregar los viajes por hora del día y día de la semana revela patrones cíclicos (picos de ida al trabajo, picos de fin de semana) que permiten anticipar la demanda en vez de solo reaccionar a ella.",
+        "<strong>Predicción de demanda</strong>: con suficiente historial, un modelo de regresión simple puede estimar cuántas bicicletas necesitará una zona en la próxima hora, permitiendo programar la reubicación con antelación en vez de a posteriori.",
+        "<strong>De la analítica a la operación</strong>: el resultado de estos métodos no es un informe académico — alimenta directamente la planificación de las rutas de los camiones que reubican bicicletas cada madrugada."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Cuando el enunciado pide «identificar automáticamente zonas de alta demanda sin definirlas manualmente», la respuesta es clustering geoespacial (K-means u otro algoritmo de agrupamiento), no una simple consulta de conteo." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Quick BI: de datos a decisiones visuales",
+      "title_en": "Quick BI: From Data to Visual Decisions",
+      "intro": "Quick BI es la capa de autoservicio de business intelligence de Alibaba Cloud — el punto donde el trabajo de MaxCompute y DataWorks se vuelve visible y utilizable por personas no técnicas.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Un dataset central por dominio",
-        "<strong>Buenas prácticas</strong>: RLS obligatorio para datos sensibles",
-        "<strong>Buenas prácticas</strong>: Cache configurada para queries lentas",
-        "<strong>Buenas prácticas</strong>: Naming convention consistente"
+        "<strong>Data Source y Dataset</strong>: Quick BI se conecta a las tablas resultantes en MaxCompute como fuente de datos, y sobre ellas se modela un Dataset con dimensiones (zona, hora, tipo de bicicleta) y medidas (número de viajes, duración promedio, distancia).",
+        "<strong>Workbook</strong>: el dashboard o reporte propiamente dicho, construido arrastrando dimensiones y medidas del Dataset — incluye el mapa de calor de demanda, gráficos de series de tiempo y tablas de detalle.",
+        "<strong>Row-level Security (RLS)</strong>: si distintos gerentes regionales solo deben ver los datos de su propia zona, RLS filtra automáticamente el mismo Workbook según la identidad del usuario que lo abre, sin duplicar dashboards.",
+        "<strong>Portal</strong>: agrupa varios Workbooks relacionados (demanda, flota, ingresos) en un sitio unificado, en vez de que cada equipo tenga enlaces sueltos a dashboards dispersos.",
+        "<strong>Cache y rendimiento</strong>: consultas pesadas sobre millones de filas se benefician de la caché de Quick BI — sin ella, cada apertura del dashboard dispararía de nuevo el cómputo completo en MaxCompute."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Row-level Security es la respuesta correcta cuando el examen describe «un mismo dashboard, pero cada usuario debe ver solo sus propios datos» — no se crean copias del dashboard por región." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "6 · Indicadores clave (KPIs) del negocio de bicicletas compartidas",
+      "title_en": "Key Business Indicators for Shared Bicycles",
+      "intro": "Toda la arquitectura de datos existe para alimentar un puñado de indicadores que la empresa realmente usa para tomar decisiones — el curso los repasa como ejemplo de traducir datos en métricas de negocio.",
+      "points": [
+        "<strong>Tasa de utilización por bicicleta</strong>: proporción de tiempo que una bicicleta está en uso frente al tiempo total disponible — una bicicleta con utilización muy baja es candidata a reubicación o retiro.",
+        "<strong>Duración y distancia promedio de viaje</strong>: ayuda a diferenciar el uso «último kilómetro» (viajes cortos hacia el transporte público) del uso recreativo (viajes largos de fin de semana).",
+        "<strong>Tiempo de inactividad (idle time)</strong>: cuánto tiempo pasa una bicicleta sin moverse en una misma ubicación — un valor alto en zonas de baja demanda señala oportunidad de reubicación.",
+        "<strong>Cobertura de demanda en hora pico</strong>: porcentaje de solicitudes de viaje que efectivamente encontraron una bicicleta disponible cerca, frente a las que no — el KPI más directamente ligado a la satisfacción del usuario.",
+        "<strong>Eficiencia de redistribución</strong>: relación entre el costo operativo de mover bicicletas (camiones, personal) y la mejora medible en cobertura de demanda que esa reubicación produjo."
+      ],
+      "keypoint": { "label": "Regla mnemotécnica", "text": "Cada KPI de este negocio responde a una de tres preguntas: ¿se está usando el activo (utilización)?, ¿está donde se necesita (cobertura)?, ¿cuesta reubicarlo más de lo que mejora el servicio (eficiencia)?" }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "El examen suele plantear escenarios donde el pipeline de analítica está mal diseñado — reconocer el antipatrón resuelve la pregunta más rápido que razonar la arquitectura ideal desde cero.",
       "points": [
-        "<strong>Antipattern</strong>: Un dashboard por request de negocio (crecimiento sin gobierno)",
-        "<strong>Antipattern</strong>: Sin RLS — todos ven todo",
-        "<strong>Antipattern</strong>: Queries costosas sin cache",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: analizar los datos crudos de viajes directamente sin agregación previa en DataWorks — cada consulta de Quick BI termina escaneando millones de filas innecesariamente.",
+        "<strong>Antipatrón</strong>: no particionar las tablas de MaxCompute por fecha — cualquier consulta, aunque sea de un solo día, escanea todo el histórico.",
+        "<strong>Antipatrón</strong>: crear un dashboard distinto por cada gerente regional en vez de usar Row-level Security sobre un único Workbook.",
+        "<strong>Antipatrón</strong>: consultas pesadas sin caché en Quick BI, generando carga innecesaria en MaxCompute cada vez que alguien abre el dashboard.",
+        "<strong>Antipatrón</strong>: reubicar bicicletas por intuición en vez de usar el mapa de calor y la predicción de demanda ya calculados.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, descarta la que procesa datos crudos sin agregar/particionar, y elige la que aprovecha el pipeline completo (MaxCompute → DataWorks → Quick BI)."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Identifica en qué capa del pipeline ocurre lo que describe la pregunta: almacenamiento/cómputo masivo → MaxCompute; orquestación/limpieza → DataWorks; visualización/decisión → Quick BI." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Reportes ejecutivos con KPIs"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Dashboards operacionales en TV/monitor"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc por área de negocio"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Reportes automáticos por correo"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Embed en aplicaciones internas"
-    }
+    { "title": "Escenario 1", "text": "Detectar zonas de alta demanda no cubiertas — clustering geoespacial + mapa de calor en Quick BI" },
+    { "title": "Escenario 2", "text": "Planificar rutas nocturnas de redistribución de bicicletas — predicción de demanda por hora sobre tablas agregadas en MaxCompute" },
+    { "title": "Escenario 3", "text": "Reportes ejecutivos con KPIs de utilización y cobertura — Workbook de Quick BI distribuido por Portal" },
+    { "title": "Escenario 4", "text": "Gerentes regionales que solo deben ver los datos de su ciudad — Row-level Security sobre un Dataset único" },
+    { "title": "Escenario 5", "text": "Procesar años de historial de viajes de forma económica — particionamiento por fecha en MaxCompute" }
   ],
   "mistakes": [
-    "Un dashboard por request de negocio (crecimiento sin gobierno)",
-    "Sin RLS — todos ven todo",
-    "Queries costosas sin cache"
+    "Consultar datos crudos de viajes sin agregación previa en DataWorks",
+    "No particionar las tablas de MaxCompute por fecha",
+    "Crear un dashboard distinto por región en vez de usar Row-level Security",
+    "Consultas pesadas en Quick BI sin caché configurada",
+    "Reubicar bicicletas por intuición en vez de usar el análisis de demanda",
+    "Pipelines de DataWorks sin reglas de calidad de datos, dejando pasar coordenadas o duraciones inválidas"
   ],
   "cli": [
-    {
-      "cmd": "Consola Quick BI",
-      "desc": "UI principal"
-    }
+    { "cmd": "odpscmd -e \"SELECT zone, COUNT(*) trips FROM ods_trips WHERE ds='20260101' GROUP BY zone;\"", "desc": "Ejecutar una consulta SQL sobre una tabla particionada de MaxCompute" },
+    { "cmd": "odpscmd -e \"DESC ods_trips;\"", "desc": "Describir el esquema y particiones de una tabla" },
+    { "cmd": "aliyun dataworks-public ListBusiness --ProjectId 12345", "desc": "Listar los flujos de negocio (pipelines) de un proyecto DataWorks" },
+    { "cmd": "aliyun dataworks-public GetNodeInfo --ProjectId 12345 --NodeId 67890", "desc": "Consultar el estado de ejecución de un nodo del pipeline" },
+    { "cmd": "aliyun dataworks-public UpdateFileTaskParam --NodeId 67890 --CronExpress \"0 0 * * *\"", "desc": "Programar la ejecución diaria de un nodo de agregación" }
   ],
   "glossary": [
-    {
-      "en": "Data Source",
-      "es": "Data source",
-      "def": "Conexión a base de datos o dataset."
-    },
-    {
-      "en": "Dataset",
-      "es": "Dataset",
-      "def": "Modelo lógico con dimensiones/medidas."
-    },
-    {
-      "en": "Workbook",
-      "es": "Workbook",
-      "def": "Dashboard o reporte."
-    },
-    {
-      "en": "Row-level Security",
-      "es": "RLS",
-      "def": "Filtrado por identidad del usuario."
-    },
-    {
-      "en": "Portal",
-      "es": "Portal",
-      "def": "Sitio unificado de dashboards."
-    },
-    {
-      "en": "Data Preparation",
-      "es": "Data preparation",
-      "def": "ETL ligero antes de análisis."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Motor de almacenamiento y cómputo masivo (hasta exabytes) de Alibaba Cloud, consultado con SQL." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Plataforma de orquestación de pipelines ETL: programa, encadena y vigila la calidad de las transformaciones de datos." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de business intelligence self-service de Alibaba Cloud para dashboards y reportes." },
+    { "en": "Data Source", "es": "Fuente de datos", "def": "Conexión de Quick BI hacia una tabla o base de datos, como una tabla de MaxCompute." },
+    { "en": "Dataset", "es": "Dataset", "def": "Modelo lógico con dimensiones y medidas construido sobre una o más fuentes de datos." },
+    { "en": "Workbook", "es": "Workbook", "def": "Dashboard o reporte visual construido sobre un Dataset." },
+    { "en": "Row-level Security (RLS)", "es": "Seguridad a nivel de fila", "def": "Filtrado automático de un mismo Workbook según la identidad del usuario que lo consulta." },
+    { "en": "Portal", "es": "Portal", "def": "Sitio unificado que agrupa varios Workbooks relacionados." },
+    { "en": "Partition", "es": "Partición", "def": "División física de una tabla (típicamente por fecha) que permite consultar solo el subconjunto relevante de datos." },
+    { "en": "DAG (Directed Acyclic Graph)", "es": "Grafo de dependencias", "def": "Estructura que define el orden de ejecución de los nodos de un pipeline de DataWorks." },
+    { "en": "ETL", "es": "ETL", "def": "Extract-Transform-Load: proceso de extraer datos crudos, transformarlos y cargarlos en tablas listas para análisis." },
+    { "en": "Data Quality Rule", "es": "Regla de calidad de datos", "def": "Condición definida en DataWorks (p.ej. rango válido de coordenadas) que alerta ante datos corruptos." },
+    { "en": "Clustering geoespacial", "es": "Agrupamiento geoespacial", "def": "Técnica (p.ej. K-means) que agrupa coordenadas en zonas de alta densidad de actividad." },
+    { "en": "Heatmap", "es": "Mapa de calor", "def": "Visualización de densidad espacial usada para mostrar concentración de demanda." },
+    { "en": "Demand Forecasting", "es": "Predicción de demanda", "def": "Estimación del volumen de solicitudes futuras a partir de patrones históricos." },
+    { "en": "Utilization Rate", "es": "Tasa de utilización", "def": "Proporción de tiempo que un activo (bicicleta) está efectivamente en uso." },
+    { "en": "Idle Time", "es": "Tiempo de inactividad", "def": "Tiempo que un activo permanece sin uso en una ubicación." },
+    { "en": "Rebalancing / Redistribution", "es": "Redistribución", "def": "Operación logística de mover activos de zonas de baja demanda a zonas de alta demanda." },
+    { "en": "Hologres", "es": "Hologres", "def": "Motor de análisis interactivo de baja latencia de Alibaba Cloud, usado como complemento de MaxCompute para consultas en tiempo real." },
+    { "en": "RAM", "es": "RAM", "def": "Resource Access Management: servicio de identidad y permisos usado para controlar el acceso a los proyectos de DataWorks y datasets." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Quick BI?",
-      "options": [
-        "Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/Powe",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/PowerBI."
-    },
-    {
-      "q": "¿Qué es <strong>Data Source</strong> (Data source) en Quick BI?",
-      "options": [
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Dashboard o reporte.",
-        "Filtrado por identidad del usuario."
-      ],
-      "answer": 0,
-      "explain": "Data Source (Data source): Conexión a base de datos o dataset."
-    },
-    {
-      "q": "¿Qué es <strong>Dataset</strong> (Dataset) en Quick BI?",
-      "options": [
-        "Modelo lógico con dimensiones/medidas.",
-        "Conexión a base de datos o dataset.",
-        "Dashboard o reporte.",
-        "Filtrado por identidad del usuario."
-      ],
-      "answer": 0,
-      "explain": "Dataset (Dataset): Modelo lógico con dimensiones/medidas."
-    },
-    {
-      "q": "¿Qué es <strong>Workbook</strong> (Workbook) en Quick BI?",
-      "options": [
-        "Dashboard o reporte.",
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Filtrado por identidad del usuario."
-      ],
-      "answer": 0,
-      "explain": "Workbook (Workbook): Dashboard o reporte."
-    },
-    {
-      "q": "¿Qué es <strong>Row-level Security</strong> (RLS) en Quick BI?",
-      "options": [
-        "Filtrado por identidad del usuario.",
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Dashboard o reporte."
-      ],
-      "answer": 0,
-      "explain": "Row-level Security (RLS): Filtrado por identidad del usuario."
-    },
-    {
-      "q": "¿Qué es <strong>Portal</strong> (Portal) en Quick BI?",
-      "options": [
-        "Sitio unificado de dashboards.",
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Dashboard o reporte."
-      ],
-      "answer": 0,
-      "explain": "Portal (Portal): Sitio unificado de dashboards."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Quick BI, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Quick BI en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Quick BI, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Quick BI es la elección típica:",
-      "options": [
-        "Reportes ejecutivos con KPIs",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Reportes ejecutivos con KPIs."
-    }
+    { "q": "¿Por qué el análisis de bicicletas compartidas se considera un problema de big data y no solo de BI tradicional?", "options": ["Porque no genera ningún dato", "Porque el volumen diario de viajes y la necesidad de análisis geoespacial/temporal exceden lo que una base de datos transaccional puede procesar eficientemente", "Porque Quick BI no puede conectarse a bases de datos relacionales", "Porque las bicicletas no tienen GPS"], "answer": 1, "explain": "El volumen (millones de viajes/día) y la complejidad geoespacial y temporal del análisis requieren un motor de cómputo distribuido como MaxCompute." },
+    { "q": "¿Cuál es el rol principal de MaxCompute en esta arquitectura?", "options": ["Visualizar dashboards para usuarios finales", "Almacenar y procesar el histórico masivo de viajes con SQL", "Programar el envío de correos automáticos", "Autenticar usuarios con RAM"], "answer": 1, "explain": "MaxCompute es el motor de almacenamiento y cómputo masivo; el análisis SQL sobre miles de millones de registros ocurre aquí." },
+    { "q": "¿Por qué particionar las tablas de MaxCompute por fecha es una práctica recomendada en este caso?", "options": ["Porque es obligatorio para usar SQL", "Porque permite que una consulta sobre un día específico escanee solo esa partición en vez de todo el histórico", "Porque reduce el número de columnas de la tabla", "Porque Quick BI lo requiere para conectar"], "answer": 1, "explain": "El particionamiento por fecha evita escanear todo el histórico cuando solo se necesita un rango de días, mejorando rendimiento y costo." },
+    { "q": "¿Qué componente del pipeline programa y encadena las tareas que limpian y agregan los datos crudos de viajes?", "options": ["Quick BI", "DataWorks", "RAM", "Portal"], "answer": 1, "explain": "DataWorks orquesta los nodos de ETL con dependencias (DAG) y programación, transformando datos crudos en tablas listas para análisis." },
+    { "q": "Un equipo necesita identificar automáticamente zonas de alta demanda sin definir manualmente los límites de cada zona. ¿Qué técnica es la adecuada?", "options": ["Una consulta SQL de conteo simple por distrito predefinido", "Clustering geoespacial (p.ej. K-means) sobre las coordenadas de los viajes", "Row-level Security", "Consolidated Billing"], "answer": 1, "explain": "El clustering geoespacial agrupa automáticamente coordenadas cercanas en zonas de alta densidad, sin requerir límites predefinidos." },
+    { "q": "¿Qué es un Dataset en Quick BI dentro de este caso de uso?", "options": ["Un archivo CSV descargado manualmente", "El modelo lógico con dimensiones (zona, hora) y medidas (número de viajes) construido sobre las tablas de MaxCompute", "Un tipo de instancia de cómputo", "Un servicio de auditoría"], "answer": 1, "explain": "El Dataset es la capa de modelado que define qué dimensiones y medidas están disponibles para construir Workbooks." },
+    { "q": "Distintos gerentes regionales deben ver el mismo dashboard, pero cada uno solo los datos de su propia ciudad. ¿Qué función de Quick BI resuelve esto sin duplicar dashboards?", "options": ["Portal", "Row-level Security (RLS)", "Data Preparation", "Cache"], "answer": 1, "explain": "RLS filtra automáticamente el contenido de un mismo Workbook según la identidad del usuario que lo abre." },
+    { "q": "¿Qué mide la 'tasa de utilización' de una bicicleta como KPI de negocio?", "options": ["El precio de alquiler de la bicicleta", "La proporción de tiempo que la bicicleta está efectivamente en uso frente al tiempo total disponible", "El número de mecánicos asignados a esa bicicleta", "La distancia total recorrida por todas las bicicletas de la flota"], "answer": 1, "explain": "La utilización compara tiempo en uso contra tiempo total disponible; una utilización baja señala una bicicleta mal ubicada." },
+    { "q": "¿Qué antipatrón describe consultar los datos crudos de viajes directamente en cada apertura de un dashboard de Quick BI?", "options": ["Es la práctica recomendada para máxima precisión", "Genera consultas lentas y costosas al escanear millones de filas sin agregación previa", "No tiene ningún impacto en el rendimiento", "Es obligatorio hacerlo así por diseño de MaxCompute"], "answer": 1, "explain": "Sin agregación previa en DataWorks, cada consulta de Quick BI escanea datos crudos innecesariamente, siendo lenta y costosa." },
+    { "q": "¿Qué mecanismo de DataWorks evita que una coordenada GPS inválida contamine un dashboard final?", "options": ["Row-level Security", "Reglas de calidad de datos (data quality rules) en el pipeline", "Consolidated Billing", "El Portal de Quick BI"], "answer": 1, "explain": "Las reglas de calidad de datos en DataWorks detectan y alertan sobre valores fuera de rango antes de que lleguen a las tablas de análisis." },
+    { "q": "¿Para qué sirve principalmente el mapa de calor (heatmap) en este caso de uso?", "options": ["Para mostrar la temperatura ambiente de cada estación", "Para comunicar visualmente dónde se concentra la demanda de viajes", "Para cifrar los datos de ubicación", "Para calcular la facturación de Quick BI"], "answer": 1, "explain": "El heatmap traduce la densidad de viajes en una visualización intuitiva que un equipo de logística no técnico puede interpretar rápidamente." },
+    { "q": "¿Qué relación describe correctamente MaxCompute y DataWorks en esta arquitectura?", "options": ["Son el mismo servicio con nombres distintos", "MaxCompute ejecuta el procesamiento; DataWorks decide cuándo y en qué orden se ejecuta cada paso", "DataWorks almacena los datos y MaxCompute los visualiza", "No tienen ninguna relación entre sí"], "answer": 1, "explain": "MaxCompute es el motor de cómputo; DataWorks es la capa de orquestación que programa y encadena las tareas sobre ese motor." },
+    { "q": "¿Qué agrupa un Portal en Quick BI?", "options": ["Varias fuentes de datos crudas sin procesar", "Varios Workbooks relacionados en un sitio unificado", "Los nodos de un pipeline de DataWorks", "Las particiones de una tabla de MaxCompute"], "answer": 1, "explain": "El Portal centraliza el acceso a varios dashboards relacionados (demanda, flota, ingresos) en un único punto de entrada." }
   ],
-  "exam_focus": "Dataset modeling, RLS, cache, integración con MaxCompute/Hologres.",
+  "exam_focus": "El examen suele evaluar: (a) el rol específico de MaxCompute vs. DataWorks vs. Quick BI en el pipeline, (b) por qué particionar tablas de MaxCompute, (c) cuándo usar clustering geoespacial frente a una consulta simple, (d) Row-level Security como solución a la personalización de dashboards por usuario, (e) definición correcta de los KPIs del caso (utilización, cobertura, eficiencia de redistribución).",
   "official_intro": "This course explains the related knowledge of sharing bicycles, large data application scenarios, commonly used data analysis methods, algorithms, and data visualization. We also introduce MaxCompute, DataWorks and Quick BI in detail. Finally, an experiment was conducted to lead the trainees to use the data analysis method to solve the analysis requirements of sharing bicycle scheduling scenarios and the core indicators that enterprises concerned. Students can refer to this experiment and combine their own business and needs to apply their learning to practice.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_ridinganalysis",

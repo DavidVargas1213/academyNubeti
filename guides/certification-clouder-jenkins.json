@@ -2,417 +2,204 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-jenkins",
   "title_en": "Achieve CI&CD With Jenkins",
-  "title_es": "Achieve CI&CD With Jenkins",
+  "title_es": "Lograr CI/CD con Jenkins",
+  "title_es_html": "Lograr CI/CD con <em>Jenkins</em>",
   "duration_es": "58 minutos",
   "level_es": "Intermedio",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "DevOps",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_jenkins",
-  "lead": "Guía completa en español para el curso «Achieve CI&CD With Jenkins» de Alibaba Cloud Academy. Cubre en profundidad DevOps en Alibaba Cloud. Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Achieve CI&CD With Jenkins» de Alibaba Cloud Academy. Jenkins es el servidor de automatización open source más usado para integración y despliegue continuo (CI/CD); esta guía cubre su arquitectura controller/agente, la instalación sobre una instancia ECS Ubuntu, la construcción de pipelines declarativos, y cómo se integra con el resto del ecosistema Alibaba Cloud (Container Registry, OSS, ECS, ACK) para llevar código desde un commit hasta producción de forma repetible.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DevOps en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pipeline, Stage, Artifact, ACR, Trigger.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DevOps en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve CI/CD frente a compilar y desplegar manualmente, y por qué Jenkins sigue siendo una opción dominante.",
+    "<strong>Describir</strong> la arquitectura controller/agente de Jenkins y cómo distribuye la carga de builds entre varios nodos.",
+    "<strong>Instalar</strong> y asegurar una instancia de Jenkins sobre una instancia ECS con Ubuntu.",
+    "<strong>Diferenciar</strong> un Freestyle Project de un Pipeline declarativo definido en un Jenkinsfile versionado.",
+    "<strong>Integrar</strong> Jenkins con Container Registry (ACR), OSS y despliegues hacia ECS/ACK.",
+    "<strong>Aplicar</strong> buenas prácticas de seguridad: gestión de credenciales, control de acceso y protección de webhooks.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre CI/CD y Jenkins."
   ],
-  "architecture": "Commit → GitLab/CodePipeline → build (imagen a ACR) → test unit + integration → security scan (SAST/DAST) → deploy a staging con canary → validation → prod → monitoreo ARMS. Feature flags para rollout controlado.",
+  "architecture": "Un desarrollador hace push a un repositorio Git; un webhook notifica al Jenkins Controller (instalado en una instancia ECS dedicada, detrás de un Security Group que solo permite HTTPS desde el proveedor Git y SSH desde IPs de administración). El Controller no ejecuta el build directamente: lo delega a uno o más Agentes (otras instancias ECS, o pods efímeros en ACK) según los executors disponibles. El Agente compila, corre pruebas, construye una imagen y la publica en Container Registry (ACR); los artefactos no-contenedor se suben a OSS. La etapa de despliegue usa credenciales RAM con permisos acotados para desencadenar un rolling update en ACK o una actualización de instancias detrás de un SLB. Jenkins guarda su estado (jobs, historial, plugins) en JENKINS_HOME, respaldado con snapshots periódicos del disco.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DevOps en Alibaba Cloud",
-      "title_en": "Introduction to DevOps en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es CI/CD y por qué Jenkins",
+      "title_en": "What is CI/CD and why Jenkins",
+      "intro": "Antes de instalar nada hay que entender el problema que resuelve la integración y el despliegue continuo: reducir el tiempo entre que un desarrollador escribe código y ese código corre de forma confiable en producción.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DevOps en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Integración Continua (CI)</strong>: cada cambio de código se compila y prueba automáticamente al hacer push, detectando errores de integración en minutos en vez de días.",
+        "<strong>Entrega/Despliegue Continuo (CD)</strong>: el artefacto validado se empaqueta y queda listo (Continuous Delivery) o se despliega automáticamente (Continuous Deployment) sin intervención manual repetitiva.",
+        "<strong>Por qué Jenkins</strong>: es open source, con miles de plugins para prácticamente cualquier herramienta (Git, Docker, Kubernetes, Slack, DingTalk), y no ata al equipo a un proveedor cloud específico — se puede instalar en cualquier VM, incluida una instancia ECS.",
+        "<strong>Alternativa gestionada</strong>: Alibaba Cloud ofrece su propio servicio de CI/CD (Cloud DevOps / Yunxiao) sin infraestructura que mantener; Jenkins se elige cuando el equipo ya tiene pipelines Jenkins existentes, necesita un plugin muy específico, o quiere control total sobre el entorno de build.",
+        "<strong>El problema que resuelve</strong>: sin CI/CD, cada despliegue es un proceso manual propenso a error humano — pasos olvidados, versiones inconsistentes entre entornos, sin registro de qué se desplegó y cuándo."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DevOps en Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "CI valida que el código nuevo se integra correctamente; CD automatiza que ese código llegue a producción. Jenkins es la herramienta que ejecuta ambos procesos como una serie de pasos repetibles y auditables."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DevOps en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Arquitectura: Controller y Agentes",
+      "title_en": "Architecture: Controller and Agents",
+      "intro": "Jenkins no es un solo proceso monolítico ejecutando builds — está diseñado para distribuir el trabajo entre varios nodos, lo cual es clave para escalar y para no saturar el servidor principal.",
       "points": [
-        "<strong>Patrón canónico</strong>: Commit → GitLab/CodePipeline → build (imagen a ACR) → test unit + integration → security scan (SAST/DAST) → deploy a staging con canary → validation → prod → monitoreo ARMS. Feature flags para rollout controlado.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DevOps en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Pipeline</strong> <em>(Pipeline)</em>: Definición del flujo CI/CD.",
-        "<strong>Stage</strong> <em>(Stage)</em>: Fase (build, test, deploy).",
-        "<strong>Artifact</strong> <em>(Artifact)</em>: JAR, imagen, binary generado.",
-        "<strong>Container Registry</strong> <em>(ACR)</em>: Registry de imágenes con scan integrado.",
-        "<strong>Trigger</strong> <em>(Trigger)</em>: Evento que dispara pipeline (push, PR, cron).",
-        "<strong>GitOps</strong> <em>(GitOps)</em>: Estado deseado en git; controller reconcilia.",
-        "<strong>Feature flag</strong> <em>(Feature Flag)</em>: Switch runtime para features."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Controller (antes «Master»)</strong>: el cerebro de Jenkins — sirve la interfaz web, guarda la configuración de jobs, programa builds y coordina los Agentes. No debería ejecutar builds pesados directamente.",
+        "<strong>Agent (Nodo)</strong>: un proceso (en otra máquina o contenedor) que se conecta al Controller y ejecuta los pasos reales de un build. Puede ser una instancia ECS permanente o un pod efímero creado bajo demanda.",
+        "<strong>Executor</strong>: un slot de ejecución dentro de un Agente — un Agente con 4 executors puede correr hasta 4 builds en paralelo.",
+        "<strong>Build distribuido</strong>: distribuir Agentes por etiqueta (label) permite dirigir jobs específicos a nodos con el hardware o software adecuado (p.ej. un Agente con GPU para builds de ML, otro con Docker para builds de contenedores).",
+        "<strong>Escalado elástico</strong>: en Alibaba Cloud, un plugin de cloud provisiona Agentes efímeros en ACK o como instancias ECS Spot bajo demanda, y los destruye al terminar el build — evitando pagar por capacidad de build ociosa."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Ejecutar builds directamente en el Controller es un antipatrón: si el enunciado describe un Jenkins que se vuelve lento o inestable bajo carga, la respuesta casi siempre es delegar el trabajo a Agentes."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Instalación de Jenkins sobre ECS con Ubuntu",
+      "title_en": "Installing Jenkins on an ECS Ubuntu instance",
+      "intro": "El curso oficial demuestra la instalación paso a paso sobre Ubuntu — es una de las formas más directas de tener un Controller propio corriendo en minutos sobre infraestructura Alibaba Cloud.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Pipelines-as-code (YAML) versionados",
-        "<strong>Buenas prácticas</strong>: Security scan bloqueante en build",
-        "<strong>Buenas prácticas</strong>: Environments efímeros para PR",
-        "<strong>Buenas prácticas</strong>: Canary + rollback automático",
-        "<strong>Buenas prácticas</strong>: GitOps para K8s"
+        "<strong>Prerrequisitos</strong>: una instancia ECS con Ubuntu LTS, Java (JDK) instalado (Jenkins corre sobre la JVM), y un Security Group que exponga el puerto 8080 (interfaz web) solo a IPs de administración.",
+        "<strong>Instalación</strong>: se agrega el repositorio APT oficial de Jenkins, se instala el paquete <code>jenkins</code>, y el servicio arranca automáticamente como systemd unit.",
+        "<strong>Desbloqueo inicial</strong>: el primer arranque genera una contraseña temporal en un archivo local; se usa una única vez para crear el usuario administrador real y nunca debe reutilizarse.",
+        "<strong>Plugins esenciales</strong>: Git, Pipeline, Credentials Binding, y el plugin específico de la plataforma de despliegue (Docker, Kubernetes CLI, o el plugin de Alibaba Cloud ECS/ACK según el flujo).",
+        "<strong>Reverse proxy</strong>: en producción se coloca Jenkins detrás de Nginx o un SLB con HTTPS, en vez de exponer el puerto 8080 directamente a internet."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "La contraseña inicial de desbloqueo es de un solo uso: sirve exclusivamente para crear el primer usuario administrador real con su propia contraseña fuerte, nunca para el acceso continuo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Freestyle Project frente a Pipeline",
+      "title_en": "Freestyle Project vs Pipeline",
+      "intro": "Jenkins ofrece dos formas fundamentalmente distintas de definir un job, y el examen espera que sepas cuándo cada una es la elección correcta.",
       "points": [
-        "<strong>Antipattern</strong>: Pipelines en UI sin versionar",
-        "<strong>Antipattern</strong>: Deploy directo a producción sin approval",
-        "<strong>Antipattern</strong>: Sin rollback strategy",
-        "<strong>Antipattern</strong>: Secrets en el pipeline en claro",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Freestyle Project</strong>: se configura enteramente desde la interfaz web (pasos, triggers, post-build actions). Rápido de crear, pero la configuración vive solo en Jenkins — no está versionada junto al código.",
+        "<strong>Pipeline</strong>: el flujo completo se define como código en un <code>Jenkinsfile</code> que vive en el propio repositorio, versionado junto a la aplicación. Es la práctica recomendada para cualquier proyecto serio.",
+        "<strong>Sintaxis declarativa vs scripted</strong>: la declarativa (<code>pipeline { stages { ... } }</code>) es más legible y suficiente para la mayoría de casos; la scripted (Groovy puro) da control total para lógica compleja.",
+        "<strong>Stage y Step</strong>: un Pipeline se divide en Stages (p.ej. Build, Test, Deploy) visibles como etapas en la interfaz, y cada Stage contiene Steps (comandos concretos a ejecutar).",
+        "<strong>Multibranch Pipeline</strong>: Jenkins detecta automáticamente cada rama o Pull Request del repositorio y crea/ejecuta un Pipeline por cada una, usando el Jenkinsfile de esa misma rama.",
+        "<strong>Shared Library</strong>: código Groovy reutilizable entre varios Jenkinsfiles, evitando duplicar lógica común (p.ej. cómo publicar una imagen en ACR) en cada repositorio."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado menciona «configuración versionada junto al código» o «Pipeline as Code», la respuesta es un Jenkinsfile con sintaxis declarativa, no un Freestyle Project."
+      }
+    },
+    {
+      "title_es": "5 · Integración con el ecosistema Alibaba Cloud",
+      "title_en": "Integration with the Alibaba Cloud ecosystem",
+      "intro": "Un pipeline de Jenkins rara vez vive aislado: normalmente construye una imagen, la publica en un registry, y dispara un despliegue sobre infraestructura gestionada — y ahí es donde Jenkins conecta con los servicios de Alibaba Cloud.",
+      "points": [
+        "<strong>Container Registry (ACR)</strong>: la etapa de build construye la imagen Docker y la publica con <code>docker push</code> hacia un repositorio ACR, autenticado con credenciales almacenadas en el Credentials Store de Jenkins, nunca en texto plano en el Jenkinsfile.",
+        "<strong>OSS</strong>: artefactos que no son imágenes (binarios, reportes de cobertura, builds de frontend estático) se suben a un bucket OSS como paso de publicación, a veces sirviendo directamente el contenido vía Static Website Hosting.",
+        "<strong>Despliegue en ACK</strong>: el pipeline aplica un nuevo manifiesto o actualiza la imagen de un Deployment (<code>kubectl set image</code>) usando un kubeconfig con permisos RAM acotados al namespace del proyecto.",
+        "<strong>Despliegue en ECS</strong>: alternativamente, el pipeline se conecta por SSH (con una clave gestionada como credencial de Jenkins) a instancias ECS detrás de un SLB para actualizar la aplicación de forma progresiva.",
+        "<strong>Notificaciones</strong>: el resultado del build (éxito, fallo, tiempo) se envía a un canal de DingTalk o Slack vía webhook, dando visibilidad inmediata al equipo sin que nadie tenga que revisar la consola de Jenkins manualmente."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Jenkins es el orquestador del flujo, no el destino final: el trabajo real de correr la aplicación sigue viviendo en ECS, ACK o Function Compute — Jenkins solo automatiza cómo el código nuevo llega ahí."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad, credenciales y buenas prácticas",
+      "title_en": "Security, credentials and best practices",
+      "intro": "Un Jenkins mal asegurado es un objetivo de alto valor: normalmente tiene credenciales con permisos de despliegue hacia producción, por lo que su seguridad debe tratarse con el mismo rigor que la de la infraestructura que despliega.",
+      "points": [
+        "<strong>Credentials Store</strong>: Jenkins almacena secretos (tokens, claves SSH, AccessKeys) cifrados en su propio almacén interno; los Jenkinsfiles referencian el secreto por su ID, nunca por su valor.",
+        "<strong>Mínimo privilegio</strong>: las credenciales usadas por un pipeline deben tener permisos RAM acotados exactamente a lo que ese pipeline necesita (p.ej. solo push a un repositorio ACR específico), no acceso administrativo completo a la cuenta.",
+        "<strong>Webhooks protegidos</strong>: el endpoint que recibe notificaciones del repositorio Git debe validar un secreto compartido — un webhook sin autenticación permite que cualquiera dispare builds arbitrarios.",
+        "<strong>Backup de JENKINS_HOME</strong>: toda la configuración, historial de builds y credenciales cifradas viven en ese directorio; perderlo sin backup significa reconstruir la plataforma de CI/CD desde cero.",
+        "<strong>Control de acceso por proyecto</strong>: usar el plugin de autorización basada en matriz o por proyecto para que un equipo no pueda ver ni modificar los pipelines de otro equipo en el mismo Jenkins compartido."
+      ],
+      "keypoint": {
+        "label": "Antipatrón frecuente",
+        "text": "Pegar un AccessKey de Alibaba Cloud directamente en el texto de un Jenkinsfile (en vez de referenciarlo desde el Credentials Store) lo expone a cualquiera con acceso de lectura al repositorio — incluyendo el historial de commits."
+      }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Las preguntas más difíciles sobre Jenkins en el examen suelen construirse sobre configuraciones reales que fallaron en producción por descuidos operativos, no por desconocimiento de la herramienta.",
+      "points": [
+        "<strong>Antipatrón</strong>: ejecutar todos los builds en el Controller en vez de delegarlos a Agentes, saturando el nodo que también sirve la interfaz web.",
+        "<strong>Antipatrón</strong>: definir jobs solo como Freestyle sin versionar la configuración, perdiendo el historial de cambios del propio pipeline.",
+        "<strong>Antipatrón</strong>: no fijar (pin) las versiones de los plugins, dejando que una actualización automática rompa un pipeline en producción sin aviso.",
+        "<strong>Antipatrón</strong>: dar a las credenciales de despliegue permisos de administrador completos «para no tener que pedir más adelante».",
+        "<strong>Antipatrón</strong>: no tener backup de JENKINS_HOME, perdiendo historial y credenciales ante un fallo de disco.",
+        "<strong>Regla de oro</strong>: ante dos configuraciones plausibles, elige la que versiona la configuración como código, delega el trabajo pesado a Agentes, y usa credenciales de alcance mínimo."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Identifica si la pregunta describe un problema de escalabilidad (→ Agentes/executors), de seguridad (→ Credentials Store/RAM) o de mantenibilidad (→ Pipeline as Code/Shared Library), y responde según esa categoría."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "CI/CD end-to-end para microservicios"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "GitOps con Flux/ArgoCD en ACK"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Security scanning integrado (ACR image scan)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Deploy automatizado a múltiples ambientes"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Rollback automático por SLO violations"
-    }
+    { "title": "Escenario 1", "text": "Monorepo con múltiples microservicios — Multibranch Pipeline que solo construye el servicio modificado" },
+    { "title": "Escenario 2", "text": "Build de imagen Docker y publicación automática en Container Registry (ACR) en cada merge a main" },
+    { "title": "Escenario 3", "text": "Despliegue progresivo a ACK con rollback automático si falla el health check post-despliegue" },
+    { "title": "Escenario 4", "text": "Pool de Agentes efímeros en instancias ECS Spot que se crean solo durante la ventana de build" },
+    { "title": "Escenario 5", "text": "Pipeline nocturno programado (cron) que corre pruebas de integración extensas fuera de horario laboral" },
+    { "title": "Escenario 6", "text": "Notificación a un canal de DingTalk cuando un build falla en la rama principal" }
   ],
   "mistakes": [
-    "Pipelines en UI sin versionar",
-    "Deploy directo a producción sin approval",
-    "Sin rollback strategy",
-    "Secrets en el pipeline en claro"
+    "Ejecutar builds pesados directamente en el Controller en vez de delegarlos a Agentes",
+    "Definir pipelines críticos solo como Freestyle sin versionar la configuración como código",
+    "Pegar AccessKeys o tokens en texto plano dentro del Jenkinsfile en vez de usar el Credentials Store",
+    "No fijar versiones de plugins, exponiéndose a que una actualización rompa un pipeline sin aviso",
+    "Dar a las credenciales de despliegue permisos administrativos completos en vez de mínimo privilegio",
+    "No respaldar JENKINS_HOME, perdiendo historial de builds y credenciales cifradas ante un fallo de disco"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cr GetInstance",
-      "desc": "Ver ACR"
-    },
-    {
-      "cmd": "Consola Yunxiao",
-      "desc": "Pipelines"
-    }
+    { "cmd": "sudo apt-get install jenkins", "desc": "Instalar Jenkins sobre Ubuntu (tras agregar el repositorio APT oficial)" },
+    { "cmd": "sudo cat /var/lib/jenkins/secrets/initialAdminPassword", "desc": "Obtener la contraseña temporal de desbloqueo inicial" },
+    { "cmd": "docker build -t registry.cn-hangzhou.aliyuncs.com/mi-ns/mi-app:$BUILD_NUMBER .", "desc": "Construir la imagen dentro de un Stage del pipeline" },
+    { "cmd": "docker push registry.cn-hangzhou.aliyuncs.com/mi-ns/mi-app:$BUILD_NUMBER", "desc": "Publicar la imagen en Container Registry (ACR)" },
+    { "cmd": "kubectl set image deployment/mi-app mi-app=registry.cn-hangzhou.aliyuncs.com/mi-ns/mi-app:$BUILD_NUMBER", "desc": "Actualizar la imagen desplegada en un clúster ACK desde el pipeline" },
+    { "cmd": "java -jar jenkins-cli.jar -s http://localhost:8080/ build mi-job", "desc": "Disparar un build de forma remota vía Jenkins CLI" }
   ],
   "glossary": [
-    {
-      "en": "Pipeline",
-      "es": "Pipeline",
-      "def": "Definición del flujo CI/CD."
-    },
-    {
-      "en": "Stage",
-      "es": "Stage",
-      "def": "Fase (build, test, deploy)."
-    },
-    {
-      "en": "Artifact",
-      "es": "Artifact",
-      "def": "JAR, imagen, binary generado."
-    },
-    {
-      "en": "ACR",
-      "es": "Container Registry",
-      "def": "Registry de imágenes con scan integrado."
-    },
-    {
-      "en": "Trigger",
-      "es": "Trigger",
-      "def": "Evento que dispara pipeline (push, PR, cron)."
-    },
-    {
-      "en": "GitOps",
-      "es": "GitOps",
-      "def": "Estado deseado en git; controller reconcilia."
-    },
-    {
-      "en": "Feature Flag",
-      "es": "Feature flag",
-      "def": "Switch runtime para features."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Jenkins Controller", "es": "Controller (antes Master)", "def": "Proceso central que sirve la interfaz web, guarda la configuración y coordina a los Agentes." },
+    { "en": "Agent / Node", "es": "Agente", "def": "Proceso que se conecta al Controller y ejecuta los pasos reales de un build." },
+    { "en": "Executor", "es": "Executor", "def": "Slot de ejecución dentro de un Agente; determina cuántos builds puede correr en paralelo." },
+    { "en": "Freestyle Project", "es": "Proyecto Freestyle", "def": "Job configurado íntegramente desde la interfaz web, sin versionar como código." },
+    { "en": "Pipeline", "es": "Pipeline", "def": "Flujo de CI/CD definido como código en un Jenkinsfile versionado junto a la aplicación." },
+    { "en": "Jenkinsfile", "es": "Jenkinsfile", "def": "Archivo de texto en el repositorio que define un Pipeline en sintaxis declarativa o scripted." },
+    { "en": "Declarative vs Scripted", "es": "Declarativo vs Scripted", "def": "Dos sintaxis de Pipeline: la declarativa es más simple y legible; la scripted usa Groovy puro para lógica compleja." },
+    { "en": "Stage", "es": "Etapa", "def": "Sección lógica de un Pipeline (p.ej. Build, Test, Deploy) visible como fase en la interfaz." },
+    { "en": "Step", "es": "Paso", "def": "Comando individual dentro de un Stage (compilar, correr un test, publicar un artefacto)." },
+    { "en": "Multibranch Pipeline", "es": "Pipeline Multibranch", "def": "Configuración que detecta y ejecuta automáticamente un Pipeline por cada rama o Pull Request del repositorio." },
+    { "en": "Shared Library", "es": "Librería compartida", "def": "Código Groovy reutilizable entre distintos Jenkinsfiles para evitar duplicar lógica común." },
+    { "en": "Plugin", "es": "Plugin", "def": "Extensión que añade funcionalidad a Jenkins (integraciones Git, Docker, notificaciones, etc.)." },
+    { "en": "Credentials Store", "es": "Almacén de credenciales", "def": "Repositorio cifrado interno de Jenkins donde se guardan secretos referenciados por ID, nunca en texto plano." },
+    { "en": "Webhook", "es": "Webhook", "def": "Notificación HTTP que el proveedor Git envía a Jenkins para disparar un build automáticamente ante un push." },
+    { "en": "Build Trigger", "es": "Disparador de build", "def": "Mecanismo que inicia un job: webhook, polling de SCM, cron programado o disparo manual." },
+    { "en": "JENKINS_HOME", "es": "JENKINS_HOME", "def": "Directorio donde Jenkins persiste configuración, historial de builds y credenciales cifradas." },
+    { "en": "Artifact", "es": "Artefacto", "def": "Resultado publicable de un build: imagen de contenedor, binario, paquete o reporte." },
+    { "en": "Rolling Update (deploy)", "es": "Actualización progresiva", "def": "Estrategia de despliegue que reemplaza instancias o Pods gradualmente para evitar downtime." },
+    { "en": "Blue Ocean", "es": "Blue Ocean", "def": "Interfaz visual moderna de Jenkins para diseñar y visualizar Pipelines de forma más intuitiva." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DevOps en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → ob",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee CodePipeline, Container Registry (ACR), Cloud Effect (proyectos), Yunxiao, e integra con Jenkins/GitLab. Objetivo: pipelines de código → build → test → security scan → deploy → observabilidad."
-    },
-    {
-      "q": "¿Qué es <strong>Pipeline</strong> (Pipeline) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Pipeline (Pipeline): Definición del flujo CI/CD."
-    },
-    {
-      "q": "¿Qué es <strong>Stage</strong> (Stage) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Fase (build, test, deploy).",
-        "Definición del flujo CI/CD.",
-        "JAR, imagen, binary generado.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Stage (Stage): Fase (build, test, deploy)."
-    },
-    {
-      "q": "¿Qué es <strong>Artifact</strong> (Artifact) en DevOps en Alibaba Cloud?",
-      "options": [
-        "JAR, imagen, binary generado.",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Artifact (Artifact): JAR, imagen, binary generado."
-    },
-    {
-      "q": "¿Qué es <strong>ACR</strong> (Container Registry) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Registry de imágenes con scan integrado.",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado."
-      ],
-      "answer": 0,
-      "explain": "ACR (Container Registry): Registry de imágenes con scan integrado."
-    },
-    {
-      "q": "¿Qué es <strong>Trigger</strong> (Trigger) en DevOps en Alibaba Cloud?",
-      "options": [
-        "Evento que dispara pipeline (push, PR, cron).",
-        "Definición del flujo CI/CD.",
-        "Fase (build, test, deploy).",
-        "JAR, imagen, binary generado."
-      ],
-      "answer": 0,
-      "explain": "Trigger (Trigger): Evento que dispara pipeline (push, PR, cron)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DevOps en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DevOps en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DevOps en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DevOps en Alibaba Cloud es la elección típica:",
-      "options": [
-        "CI/CD end-to-end para microservicios",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: CI/CD end-to-end para microservicios."
-    }
+    { "q": "¿Cuál es la diferencia principal entre Integración Continua (CI) y Despliegue Continuo (CD)?", "options": ["Son sinónimos exactos", "CI valida que el código se integra y prueba correctamente; CD automatiza que ese código llegue a producción", "CD ocurre antes que CI en el flujo", "CI solo aplica a aplicaciones Java"], "answer": 1, "explain": "CI se enfoca en compilar/probar cada cambio; CD se enfoca en entregar o desplegar el resultado validado de forma automática." },
+    { "q": "En la arquitectura de Jenkins, ¿qué componente ejecuta realmente los pasos de un build?", "options": ["El Controller siempre", "Un Agente (Node) con executors disponibles", "El plugin de notificaciones", "El Credentials Store"], "answer": 1, "explain": "El Controller coordina y programa, pero delega la ejecución real del build a uno o más Agentes." },
+    { "q": "Un Jenkins se vuelve lento e inestable porque todos los builds corren directamente en el servidor principal. ¿Cuál es la causa raíz?", "options": ["Falta de plugins instalados", "Los builds se ejecutan en el Controller en vez de delegarse a Agentes", "El Jenkinsfile usa sintaxis declarativa", "El repositorio Git es muy grande"], "answer": 1, "explain": "Ejecutar builds en el Controller es un antipatrón clásico: satura el nodo que también sirve la interfaz web y coordina el sistema." },
+    { "q": "¿Qué ventaja tiene un Pipeline definido en un Jenkinsfile frente a un Freestyle Project?", "options": ["Es más rápido de crear desde la interfaz web", "La configuración del flujo queda versionada junto al código en el repositorio", "Freestyle no permite compilar código", "No hay ninguna diferencia práctica"], "answer": 1, "explain": "El Jenkinsfile vive en el repositorio y se versiona con el código; un Freestyle Project solo existe en la configuración interna de Jenkins." },
+    { "q": "¿Qué hace específicamente una configuración Multibranch Pipeline?", "options": ["Ejecuta un solo Pipeline fijo sin importar la rama", "Detecta automáticamente cada rama o Pull Request y ejecuta el Pipeline definido en el Jenkinsfile de esa rama", "Reemplaza al Credentials Store", "Solo funciona con Freestyle Projects"], "answer": 1, "explain": "Multibranch Pipeline crea y ejecuta automáticamente un job por cada rama/PR usando su propio Jenkinsfile." },
+    { "q": "¿Por qué es un antipatrón escribir un AccessKey de Alibaba Cloud directamente en el texto de un Jenkinsfile?", "options": ["Porque Jenkins no admite variables de entorno", "Porque queda expuesto a cualquiera con acceso de lectura al repositorio, incluido el historial de commits", "Porque ralentiza el build", "Porque los Jenkinsfiles no admiten texto"], "answer": 1, "explain": "El repositorio (y su historial) puede ser leído por más personas de las que deberían ver un secreto; por eso se usa el Credentials Store." },
+    { "q": "Un pipeline necesita construir una imagen Docker y publicarla para que un clúster ACK la despliegue después. ¿Qué servicio de Alibaba Cloud es el destino natural de esa imagen?", "options": ["OSS", "Container Registry (ACR)", "ActionTrail", "RAM"], "answer": 1, "explain": "ACR es el registry gestionado de Alibaba Cloud donde se publican y versionan las imágenes de contenedor." },
+    { "q": "¿Qué garantiza el uso de credenciales con mínimo privilegio en un pipeline de despliegue?", "options": ["Que el build se ejecute más rápido", "Que, si esas credenciales se filtran, el daño potencial quede acotado al alcance estrictamente necesario", "Que Jenkins no necesite Credentials Store", "Que los Agentes no necesiten autenticarse"], "answer": 1, "explain": "El principio de mínimo privilegio limita el impacto de una posible fuga de credenciales a solo lo que ese pipeline realmente necesita hacer." },
+    { "q": "¿Qué ocurre si se pierde el directorio JENKINS_HOME sin backup?", "options": ["No pasa nada, Jenkins lo regenera automáticamente", "Se pierde el historial de builds, la configuración de jobs y las credenciales cifradas", "Solo se pierden los plugins", "Los Agentes siguen funcionando de forma independiente"], "answer": 1, "explain": "JENKINS_HOME concentra el estado completo de la plataforma; sin backup, perderlo obliga a reconstruir todo desde cero." },
+    { "q": "¿Cuál es la diferencia entre un Stage y un Step dentro de un Pipeline?", "options": ["Son sinónimos", "Un Stage agrupa una fase lógica (p.ej. Build); un Step es un comando individual dentro de esa fase", "Un Step contiene varios Stages", "Solo existen Steps en Freestyle Projects"], "answer": 1, "explain": "El Stage organiza el Pipeline en fases visibles; dentro de cada Stage se ejecutan uno o más Steps concretos." },
+    { "q": "¿Qué mecanismo permite que Jenkins reaccione automáticamente en segundos a un push en el repositorio, en vez de revisar periódicamente si hubo cambios?", "options": ["SCM polling exclusivamente", "Un webhook configurado en el proveedor Git", "El Credentials Store", "El plugin de notificaciones a DingTalk"], "answer": 1, "explain": "El webhook notifica a Jenkins inmediatamente tras el push, evitando la latencia del polling periódico." },
+    { "q": "Un equipo quiere reutilizar la misma lógica de 'publicar imagen en ACR' en 15 repositorios distintos sin copiar y pegar código Groovy en cada Jenkinsfile. ¿Qué mecanismo de Jenkins usan?", "options": ["Freestyle Project", "Shared Library", "Blue Ocean", "Webhook"], "answer": 1, "explain": "Una Shared Library centraliza lógica reutilizable de Pipeline para que múltiples repositorios la referencien sin duplicarla." },
+    { "q": "¿Por qué se recomienda fijar (pin) las versiones de los plugins de Jenkins en un entorno de producción?", "options": ["Porque los plugins caducan a los 30 días", "Porque una actualización automática no probada puede romper pipelines existentes sin aviso", "Porque Jenkins no permite tener más de 5 plugins", "Porque los plugins consumen licencias pagadas"], "answer": 1, "explain": "Fijar versiones evita que una actualización inesperada de un plugin introduzca incompatibilidades en producción." },
+    { "q": "¿Qué representa un 'executor' en un Agente de Jenkins?", "options": ["Un tipo de credencial", "Un slot de ejecución que determina cuántos builds puede correr ese Agente en paralelo", "Un plugin de seguridad", "El nombre del Jenkinsfile"], "answer": 1, "explain": "Un Agente con N executors puede ejecutar hasta N builds simultáneamente, sin bloquearse entre sí." },
+    { "q": "La contraseña temporal generada en el primer arranque de Jenkins tras la instalación sobre Ubuntu, ¿para qué debe usarse exclusivamente?", "options": ["Como contraseña permanente del administrador", "Para desbloquear la instalación y crear el usuario administrador real con su propia contraseña", "Para autenticar todos los Agentes", "Para firmar los Jenkinsfiles"], "answer": 1, "explain": "Es de un solo uso: sirve únicamente para completar el asistente inicial y crear una cuenta administrativa propia, nunca para el acceso continuo." }
   ],
-  "exam_focus": "CI/CD stages, GitOps, ACR con scanning, canary + rollback, feature flags.",
+  "exam_focus": "El examen suele evaluar: (a) arquitectura Controller/Agente y por qué no ejecutar builds en el Controller, (b) Pipeline as Code (Jenkinsfile) frente a Freestyle, (c) gestión segura de credenciales y AccessKeys, (d) integración de Jenkins con ACR/OSS/ACK/ECS en el flujo de build-a-despliegue, (e) mecanismos de disparo de builds (webhook vs polling) y Multibranch Pipeline.",
   "official_intro": "This course introduces the basic concepts, features and benifits of CI/CD compared with traditional software developing mode. Then we have a detailed introduction about the features and benefits of Jenkins software and also the installation of Jenkins based on Ubuntu operating system. Finally we introduced the detailed operations on Jenkins console with a brief demonstration.",
   "recommended_for": "developer and testers who is working or interested in devops and CI/CD.",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_jenkins",

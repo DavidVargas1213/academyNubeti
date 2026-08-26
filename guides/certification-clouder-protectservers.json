@@ -2,477 +2,226 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-protectservers",
   "title_en": "Best Practice to Protect Your Servers on Alibaba Cloud",
-  "title_es": "Best Práctica to Protect Your Servidores en Alibaba Cloud",
+  "title_es": "Mejores Prácticas para Proteger tus Servidores en Alibaba Cloud",
+  "title_es_html": "Mejores Prácticas para Proteger tus <em>Servidores en Alibaba Cloud</em>",
   "duration_es": "50 minutos",
   "level_es": "Intermedio",
   "category_es": "Seguridad",
   "subcategory_es": "Seguridad en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_protectservers",
-  "lead": "Guía completa en español para el curso «Best Practice to Protect Your Servers on Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre cómo blindar un servidor ECS en producción usando Security Center (SAS) como pieza central. No es un curso de teoría de amenazas ni de hardening interno del sistema operativo: es una checklist de producto — qué activar, en qué orden y por qué — para que un host en la nube sobreviva a vulnerabilidades sin parchear, fuerza bruta, ransomware y web tampering, y además pase una auditoría de cumplimiento.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Identificar</strong> los riesgos principales que enfrenta un host en la nube: puertos de gestión expuestos, vulnerabilidades sin parchear, malware, web tampering y fuerza bruta contra SSH/RDP.",
+    "<strong>Explicar</strong> qué es Security Center (SAS) y cómo unifica detección de vulnerabilidades, baseline check, protección contra ransomware/virus y defensa contra web tampering en una sola consola.",
+    "<strong>Elegir</strong> la edición de Security Center (Basic, Antivirus, Advanced, Enterprise, Ultimate) adecuada según la criticidad del entorno.",
+    "<strong>Aplicar</strong> compliance assessment para validar servidores cloud y on-premises contra estándares como PCI-DSS o ISO 27001.",
+    "<strong>Priorizar</strong> parches usando la clasificación de severidad de Security Center en vez de aplicar actualizaciones a ciegas.",
+    "<strong>Diseñar</strong> una defensa en capas para un servidor combinando Security Group, RAM, Security Center, parches regulares y backup.",
+    "<strong>Responder</strong> con confianza las preguntas del examen Apsara Clouder sobre buenas prácticas de protección de servidores."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Un servidor bien protegido no depende de un único control, sino de capas que se refuerzan entre sí: (1) Security Group filtra en la red qué puertos y orígenes pueden siquiera llegar a la instancia; (2) RAM aplica mínimo privilegio sobre quién puede administrar el recurso desde la API o la consola; (3) Security Center (SAS) vive dentro del host mediante un agente y vigila el comportamiento — vulnerabilidades, desviaciones de baseline, ransomware, virus, web tampering e intentos de fuerza bruta — con visibilidad que ni el Security Group ni RAM pueden dar por sí solos; (4) el patch management, priorizado por la severidad que reporta Security Center, cierra la puerta de entrada más común: la vulnerabilidad conocida sin corregir; (5) el backup regular es la última red de seguridad, para cuando las capas anteriores fallan y hay que restaurar en vez de negociar con un atacante. Compliance assessment recorre estas mismas capas para confirmar, con evidencia, que cumplen un estándar regulatorio.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Los riesgos reales de un host en la nube",
+      "title_en": "Security Risks Cloud Hosts Face",
+      "intro": "Antes de activar cualquier producto hay que entender contra qué se está defendiendo un servidor. El curso oficial arranca aquí porque el examen espera que reconozcas el riesgo descrito en un escenario antes de elegir la solución.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Puertos de gestión expuestos</strong>: SSH (22) o RDP (3389) alcanzables desde cualquier IP de internet son el primer punto que un atacante automatizado escanea al detectar una instancia nueva.",
+        "<strong>Vulnerabilidades sin parchear</strong>: un CVE conocido y público en el sistema operativo o en una aplicación instalada (servidor web, base de datos, framework) es la puerta de entrada más explotada, porque no requiere ingeniería social ni credenciales robadas.",
+        "<strong>Malware y ransomware</strong>: software que compromete el host para minar criptomonedas, exfiltrar datos o cifrar archivos y exigir un rescate, a menudo entrando por la vulnerabilidad sin parchear o por una credencial débil.",
+        "<strong>Web tampering</strong>: modificación no autorizada del contenido de un sitio web alojado en el servidor — desde desfiguración visible hasta inyección silenciosa de código malicioso para infectar visitantes.",
+        "<strong>Fuerza bruta contra SSH/RDP</strong>: intentos automatizados y masivos de adivinar usuario y contraseña contra los puertos de administración remota.",
+        "<strong>Contraseñas débiles o por defecto</strong>: la causa raíz que hace viable a la fuerza bruta; una contraseña reutilizada o corta reduce el ataque a minutos."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen no pregunta solo \"qué es una amenaza\" sino \"qué capa del servidor la habilita\". Puerto expuesto → capa de red; vulnerabilidad sin parchear → capa de sistema/aplicación; contraseña débil → capa de identidad."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Security Center (SAS): el producto central del curso",
+      "title_en": "Security Center Overview",
+      "intro": "Security Center (también llamado SAS, Situation Awareness System) es el hilo conductor de todo el curso. A diferencia de un Security Group o un WAF, que filtran tráfico desde fuera, Security Center observa el servidor desde dentro mediante un agente instalado en la instancia.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Detección de vulnerabilidades</strong>: escanea el sistema operativo y las aplicaciones instaladas contra bases de datos de CVE conocidos, tanto en servidores Linux como Windows.",
+        "<strong>Baseline check</strong>: compara la configuración real del servidor contra configuraciones de referencia seguras (contraseñas por defecto, permisos de archivos, servicios innecesarios activos) y reporta cada desviación como un hallazgo accionable.",
+        "<strong>Detección de ransomware y virus</strong>: combina firmas conocidas con análisis de comportamiento — por ejemplo, un proceso que empieza a cifrar masivamente archivos de usuario dispara una alerta aunque el binario sea nuevo y no tenga firma previa.",
+        "<strong>Protección contra web tampering</strong>: vigila los archivos publicados por un servidor web y revierte automáticamente cualquier modificación no autorizada del contenido.",
+        "<strong>Alertas de fuerza bruta</strong>: detecta intentos repetidos de login fallido contra SSH/RDP y puede bloquear automáticamente la IP de origen.",
+        "<strong>Agente ligero</strong>: se instala una sola vez en la instancia y reporta continuamente a la consola central, sin que el administrador tenga que revisar cada servidor por separado."
       ],
       "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+        "label": "Concepto clave",
+        "text": "Si el escenario del examen describe algo que ocurre <em>dentro</em> del servidor (un proceso sospechoso, un archivo modificado, una vulnerabilidad del SO), la respuesta casi siempre es Security Center, no un Security Group ni un WAF."
       }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Ediciones de Security Center y cómo elegir",
+      "title_en": "Security Center Editions",
+      "intro": "Security Center no es un producto único: se vende en ediciones con distinto alcance de protección. Elegir la edición correcta según la criticidad del entorno es un tipo de pregunta recurrente en el examen.",
       "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Basic</strong>: nivel gratuito incluido con la cuenta, con visibilidad limitada — útil para inventario básico, pero insuficiente para producción.",
+        "<strong>Antivirus</strong>: añade detección y limpieza de virus y malware conocido sobre lo que ofrece Basic.",
+        "<strong>Advanced</strong>: suma detección de vulnerabilidades, baseline check y alertas de fuerza bruta — el punto de entrada razonable para un servidor de producción no crítico.",
+        "<strong>Enterprise</strong>: añade protección contra ransomware por comportamiento, web tampering y capacidades más profundas de respuesta a incidentes, pensada para cargas de negocio importantes.",
+        "<strong>Ultimate</strong>: el nivel más completo, con detección avanzada por IA, mayor retención de datos de auditoría y soporte para entornos híbridos a gran escala.",
+        "<strong>Criterio de elección</strong>: la edición no se elige por presupuesto disponible sino por el impacto de negocio si el servidor se ve comprometido — un servidor que procesa pagos o datos regulados justifica Enterprise o Ultimate."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado menciona \"protección contra ransomware\" o \"web tampering\" como requisito explícito, descarta Basic y Antivirus — esas capacidades aparecen desde Enterprise en adelante."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Gestión de parches, priorizada por severidad",
+      "title_en": "Patch Management and Vulnerability Prioritization",
+      "intro": "Tener un escáner de vulnerabilidades no basta si el equipo no sabe qué parchear primero. Security Center convierte una lista larga de hallazgos en un plan de acción ordenado.",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>Por qué una vulnerabilidad sin parchear es la puerta de entrada más común</strong>: es pública, documentada, y a menudo tiene un exploit automatizado disponible — no requiere que el atacante invierta esfuerzo adicional.",
+        "<strong>Clasificación por severidad</strong>: Security Center etiqueta cada hallazgo (crítico, alto, medio, bajo) según el impacto potencial y la facilidad de explotación, no solo por la antigüedad del CVE.",
+        "<strong>Ventana de parcheo</strong>: cuanto más tiempo permanece abierta una vulnerabilidad crítica, mayor la probabilidad de que sea explotada de forma automatizada por escáneres masivos de atacantes.",
+        "<strong>Parcheo verificado</strong>: tras aplicar un parche, Security Center vuelve a escanear para confirmar que el hallazgo desapareció, en vez de asumir que la actualización tuvo éxito.",
+        "<strong>Excepciones controladas</strong>: cuando un parche no puede aplicarse de inmediato (por dependencia de una aplicación legada), se documenta como riesgo aceptado con fecha de revisión, no se ignora silenciosamente.",
+        "<strong>Aplicaciones, no solo el SO</strong>: el mismo criterio de priorización cubre vulnerabilidades en software de terceros (servidores web, bases de datos, frameworks) instalado sobre la instancia."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El examen premia reconocer que \"escanear\" y \"parchear\" son pasos distintos: escanear sin un proceso de priorización y verificación no reduce el riesgo real del servidor."
+      }
+    },
+    {
+      "title_es": "5 · Compliance assessment: cumplir sin adivinar",
+      "title_en": "Compliance Assessment",
+      "intro": "Un servidor puede estar técnicamente protegido y aun así fallar una auditoría si nadie puede demostrarlo con evidencia. Compliance assessment resuelve ese vacío evaluando el servidor contra estándares reconocidos.",
+      "points": [
+        "<strong>Qué hace</strong>: compara automáticamente la configuración y postura de seguridad del servidor contra los controles exigidos por un estándar regulatorio específico.",
+        "<strong>Estándares típicos</strong>: PCI-DSS (para quien procesa pagos con tarjeta), ISO 27001 (gestión de seguridad de la información), y otros marcos sectoriales o gubernamentales según la región.",
+        "<strong>Resultado accionable</strong>: no solo indica si el servidor pasa o falla, sino qué control específico no se cumple y qué cambio de configuración lo resolvería.",
+        "<strong>Servidores híbridos</strong>: la evaluación no se limita a instancias ECS — Security Center puede proteger y auditar también servidores on-premises desde la misma consola, relevante para empresas en transición gradual a la nube.",
+        "<strong>Auditoría continua vs. puntual</strong>: a diferencia de una auditoría manual anual, el compliance assessment se puede ejecutar de forma recurrente, detectando desviaciones apenas ocurren en vez de meses después.",
+        "<strong>Valor para el negocio</strong>: convierte el cumplimiento normativo de un ejercicio manual de checklist en un proceso medible y repetible."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario menciona \"regulación\", \"auditoría\" o un estándar por nombre (PCI-DSS, ISO 27001), la respuesta esperada es compliance assessment dentro de Security Center, no un escaneo de vulnerabilidades genérico."
+      }
+    },
+    {
+      "title_es": "6 · Servidores híbridos: cloud y on-premises en una sola consola",
+      "title_en": "Protecting Hybrid Cloud Servers",
+      "intro": "Muchas empresas no migran todo su parque de servidores a la nube de golpe. Security Center está pensado para acompañar esa transición sin duplicar herramientas de seguridad.",
+      "points": [
+        "<strong>Un solo agente, dos entornos</strong>: el mismo agente de Security Center se instala tanto en instancias ECS como en servidores físicos o virtuales dentro del centro de datos propio de la empresa.",
+        "<strong>Consola unificada</strong>: vulnerabilidades, baseline check, alertas de fuerza bruta y compliance assessment se ven en un único panel, sin importar si el servidor vive en Alibaba Cloud o en un rack local.",
+        "<strong>Consistencia de política</strong>: las mismas reglas de baseline y los mismos estándares de compliance se aplican a ambos entornos, evitando que el servidor on-premises quede con un nivel de protección distinto (y más débil) que el de la nube.",
+        "<strong>Valor durante la migración</strong>: mientras dura la transición, el equipo de seguridad no pierde visibilidad de la parte del parque que todavía no se movió a la nube.",
+        "<strong>Caso de uso típico</strong>: una empresa mueve sus servidores de aplicación a ECS pero mantiene una base de datos regulada on-premises por requisitos de residencia de datos — Security Center cubre ambos."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "\"Protección híbrida\" en el examen no significa que el servidor use dos nubes distintas, sino que combina infraestructura cloud y on-premises bajo una misma herramienta de seguridad."
+      }
+    },
+    {
+      "title_es": "7 · Checklist de defensa en capas para un servidor",
+      "title_en": "Layered Server Protection Checklist",
+      "intro": "El curso cierra la parte técnica integrando todo lo anterior en una lista de verificación práctica — el tipo de razonamiento que el examen espera aplicado a un escenario concreto de servidor en producción.",
+      "points": [
+        "<strong>Red</strong>: Security Group restringe SSH/RDP a IPs conocidas; ningún puerto de gestión debe quedar abierto a 0.0.0.0/0 en un servidor productivo.",
+        "<strong>Identidad</strong>: RAM aplica mínimo privilegio sobre quién puede detener, modificar o eliminar la instancia desde la API o la consola, separado de quién puede iniciar sesión dentro del sistema operativo.",
+        "<strong>Comportamiento y vulnerabilidades</strong>: Security Center vigila el interior del servidor de forma continua — vulnerabilidades, desviaciones de baseline, ransomware, virus, web tampering y fuerza bruta.",
+        "<strong>Parches</strong>: se aplican con regularidad, priorizados por la severidad que reporta Security Center, y se verifican tras cada actualización.",
+        "<strong>Backup</strong>: existe una copia recuperable e independiente del servidor para el escenario en que las capas anteriores fallen y haya que restaurar en vez de negociar con un atacante.",
+        "<strong>Verificación de cumplimiento</strong>: compliance assessment confirma periódicamente que las capas anteriores siguen alineadas con el estándar regulatorio que aplique al negocio."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "<strong>Red → Identidad → Comportamiento → Parches → Backup</strong>: cada capa cubre lo que la anterior no puede ver. Ninguna capa sola sustituye a las demás."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
+      "title_es": "8 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de las preguntas difíciles sobre protección de servidores están inspiradas en decisiones reales que dejaron un host expuesto por más tiempo del necesario.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: instalar Security Center pero quedarse en la edición Basic en un servidor de producción crítico, sin protección real contra ransomware ni web tampering.",
+        "<strong>Antipatrón</strong>: escanear vulnerabilidades una sola vez al desplegar el servidor y nunca repetir el escaneo tras instalar software nuevo.",
+        "<strong>Antipatrón</strong>: dejar hallazgos de baseline check abiertos indefinidamente por no tener un proceso claro de priorización.",
+        "<strong>Antipatrón</strong>: asumir que un Security Group bien configurado hace innecesario un producto como Security Center — la red bloquea acceso externo, pero no detecta malware ya presente dentro del host.",
+        "<strong>Antipatrón</strong>: tratar el compliance assessment como un ejercicio de una sola vez antes de una auditoría, en lugar de un proceso recurrente.",
+        "<strong>Antipatrón</strong>: dejar servidores on-premises fuera del alcance de la herramienta de seguridad porque \"la nube es lo prioritario\", creando un punto ciego."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un escenario del examen, identifica primero en qué capa ocurre el problema descrito (red, identidad, comportamiento del host, parches o backup) y elige la herramienta que corresponde exactamente a esa capa."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Un servidor web público recibe miles de intentos de login SSH fallidos por hora — se activa la protección de fuerza bruta de Security Center para bloquear automáticamente las IPs de origen" },
+    { "title": "Escenario 2", "text": "Una auditoría PCI-DSS exige evidencia de que los servidores que procesan pagos cumplen los controles del estándar — se ejecuta compliance assessment y se corrigen los hallazgos reportados" },
+    { "title": "Escenario 3", "text": "Un equipo detecta que el contenido de su sitio corporativo fue modificado sin autorización — la protección contra web tampering de Security Center revierte el cambio y alerta al equipo" },
+    { "title": "Escenario 4", "text": "Una vulnerabilidad crítica recién publicada afecta al motor de base de datos instalado en varios servidores — Security Center la marca como prioridad alta y el equipo aplica el parche antes que el resto del backlog" },
+    { "title": "Escenario 5", "text": "Una empresa migra sus servidores de aplicación a ECS pero mantiene una base de datos regulada en su propio data center — Security Center protege y audita ambos entornos desde una sola consola" },
+    { "title": "Escenario 6", "text": "Varios archivos en un servidor comienzan a cifrarse en cuestión de minutos — la detección de ransomware por comportamiento de Security Center corta el proceso antes de que se propague al resto del disco" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Dejar la edición Basic de Security Center en un servidor de producción crítico, sin cobertura contra ransomware ni web tampering",
+    "Escanear vulnerabilidades una sola vez al desplegar el servidor y no repetir el escaneo tras instalar software nuevo",
+    "Acumular hallazgos de baseline check sin un proceso de priorización ni fecha de resolución",
+    "Confiar únicamente en el Security Group y asumir que basta para detectar malware que ya está dentro del host",
+    "Ejecutar compliance assessment solo una vez antes de una auditoría en vez de como proceso recurrente",
+    "Excluir servidores on-premises del alcance de Security Center por considerarlos secundarios frente a la nube"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun sas DescribeCloudCenterInstances --RegionId cn-hangzhou", "desc": "Listar los servidores (activos) cubiertos por Security Center en una región" },
+    { "cmd": "aliyun sas DescribeVulListNew --Type sys", "desc": "Consultar vulnerabilidades del sistema operativo detectadas y su nivel de severidad" },
+    { "cmd": "aliyun sas DescribeCheckWarningSummary", "desc": "Obtener el resumen de hallazgos de baseline check pendientes de resolver" },
+    { "cmd": "aliyun sas DescribeSuspEvents --RegionId cn-hangzhou", "desc": "Listar eventos sospechosos detectados, incluida actividad de tipo ransomware o virus" },
+    { "cmd": "aliyun sas FixVulList --ClientList i-xxxxx --VulList CVE-2023-xxxx", "desc": "Enviar la orden de aplicar un parche para una vulnerabilidad específica" },
+    { "cmd": "aliyun sas DescribeComplianceResultsSummary", "desc": "Consultar el resumen de resultados de un compliance assessment" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Security Center (SAS)", "es": "Security Center", "def": "Producto central de este curso: agente instalado en el servidor que detecta vulnerabilidades, desviaciones de baseline, ransomware, virus, web tampering e intentos de fuerza bruta desde una sola consola." },
+    { "en": "SAS Agent", "es": "Agente de Security Center", "def": "Componente ligero instalado una vez en el servidor que recopila datos y aplica protección de forma continua sin intervención manual." },
+    { "en": "Baseline Check", "es": "Verificación de línea base", "def": "Comparación automática de la configuración real del servidor contra configuraciones de referencia seguras, reportando cada desviación como hallazgo." },
+    { "en": "Vulnerability Management", "es": "Gestión de vulnerabilidades", "def": "Ciclo de detección, priorización por severidad, parcheo y verificación de vulnerabilidades del sistema operativo y de las aplicaciones instaladas." },
+    { "en": "Patch Priority", "es": "Prioridad de parcheo", "def": "Clasificación de cada vulnerabilidad detectada (crítica, alta, media, baja) para decidir qué parchear primero según impacto y facilidad de explotación." },
+    { "en": "Ransomware Protection", "es": "Protección contra ransomware", "def": "Detección por comportamiento de procesos que cifran archivos de forma masiva y sospechosa, incluso sin firma previa conocida." },
+    { "en": "Web Tampering Protection", "es": "Protección contra web tampering", "def": "Vigilancia de los archivos publicados por un servidor web con reversión automática de cualquier modificación no autorizada del contenido." },
+    { "en": "Brute-force Defense", "es": "Defensa contra fuerza bruta", "def": "Detección y bloqueo automático de la IP de origen tras repetidos intentos fallidos de inicio de sesión por SSH o RDP." },
+    { "en": "Compliance Assessment", "es": "Evaluación de cumplimiento", "def": "Comparación automatizada de la postura de seguridad del servidor contra los controles de un estándar regulatorio específico." },
+    { "en": "PCI-DSS", "es": "PCI-DSS", "def": "Estándar de seguridad para organizaciones que procesan, almacenan o transmiten datos de tarjetas de pago." },
+    { "en": "ISO 27001", "es": "ISO 27001", "def": "Norma internacional para sistemas de gestión de seguridad de la información." },
+    { "en": "Security Center Basic", "es": "Security Center Basic", "def": "Edición gratuita incluida con la cuenta, con visibilidad limitada de seguridad — insuficiente para producción crítica." },
+    { "en": "Security Center Advanced", "es": "Security Center Advanced", "def": "Edición que añade detección de vulnerabilidades, baseline check y alertas de fuerza bruta sobre lo incluido en Basic/Antivirus." },
+    { "en": "Security Center Enterprise", "es": "Security Center Enterprise", "def": "Edición que suma protección contra ransomware por comportamiento y web tampering, pensada para cargas de negocio importantes." },
+    { "en": "Security Center Ultimate", "es": "Security Center Ultimate", "def": "Edición más completa, con detección avanzada por IA y soporte robusto para entornos híbridos a gran escala." },
+    { "en": "Hybrid Cloud Protection", "es": "Protección híbrida", "def": "Capacidad de Security Center de proteger y auditar, desde una sola consola, servidores tanto en la nube como en un centro de datos propio." },
+    { "en": "Asset Fingerprint", "es": "Huella del activo", "def": "Inventario automático de puertos abiertos, procesos, cuentas y software instalado en cada servidor monitoreado." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful a nivel de red que decide qué tráfico llega a la instancia; primera capa de la defensa antes de que Security Center actúe dentro del host." },
+    { "en": "RAM (Resource Access Management)", "es": "RAM", "def": "Servicio de identidad y permisos que aplica mínimo privilegio sobre quién puede administrar la instancia desde la API o la consola." },
+    { "en": "Backup / Snapshot", "es": "Respaldo", "def": "Copia recuperable e independiente del servidor, última red de seguridad cuando las demás capas de protección fallan." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "Según el curso, ¿cuál es la puerta de entrada más común para comprometer un servidor en la nube?", "options": ["Una vulnerabilidad conocida y sin parchear en el sistema operativo o una aplicación", "Un fallo del proveedor de nube en la capa física", "Un corte de energía en el data center", "Un cambio de precio en el plan de facturación"], "answer": 0, "explain": "Las vulnerabilidades públicas y sin corregir son la puerta de entrada más explotada porque no requieren ingeniería social ni credenciales robadas." },
+    { "q": "¿Qué hace específicamente el baseline check de Security Center?", "options": ["Mide el ancho de banda consumido por la instancia", "Compara la configuración real del servidor contra configuraciones de referencia seguras", "Calcula el costo mensual proyectado del servidor", "Reinicia automáticamente la instancia cada semana"], "answer": 1, "explain": "El baseline check compara la configuración actual contra líneas base seguras y reporta cada desviación como hallazgo accionable." },
+    { "q": "Un servidor de producción crítico necesita protección explícita contra ransomware y web tampering. ¿Qué edición mínima de Security Center se requiere según el curso?", "options": ["Basic", "Antivirus", "Enterprise", "Ninguna edición ofrece esa protección"], "answer": 2, "explain": "La protección contra ransomware por comportamiento y web tampering aparece desde la edición Enterprise en adelante." },
+    { "q": "¿Cómo detecta Security Center un ransomware que todavía no tiene firma conocida?", "options": ["No puede detectarlo bajo ninguna circunstancia", "Analizando el comportamiento del proceso, como el cifrado masivo y repentino de archivos", "Bloqueando todo el tráfico de red saliente por defecto", "Solicitando confirmación manual del administrador antes de cada ejecución"], "answer": 1, "explain": "Además de firmas conocidas, Security Center usa análisis de comportamiento para detectar actividad sospechosa aunque el binario sea nuevo." },
+    { "q": "¿Cuál es el propósito principal del compliance assessment dentro de Security Center?", "options": ["Aumentar el rendimiento de red de la instancia", "Evaluar automáticamente al servidor contra los controles de un estándar regulatorio como PCI-DSS o ISO 27001", "Reducir el costo mensual del servidor", "Reemplazar por completo al Security Group"], "answer": 1, "explain": "Compliance assessment compara la postura de seguridad del servidor contra los controles exigidos por un estándar regulatorio específico." },
+    { "q": "Una empresa mantiene una base de datos regulada en su propio data center mientras migra el resto a Alibaba Cloud. ¿Qué capacidad de Security Center es relevante en este escenario?", "options": ["Anti-DDoS Premium", "Protección híbrida cloud + on-premises desde una sola consola", "Auto Scaling multi-zona", "Migración en caliente de instancias"], "answer": 1, "explain": "Security Center puede proteger y auditar tanto servidores ECS como servidores on-premises desde una misma consola, útil durante una migración gradual." },
+    { "q": "¿Qué acción automática puede tomar Security Center ante repetidos intentos fallidos de inicio de sesión por SSH?", "options": ["Aumentar el tamaño de la instancia", "Bloquear automáticamente la IP de origen de los intentos", "Cifrar todos los discos de la instancia", "Cambiar la región del servidor"], "answer": 1, "explain": "La defensa contra fuerza bruta de Security Center detecta el patrón de intentos fallidos y bloquea automáticamente la IP de origen." },
+    { "q": "En la checklist de defensa en capas del curso, ¿qué controla específicamente el Security Group frente a lo que hace Security Center?", "options": ["El Security Group filtra tráfico de red antes de llegar a la instancia; Security Center vigila el comportamiento dentro del host", "Son exactamente lo mismo con nombres distintos", "Security Center reemplaza por completo al Security Group", "El Security Group detecta ransomware y Security Center filtra puertos"], "answer": 0, "explain": "El Security Group actúa en la capa de red antes de que el tráfico llegue a la instancia; Security Center observa lo que ocurre dentro del servidor, algo que un firewall de red no puede ver." },
+    { "q": "¿Por qué no basta con escanear vulnerabilidades una sola vez al desplegar el servidor, según el curso?", "options": ["Porque el escaneo consume demasiados recursos si se repite", "Porque nuevo software instalado después puede introducir vulnerabilidades no detectadas en el primer escaneo", "Porque Security Center borra los resultados automáticamente cada 24 horas", "Porque un solo escaneo ya cubre toda la vida útil del servidor"], "answer": 1, "explain": "El software y las configuraciones cambian con el tiempo; un escaneo único queda obsoleto en cuanto se instala una nueva dependencia o aplicación." },
+    { "q": "¿Qué determina la prioridad con la que Security Center recomienda aplicar un parche?", "options": ["El orden alfabético del nombre del CVE", "La severidad del hallazgo, según impacto potencial y facilidad de explotación", "El tamaño del archivo del parche", "La antigüedad de la instancia donde se detectó"], "answer": 1, "explain": "Security Center clasifica cada vulnerabilidad por severidad (crítica, alta, media, baja) para guiar qué parchear primero." },
+    { "q": "Una empresa de e-commerce necesita demostrar en una auditoría que sus servidores de pago cumplen PCI-DSS. ¿Qué herramienta del curso responde directamente a ese requisito?", "options": ["Auto Scaling Group", "Compliance assessment de Security Center", "Live migration", "Reserved Instance"], "answer": 1, "explain": "Compliance assessment evalúa automáticamente al servidor contra los controles de estándares como PCI-DSS y reporta qué falla." },
+    { "q": "¿Qué antipatrón describe mejor dejar un servidor de producción crítico únicamente en la edición Basic de Security Center?", "options": ["Es la práctica recomendada para cualquier entorno", "Deja al servidor sin protección real contra ransomware ni web tampering, capacidades que solo aparecen en ediciones superiores", "Reduce el riesgo de vulnerabilidades a cero", "No tiene ninguna consecuencia práctica"], "answer": 1, "explain": "Basic ofrece visibilidad limitada; la protección contra ransomware y web tampering requiere al menos la edición Enterprise." },
+    { "q": "¿Qué papel cumple el backup dentro de la checklist de defensa en capas del curso?", "options": ["Es la primera línea de defensa contra ataques de red", "Es la última red de seguridad para restaurar el servidor si las demás capas de protección fallan", "Sustituye a Security Center en la detección de malware", "Solo aplica a servidores on-premises, no a instancias ECS"], "answer": 1, "explain": "El backup no previene un ataque, pero permite recuperar el servidor cuando red, identidad, comportamiento y parches no lograron detenerlo." },
+    { "q": "¿Qué diferencia a la protección contra web tampering de una simple copia de seguridad del sitio web?", "options": ["No hay diferencia, son el mismo mecanismo", "La protección contra web tampering detecta y revierte automáticamente la modificación no autorizada en el momento en que ocurre", "Web tampering protection solo funciona en servidores Windows", "Una copia de seguridad revierte cambios automáticamente sin necesidad de intervención"], "answer": 1, "explain": "Web tampering protection vigila el contenido activo y revierte cambios no autorizados en tiempo real, no solo permite restaurar después desde una copia manual." },
+    { "q": "En el escenario de un compliance assessment recurrente frente a uno puntual antes de una auditoría, ¿cuál es la ventaja del enfoque recurrente?", "options": ["Cuesta menos ejecutar el assessment una sola vez al año", "Detecta desviaciones del estándar apenas ocurren, en vez de descubrirlas meses después en la siguiente auditoría", "Un assessment puntual siempre es más preciso que uno recurrente", "No hay ninguna diferencia práctica entre ambos enfoques"], "answer": 1, "explain": "Ejecutar el compliance assessment de forma recurrente convierte el cumplimiento en un proceso medible y continuo en vez de un ejercicio de checklist anual." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen evalúa: (a) reconocer en qué capa del servidor ocurre el riesgo descrito (red, identidad, comportamiento del host, parches, backup) y qué herramienta corresponde a cada una; (b) diferenciar las capacidades de Security Center —vulnerability management, baseline check, protección contra ransomware/virus, web tampering, fuerza bruta— y en qué edición aparece cada una; (c) el propósito de compliance assessment frente a estándares como PCI-DSS o ISO 27001; (d) por qué la priorización de parches importa tanto como detectarlos; (e) el valor de proteger servidores híbridos cloud y on-premises desde una sola consola.",
   "official_intro": "This course aims to help the learner to understand the security risks that cloud hosts running in cloud environment would face, you will also learn the solution Alibaba Cloud provides which are practical. You will understand how to use Security Center to defend ransomware, various virus, web tampering. It supports compliance assessments to secure cloud and on-premises servers to meet regulatory compliance requirements. Once you get these skills you will gain the capability to mitigate most of the risks when running cloud servers in Alibaba Cloud.",
   "recommended_for": "Cloud security administrator, OS security adminstrator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_protectservers",

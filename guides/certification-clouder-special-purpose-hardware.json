@@ -3,407 +3,195 @@
   "course_id": "Curso Nº certification-clouder-special-purpose-hardware",
   "title_en": "Special Purpose Hardware: Introduction to GPU and FPGA Equipped Instances",
   "title_es": "Hardware de Propósito Especial: Introducción a Instancias con GPU y FPGA",
+  "title_es_html": "Hardware de Propósito Especial: <em>Instancias con GPU y FPGA</em>",
   "duration_es": "50 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_special_purpose_hardware",
-  "lead": "Guía completa en español para el curso «Special Purpose Hardware: Introduction to GPU and FPGA Equipped Instances» de Alibaba Cloud Academy. Cubre en profundidad ECS GPU/FPGA Instances. Alibaba Cloud ofrece instancias con NVIDIA (T4, V100, A10, A100, H800) y FPGA para entrenamiento/inferencia de ML, rendering, HPC y bioinformática. Se combinan con PAI, ACK+GPU y elastic containers. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Special Purpose Hardware: Introduction to GPU and FPGA Equipped Instances» de Alibaba Cloud Academy. Cubre cuándo una carga deja de ser adecuada para una instancia de propósito general (familias g/c/r) y necesita un acelerador dedicado — GPU para paralelismo masivo (entrenamiento e inferencia de IA, render 3D) o FPGA para lógica programable de bajísima latencia (transcodificación de video, criptografía) — incluyendo el ejemplo práctico del curso de acelerar un raytracer sencillo con GPU.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>ECS GPU/FPGA Instances</em>.",
-    "<strong>Dominar</strong> los conceptos clave: gn6, gn7, ebmgn, FPGA (f1/f3), MIG.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con ECS GPU/FPGA Instances y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una GPU o una FPGA superan a una CPU de propósito general en cargas paralelizables.",
+    "<strong>Distinguir</strong> las familias de instancia GPU de Alibaba Cloud (gn6i, gn6e, gn7i, gn7e, ebmgn) y su caso de uso principal.",
+    "<strong>Identificar</strong> cuándo una instancia FPGA (f1/f3) es preferible a una GPU para una carga específica.",
+    "<strong>Aplicar</strong> técnicas de virtualización de GPU (cGPU, vGPU, NVIDIA MIG) para no desperdiciar capacidad en inferencia de baja carga.",
+    "<strong>Preparar</strong> el entorno de software correcto: drivers, CUDA/cuDNN e imágenes con el stack preinstalado.",
+    "<strong>Acelerar</strong> una carga de visualización (render/raytracing) usando GPU en vez de CPU.",
+    "<strong>Optimizar</strong> el costo de cargas GPU combinando Preemptible Instance para entrenamiento tolerante a interrupción con instancias dedicadas para inferencia productiva."
   ],
-  "architecture": "Training: ACK con node pool gn7 + spot → dataset en OSS/NAS + Fluid caching → checkpoints a OSS. Inference: PAI-EAS con GPU + autoscaling por QPS. Rendering: cluster gn6i con licencias por sesión.",
+  "architecture": "Entrenamiento por lotes: un clúster de instancias gn7 (o ebmgn bare-metal para el mayor throughput vía NVLink) lee el dataset desde OSS o NAS, entrena con checkpoints periódicos escritos de vuelta a OSS, y usa Preemptible Instance para reducir costo en trabajos reanudables. Inferencia online: una o pocas instancias gn6i (o una GPU particionada con cGPU/MIG entre varios contenedores) sirven el modelo detrás de un balanceador, dimensionadas por QPS en vez de por el tamaño del dataset de entrenamiento. Render/visualización: instancias con GPU dedicada ejecutan el motor de render (raytracer, motor 3D) por sesión o por frame, paralelizando el trabajo entre varias instancias cuando el proyecto lo permite. FPGA: se reserva para cargas de latencia predecible y repetitiva —transcodificación de video en tiempo real, aceleración criptográfica— donde reprogramar la lógica una vez y ejecutarla en hardware bate a cualquier CPU o incluso a una GPU genérica.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a ECS GPU/FPGA Instances",
-      "title_en": "Introduction to ECS GPU/FPGA Instances",
-      "intro": "Alibaba Cloud ofrece instancias con NVIDIA (T4, V100, A10, A100, H800) y FPGA para entrenamiento/inferencia de ML, rendering, HPC y bioinformática. Se combinan con PAI, ACK+GPU y elastic containers. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué cómputo acelerado: GPU y FPGA frente a CPU",
+      "title_en": "Why Accelerated Computing",
+      "intro": "Antes de elegir una familia de instancia con GPU o FPGA hay que entender qué problema resuelve el hardware especializado que una CPU de propósito general no puede resolver igual de bien.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud ofrece instancias con NVIDIA (T4, V100, A10, A100, H800) y FPGA para entrenamiento/inferencia de ML, rendering, HPC y bioinformática.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo ECS GPU/FPGA Instances se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>CPU</strong>: pocos núcleos muy versátiles, optimizados para lógica secuencial y ramificada — excelente para tareas de propósito general, pero ineficiente en operaciones masivamente paralelas idénticas repetidas millones de veces.",
+        "<strong>GPU</strong>: miles de núcleos simples optimizados para ejecutar la misma operación sobre datos distintos en paralelo (SIMD) — el patrón exacto de multiplicación de matrices que domina el entrenamiento de redes neuronales y el trazado de rayos en render 3D.",
+        "<strong>FPGA</strong>: circuito lógico reconfigurable a nivel de hardware; no ejecuta instrucciones como una CPU/GPU, sino que se «programa» una vez para implementar directamente el algoritmo en silicio, logrando latencia mínima y consumo energético bajo para esa tarea específica.",
+        "<strong>Costo de oportunidad</strong>: el hardware especializado es más caro por hora que una instancia general-purpose equivalente; solo se justifica cuando la carga realmente satura el cuello de botella que ese hardware resuelve (paralelismo masivo o latencia determinística)."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "ECS GPU/FPGA Instances es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen típica no es «¿qué es una GPU?» sino «¿esta carga se beneficia de paralelismo masivo (GPU), de lógica reconfigurable de baja latencia (FPGA), o le basta una CPU normal?»."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando ECS GPU/FPGA Instances no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Familias de instancia GPU en Alibaba Cloud",
+      "title_en": "GPU Instance Families",
+      "intro": "Alibaba Cloud ofrece varias generaciones y variantes de instancia con GPU NVIDIA — el examen espera que sepas emparejar la familia con el tipo de carga, no memorizar cada modelo de GPU al detalle.",
       "points": [
-        "<strong>Patrón canónico</strong>: Training: ACK con node pool gn7 + spot → dataset en OSS/NAS + Fluid caching → checkpoints a OSS. Inference: PAI-EAS con GPU + autoscaling por QPS. Rendering: cluster gn6i con licencias por sesión.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → ECS GPU/FPGA Instances (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>gn6</strong> <em>(gn6)</em>: T4 (16 GB) — inferencia y training ligero.",
-        "<strong>gn7</strong> <em>(gn7)</em>: A100/A10 — training deep learning.",
-        "<strong>EBM GPU</strong> <em>(ebmgn)</em>: Bare-metal GPU con NVLink de máximo throughput.",
-        "<strong>FPGA</strong> <em>(FPGA (f1/f3))</em>: Aceleradores programables para transcoding y crypto.",
-        "<strong>NVIDIA MIG</strong> <em>(MIG)</em>: Particionamiento de GPU en 7 instancias lógicas.",
-        "<strong>Alibaba cGPU</strong> <em>(cGPU)</em>: Compartir GPU física entre múltiples contenedores."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>gn6i / gn6e</strong>: GPUs de gama orientada a inferencia y entrenamiento ligero (equivalentes T4/V100), buen balance costo-rendimiento para cargas que no necesitan la GPU más potente disponible.",
+        "<strong>gn7i / gn7e</strong>: GPUs de última generación (equivalentes A10/A100) orientadas a entrenamiento de deep learning a gran escala y modelos de mayor tamaño.",
+        "<strong>ebmgn (Elastic Bare Metal GPU)</strong>: instancias bare-metal sin capa de virtualización, con interconexión NVLink de alto ancho de banda entre GPUs del mismo host — el máximo throughput posible para entrenamiento distribuido multi-GPU.",
+        "<strong>Selección por métrica, no por nombre</strong>: memoria de GPU (VRAM) determina el tamaño de modelo o batch que cabe; ancho de banda de interconexión determina qué tan bien escala el entrenamiento a varias GPUs; el examen suele describir estas restricciones en el enunciado en vez de pedir el nombre exacto de la instancia.",
+        "<strong>Inferencia vs. entrenamiento</strong>: la inferencia online suele necesitar menos memoria y se beneficia más de la latencia baja y el costo por hora bajo (gn6i); el entrenamiento se beneficia de mayor VRAM y mejor interconexión (gn7e/ebmgn)."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado dice «entrenar un modelo grande desde cero con varias GPUs» → familia de mayor VRAM e interconexión (gn7e/ebmgn). Si dice «servir predicciones con baja latencia a bajo costo» → familia de inferencia (gn6i)."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Instancias FPGA y sus casos de uso",
+      "title_en": "FPGA Instances (f1/f3)",
+      "intro": "Las instancias FPGA son las menos conocidas del catálogo, pero el curso las incluye porque resuelven un tipo de problema que ni CPU ni GPU atacan de forma óptima.",
       "points": [
-        "<strong>HA</strong>: GPU driver + CUDA versionados con imagen custom",
-        "<strong>Costo</strong>: Spot GPU para training tolerante a fallos",
-        "<strong>Buenas prácticas</strong>: cGPU para inferencias que no saturan una GPU",
-        "<strong>Buenas prácticas</strong>: Checkpoints frecuentes en training largos"
+        "<strong>Familias f1/f3</strong>: exponen una FPGA reconfigurable a la instancia, sobre la cual se carga una imagen de hardware (bitstream) que implementa el algoritmo objetivo.",
+        "<strong>Transcodificación de video en tiempo real</strong>: convertir formatos/resoluciones de video con latencia mínima y alto volumen es un caso clásico de FPGA, superando a CPU en throughput por vatio.",
+        "<strong>Aceleración criptográfica</strong>: operaciones de cifrado/descifrado o hashing a gran escala se benefician de una implementación en hardware dedicado en vez de en software.",
+        "<strong>Curva de adopción</strong>: programar una FPGA requiere herramientas y lenguajes específicos (HDL o frameworks de alto nivel); el costo de desarrollo inicial es mayor que usar una GPU con un framework de ML estándar, por lo que solo se justifica cuando el volumen de la carga lo amortiza.",
+        "<strong>FPGA vs. GPU</strong>: la GPU gana en flexibilidad (se reprograma con software estándar); la FPGA gana en latencia determinística y eficiencia energética para un algoritmo fijo que no cambia con frecuencia."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Si el enunciado describe una carga de <em>algoritmo fijo, alto volumen y latencia crítica</em> (transcoding, crypto), FPGA es la respuesta esperada; si describe <em>modelos que cambian y se reentrenan seguido</em>, GPU es la respuesta."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Compartir GPU: cGPU, vGPU y NVIDIA MIG",
+      "title_en": "GPU Sharing: cGPU, vGPU and MIG",
+      "intro": "Una GPU física completa suele ser mucho más capacidad de la que necesita una sola carga de inferencia — este módulo cubre cómo particionarla sin comprar varias instancias.",
       "points": [
-        "<strong>Antipattern</strong>: Reservar 1 GPU exclusiva para inferencia baja carga (desperdicio)",
-        "<strong>Antipattern</strong>: No usar spot en training tolerante",
-        "<strong>Antipattern</strong>: Driver mismatch entre imagen y framework",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Alibaba cGPU</strong>: tecnología propia de Alibaba Cloud que permite que múltiples contenedores compartan una misma GPU física, aislando la memoria y el tiempo de cómputo asignado a cada uno.",
+        "<strong>vGPU</strong>: virtualización de GPU a nivel de instancia, útil en escenarios de escritorio virtual o aplicaciones gráficas donde varios usuarios comparten hardware GPU sin acceso exclusivo.",
+        "<strong>NVIDIA MIG (Multi-Instance GPU)</strong>: en las GPUs que lo soportan, particiona una sola GPU física en hasta 7 instancias lógicas totalmente aisladas entre sí a nivel de hardware, cada una con su propia porción de memoria y núcleos.",
+        "<strong>Cuándo usarlo</strong>: cuando varios modelos pequeños de inferencia no saturan individualmente una GPU completa — particionar evita pagar por capacidad ociosa que ningún proceso individual necesita.",
+        "<strong>Cuándo NO usarlo</strong>: en entrenamiento de modelos grandes que sí necesitan toda la memoria y todo el ancho de banda de la GPU — particionarla ahí solo reduce el rendimiento disponible."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "«Varios servicios de inferencia pequeños sobre la misma GPU» → cGPU o MIG. «Un solo entrenamiento grande» → GPU dedicada sin particionar, o incluso varias GPUs vía ebmgn."
+      }
+    },
+    {
+      "title_es": "5 · Preparar el entorno: drivers, CUDA e imágenes",
+      "title_en": "Environment Setup: Drivers and CUDA",
+      "intro": "Una instancia con GPU sin el software correcto instalado es, en la práctica, una instancia general-purpose cara. Este módulo cubre el checklist de software antes de correr cualquier carga acelerada.",
+      "points": [
+        "<strong>Driver de GPU</strong>: la instancia necesita el driver NVIDIA correspondiente a su generación de hardware instalado explícitamente — no viene preinstalado en una imagen de sistema operativo genérica.",
+        "<strong>CUDA / cuDNN</strong>: la mayoría de los frameworks de deep learning (y del propio raytracer del curso) dependen de las bibliotecas CUDA de NVIDIA para acceder a la GPU; la versión de CUDA debe ser compatible con la versión del driver y del framework usado.",
+        "<strong>Imágenes preconfiguradas</strong>: Alibaba Cloud ofrece imágenes de Marketplace con driver, CUDA y frameworks (PyTorch, TensorFlow) ya instalados y verificados entre sí — evita el problema más común de incompatibilidad de versiones.",
+        "<strong>Contenedores con soporte GPU</strong>: al usar Docker/Kubernetes sobre una instancia GPU, el runtime del contenedor necesita el toolkit de NVIDIA para exponer la GPU del host al contenedor — sin esto, el contenedor no «ve» la GPU aunque la instancia la tenga.",
+        "<strong>Verificación</strong>: tras aprovisionar, se confirma que el sistema operativo reconoce la GPU y que el driver está activo antes de instalar cualquier capa superior — un error aquí se propaga a todo lo que se instale después."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El error más común al empezar con instancias GPU es un desajuste de versiones entre driver, CUDA y framework — usar una imagen de Marketplace verificada elimina la mayor parte de ese riesgo."
+      }
+    },
+    {
+      "title_es": "6 · Acelerando visualización: el ejemplo del raytracer",
+      "title_en": "Accelerating Visualization: The Raytracer Example",
+      "intro": "El curso oficial usa un raytracer sencillo para demostrar, de forma tangible, la diferencia de rendimiento entre ejecutar la misma carga en CPU y en GPU.",
+      "points": [
+        "<strong>Qué es un raytracer</strong>: un programa que calcula el color de cada píxel de una imagen simulando la trayectoria de rayos de luz — una carga masivamente paralela porque el cálculo de cada píxel es independiente del resto.",
+        "<strong>Por qué es un buen ejemplo</strong>: al ser embarazosamente paralelo, escala casi linealmente con el número de núcleos disponibles — la diferencia entre unos pocos núcleos de CPU y miles de núcleos de GPU se vuelve visible y medible en tiempo de render.",
+        "<strong>Del ejercicio al mundo real</strong>: el mismo principio aplica a render de escenas 3D para cine/videojuegos, procesamiento de imágenes médicas o simulaciones físicas — cualquier carga donde el mismo cálculo se repite sobre muchos elementos independientes.",
+        "<strong>Medir antes de decidir</strong>: el ejercicio anima a comparar el tiempo de ejecución en CPU vs. GPU con el mismo código, en vez de asumir que la GPU siempre gana — para cargas pequeñas o poco paralelizables, el overhead de mover datos a la GPU puede no compensar."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe una carga «embarazosamente paralela» (el mismo cálculo repetido sobre muchos elementos independientes, sin dependencias entre ellos), es la señal más clara de que GPU es la respuesta esperada."
+      }
+    },
+    {
+      "title_es": "7 · Costos, errores comunes y estrategia de examen",
+      "title_en": "Cost Optimization and Exam Strategy",
+      "intro": "El hardware acelerado es la parte más cara del catálogo de ECS — el curso cierra con cómo evitar pagar de más por capacidad GPU/FPGA que no se aprovecha.",
+      "points": [
+        "<strong>Antipatrón</strong>: reservar una GPU exclusiva y dedicada para una carga de inferencia de baja demanda que apenas usa un 10% de su capacidad — mejor usar cGPU/MIG para compartirla.",
+        "<strong>Antipatrón</strong>: entrenar modelos largos en instancias Pay-As-You-Go dedicadas sin considerar Preemptible Instance, cuando el trabajo ya tiene checkpoints y tolera interrupción.",
+        "<strong>Antipatrón</strong>: desajuste de versiones entre driver, CUDA y framework que provoca errores difíciles de depurar en producción.",
+        "<strong>Antipatrón</strong>: usar una instancia FPGA para una carga que en realidad necesita reentrenarse o cambiar de algoritmo con frecuencia — la fricción de reprogramar la FPGA anula la ventaja de latencia.",
+        "<strong>Buena práctica</strong>: dimensionar por métrica real (VRAM necesaria, QPS objetivo, latencia máxima tolerada), no por «la GPU más grande disponible»."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de hardware especializado, identifica primero si la carga es de <em>entrenamiento</em> (GPU de alta VRAM/interconexión, posiblemente Preemptible), <em>inferencia</em> (GPU compartida vía cGPU/MIG) o <em>algoritmo fijo de alto volumen</em> (FPGA) — esa clasificación resuelve la mayoría de las preguntas."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Entrenamiento de LLMs y modelos de visión"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Inferencia online (chatbots, ASR, OCR)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Rendering 3D y video (V-Ray, Blender, Unreal)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Simulación científica y HPC"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Transcoding masivo con FPGA"
-    }
+    { "title": "Escenario 1", "text": "Entrenamiento distribuido de un modelo de visión desde cero — clúster ebmgn/gn7e con NVLink" },
+    { "title": "Escenario 2", "text": "Servir un chatbot o modelo de OCR con baja latencia y muchas réplicas pequeñas — gn6i con cGPU/MIG" },
+    { "title": "Escenario 3", "text": "Render 3D de una escena embarazosamente paralela (el ejemplo del raytracer) — GPU dedicada" },
+    { "title": "Escenario 4", "text": "Simulación científica o bioinformática con alto paralelismo numérico — instancias GPU de alta VRAM" },
+    { "title": "Escenario 5", "text": "Transcodificación masiva de video en tiempo real con latencia crítica — instancia FPGA (f1/f3)" },
+    { "title": "Escenario 6", "text": "Entrenamiento largo tolerante a interrupción con checkpoints frecuentes — GPU en Preemptible Instance" }
   ],
   "mistakes": [
-    "Reservar 1 GPU exclusiva para inferencia baja carga (desperdicio)",
-    "No usar spot en training tolerante",
-    "Driver mismatch entre imagen y framework"
+    "Reservar una GPU exclusiva para una carga de inferencia de baja demanda en vez de compartirla con cGPU/MIG",
+    "No evaluar Preemptible Instance para entrenamiento largo que ya tiene checkpoints y tolera interrupción",
+    "Desajustar versiones de driver, CUDA y framework, causando fallos difíciles de depurar",
+    "Elegir FPGA para una carga cuyo algoritmo cambia con frecuencia, anulando la ventaja de reprogramar hardware",
+    "Dimensionar por 'la GPU más grande disponible' en vez de por VRAM y QPS realmente necesarios"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ecs RunInstances --InstanceType ecs.gn7-c12g1.3xlarge",
-      "desc": "Instancia A100"
-    },
-    {
-      "cmd": "nvidia-smi",
-      "desc": "Ver estado GPU dentro de la instancia"
-    }
+    { "cmd": "aliyun ecs DescribeInstanceTypes --InstanceTypeFamily ecs.gn7i", "desc": "Consultar especificaciones de una familia GPU de inferencia" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.gn7-c12g1.3xlarge --ImageId ubuntu_22_cuda_image", "desc": "Crear una instancia GPU con una imagen que ya incluye CUDA" },
+    { "cmd": "aliyun ecs RunInstances --InstanceType ecs.gn6i-c4g1.xlarge --SpotStrategy SpotAsPriceGo", "desc": "Crear una instancia GPU Preemptible para un entrenamiento tolerante a interrupción" },
+    { "cmd": "nvidia-smi", "desc": "Verificar dentro de la instancia que el driver y la GPU están activos" },
+    { "cmd": "aliyun ecs DescribeInstanceTypes --InstanceTypeFamily ecs.f3", "desc": "Consultar especificaciones de una familia FPGA disponible" }
   ],
   "glossary": [
-    {
-      "en": "gn6",
-      "es": "gn6",
-      "def": "T4 (16 GB) — inferencia y training ligero."
-    },
-    {
-      "en": "gn7",
-      "es": "gn7",
-      "def": "A100/A10 — training deep learning."
-    },
-    {
-      "en": "ebmgn",
-      "es": "EBM GPU",
-      "def": "Bare-metal GPU con NVLink de máximo throughput."
-    },
-    {
-      "en": "FPGA (f1/f3)",
-      "es": "FPGA",
-      "def": "Aceleradores programables para transcoding y crypto."
-    },
-    {
-      "en": "MIG",
-      "es": "NVIDIA MIG",
-      "def": "Particionamiento de GPU en 7 instancias lógicas."
-    },
-    {
-      "en": "cGPU",
-      "es": "Alibaba cGPU",
-      "def": "Compartir GPU física entre múltiples contenedores."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "GPU (Graphics Processing Unit)", "es": "GPU", "def": "Procesador con miles de núcleos simples optimizado para ejecutar la misma operación en paralelo sobre grandes volúmenes de datos." },
+    { "en": "FPGA (Field-Programmable Gate Array)", "es": "FPGA", "def": "Circuito lógico reconfigurable programado a nivel de hardware para implementar directamente un algoritmo específico." },
+    { "en": "gn6i / gn6e", "es": "gn6i / gn6e", "def": "Familias GPU orientadas a inferencia y entrenamiento ligero, buen balance costo-rendimiento." },
+    { "en": "gn7i / gn7e", "es": "gn7i / gn7e", "def": "Familias GPU de última generación orientadas a entrenamiento de deep learning a gran escala." },
+    { "en": "ebmgn (Elastic Bare Metal GPU)", "es": "EBM GPU", "def": "Instancias GPU bare-metal con interconexión NVLink de alto ancho de banda, para entrenamiento distribuido." },
+    { "en": "FPGA (f1/f3)", "es": "Instancia FPGA", "def": "Familias de instancia que exponen una FPGA reconfigurable para cargas de algoritmo fijo y alto volumen." },
+    { "en": "cGPU", "es": "Alibaba cGPU", "def": "Tecnología propia de Alibaba Cloud para compartir una GPU física entre múltiples contenedores." },
+    { "en": "vGPU", "es": "GPU virtualizada", "def": "Virtualización de GPU a nivel de instancia, típica en escritorios virtuales o apps gráficas compartidas." },
+    { "en": "NVIDIA MIG (Multi-Instance GPU)", "es": "MIG", "def": "Particionamiento de una GPU física en hasta 7 instancias lógicas aisladas por hardware." },
+    { "en": "CUDA / cuDNN", "es": "CUDA / cuDNN", "def": "Bibliotecas de NVIDIA que permiten a frameworks de ML y otras aplicaciones acceder al cómputo de la GPU." },
+    { "en": "GPU driver", "es": "Driver de GPU", "def": "Software que permite al sistema operativo reconocer y usar la GPU; debe instalarse explícitamente." },
+    { "en": "NVIDIA Container Toolkit", "es": "Toolkit de contenedores NVIDIA", "def": "Componente que expone la GPU del host a contenedores Docker/Kubernetes." },
+    { "en": "Raytracer", "es": "Trazador de rayos", "def": "Programa que calcula el color de cada píxel simulando trayectorias de luz; carga masivamente paralela usada como ejemplo del curso." },
+    { "en": "Embarrassingly parallel", "es": "Embarazosamente paralelo", "def": "Carga donde cada unidad de trabajo es independiente del resto, ideal para GPU." },
+    { "en": "VRAM", "es": "Memoria de GPU", "def": "Memoria dedicada de la GPU; determina el tamaño de modelo o batch que puede procesarse sin fragmentar el trabajo." },
+    { "en": "Preemptible Instance", "es": "Instancia preferente/Spot", "def": "Instancia a precio de mercado, reclamable con aviso previo; ideal para entrenamiento con checkpoints." },
+    { "en": "Checkpoint", "es": "Punto de control", "def": "Guardado periódico del progreso de un entrenamiento, necesario para tolerar interrupciones de Preemptible Instance." },
+    { "en": "Bitstream", "es": "Imagen de hardware", "def": "Archivo de configuración que programa la lógica de una FPGA para implementar un algoritmo específico." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a ECS GPU/FPGA Instances?",
-      "options": [
-        "Alibaba Cloud ofrece instancias con NVIDIA (T4, V100, A10, A100, H800) y FPGA para entrenamiento/inferencia de ML, rendering, HPC y bioinformática. Se combinan con PAI, ACK+GPU y elastic containers.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud ofrece instancias con NVIDIA (T4, V100, A10, A100, H800) y FPGA para entrenamiento/inferencia de ML, rendering, HPC y bioinformática. Se combinan con PAI, ACK+GPU y elastic containers."
-    },
-    {
-      "q": "¿Qué es <strong>gn6</strong> (gn6) en ECS GPU/FPGA Instances?",
-      "options": [
-        "T4 (16 GB) — inferencia y training ligero.",
-        "A100/A10 — training deep learning.",
-        "Bare-metal GPU con NVLink de máximo throughput.",
-        "Aceleradores programables para transcoding y crypto."
-      ],
-      "answer": 0,
-      "explain": "gn6 (gn6): T4 (16 GB) — inferencia y training ligero."
-    },
-    {
-      "q": "¿Qué es <strong>gn7</strong> (gn7) en ECS GPU/FPGA Instances?",
-      "options": [
-        "A100/A10 — training deep learning.",
-        "T4 (16 GB) — inferencia y training ligero.",
-        "Bare-metal GPU con NVLink de máximo throughput.",
-        "Aceleradores programables para transcoding y crypto."
-      ],
-      "answer": 0,
-      "explain": "gn7 (gn7): A100/A10 — training deep learning."
-    },
-    {
-      "q": "¿Qué es <strong>ebmgn</strong> (EBM GPU) en ECS GPU/FPGA Instances?",
-      "options": [
-        "Bare-metal GPU con NVLink de máximo throughput.",
-        "T4 (16 GB) — inferencia y training ligero.",
-        "A100/A10 — training deep learning.",
-        "Aceleradores programables para transcoding y crypto."
-      ],
-      "answer": 0,
-      "explain": "ebmgn (EBM GPU): Bare-metal GPU con NVLink de máximo throughput."
-    },
-    {
-      "q": "¿Qué es <strong>FPGA (f1/f3)</strong> (FPGA) en ECS GPU/FPGA Instances?",
-      "options": [
-        "Aceleradores programables para transcoding y crypto.",
-        "T4 (16 GB) — inferencia y training ligero.",
-        "A100/A10 — training deep learning.",
-        "Bare-metal GPU con NVLink de máximo throughput."
-      ],
-      "answer": 0,
-      "explain": "FPGA (f1/f3) (FPGA): Aceleradores programables para transcoding y crypto."
-    },
-    {
-      "q": "¿Qué es <strong>MIG</strong> (NVIDIA MIG) en ECS GPU/FPGA Instances?",
-      "options": [
-        "Particionamiento de GPU en 7 instancias lógicas.",
-        "T4 (16 GB) — inferencia y training ligero.",
-        "A100/A10 — training deep learning.",
-        "Bare-metal GPU con NVLink de máximo throughput."
-      ],
-      "answer": 0,
-      "explain": "MIG (NVIDIA MIG): Particionamiento de GPU en 7 instancias lógicas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con ECS GPU/FPGA Instances, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar ECS GPU/FPGA Instances en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con ECS GPU/FPGA Instances, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde ECS GPU/FPGA Instances es la elección típica:",
-      "options": [
-        "Entrenamiento de LLMs y modelos de visión",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Entrenamiento de LLMs y modelos de visión."
-    }
+    { "q": "¿Por qué una GPU supera a una CPU en el entrenamiento de redes neuronales?", "options": ["Porque tiene más memoria RAM en general", "Porque tiene miles de núcleos simples optimizados para ejecutar la misma operación en paralelo sobre muchos datos", "Porque siempre es más barata que una CPU", "Porque no necesita drivers"], "answer": 1, "explain": "El entrenamiento de redes neuronales se compone de operaciones matriciales masivamente paralelas, el patrón exacto que una GPU ejecuta mejor que una CPU de propósito general." },
+    { "q": "¿Qué caracteriza a una instancia FPGA frente a una GPU?", "options": ["Ejecuta instrucciones de software igual que una CPU", "Es un circuito lógico reconfigurable programado a nivel de hardware para un algoritmo específico", "Solo sirve para entrenar modelos de deep learning", "No requiere ningún tipo de configuración"], "answer": 1, "explain": "La FPGA se reprograma a nivel de hardware para implementar directamente el algoritmo, distinto al modelo de ejecución de instrucciones de CPU/GPU." },
+    { "q": "Una carga necesita entrenar un modelo grande desde cero usando varias GPUs con máxima velocidad de comunicación entre ellas. ¿Qué familia es más adecuada?", "options": ["gn6i", "ebmgn (bare-metal con NVLink)", "FPGA f1/f3", "Una instancia de propósito general"], "answer": 1, "explain": "ebmgn ofrece interconexión NVLink de alto ancho de banda entre GPUs del mismo host, clave para entrenamiento distribuido multi-GPU." },
+    { "q": "Varios modelos pequeños de inferencia no saturan individualmente una GPU completa. ¿Qué técnica evita pagar por capacidad ociosa?", "options": ["Comprar una GPU dedicada por cada modelo", "cGPU o NVIDIA MIG para particionar la GPU entre varios procesos", "Migrar a instancias FPGA", "Usar solo CPU para todos los modelos"], "answer": 1, "explain": "cGPU y MIG permiten compartir una GPU física entre varios contenedores o cargas pequeñas sin desperdiciar capacidad." },
+    { "q": "¿Qué caso de uso es más apropiado para una instancia FPGA que para una GPU?", "options": ["Entrenamiento de un modelo que se reentrena cada semana con nuevos datos", "Transcodificación de video en tiempo real con latencia crítica y alto volumen", "Desarrollo experimental de un nuevo algoritmo de ML", "Renderizado de una escena 3D única"], "answer": 1, "explain": "La FPGA brilla en algoritmos fijos de alto volumen y latencia determinística, como la transcodificación en tiempo real." },
+    { "q": "¿Qué software debe instalarse explícitamente en una instancia con GPU antes de poder usarla para deep learning?", "options": ["Nada, viene preinstalado en cualquier imagen de sistema operativo", "El driver de GPU y las bibliotecas CUDA/cuDNN compatibles entre sí", "Solo un navegador web", "Un antivirus adicional"], "answer": 1, "explain": "El driver y CUDA/cuDNN no vienen preinstalados en una imagen genérica; deben instalarse y mantenerse compatibles entre versiones." },
+    { "q": "¿Qué característica hace del raytracer un buen ejemplo educativo para comparar CPU y GPU?", "options": ["Es una carga secuencial que no se puede paralelizar", "Es una carga embarazosamente paralela: el cálculo de cada píxel es independiente del resto", "Solo funciona en FPGA", "No requiere ningún cómputo real"], "answer": 1, "explain": "Al ser cada píxel independiente, el raytracer escala casi linealmente con el número de núcleos, haciendo visible la ventaja de la GPU." },
+    { "q": "Un equipo tiene un entrenamiento de modelo largo que ya guarda checkpoints periódicos y tolera interrupciones. ¿Qué opción de compra minimiza el costo de las GPUs usadas?", "options": ["Subscription anual dedicada", "Preemptible Instance con GPU", "Solo instancias FPGA", "Reserved Instance de 3 años obligatoriamente"], "answer": 1, "explain": "Con checkpoints y tolerancia a interrupción, Preemptible Instance reduce significativamente el costo de cómputo GPU para entrenamiento." },
+    { "q": "¿Cuál es un antipatrón común al usar hardware GPU/FPGA según el curso?", "options": ["Dimensionar por VRAM y QPS reales necesarios", "Reservar una GPU exclusiva para una carga de inferencia de baja demanda", "Usar imágenes de Marketplace con CUDA preinstalado", "Usar Preemptible Instance para entrenamiento tolerante a fallos"], "answer": 1, "explain": "Reservar una GPU completa para una carga que apenas la usa desperdicia capacidad que podría compartirse con cGPU o MIG." },
+    { "q": "¿Qué mide principalmente la VRAM de una GPU en el contexto de deep learning?", "options": ["La velocidad de red de la instancia", "El tamaño de modelo o batch que puede procesarse sin fragmentar el trabajo", "El número de FPGAs disponibles", "El costo por hora de la instancia únicamente"], "answer": 1, "explain": "La memoria de GPU limita cuánto modelo y batch caben simultáneamente en el procesamiento." },
+    { "q": "¿Por qué el uso de una imagen de Marketplace con driver, CUDA y framework preinstalados reduce riesgo?", "options": ["Porque elimina la necesidad de tener GPU", "Porque evita el desajuste de versiones entre driver, CUDA y framework, la fuente más común de errores al iniciar", "Porque hace innecesario el Security Group", "Porque convierte la instancia en FPGA automáticamente"], "answer": 1, "explain": "Los desajustes de versión entre estas capas son la causa más frecuente de errores difíciles de depurar al arrancar con GPU." },
+    { "q": "¿Qué diferencia principal existe entre cGPU/vGPU y NVIDIA MIG?", "options": ["Son términos idénticos para la misma tecnología", "MIG particiona la GPU en instancias lógicas aisladas por hardware; cGPU es una tecnología propia de Alibaba Cloud para compartir a nivel de software/contenedor", "MIG solo funciona en instancias FPGA", "cGPU requiere reprogramar la GPU como una FPGA"], "answer": 1, "explain": "MIG es una capacidad de hardware de ciertas GPUs NVIDIA; cGPU es la solución propia de Alibaba Cloud para compartir GPU entre contenedores." },
+    { "q": "Un algoritmo de cifrado de alto volumen necesita la menor latencia posible y no cambia con frecuencia. ¿Qué acelerador es el más adecuado?", "options": ["GPU de inferencia gn6i", "FPGA (f1/f3)", "Una instancia general-purpose sin acelerador", "GPU bare-metal ebmgn"], "answer": 1, "explain": "Un algoritmo fijo de alto volumen y latencia crítica es el caso de uso clásico de FPGA, superior a GPU en eficiencia para esa tarea específica." },
+    { "q": "¿Qué se debe verificar inmediatamente después de aprovisionar una instancia GPU, antes de instalar cualquier framework?", "options": ["El precio de la instancia Spot del día", "Que el sistema operativo reconoce la GPU y el driver está activo", "El número de regiones disponibles en la cuenta", "El tamaño del disco de sistema únicamente"], "answer": 1, "explain": "Confirmar que el driver y la GPU están activos evita que errores de base se propaguen a todo lo que se instale después." }
   ],
-  "exam_focus": "Familias GPU y cuándo usar cada una; cGPU y MIG; spot para training; PAI-EAS para serving.",
+  "exam_focus": "El examen evalúa: (a) elegir GPU vs. FPGA vs. CPU según el patrón de la carga (entrenamiento, inferencia, algoritmo fijo de alto volumen), (b) emparejar familia GPU (gn6/gn7/ebmgn) con VRAM e interconexión necesarias, (c) cuándo particionar una GPU con cGPU/MIG en vez de dedicarla completa, (d) checklist de software (driver/CUDA) antes de ejecutar cargas aceleradas, (e) usar Preemptible Instance para reducir costo de entrenamiento tolerante a interrupción.",
   "official_intro": "In this course, you'll learn what different types of GPU and FPGA hardware are available on Alibaba Cloud, and learn how to select the appropriate instance types for different workloads. You'll also see how you can accelerate visualization tasks using the GPU, with a simple raytracer program used as an example.",
   "recommended_for": "Developers",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_special_purpose_hardware",

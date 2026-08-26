@@ -2,414 +2,171 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-pythondata",
   "title_en": "A Quick Guide to Process Structured Data with Python",
-  "title_es": "A Quick Guía to Process Structured Datos con Python",
+  "title_es": "Guía Rápida para Procesar Datos Estructurados con Python",
+  "title_es_html": "Guía Rápida para <em>Procesar Datos Estructurados</em> con Python",
   "duration_es": "48 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_pythondata",
-  "lead": "Guía completa en español para el curso «A Quick Guide to Process Structured Data with Python» de Alibaba Cloud Academy. Cubre en profundidad Python en Alibaba Cloud (Data & Cloud). Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «A Quick Guide to Process Structured Data with Python» de Alibaba Cloud Academy. Es el curso de entrada a la analítica con Python en una sola máquina: usando un dataset de ejemplo de un blog (países de origen, tráfico por día de la semana, clickstream), cubre carga, limpieza, análisis con pandas y visualización básica — la base necesaria antes de abordar el escalado distribuido (cubierto en Scale Python on Cloud).",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Python en Alibaba Cloud (Data & Cloud)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: aliyunsdk, PyODPS, PySpark, PAI-DSW, Poetry/pip.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Python en Alibaba Cloud (Data & Cloud) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué pandas sobre una sola máquina es el punto de partida natural del análisis de datos con Python.",
+    "<strong>Cargar y explorar</strong> un dataset con pandas: lectura, tipos de columna y estadísticas descriptivas.",
+    "<strong>Limpiar</strong> datos reales: valores nulos, duplicados y tipos incorrectos.",
+    "<strong>Analizar</strong> datos con agrupaciones y agregaciones (groupby).",
+    "<strong>Visualizar</strong> resultados con gráficos básicos para comunicar hallazgos.",
+    "<strong>Reconocer</strong> los límites de este enfoque de una sola máquina, como preparación conceptual para escalar más adelante."
   ],
-  "architecture": "Notebook PAI-DSW → pandas/polars local → escalado con PyODPS/pyspark → modelos con scikit-learn/PyTorch → deploy en EAS. Automatización: aliyunsdk + boto3-like para infra.",
+  "architecture": "El flujo de trabajo de este curso ocurre enteramente dentro de un único proceso Python en una sola máquina: un archivo de datos (por ejemplo, un CSV de eventos de un blog) se carga completo en memoria como un DataFrame de pandas, se inspecciona y limpia, se agrupa y agrega para responder preguntas de negocio (qué países generan más tráfico, qué día de la semana tiene más visitas, qué región aporta más clics), y finalmente se visualiza con una biblioteca de gráficos como matplotlib. No hay ningún componente distribuido: el límite de este enfoque es literalmente la memoria RAM y la CPU de la máquina donde corre el script o notebook.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Python en Alibaba Cloud (Data & Cloud)",
-      "title_en": "Introduction to Python en Alibaba Cloud (Data & Cloud)",
-      "intro": "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema: analizar datos estructurados con Python en una sola máquina",
+      "title_en": "The Problem: Analyzing Structured Data with Python on a Single Machine",
+      "intro": "Antes de abrir pandas conviene ubicar este curso dentro del flujo típico de trabajo de un analista: ¿por qué empezar aquí y no directamente en un motor distribuido?",
       "points": [
-        "<strong>Problema que resuelve</strong>: Python es el lenguaje canónico para data engineering, ML y automatización cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Python en Alibaba Cloud (Data & Cloud) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Dato tabular estructurado</strong>: el curso trabaja con datos ya estructurados en filas y columnas (por ejemplo, eventos de un blog: país del visitante, fecha, página vista) — el problema no es dar forma al dato, sino explorarlo y responder preguntas de negocio sobre él.",
+        "<strong>Por qué una sola máquina primero</strong>: la mayoría de los datasets con los que trabaja un analista al inicio de un proyecto caben perfectamente en la memoria de un portátil o de una instancia ECS modesta — introducir un motor distribuido antes de necesitarlo añade complejidad sin beneficio real.",
+        "<strong>El ecosistema Python de análisis</strong>: pandas para manipulación tabular, matplotlib/seaborn para visualización, y el propio intérprete interactivo (notebook o REPL) para iterar rápido son las herramientas centrales de este flujo.",
+        "<strong>Preguntas de negocio típicas</strong>: el curso usa ejemplos concretos —¿de qué países vienen los visitantes?, ¿qué día de la semana recibe más tráfico?, ¿qué región genera más clics?— como hilo conductor de cada técnica presentada.",
+        "<strong>Lo que este curso NO cubre</strong>: no aborda procesamiento distribuido ni datasets que exceden la memoria de una máquina — ese es exactamente el tema del curso siguiente de la serie, centrado en escalar este mismo tipo de análisis."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Python en Alibaba Cloud (Data & Cloud) es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Dominar pandas sobre una sola máquina no es un paso descartable antes de «lo real» — es la base conceptual que después se traduce, con sintaxis muy similar, a herramientas distribuidas como PyODPS o PySpark."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Python en Alibaba Cloud (Data & Cloud) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Cargar y explorar datos con pandas",
+      "title_en": "Loading and Exploring Data with pandas",
+      "intro": "El primer contacto con cualquier dataset nuevo sigue un patrón repetible: cargarlo, mirar su forma, y entender qué contiene cada columna antes de analizarlo en serio.",
       "points": [
-        "<strong>Patrón canónico</strong>: Notebook PAI-DSW → pandas/polars local → escalado con PyODPS/pyspark → modelos con scikit-learn/PyTorch → deploy en EAS. Automatización: aliyunsdk + boto3-like para infra.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Python en Alibaba Cloud (Data & Cloud) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>aliyunsdk</strong> <em>(aliyunsdk)</em>: SDK oficial Python.",
-        "<strong>PyODPS</strong> <em>(PyODPS)</em>: Cliente Python para MaxCompute.",
-        "<strong>PySpark</strong> <em>(PySpark)</em>: Spark API en Python.",
-        "<strong>PAI-DSW</strong> <em>(PAI-DSW)</em>: JupyterLab gestionado.",
-        "<strong>Gestión deps</strong> <em>(Poetry/pip)</em>: Poetry/pip para paquetes.",
-        "<strong>Ray</strong> <em>(Ray on PAI)</em>: Compute distribuido tipo Spark en Python.",
-        "<strong>Wheels</strong> <em>(Wheels)</em>: Formato de distribución binario."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Lectura</strong>: <code>pd.read_csv('eventos.csv')</code> carga un archivo delimitado como un DataFrame; parámetros como el delimitador, la codificación de caracteres o las columnas de fecha a parsear se ajustan según el archivo de origen.",
+        "<strong>Inspección de forma</strong>: <code>df.shape</code> muestra número de filas y columnas, <code>df.head()</code> muestra las primeras filas, y <code>df.columns</code> lista los nombres de columna — el primer chequeo antes de cualquier análisis.",
+        "<strong>Tipos de dato</strong>: <code>df.dtypes</code> revela cómo pandas interpretó cada columna (numérica, texto, fecha); una columna de fecha leída como texto es un problema común que hay que corregir antes de operar con ella temporalmente.",
+        "<strong>Estadísticas descriptivas</strong>: <code>df.describe()</code> resume rápidamente columnas numéricas (media, desviación, cuartiles), útil para detectar valores atípicos o rangos inesperados en la primera exploración.",
+        "<strong>Muestreo y valores únicos</strong>: <code>df['pais'].unique()</code> y <code>df['pais'].value_counts()</code> son herramientas rápidas para entender la cardinalidad y distribución de una columna categórica antes de agrupar por ella."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Verificar df.dtypes inmediatamente después de cargar un archivo es el paso que más frecuentemente evita errores silenciosos más adelante — una columna de fecha mal tipada rompe cualquier cálculo temporal posterior sin lanzar un error obvio."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Limpieza de datos: nulos, duplicados y tipos",
+      "title_en": "Data Cleaning: Nulls, Duplicates and Types",
+      "intro": "Ningún dataset real llega perfecto — este módulo cubre las tres categorías de problemas de calidad de datos más comunes y cómo resolverlas con pandas.",
       "points": [
-        "<strong>Seguridad</strong>: aliyunsdk con RAM roles, no AccessKey embebida",
-        "<strong>Buenas prácticas</strong>: Virtual envs por proyecto (poetry/venv)",
-        "<strong>Buenas prácticas</strong>: Types con mypy en proyectos grandes",
-        "<strong>Buenas prácticas</strong>: PyODPS para MaxCompute a escala"
+        "<strong>Detectar nulos</strong>: <code>df.isnull().sum()</code> cuenta valores faltantes por columna, primer paso para decidir cómo tratarlos.",
+        "<strong>Tratar nulos</strong>: según el caso, se eliminan las filas afectadas (<code>dropna()</code>), se rellenan con un valor por defecto o estadístico (<code>fillna()</code>), o se dejan intencionalmente si el análisis posterior los maneja de forma explícita — no existe una única respuesta correcta, depende del contexto de negocio.",
+        "<strong>Duplicados</strong>: <code>df.duplicated().sum()</code> detecta filas repetidas; <code>df.drop_duplicates()</code> las elimina, opcionalmente considerando solo un subconjunto de columnas como clave de duplicidad.",
+        "<strong>Corrección de tipos</strong>: <code>pd.to_datetime()</code> convierte una columna de texto a fecha real, habilitando operaciones como extraer el día de la semana; <code>astype()</code> fuerza conversiones numéricas cuando pandas no las infiere correctamente.",
+        "<strong>Normalización de texto</strong>: valores categóricos con inconsistencias de mayúsculas/espacios (por ejemplo, «México» vs. «mexico » vs. «MEXICO») deben normalizarse antes de agrupar, o el análisis tratará cada variante como una categoría distinta."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Un dataset con nulos o duplicados sin tratar no produce un error visible — produce un resultado numéricamente incorrecto que parece plausible. La limpieza de datos es, en la práctica, tan importante como el análisis en sí."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Análisis con groupby y agregaciones",
+      "title_en": "Analysis with groupby and Aggregations",
+      "intro": "Con los datos limpios, el siguiente paso es responder preguntas de negocio concretas — y la herramienta central de pandas para eso es la combinación de agrupación y agregación.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey hardcoded",
-        "<strong>Antipattern</strong>: Sin virtual env — dependency hell",
-        "<strong>Antipattern</strong>: Python for-loops donde debería ser vectorizado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>groupby básico</strong>: <code>df.groupby('pais')['visitas'].sum()</code> agrupa las filas por el valor de una columna y aplica una función de agregación sobre otra — el patrón central para responder «¿qué país genera más tráfico?».",
+        "<strong>Múltiples agregaciones</strong>: <code>df.groupby('pais').agg({'visitas': 'sum', 'duracion': 'mean'})</code> calcula varias métricas distintas por grupo en una sola operación, evitando pasadas repetidas sobre los mismos datos.",
+        "<strong>Extraer el día de la semana</strong>: una vez la columna de fecha está correctamente tipada, <code>df['fecha'].dt.day_name()</code> permite agrupar el tráfico por día de la semana para responder qué día recibe más visitas.",
+        "<strong>Ordenar resultados</strong>: encadenar <code>.sort_values(ascending=False)</code> al resultado de un groupby es el patrón habitual para obtener un ranking (por ejemplo, los 10 países con más tráfico).",
+        "<strong>Tablas dinámicas (pivot_table)</strong>: cuando se necesita cruzar dos dimensiones a la vez (por ejemplo, país por día de la semana), <code>pd.pivot_table()</code> ofrece una vista tipo hoja de cálculo más legible que un groupby anidado."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "groupby().agg() con un diccionario de columnas y funciones es la forma más eficiente de calcular varias métricas por grupo en una sola pasada, frente a llamar a groupby() por separado para cada métrica."
+      }
+    },
+    {
+      "title_es": "5 · Visualización básica con matplotlib",
+      "title_en": "Basic Visualization with matplotlib",
+      "intro": "Un análisis correcto que nadie entiende no comunica nada — este módulo cubre los tipos de gráfico más comunes para presentar los hallazgos de los módulos anteriores.",
+      "points": [
+        "<strong>Gráfico de barras</strong>: apropiado para comparar una métrica entre categorías (por ejemplo, visitas por país); se genera fácilmente encadenando <code>.plot(kind='bar')</code> sobre el resultado de un groupby ya ordenado.",
+        "<strong>Gráfico de líneas</strong>: apropiado para mostrar una tendencia a lo largo del tiempo (por ejemplo, visitas por día durante un mes); requiere que el eje temporal esté correctamente ordenado y tipado como fecha.",
+        "<strong>Histograma</strong>: útil para entender la distribución de una variable numérica continua (por ejemplo, duración de sesión), revelando si los valores se concentran, tienen colas largas o presentan valores atípicos.",
+        "<strong>Etiquetas y título</strong>: un gráfico sin título, ejes etiquetados o unidades claras pierde gran parte de su valor comunicativo, sin importar cuán correcto sea el análisis subyacente.",
+        "<strong>Cuándo usar seaborn</strong>: para gráficos estadísticos más elaborados (comparaciones con intervalos de confianza, mapas de calor de correlación), seaborn ofrece una capa de más alto nivel sobre matplotlib con mejores valores por defecto."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "La elección del tipo de gráfico depende de la pregunta: comparar categorías → barras; mostrar tendencia en el tiempo → líneas; entender distribución → histograma. Elegir el tipo equivocado confunde más de lo que aclara."
+      }
+    },
+    {
+      "title_es": "6 · De pandas a flujos más grandes: dónde este enfoque deja de alcanzar",
+      "title_en": "From pandas to Larger Flows: Where This Approach Stops Scaling",
+      "intro": "Este curso cierra reconociendo honestamente sus propios límites — el puente natural hacia el siguiente paso de la serie, dedicado a escalar exactamente este tipo de trabajo.",
+      "points": [
+        "<strong>Límite de memoria</strong>: pandas carga el DataFrame completo en la memoria RAM del proceso; un archivo que excede la memoria disponible de la máquina simplemente no se puede cargar de esta forma sin trabajo adicional.",
+        "<strong>Límite de un solo núcleo lógico por operación</strong>: aunque pandas puede aprovechar algo de paralelismo interno en ciertas operaciones, el modelo general no está diseñado para repartir el trabajo entre múltiples máquinas.",
+        "<strong>Señales de que hace falta escalar</strong>: operaciones que empiezan a tardar minutos en vez de segundos, archivos que ya no caben cómodamente en memoria, o la necesidad de procesar el mismo análisis repetidamente sobre datos que crecen cada día.",
+        "<strong>El puente conceptual</strong>: los verbos que se acaban de aprender (filtrar, agrupar, agregar, ordenar) son exactamente los mismos que se usan sobre PyODPS DataFrame (ejecutando en MaxCompute) o PySpark (ejecutando en un clúster) — cambia el motor de ejecución, no la forma de pensar el análisis.",
+        "<strong>Este curso como fundamento</strong>: según el propio curso, este flujo de limpieza, análisis y visualización es la base explícita para programar después sobre sistemas distribuidos como Spark SQL o el SDK de Python de MaxCompute."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "No escales prematuramente: si el dataset cabe cómodamente en memoria y el análisis corre en segundos, pandas sigue siendo la herramienta correcta. El curso de escalado entra en juego quando esas condiciones dejan de cumplirse, no antes."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data engineering con pandas → PyODPS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ML end-to-end con PAI"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Automatización de infra con SDK"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Web scraping y APIs"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Análisis exploratorio en notebooks"
-    }
+    { "title": "Escenario 1", "text": "Explorar por primera vez un archivo CSV de eventos de un blog — read_csv, head, dtypes, describe" },
+    { "title": "Escenario 2", "text": "Dataset con columna de fecha leída como texto — convertir con pd.to_datetime antes de cualquier análisis temporal" },
+    { "title": "Escenario 3", "text": "Responder qué país genera más tráfico — groupby('pais') seguido de sum() y sort_values" },
+    { "title": "Escenario 4", "text": "Comparar visitas por día de la semana con un gráfico claro — extraer day_name() y graficar de barras" },
+    { "title": "Escenario 5", "text": "Detectar por qué un análisis de ventas da un total menor al esperado — revisar filas duplicadas antes de sospechar de la lógica" },
+    { "title": "Escenario 6", "text": "Archivo que ya no cabe en la memoria del portátil del analista — señal para pasar a PyODPS/PySpark en el curso de escalado" }
   ],
   "mistakes": [
-    "AccessKey hardcoded",
-    "Sin virtual env — dependency hell",
-    "Python for-loops donde debería ser vectorizado"
+    "Analizar una columna de fecha sin convertirla primero con pd.to_datetime, perdiendo la posibilidad de operar con ella temporalmente",
+    "No revisar valores nulos o duplicados antes de calcular totales, obteniendo resultados numéricamente incorrectos pero plausibles",
+    "Usar collect visual de un gráfico sin título ni etiquetas de eje, perdiendo valor comunicativo del análisis",
+    "Agrupar por una columna categórica sin normalizar mayúsculas/espacios, fragmentando artificialmente una misma categoría",
+    "Intentar cargar con pandas un archivo que excede claramente la memoria disponible de la máquina, en vez de considerar un enfoque distribuido",
+    "Elegir el tipo de gráfico equivocado para la pregunta (por ejemplo, líneas para comparar categorías sin orden temporal)"
   ],
   "cli": [
-    {
-      "cmd": "pip install aliyunsdk-core",
-      "desc": "Instalar SDK"
-    },
-    {
-      "cmd": "python -m venv .venv",
-      "desc": "Virtual env"
-    }
+    { "cmd": "pip install pandas matplotlib", "desc": "Instalar las bibliotecas base del curso" },
+    { "cmd": "python -c \"import pandas as pd; df = pd.read_csv('eventos.csv'); print(df.dtypes)\"", "desc": "Cargar un archivo y revisar los tipos de columna inferidos" },
+    { "cmd": "jupyter notebook", "desc": "Abrir un notebook interactivo para explorar el dataset paso a paso" }
   ],
   "glossary": [
-    {
-      "en": "aliyunsdk",
-      "es": "aliyunsdk",
-      "def": "SDK oficial Python."
-    },
-    {
-      "en": "PyODPS",
-      "es": "PyODPS",
-      "def": "Cliente Python para MaxCompute."
-    },
-    {
-      "en": "PySpark",
-      "es": "PySpark",
-      "def": "Spark API en Python."
-    },
-    {
-      "en": "PAI-DSW",
-      "es": "PAI-DSW",
-      "def": "JupyterLab gestionado."
-    },
-    {
-      "en": "Poetry/pip",
-      "es": "Gestión deps",
-      "def": "Poetry/pip para paquetes."
-    },
-    {
-      "en": "Ray on PAI",
-      "es": "Ray",
-      "def": "Compute distribuido tipo Spark en Python."
-    },
-    {
-      "en": "Wheels",
-      "es": "Wheels",
-      "def": "Formato de distribución binario."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "DataFrame (pandas)", "es": "DataFrame", "def": "Estructura tabular de pandas cargada completamente en memoria, con columnas nombradas y tipadas." },
+    { "en": "read_csv", "es": "read_csv", "def": "Función de pandas para cargar un archivo delimitado como DataFrame." },
+    { "en": "dtypes", "es": "dtypes", "def": "Atributo que muestra el tipo de dato inferido por pandas para cada columna." },
+    { "en": "describe()", "es": "describe()", "def": "Método que resume estadísticamente las columnas numéricas de un DataFrame." },
+    { "en": "isnull()/dropna()/fillna()", "es": "Manejo de nulos", "def": "Métodos para detectar, eliminar o rellenar valores faltantes en un DataFrame." },
+    { "en": "drop_duplicates()", "es": "drop_duplicates()", "def": "Método que elimina filas duplicadas de un DataFrame." },
+    { "en": "to_datetime()", "es": "to_datetime()", "def": "Función que convierte una columna de texto a un tipo de fecha real, habilitando operaciones temporales." },
+    { "en": "groupby()", "es": "groupby()", "def": "Método que agrupa filas por el valor de una o más columnas para aplicar funciones de agregación." },
+    { "en": "agg()", "es": "agg()", "def": "Método que calcula varias agregaciones distintas por grupo en una sola operación." },
+    { "en": "pivot_table()", "es": "pivot_table()", "def": "Función que cruza dos o más dimensiones en una vista tipo hoja de cálculo." },
+    { "en": "matplotlib", "es": "matplotlib", "def": "Biblioteca de visualización base de Python usada para gráficos de barras, líneas e histogramas." },
+    { "en": "seaborn", "es": "seaborn", "def": "Biblioteca de visualización estadística de más alto nivel construida sobre matplotlib." },
+    { "en": "value_counts()", "es": "value_counts()", "def": "Método que cuenta la frecuencia de cada valor único en una columna categórica." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRa",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Python es el lenguaje canónico para data engineering, ML y automatización cloud. Alibaba ecosystem: SDK aliyunsdk-* para APIs, PyODPS para MaxCompute, pyspark en EMR/DLC, PAI-DSW notebooks, PandasOnRay para dataframes escalados."
-    },
-    {
-      "q": "¿Qué es <strong>aliyunsdk</strong> (aliyunsdk) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "aliyunsdk (aliyunsdk): SDK oficial Python."
-    },
-    {
-      "q": "¿Qué es <strong>PyODPS</strong> (PyODPS) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Cliente Python para MaxCompute.",
-        "SDK oficial Python.",
-        "Spark API en Python.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "PyODPS (PyODPS): Cliente Python para MaxCompute."
-    },
-    {
-      "q": "¿Qué es <strong>PySpark</strong> (PySpark) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Spark API en Python.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "JupyterLab gestionado."
-      ],
-      "answer": 0,
-      "explain": "PySpark (PySpark): Spark API en Python."
-    },
-    {
-      "q": "¿Qué es <strong>PAI-DSW</strong> (PAI-DSW) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "JupyterLab gestionado.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python."
-      ],
-      "answer": 0,
-      "explain": "PAI-DSW (PAI-DSW): JupyterLab gestionado."
-    },
-    {
-      "q": "¿Qué es <strong>Poetry/pip</strong> (Gestión deps) en Python en Alibaba Cloud (Data & Cloud)?",
-      "options": [
-        "Poetry/pip para paquetes.",
-        "SDK oficial Python.",
-        "Cliente Python para MaxCompute.",
-        "Spark API en Python."
-      ],
-      "answer": 0,
-      "explain": "Poetry/pip (Gestión deps): Poetry/pip para paquetes."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Python en Alibaba Cloud (Data & Cloud), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Python en Alibaba Cloud (Data & Cloud) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Python en Alibaba Cloud (Data & Cloud), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Python en Alibaba Cloud (Data & Cloud) es la elección típica:",
-      "options": [
-        "Data engineering con pandas → PyODPS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data engineering con pandas → PyODPS."
-    }
+    { "q": "¿Qué comando revela cómo pandas interpretó el tipo de cada columna tras cargar un archivo?", "options": ["df.head()", "df.dtypes", "df.describe()", "df.shape"], "answer": 1, "explain": "df.dtypes muestra el tipo inferido de cada columna, paso indispensable para detectar, por ejemplo, una fecha leída como texto." },
+    { "q": "¿Por qué es importante convertir una columna de fecha con pd.to_datetime() antes de analizarla?", "options": ["Porque pandas no permite columnas de texto", "Porque habilita operaciones temporales como extraer el día de la semana, que no son posibles sobre texto plano", "Porque reduce el tamaño del archivo en disco", "Porque es un requisito de matplotlib"], "answer": 1, "explain": "Sin convertirla a fecha real, no se pueden extraer componentes temporales como el día de la semana ni hacer comparaciones cronológicas correctas." },
+    { "q": "¿Qué riesgo tiene calcular un total de ventas sin revisar previamente si existen filas duplicadas?", "options": ["Ningún riesgo, pandas elimina duplicados automáticamente", "El total puede quedar inflado de forma silenciosa, sin generar ningún error visible", "El script no se ejecutará", "Los duplicados solo afectan a columnas de texto"], "answer": 1, "explain": "Los duplicados sin tratar producen resultados numéricamente incorrectos pero plausibles, sin lanzar ningún error explícito." },
+    { "q": "¿Qué método es el más eficiente para calcular varias agregaciones distintas por grupo en una sola operación?", "options": ["Llamar a groupby() por separado para cada métrica", "groupby().agg() con un diccionario de columnas y funciones", "sort_values() repetido", "describe() sobre cada grupo individualmente"], "answer": 1, "explain": "agg() con un diccionario permite calcular múltiples métricas por grupo en una sola pasada, evitando reprocesar los datos varias veces." },
+    { "q": "Se necesita comparar el tráfico total entre distintos países. ¿Qué tipo de gráfico es el más adecuado?", "options": ["Histograma", "Gráfico de barras", "Gráfico de líneas sin orden temporal", "Ninguno, debe presentarse solo como tabla"], "answer": 1, "explain": "El gráfico de barras es el estándar para comparar una métrica entre categorías discretas como países." },
+    { "q": "¿Qué problema provoca no normalizar mayúsculas/espacios en una columna categórica antes de agrupar por ella?", "options": ["Ninguno, pandas normaliza automáticamente el texto", "Una misma categoría puede fragmentarse en varios grupos distintos (por ejemplo 'México' y 'mexico ')", "El groupby() lanzará un error de ejecución", "Solo afecta a columnas numéricas"], "answer": 1, "explain": "Variantes de mayúsculas o espacios se tratan como categorías distintas en un groupby, distorsionando el análisis." },
+    { "q": "¿Cuál es la señal más clara de que un análisis debería migrar de pandas a una herramienta distribuida como PyODPS o PySpark?", "options": ["El dataset tiene menos de 100 filas", "El archivo ya no cabe cómodamente en la memoria de la máquina o las operaciones tardan cada vez más", "Se necesita usar groupby()", "Se necesita generar un gráfico de barras"], "answer": 1, "explain": "El límite de memoria de una sola máquina y el aumento del tiempo de procesamiento son las señales prácticas de que hace falta escalar." },
+    { "q": "Según el curso, ¿qué relación tiene este flujo de pandas con herramientas distribuidas como PyODPS DataFrame o PySpark?", "options": ["No tiene ninguna relación, son completamente distintas", "Los mismos verbos de análisis (filtrar, agrupar, agregar) se reutilizan conceptualmente sobre esas herramientas distribuidas", "PyODPS y PySpark reemplazan por completo la necesidad de aprender pandas", "pandas solo sirve para visualización, nunca para análisis"], "answer": 1, "explain": "El curso presenta este flujo como fundamento explícito para programar después sobre sistemas distribuidos que reutilizan la misma forma de pensar el análisis." },
+    { "q": "¿Qué método detecta cuántos valores faltantes tiene cada columna de un DataFrame?", "options": ["df.dropna()", "df.isnull().sum()", "df.fillna()", "df.describe()"], "answer": 1, "explain": "isnull() marca los valores nulos y sum() los cuenta por columna, el primer paso antes de decidir cómo tratarlos." },
+    { "q": "¿Qué limitación fundamental tiene pandas frente a un motor distribuido para procesar datos?", "options": ["No soporta archivos CSV", "Carga el DataFrame completo en la memoria de una sola máquina, sin repartir el trabajo entre varios nodos", "No permite calcular estadísticas descriptivas", "No puede generar ningún tipo de gráfico"], "answer": 1, "explain": "El modelo de pandas asume que todo el dataset cabe en la memoria de un único proceso, a diferencia de un motor distribuido que reparte el trabajo entre varias máquinas." }
   ],
-  "exam_focus": "aliyunsdk, PyODPS, PySpark, PAI-DSW, gestión de dependencias.",
+  "exam_focus": "El examen suele evaluar: (a) el flujo de carga/exploración/limpieza/análisis/visualización con pandas, (b) por qué revisar tipos, nulos y duplicados antes de cualquier análisis, (c) el uso correcto de groupby/agg para responder preguntas de negocio, (d) la elección del tipo de gráfico según la pregunta, (e) reconocer cuándo este enfoque de una sola máquina deja de alcanzar.",
   "official_intro": "The data set of this course is from virtual blog site, we are going to use the data to solve business problems,for example what countries do your customers come from；Which day of the week gets the most online traffic; Which region contributes the most clickstream data etc. Basic functions for data cleaning, data analysis and visualization will be coverd in this course. It is also the foundation for programming on distributed system like Spark SQL,or with Alibaba cloud MaxCompute Python SDK.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_pythondata",

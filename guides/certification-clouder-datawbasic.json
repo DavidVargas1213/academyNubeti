@@ -2,433 +2,177 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datawbasic",
   "title_en": "Alibaba Cloud DataWorks - Basic Knowledge",
-  "title_es": "Alibaba Cloud DataWorks - Básico Knowledge",
+  "title_es": "Alibaba Cloud DataWorks - Conocimientos Básicos",
+  "title_es_html": "Alibaba Cloud DataWorks - <em>Conocimientos Básicos</em>",
   "duration_es": "36 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Data Development",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datawbasic",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud DataWorks - Basic Knowledge» de Alibaba Cloud Academy. Cubre en profundidad DataWorks. DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud DataWorks - Basic Knowledge» de Alibaba Cloud Academy. Es la puerta de entrada conceptual a DataWorks: qué problema resuelve, cómo se organiza un Workspace, qué rol cumple cada módulo (Data Integration, Data Studio, Data Quality, Data Map, Data Security) y, sobre todo, cómo funciona el aislamiento de roles entre quien desarrolla, quien despliega y quien opera. Este curso es la base; los cursos «Application Development» y «Data Development with DataWorks and MaxCompute» profundizan en el uso práctico.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DataWorks</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Workspace, Node, Workflow, Scheduler, Data Integration.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DataWorks y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve DataWorks frente a coordinar manualmente scripts de ETL dispersos.",
+    "<strong>Describir</strong> la estructura de un Workspace: proyecto, modo simple vs. modo estándar (dev/prod separados).",
+    "<strong>Distinguir</strong> los roles de DataWorks (Administrador, Desarrollador, Desplegador/Deployer, O&M, Visitante) y qué puede hacer cada uno.",
+    "<strong>Ubicar</strong> los módulos principales: Data Integration, Data Studio, Data Quality, Data Map y Data Security dentro del flujo de trabajo.",
+    "<strong>Reconocer</strong> los motores de cómputo con los que DataWorks se integra como front-end (MaxCompute, Hologres, EMR, AnalyticDB).",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre roles, modos de Workspace y alcance de cada módulo."
   ],
-  "architecture": "Módulos: Data Integration (ingestas batch/stream), Data Studio (IDE SQL/Python con workflows DAG), Data Quality (reglas), Data Map (catálogo y linaje), Data Security (DLP), AI Studio. El scheduler ejecuta DAGs con dependencias, reintentos y alertas.",
+  "architecture": "DataWorks no procesa datos por sí mismo — es la capa de orquestación, desarrollo y gobernanza que se sienta encima de motores de cómputo como MaxCompute, Hologres, EMR o AnalyticDB. Un Workspace agrupa los recursos de un proyecto y, en modo estándar, separa un entorno de desarrollo de uno de producción, de forma que un cambio de código pase por un flujo de publicación explícito antes de afectar datos reales. Dentro del Workspace, Data Integration sincroniza datos desde fuentes externas, Data Studio es el IDE donde se desarrollan nodos y workflows, Data Quality valida la calidad de los datos producidos, Data Map cataloga y documenta las tablas, y Data Security detecta y protege información sensible. El acceso a cada módulo se controla por rol: quién puede escribir código, quién puede publicarlo a producción y quién solo puede operar y monitorear.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DataWorks",
-      "title_en": "Introduction to DataWorks",
-      "intro": "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué problema resuelve DataWorks",
+      "title_en": "What Problem Does DataWorks Solve",
+      "intro": "Antes de tocar la consola, hay que entender por qué una empresa con varios equipos de datos necesita una plataforma de orquestación en vez de coordinar scripts SQL y cron jobs dispersos entre distintos servidores.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DataWorks se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema sin DataWorks</strong>: decenas de scripts SQL y de sincronización dispersos, cada uno con su propio cron, sin control de versiones centralizado, sin visibilidad de qué tabla depende de cuál, y sin un proceso formal para pasar un cambio de desarrollo a producción.",
+        "<strong>Lo que aporta DataWorks</strong>: un lugar único para desarrollar, programar, monitorear y gobernar el flujo completo de datos — desde que entran de un sistema origen hasta que alimentan un reporte de negocio.",
+        "<strong>No es un motor de cómputo</strong>: DataWorks no almacena ni procesa datos por sí mismo — es el front-end que orquesta motores como MaxCompute, Hologres, EMR o AnalyticDB, que sí ejecutan las consultas reales.",
+        "<strong>Gobernanza como diferenciador</strong>: más allá de programar tareas, DataWorks añade calidad de datos (Data Quality), catálogo y linaje (Data Map) y protección de datos sensibles (Data Security) — capacidades que un simple scheduler de cron jobs no ofrece.",
+        "<strong>Audiencia típica</strong>: equipos de ingeniería de datos, analistas que escriben SQL de transformación, y administradores que necesitan controlar quién accede a qué dato."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DataWorks es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "DataWorks resuelve coordinación y gobernanza, no cómputo. La pregunta de examen típica distingue DataWorks (orquesta) de MaxCompute/Hologres/EMR (ejecutan el cómputo real)."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DataWorks no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · El Workspace: modo simple vs. modo estándar",
+      "title_en": "The Workspace: Basic Mode vs. Standard Mode",
+      "intro": "El Workspace es la unidad organizativa de más alto nivel en DataWorks — y la decisión de cómo configurarlo desde el inicio determina si un cambio de código puede accidentalmente romper producción.",
       "points": [
-        "<strong>Patrón canónico</strong>: Módulos: Data Integration (ingestas batch/stream), Data Studio (IDE SQL/Python con workflows DAG), Data Quality (reglas), Data Map (catálogo y linaje), Data Security (DLP), AI Studio. El scheduler ejecuta DAGs con dependencias, reintentos y alertas.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DataWorks (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Espacio de trabajo</strong> <em>(Workspace)</em>: Unidad top con quotas, engines y permisos.",
-        "<strong>Nodo</strong> <em>(Node)</em>: Tarea individual: SQL, Python, shell, ML.",
-        "<strong>Workflow</strong> <em>(Workflow)</em>: DAG de nodos con dependencias.",
-        "<strong>Scheduler</strong> <em>(Scheduler)</em>: Ejecuta DAGs por cron; maneja retry, catch-up, alertas.",
-        "<strong>Data Integration</strong> <em>(Data Integration)</em>: Sincronización batch/stream entre 50+ conectores.",
-        "<strong>DQC</strong> <em>(Data Quality (DQC))</em>: Reglas de calidad: null, ranges, unicidad; bloquea downstream si falla.",
-        "<strong>Data Map</strong> <em>(Data Map)</em>: Catálogo con búsqueda, tags, linaje columnar.",
-        "<strong>Data Security</strong> <em>(Data Security)</em>: DLP: detecta y enmascara PII."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Modo simple (basic)</strong>: un solo entorno donde desarrollo y producción comparten el mismo espacio — más rápido de configurar, adecuado para pruebas de concepto o equipos muy pequeños, pero sin separación real entre código en pruebas y código en producción.",
+        "<strong>Modo estándar (standard)</strong>: separa explícitamente un entorno de desarrollo de uno de producción, cada uno con su propio motor de cómputo asociado (o su propia cuota) — un nodo debe pasar por un proceso de publicación (deployment) formal para llegar a producción.",
+        "<strong>Flujo de publicación en modo estándar</strong>: un desarrollador escribe y prueba código en el entorno de desarrollo; una vez validado, se envía a revisión y, con la aprobación correspondiente, se publica al entorno de producción — un cambio no salta directo de la laptop del desarrollador a producción.",
+        "<strong>Recomendación de examen</strong>: cualquier escenario que mencione 'aislar desarrollo de producción' o 'evitar que un cambio no probado afecte datos reales' apunta a modo estándar, no a modo simple.",
+        "<strong>Motores por entorno</strong>: en modo estándar, es común (aunque no obligatorio) asociar un Project de MaxCompute distinto a cada entorno, de forma que las pruebas de desarrollo no consuman cuota de producción ni corran riesgo de sobrescribir tablas reales."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe un incidente donde código sin probar terminó en producción, el antipatrón de raíz suele ser usar modo simple en vez de modo estándar con un flujo de publicación formal."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Roles y aislamiento de permisos",
+      "title_en": "Roles and Permission Isolation",
+      "intro": "DataWorks no asume que todo el mundo puede hacer todo — cada rol tiene un alcance de permisos deliberadamente distinto, y el examen evalúa con precisión quién puede hacer qué.",
       "points": [
-        "<strong>Costo</strong>: Resource Groups reservados para integración crítica",
-        "<strong>Buenas prácticas</strong>: Workspaces separados por ambiente (dev/prod)",
-        "<strong>Buenas prácticas</strong>: Reglas DQC bloqueantes en tablas críticas",
-        "<strong>Buenas prácticas</strong>: Baselines para procesos con SLA de reporte",
-        "<strong>Buenas prácticas</strong>: Data Map con owners obligatorios — sin owner, sin acceso"
+        "<strong>Administrador (Admin)</strong>: gestiona la configuración del Workspace completo — miembros, roles, motores de cómputo asociados y políticas globales del proyecto.",
+        "<strong>Desarrollador (Developer)</strong>: escribe y prueba código en el entorno de desarrollo (nodos SQL, Python, shell, workflows) pero, en modo estándar, no puede publicar directamente a producción.",
+        "<strong>Desplegador (Deployer/Release)</strong>: rol específico con permiso para promover código validado desde desarrollo hacia producción — la separación entre quien escribe y quien despliega es deliberada, para evitar que un solo individuo controle todo el ciclo sin revisión.",
+        "<strong>O&M (Operations)</strong>: monitorea la ejecución de tareas en producción, revisa alarmas y reintenta o pausa nodos fallidos, pero típicamente no edita el código fuente de los nodos.",
+        "<strong>Visitante (Visitor)</strong>: acceso de solo lectura para consultar definiciones, linaje o documentación, sin capacidad de modificar nada — útil para stakeholders de negocio que necesitan visibilidad sin riesgo de cambios accidentales."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "Developer escribe, Deployer publica, O&M opera, Visitor solo observa. Ningún rol individual (salvo Admin) combina las cuatro capacidades por diseño — es la aplicación del principio de separación de funciones a un equipo de datos."
+      }
+    },
+    {
+      "title_es": "4 · Los módulos principales de un vistazo",
+      "title_en": "The Core Modules at a Glance",
+      "intro": "DataWorks se organiza en módulos especializados, cada uno resolviendo una etapa distinta del ciclo de vida del dato — este módulo da la vista de mapa general que los cursos más avanzados profundizan uno por uno.",
+      "points": [
+        "<strong>Data Integration</strong>: mueve datos entre sistemas origen y destino mediante tareas de sincronización batch o en tiempo real (CDC), sin necesidad de escribir un ETL custom desde cero.",
+        "<strong>Data Studio</strong>: el IDE visual donde se desarrollan nodos (SQL, Python/PyODPS, shell) y se ensamblan en workflows con dependencias, el corazón operativo de DataWorks para el día a día del desarrollador.",
+        "<strong>Data Quality (DQC)</strong>: define reglas de calidad sobre las tablas producidas (valores nulos, rangos válidos, unicidad) que pueden bloquear la ejecución de nodos downstream si detectan datos anómalos.",
+        "<strong>Data Map</strong>: el catálogo de datos del Workspace — búsqueda de tablas, documentación, propietarios (owners) y linaje columnar (de dónde viene cada campo y a dónde va).",
+        "<strong>Data Security</strong>: identifica y protege información sensible (PII) dentro de las tablas, aplicando enmascaramiento o controles de acceso adicionales según clasificación."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Cada módulo cubre una etapa distinta: Integration mueve, Studio transforma, Quality valida, Map documenta, Security protege. El examen a menudo pide identificar en qué módulo ocurre una capacidad descrita."
+      }
+    },
+    {
+      "title_es": "5 · Motores de cómputo integrados",
+      "title_en": "Integrated Compute Engines",
+      "intro": "DataWorks es agnóstico del motor de cómputo subyacente en cierta medida — este módulo aclara con cuáles se integra de forma nativa y qué rol juega cada uno en una arquitectura típica.",
+      "points": [
+        "<strong>MaxCompute</strong>: el motor más común como back-end de DataWorks — el data warehouse serverless donde viven la mayoría de las tablas y se ejecutan los nodos SQL de transformación batch.",
+        "<strong>Hologres</strong>: se integra como destino para casos que requieren consulta interactiva de baja latencia (dashboards en vivo), complementando el procesamiento batch de MaxCompute.",
+        "<strong>E-MapReduce (EMR)</strong>: para equipos que necesitan Spark/Hive/Presto con más control sobre el motor, DataWorks también puede orquestar nodos que se ejecutan sobre un clúster EMR.",
+        "<strong>AnalyticDB</strong>: otra opción de motor analítico de baja latencia que DataWorks puede orquestar como destino de datos ya transformados.",
+        "<strong>Un mismo Workspace, varios motores</strong>: no es raro que un mismo proyecto combine MaxCompute para el procesamiento pesado y Hologres para servir los resultados finales a un dashboard — DataWorks coordina el flujo entre ambos."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado pregunta 'qué ejecuta realmente el SQL de un nodo DataWorks', la respuesta correcta es el motor de cómputo asociado al Workspace (típicamente MaxCompute) — DataWorks orquesta, no ejecuta el cómputo pesado."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "Este cierre repasa los errores conceptuales más frecuentes al empezar con DataWorks, que suelen aparecer como distractores en el examen.",
       "points": [
-        "<strong>Antipattern</strong>: Un solo workspace mezclando dev y prod",
-        "<strong>Antipattern</strong>: DQC solo informativo — sin bloqueo el error llega a producción",
-        "<strong>Antipattern</strong>: Nodos sin retry — jobs fallan por errores transitorios",
-        "<strong>Antipattern</strong>: Cron con timezone incorrecto — jobs corren fuera de ventana",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: usar modo simple de Workspace para un proyecto de producción real, sin separación de entornos.",
+        "<strong>Antipatrón</strong>: dar rol de Developer con permisos de publicación directa a producción, saltándose la revisión.",
+        "<strong>Antipatrón</strong>: confundir DataWorks con un motor de cómputo — pensar que 'DataWorks procesa los datos' en vez de orquestar el motor que realmente los procesa.",
+        "<strong>Antipatrón</strong>: no asignar owners en Data Map, dejando tablas sin responsable claro cuando crece el número de proyectos.",
+        "<strong>Estrategia</strong>: ante una pregunta de rol o módulo, primero identifica qué acción se describe (escribir, publicar, operar, consultar) y mapea directamente al rol o módulo correspondiente."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Este curso es la base conceptual — los detalles de desarrollo de nodos y workflows específicos se cubren en «DataWorks - Application Development», y el uso combinado con MaxCompute para calidad de datos en «Data Development with DataWorks and MaxCompute»."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data pipelines diarios de ingesta desde 50+ fuentes"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Data lake governance — quién accede a qué"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Data quality monitoring en producción"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Colaboración multi-equipo en un mismo proyecto"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Linaje end-to-end para auditorías"
-    }
+    { "title": "Escenario 1", "text": "Configurar un Workspace en modo estándar para separar desarrollo de producción en un equipo de datos nuevo" },
+    { "title": "Escenario 2", "text": "Definir roles para que solo un Deployer autorizado pueda publicar cambios a producción" },
+    { "title": "Escenario 3", "text": "Dar acceso de solo lectura a un stakeholder de negocio para consultar el linaje de una tabla" },
+    { "title": "Escenario 4", "text": "Explicar a un cliente por qué DataWorks no reemplaza a MaxCompute sino que lo orquesta" },
+    { "title": "Escenario 5", "text": "Diseñar un Workspace que combine MaxCompute para batch y Hologres para dashboards en vivo" }
   ],
   "mistakes": [
-    "Un solo workspace mezclando dev y prod",
-    "DQC solo informativo — sin bloqueo el error llega a producción",
-    "Nodos sin retry — jobs fallan por errores transitorios",
-    "Cron con timezone incorrecto — jobs corren fuera de ventana"
+    "Usar modo simple de Workspace en un proyecto de producción real, sin separación dev/prod",
+    "Otorgar permisos de publicación directa a producción al rol Developer",
+    "Confundir DataWorks con un motor de cómputo, en vez de la capa de orquestación sobre motores como MaxCompute",
+    "No asignar owners en Data Map, perdiendo trazabilidad de responsables al crecer el proyecto",
+    "Mezclar el entorno de desarrollo y producción en el mismo Workspace por simplicidad inicial",
+    "Dar rol de Visitante a alguien que en realidad necesita escribir código, generando fricción operativa"
   ],
   "cli": [
-    {
-      "cmd": "Consola: DataWorks → Data Studio",
-      "desc": "Editor visual con git integrado"
-    },
-    {
-      "cmd": "aliyun dataworks-public GetNode",
-      "desc": "Ver definición de nodo"
-    }
+    { "cmd": "Consola: DataWorks → Workspace Management", "desc": "Configurar modo simple o estándar del Workspace" },
+    { "cmd": "aliyun dataworks-public ListProjectMembers --ProjectId 12345", "desc": "Listar miembros y roles asignados en un Workspace" },
+    { "cmd": "aliyun dataworks-public GetProject --ProjectId 12345", "desc": "Consultar la configuración general de un Workspace" }
   ],
   "glossary": [
-    {
-      "en": "Workspace",
-      "es": "Espacio de trabajo",
-      "def": "Unidad top con quotas, engines y permisos."
-    },
-    {
-      "en": "Node",
-      "es": "Nodo",
-      "def": "Tarea individual: SQL, Python, shell, ML."
-    },
-    {
-      "en": "Workflow",
-      "es": "Workflow",
-      "def": "DAG de nodos con dependencias."
-    },
-    {
-      "en": "Scheduler",
-      "es": "Scheduler",
-      "def": "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-    },
-    {
-      "en": "Data Integration",
-      "es": "Data Integration",
-      "def": "Sincronización batch/stream entre 50+ conectores."
-    },
-    {
-      "en": "Data Quality (DQC)",
-      "es": "DQC",
-      "def": "Reglas de calidad: null, ranges, unicidad; bloquea downstream si falla."
-    },
-    {
-      "en": "Data Map",
-      "es": "Data Map",
-      "def": "Catálogo con búsqueda, tags, linaje columnar."
-    },
-    {
-      "en": "Data Security",
-      "es": "Data Security",
-      "def": "DLP: detecta y enmascara PII."
-    },
-    {
-      "en": "Resource Group",
-      "es": "Resource Group",
-      "def": "Compute reservado para tareas de integración."
-    },
-    {
-      "en": "Baseline",
-      "es": "Baseline",
-      "def": "SLA de completitud diario; alerta si retraso."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Workspace", "es": "Espacio de trabajo", "def": "Unidad organizativa de más alto nivel en DataWorks, que agrupa recursos, permisos y motores de cómputo de un proyecto." },
+    { "en": "Basic Mode", "es": "Modo simple", "def": "Configuración de Workspace donde desarrollo y producción comparten el mismo entorno." },
+    { "en": "Standard Mode", "es": "Modo estándar", "def": "Configuración de Workspace que separa entornos de desarrollo y producción con un flujo de publicación formal." },
+    { "en": "Admin", "es": "Administrador", "def": "Rol que gestiona la configuración global del Workspace: miembros, roles y motores asociados." },
+    { "en": "Developer", "es": "Desarrollador", "def": "Rol que escribe y prueba código en el entorno de desarrollo." },
+    { "en": "Deployer / Release", "es": "Desplegador", "def": "Rol con permiso para promover código validado desde desarrollo a producción." },
+    { "en": "O&M (Operations)", "es": "Operaciones", "def": "Rol que monitorea la ejecución en producción y gestiona alarmas y reintentos, sin editar código." },
+    { "en": "Visitor", "es": "Visitante", "def": "Rol de solo lectura para consultar definiciones, linaje o documentación." },
+    { "en": "Data Integration", "es": "Integración de datos", "def": "Módulo que sincroniza datos entre sistemas origen y destino." },
+    { "en": "Data Studio", "es": "Data Studio", "def": "IDE visual donde se desarrollan nodos y se ensamblan workflows con dependencias." },
+    { "en": "Data Quality (DQC)", "es": "Calidad de datos", "def": "Módulo que valida reglas de calidad sobre tablas y puede bloquear nodos downstream ante datos anómalos." },
+    { "en": "Data Map", "es": "Data Map", "def": "Catálogo de datos del Workspace: búsqueda, documentación, owners y linaje columnar." },
+    { "en": "Data Security", "es": "Seguridad de datos", "def": "Módulo que identifica y protege información sensible (PII) dentro de las tablas." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Motor de cómputo más común como back-end de DataWorks para procesamiento batch." },
+    { "en": "Hologres", "es": "Hologres", "def": "Motor analítico de baja latencia que DataWorks puede orquestar como destino para dashboards en vivo." },
+    { "en": "Deployment Flow", "es": "Flujo de publicación", "def": "Proceso formal de revisión y promoción de código desde desarrollo hacia producción en modo estándar." },
+    { "en": "Owner", "es": "Propietario", "def": "Persona o equipo responsable de una tabla, registrado en Data Map." },
+    { "en": "Lineage", "es": "Linaje", "def": "Trazabilidad de origen y destino de un campo o tabla a través de las transformaciones del pipeline." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DataWorks?",
-      "options": [
-        "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natura",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DataWorks es la plataforma integral de desarrollo, orquestación y gobernanza de datos de Alibaba Cloud. Cubre ingesta, transformación, calidad, catalogación, seguridad y linaje. Es el front-end natural para MaxCompute, Hologres, EMR y AnalyticDB."
-    },
-    {
-      "q": "¿Qué es <strong>Workspace</strong> (Espacio de trabajo) en DataWorks?",
-      "options": [
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Workspace (Espacio de trabajo): Unidad top con quotas, engines y permisos."
-    },
-    {
-      "q": "¿Qué es <strong>Node</strong> (Nodo) en DataWorks?",
-      "options": [
-        "Tarea individual: SQL, Python, shell, ML.",
-        "Unidad top con quotas, engines y permisos.",
-        "DAG de nodos con dependencias.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Node (Nodo): Tarea individual: SQL, Python, shell, ML."
-    },
-    {
-      "q": "¿Qué es <strong>Workflow</strong> (Workflow) en DataWorks?",
-      "options": [
-        "DAG de nodos con dependencias.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-      ],
-      "answer": 0,
-      "explain": "Workflow (Workflow): DAG de nodos con dependencias."
-    },
-    {
-      "q": "¿Qué es <strong>Scheduler</strong> (Scheduler) en DataWorks?",
-      "options": [
-        "Ejecuta DAGs por cron; maneja retry, catch-up, alertas.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias."
-      ],
-      "answer": 0,
-      "explain": "Scheduler (Scheduler): Ejecuta DAGs por cron; maneja retry, catch-up, alertas."
-    },
-    {
-      "q": "¿Qué es <strong>Data Integration</strong> (Data Integration) en DataWorks?",
-      "options": [
-        "Sincronización batch/stream entre 50+ conectores.",
-        "Unidad top con quotas, engines y permisos.",
-        "Tarea individual: SQL, Python, shell, ML.",
-        "DAG de nodos con dependencias."
-      ],
-      "answer": 0,
-      "explain": "Data Integration (Data Integration): Sincronización batch/stream entre 50+ conectores."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DataWorks, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DataWorks en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DataWorks, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DataWorks es la elección típica:",
-      "options": [
-        "Data pipelines diarios de ingesta desde 50+ fuentes",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data pipelines diarios de ingesta desde 50+ fuentes."
-    }
+    { "q": "¿Qué problema resuelve principalmente DataWorks frente a coordinar scripts SQL dispersos con cron jobs?", "options": ["Reemplaza completamente la necesidad de un motor de cómputo", "Centraliza desarrollo, programación, monitoreo y gobernanza del flujo completo de datos", "Solo sirve para crear dashboards visuales", "Es exclusivamente un servicio de almacenamiento"], "answer": 1, "explain": "DataWorks aporta un lugar único para desarrollar, programar y gobernar pipelines, algo que scripts dispersos no ofrecen de forma centralizada." },
+    { "q": "¿DataWorks ejecuta el cómputo pesado de las consultas SQL por sí mismo?", "options": ["Sí, siempre lo hace internamente", "No, orquesta motores de cómputo como MaxCompute, Hologres o EMR, que ejecutan el procesamiento real", "Solo en modo estándar", "Solo si se activa Data Security"], "answer": 1, "explain": "DataWorks es la capa de orquestación y desarrollo; el cómputo real ocurre en el motor asociado, típicamente MaxCompute." },
+    { "q": "Un equipo quiere garantizar que ningún código sin probar llegue accidentalmente a producción. ¿Qué configuración de Workspace deben usar?", "options": ["Modo simple", "Modo estándar, con entornos de desarrollo y producción separados y un flujo de publicación formal", "Cualquier modo, no hay diferencia", "Deshabilitar Data Studio"], "answer": 1, "explain": "El modo estándar separa explícitamente desarrollo de producción y exige un proceso de publicación antes de que un cambio llegue a producción." },
+    { "q": "¿Qué rol de DataWorks tiene permiso para promover código validado desde desarrollo hacia producción?", "options": ["Visitor", "Developer exclusivamente", "Deployer / Release", "O&M"], "answer": 2, "explain": "El rol Deployer está específicamente diseñado para publicar código a producción, separado del rol que lo escribe (Developer)." },
+    { "q": "¿Qué puede hacer típicamente el rol O&M (Operations) en DataWorks?", "options": ["Editar el código fuente de los nodos en desarrollo", "Monitorear la ejecución en producción, revisar alarmas y reintentar o pausar nodos fallidos", "Configurar los motores de cómputo del Workspace completo", "Publicar directamente cambios sin revisión"], "answer": 1, "explain": "O&M se enfoca en operación y monitoreo de tareas ya en producción, no en modificar el código fuente." },
+    { "q": "¿Qué módulo de DataWorks se encarga de mover datos entre sistemas origen y destino?", "options": ["Data Studio", "Data Integration", "Data Map", "Data Security"], "answer": 1, "explain": "Data Integration es el módulo especializado en sincronización de datos batch o en tiempo real entre sistemas." },
+    { "q": "¿Qué módulo de DataWorks puede bloquear la ejecución de nodos downstream si detecta datos anómalos?", "options": ["Data Map", "Data Quality (DQC)", "Data Studio", "Data Integration"], "answer": 1, "explain": "Data Quality define reglas (nulos, rangos, unicidad) que, si fallan, pueden detener el flujo antes de propagar datos incorrectos." },
+    { "q": "¿Qué información provee Data Map dentro de un Workspace?", "options": ["Reglas de calidad de datos", "Catálogo de tablas con búsqueda, documentación, owners y linaje columnar", "Configuración de roles del proyecto", "Sincronización de datos en tiempo real"], "answer": 1, "explain": "Data Map es el catálogo del Workspace: permite buscar tablas, ver su documentación, propietario y de dónde viene cada columna." },
+    { "q": "¿Cuál es el motor de cómputo más común como back-end de DataWorks para procesamiento batch?", "options": ["OSS", "MaxCompute", "CloudMonitor", "RAM"], "answer": 1, "explain": "MaxCompute es el data warehouse serverless que típicamente ejecuta los nodos SQL de transformación orquestados por DataWorks." },
+    { "q": "¿Qué motor se integra con DataWorks cuando se necesita consulta interactiva de baja latencia para dashboards en vivo?", "options": ["Hologres", "HDFS", "ActionTrail", "Data Security"], "answer": 0, "explain": "Hologres complementa el procesamiento batch de MaxCompute cuando se requiere latencia sub-segundo para servir dashboards." },
+    { "q": "¿Qué rol de DataWorks tiene acceso de solo lectura, sin capacidad de modificar nada?", "options": ["Admin", "Developer", "Visitor", "Deployer"], "answer": 2, "explain": "Visitor permite consultar definiciones, linaje o documentación sin riesgo de cambios accidentales, ideal para stakeholders de negocio." },
+    { "q": "¿Por qué es un antipatrón otorgar al rol Developer permisos de publicación directa a producción?", "options": ["Porque Developer no puede escribir código", "Porque elimina la separación de funciones y permite que un cambio no revisado llegue directo a producción", "Porque DataWorks no permite ese permiso técnicamente", "No es un antipatrón, es la configuración recomendada"], "answer": 1, "explain": "La separación entre quien escribe (Developer) y quien publica (Deployer) es deliberada, para introducir un punto de revisión antes de producción." }
   ],
-  "exam_focus": "Preguntas: (a) integración con MaxCompute, (b) DQC bloqueante vs informativo, (c) baselines y SLA, (d) Data Map y linaje, (e) permisos por rol.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar modo simple de modo estándar de Workspace y cuándo usar cada uno, (b) el alcance exacto de cada rol (Admin, Developer, Deployer, O&M, Visitor), (c) qué módulo cubre cada capacidad (Integration, Studio, Quality, Map, Security), (d) que DataWorks orquesta pero no ejecuta el cómputo pesado por sí mismo, (e) con qué motores de cómputo se integra de forma nativa.",
   "official_intro": "This course explains what DataWorks is, including functions, features, product advantages, application scenarios and role isolation.",
   "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datawbasic",

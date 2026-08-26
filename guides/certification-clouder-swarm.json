@@ -2,485 +2,181 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-swarm",
   "title_en": "Using Swarm to Orchestrate and Manage Containers",
-  "title_es": "Usar Swarm to Orchestrate y Gestionar Contenedores",
+  "title_es": "Usar Swarm para Orquestar y Gestionar Contenedores",
+  "title_es_html": "Usar <em>Swarm</em> para Orquestar y Gestionar Contenedores",
   "duration_es": "54 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Container",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_swarm",
-  "lead": "Guía completa en español para el curso «Using Swarm to Orchestrate and Manage Containers» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Using Swarm to Orchestrate and Manage Containers» de Alibaba Cloud Academy, centrado en Docker Swarm: el modo de orquestación nativo e integrado en el propio motor Docker. A diferencia de Kubernetes, Swarm no es un sistema aparte que se instala sobre Docker — es un modo (<code>swarm mode</code>) que el propio daemon activa, pensado para equipos que quieren orquestación básica sin la curva de aprendizaje de Kubernetes.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve un orquestador frente a Docker standalone en un solo host.",
+    "<strong>Distinguir</strong> los roles de un clúster Swarm: nodos manager y nodos worker.",
+    "<strong>Desplegar</strong> aplicaciones como Services declarativos en vez de contenedores sueltos.",
+    "<strong>Agrupar</strong> servicios relacionados en un Stack definido con Compose.",
+    "<strong>Aplicar</strong> actualizaciones progresivas (rolling update) y rollback a un servicio Swarm.",
+    "<strong>Comparar</strong> Swarm frente a Kubernetes/ACK para justificar cuándo cada uno es la elección correcta en el examen."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Un clúster Swarm se forma con <code>docker swarm init</code> en el primer nodo (que se vuelve manager) y <code>docker swarm join</code> en el resto. Los nodos manager mantienen el estado del clúster mediante un log de consenso Raft y deciden dónde programar las tareas (tasks); los nodos worker solo ejecutan contenedores. Un Service declara la imagen, el número de réplicas deseadas y la red; el orquestador crea tasks (una por réplica) y las distribuye entre los workers disponibles, reemplazando automáticamente las que fallan. Una red overlay conecta los contenedores de un servicio entre distintos hosts físicos, y un Routing Mesh interno enruta el tráfico entrante hacia cualquier nodo del clúster hacia el contenedor correcto, esté donde esté.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué orquestar contenedores",
+      "title_en": "Why Container Orchestration",
+      "intro": "Docker standalone gestiona contenedores en un único host. En cuanto una aplicación necesita alta disponibilidad real —sobrevivir a la caída de un servidor— aparece la necesidad de un orquestador, y Swarm es la opción que Docker ofrece de forma nativa.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Límite de Docker standalone</strong>: si el host donde corre un contenedor cae, el contenedor cae con él — no hay nada que lo reprograme en otro servidor.",
+        "<strong>Lo que aporta un orquestador</strong>: distribuir contenedores entre varios hosts, reemplazar automáticamente los que fallan, escalar el número de réplicas, y actualizar la aplicación sin downtime.",
+        "<strong>Swarm mode</strong>: capacidad de orquestación integrada directamente en el motor Docker desde la versión 1.12 — no requiere instalar un sistema externo, solo activar el modo clúster con un comando.",
+        "<strong>Filosofía de Swarm</strong>: priorizar la simplicidad operativa y una curva de aprendizaje corta sobre la flexibilidad extrema; usa la misma CLI y sintaxis de Compose que ya conoce cualquiera que use Docker."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Swarm no es un producto aparte: es un modo del propio Docker. Si ya sabes usar docker y docker-compose, la curva para aprender Swarm es mucho más corta que la de Kubernetes."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Arquitectura de un clúster Swarm",
+      "title_en": "Swarm Cluster Architecture",
+      "intro": "Un clúster Swarm distingue dos roles de nodo, y entender su relación es la base para razonar sobre disponibilidad y tolerancia a fallos en el examen.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Nodo manager</strong>: mantiene el estado deseado del clúster (qué servicios existen, cuántas réplicas) usando el algoritmo de consenso Raft; decide dónde programar cada tarea. Un clúster puede tener varios managers para tolerancia a fallos.",
+        "<strong>Nodo worker</strong>: solo ejecuta las tareas (contenedores) que el manager le asigna; no participa en las decisiones de programación ni mantiene el estado del clúster.",
+        "<strong>Quórum Raft</strong>: para tolerar la caída de managers sin perder el clúster se necesita un número impar de managers (típicamente 3 o 5); con 3 managers el clúster tolera la pérdida de 1 sin perder quórum.",
+        "<strong>Un manager también puede ejecutar tareas</strong>: por defecto un manager acepta cargas de trabajo igual que un worker, aunque en producción es común restringir eso (<code>--availability drain</code>) para que los managers solo gestionen el clúster.",
+        "<strong>Task</strong>: la unidad mínima que Swarm programa — una instancia en ejecución de un contenedor perteneciente a un Service, análoga (aunque más simple) a un Pod en Kubernetes."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Para alta disponibilidad del propio clúster se recomienda un número impar de managers (3 o 5), nunca un número par: un número par no mejora la tolerancia a fallos y sí aumenta el riesgo de empates en el quórum."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Services: el objeto central de Swarm",
+      "title_en": "Services in Swarm",
+      "intro": "En Swarm no se lanzan contenedores sueltos con docker run para producción — se declara un Service, que es el equivalente a decirle al clúster «quiero N réplicas de esta imagen corriendo siempre».",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Service</strong>: definición declarativa de una aplicación en el clúster — imagen, número de réplicas, puertos publicados, redes, variables de entorno y política de actualización.",
+        "<strong>Réplicas y auto-recuperación</strong>: si una task muere (el contenedor falla o el nodo donde vivía cae), el manager crea una task nueva en otro nodo disponible para mantener el número de réplicas declarado.",
+        "<strong>Modo replicated vs global</strong>: <em>replicated</em> corre el número de réplicas que se indique, distribuidas donde haya capacidad; <em>global</em> corre exactamente una tarea en cada nodo del clúster (útil para agentes de monitoreo o logging).",
+        "<strong>Routing Mesh</strong>: al publicar un puerto de un Service, ese puerto queda accesible desde cualquier nodo del clúster, no solo desde el nodo donde corre el contenedor — Swarm enruta internamente la petición al nodo correcto.",
+        "<strong>Red overlay</strong>: red virtual que conecta contenedores de un mismo servicio aunque corran en hosts físicos distintos, permitiendo que se descubran por nombre igual que en una red bridge de un solo host."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "docker run crea un contenedor suelto en un host; docker service create crea un Service gestionado por el clúster, con auto-recuperación y distribución entre nodos. Esa es la diferencia central que distingue Swarm de Docker standalone."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Stacks: agrupar servicios con Compose",
+      "title_en": "Stacks: Grouping Services with Compose",
+      "intro": "Una aplicación real casi nunca es un único Service — suele combinar un backend, una base de datos y un proxy. Un Stack agrupa esos servicios relacionados y se despliega en el clúster con la misma sintaxis de Docker Compose.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Stack</strong>: conjunto de Services relacionados definidos en un archivo <code>docker-compose.yml</code> (versión 3+) y desplegados juntos en el clúster con <code>docker stack deploy</code>.",
+        "<strong>Reutilización de sintaxis</strong>: el mismo formato de Compose usado para desarrollo local en un solo host se extiende con claves específicas de Swarm (<code>deploy:</code> con <code>replicas</code>, <code>update_config</code>, <code>restart_policy</code>) para producción en clúster.",
+        "<strong>Namespace del stack</strong>: todos los recursos de un stack (servicios, redes) se prefijan con el nombre del stack, permitiendo desplegar varias copias de la misma aplicación (p. ej. staging y producción) sin colisión de nombres.",
+        "<strong>Diferencia con Compose local</strong>: <code>docker compose up</code> corre en un solo host sin redistribuir nada si el host falla; <code>docker stack deploy</code> programa los servicios a través de todo el clúster con la auto-recuperación propia de Swarm."
       ],
       "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe «desplegar varios servicios relacionados en un clúster Swarm a partir de un solo archivo declarativo», la respuesta es Stack, no Service individual ni Compose local."
+      }
+    },
+    {
+      "title_es": "5 · Actualizaciones progresivas y rollback",
+      "title_en": "Rolling Updates and Rollback",
+      "intro": "Uno de los mayores beneficios operativos de Swarm frente a Docker standalone es poder actualizar la versión de una aplicación en producción sin downtime, y revertir automáticamente si algo sale mal.",
+      "points": [
+        "<strong>Rolling update</strong>: al actualizar la imagen de un Service, Swarm reemplaza las réplicas de forma incremental (controlado por <code>--update-parallelism</code> y <code>--update-delay</code>), manteniendo siempre parte del servicio disponible durante el despliegue.",
+        "<strong>Política de fallo en la actualización</strong>: <code>--update-failure-action</code> define qué hacer si una nueva réplica falla al arrancar — puede pausar la actualización (por defecto) o hacer rollback automático.",
+        "<strong>docker service rollback</strong>: revierte un servicio a la configuración anterior a la última actualización, sin necesidad de reconstruir manualmente la versión previa.",
+        "<strong>Escalado manual</strong>: <code>docker service scale</code> ajusta el número de réplicas de un Service en caliente; Swarm no incluye auto-scaling nativo basado en métricas como sí lo hace Kubernetes con HPA — eso requiere herramientas externas."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Swarm ofrece rolling update y rollback nativos por diseño, pero NO auto-scaling basado en métricas de carga sin herramientas externas — una diferencia clave frente a Kubernetes/ACK que el examen suele remarcar."
+      }
+    },
+    {
+      "title_es": "6 · Swarm frente a Kubernetes/ACK",
+      "title_en": "Swarm vs Kubernetes/ACK",
+      "intro": "El examen espera que sepas justificar cuándo Swarm es la elección adecuada y cuándo conviene dar el salto a un orquestador más completo como Kubernetes (ACK en Alibaba Cloud).",
+      "points": [
+        "<strong>Simplicidad</strong>: Swarm usa la misma CLI y conceptos que Docker; se puede tener un clúster funcional en minutos, sin aprender un nuevo lenguaje de manifiestos.",
+        "<strong>Ecosistema</strong>: Kubernetes tiene un ecosistema mucho más grande (Helm, operators, service mesh, HPA nativo, CRDs) y es el estándar de facto en la industria y en los servicios gestionados de las nubes públicas, incluido ACK.",
+        "<strong>Escalabilidad y funciones avanzadas</strong>: Kubernetes soporta auto-scaling nativo por métricas, StatefulSets para apps con estado, Network Policies granulares y una comunidad de extensiones mucho mayor; Swarm se queda corto en clústeres muy grandes o con requisitos avanzados.",
+        "<strong>Cuándo elegir Swarm</strong>: equipos pequeños, cargas relativamente simples, o cuando la prioridad es minimizar la complejidad operativa y ya se domina Docker.",
+        "<strong>Cuándo elegir Kubernetes/ACK</strong>: cargas de producción a gran escala, necesidad de auto-scaling avanzado, integraciones ricas con el ecosistema cloud-native, o cuando el equipo ya tiene experiencia con Kubernetes."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario del examen menciona equipos pequeños con foco en simplicidad, Swarm es razonable; si menciona escalado avanzado, ecosistema cloud-native o alta complejidad organizacional, la respuesta apunta a Kubernetes/ACK."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Equipo pequeño que ya domina Docker y quiere orquestación básica sin curva de aprendizaje adicional" },
+    { "title": "Escenario 2", "text": "Aplicación multi-servicio (web + API + base de datos) desplegada como Stack en un clúster de 3 nodos" },
+    { "title": "Escenario 3", "text": "Actualizar la versión de un servicio en producción sin downtime mediante rolling update" },
+    { "title": "Escenario 4", "text": "Agente de monitoreo que debe correr en cada nodo del clúster — Service en modo global" },
+    { "title": "Escenario 5", "text": "Clúster con 3 managers para tolerar la pérdida de un nodo manager sin perder el quórum" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Usar un número par de nodos manager (p.ej. 2 o 4) → no mejora la tolerancia a fallos y aumenta el riesgo de empates de quórum",
+    "Lanzar contenedores sueltos con docker run en vez de Services en un clúster Swarm en producción",
+    "Dejar que los nodos manager acepten toda la carga de trabajo en clústeres grandes → satura el plano de control",
+    "Asumir que Swarm escala automáticamente por CPU/memoria sin herramientas externas — no lo hace de forma nativa",
+    "No definir una política de update-failure-action → una actualización fallida puede quedar a medio camino sin rollback automático",
+    "Elegir Swarm para una carga que requiere StatefulSets, Network Policies granulares o el ecosistema de Helm/operators de Kubernetes"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "docker swarm init --advertise-addr <IP>", "desc": "Inicializar un clúster Swarm en el primer nodo (se convierte en manager)" },
+    { "cmd": "docker swarm join --token <TOKEN> <IP>:2377", "desc": "Unir un nodo al clúster como worker o manager según el token usado" },
+    { "cmd": "docker service create --name web --replicas 3 -p 80:80 nginx", "desc": "Crear un Service con 3 réplicas publicando el puerto 80" },
+    { "cmd": "docker stack deploy -c docker-compose.yml miapp", "desc": "Desplegar un Stack completo a partir de un archivo Compose" },
+    { "cmd": "docker service update --image nginx:1.27 web", "desc": "Actualizar la imagen de un Service con rolling update" },
+    { "cmd": "docker service rollback web", "desc": "Revertir un Service a su configuración anterior a la última actualización" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Swarm mode", "es": "Modo Swarm", "def": "Capacidad de orquestación nativa integrada en el motor Docker, activable con docker swarm init." },
+    { "en": "Manager node", "es": "Nodo manager", "def": "Nodo que mantiene el estado del clúster (vía Raft) y decide dónde se programan las tareas." },
+    { "en": "Worker node", "es": "Nodo worker", "def": "Nodo que únicamente ejecuta las tareas asignadas por los managers, sin participar en el consenso del clúster." },
+    { "en": "Raft consensus", "es": "Consenso Raft", "def": "Algoritmo que usan los managers para mantener un estado del clúster consistente y tolerante a fallos." },
+    { "en": "Service", "es": "Service", "def": "Definición declarativa de una aplicación en el clúster: imagen, réplicas, puertos, red y política de actualización." },
+    { "en": "Task", "es": "Task", "def": "Unidad mínima que Swarm programa: una instancia en ejecución de un contenedor perteneciente a un Service." },
+    { "en": "Stack", "es": "Stack", "def": "Conjunto de Services relacionados definidos en un archivo Compose y desplegados juntos en el clúster." },
+    { "en": "Replicated mode", "es": "Modo replicado", "def": "Modo de Service que corre el número de réplicas indicado, distribuidas donde haya capacidad." },
+    { "en": "Global mode", "es": "Modo global", "def": "Modo de Service que corre exactamente una tarea en cada nodo del clúster." },
+    { "en": "Overlay network", "es": "Red overlay", "def": "Red virtual que conecta contenedores de un mismo servicio a través de distintos hosts físicos." },
+    { "en": "Routing Mesh", "es": "Malla de enrutamiento", "def": "Mecanismo que hace accesible un puerto publicado desde cualquier nodo del clúster, enrutando al nodo correcto internamente." },
+    { "en": "Rolling update", "es": "Actualización progresiva", "def": "Reemplazo incremental de réplicas de un Service al desplegar una nueva versión, sin downtime total." },
+    { "en": "Rollback", "es": "Reversión", "def": "Volver un Service a su configuración anterior a la última actualización." },
+    { "en": "Quorum", "es": "Quórum", "def": "Número mínimo de managers que deben estar disponibles para que el clúster siga tomando decisiones." },
+    { "en": "docker service scale", "es": "Escalado de servicio", "def": "Comando que ajusta en caliente el número de réplicas de un Service." },
+    { "en": "Node availability", "es": "Disponibilidad de nodo", "def": "Estado de un nodo (active, pause, drain) que determina si acepta nuevas tareas." },
+    { "en": "Ingress network", "es": "Red de ingreso", "def": "Red overlay especial que Swarm usa internamente para implementar el Routing Mesh." },
+    { "en": "Container Service for Kubernetes (ACK)", "es": "ACK", "def": "Servicio gestionado de Kubernetes de Alibaba Cloud, alternativa de mayor escala y ecosistema frente a Swarm." },
+    { "en": "docker-compose.yml (v3)", "es": "docker-compose.yml v3", "def": "Formato de Compose compatible tanto con desarrollo local como con despliegue de Stacks en Swarm." },
+    { "en": "Update failure action", "es": "Acción ante fallo de actualización", "def": "Política que define si una actualización fallida se pausa o revierte automáticamente." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Qué es exactamente 'Swarm mode' en Docker?", "options": ["Un producto de terceros que se instala por separado de Docker", "Un modo de orquestación integrado nativamente en el motor Docker", "Una versión antigua de Kubernetes", "Un plugin de red exclusivo para contenedores Windows"], "answer": 1, "explain": "Swarm mode viene integrado directamente en el motor Docker desde la versión 1.12; no requiere instalar un sistema aparte." },
+    { "q": "¿Qué rol cumplen los nodos manager en un clúster Swarm?", "options": ["Solo ejecutan contenedores, igual que los workers", "Mantienen el estado del clúster mediante consenso Raft y deciden dónde se programan las tareas", "Únicamente almacenan las imágenes del registry", "Se usan solo para balanceo de carga de red"], "answer": 1, "explain": "Los managers son responsables del plano de control: mantienen el estado deseado y programan las tareas en los nodos disponibles." },
+    { "q": "¿Cuántos nodos manager se recomienda tener para tolerar la pérdida de uno sin perder el quórum del clúster?", "options": ["Cualquier número par, como 2 o 4", "Un número impar, típicamente 3 o 5", "Exactamente 1", "No importa el número, Swarm no usa quórum"], "answer": 1, "explain": "Un número impar de managers evita empates en el consenso Raft y permite tolerar la caída de algunos sin perder la capacidad de decisión del clúster." },
+    { "q": "¿Cuál es la diferencia principal entre ejecutar 'docker run' y 'docker service create' en un clúster Swarm?", "options": ["Son comandos idénticos en Swarm", "docker run crea un contenedor suelto en un host; docker service create crea un objeto gestionado con auto-recuperación distribuido en el clúster", "docker service create solo funciona con imágenes de Docker Hub", "docker run es exclusivo de Kubernetes"], "answer": 1, "explain": "Un Service es la unidad de orquestación de Swarm: mantiene réplicas, se auto-recupera y se distribuye entre nodos, a diferencia de un contenedor suelto." },
+    { "q": "¿Qué modo de Service garantiza que exactamente una tarea corra en cada nodo del clúster, útil para un agente de monitoreo?", "options": ["Modo replicated", "Modo global", "Modo standalone", "Modo overlay"], "answer": 1, "explain": "El modo global asegura una copia del servicio por nodo, ideal para agentes de infraestructura como logging o monitoreo." },
+    { "q": "¿Qué mecanismo hace que un puerto publicado por un Service sea accesible desde CUALQUIER nodo del clúster, incluso si el contenedor no corre ahí?", "options": ["Overlay network exclusivamente", "Routing Mesh", "Bind mount", "Raft consensus"], "answer": 1, "explain": "El Routing Mesh enruta internamente el tráfico entrante desde cualquier nodo hacia el nodo real donde corre el contenedor." },
+    { "q": "¿Qué comando agrupa y despliega varios Services relacionados definidos en un archivo Compose sobre un clúster Swarm?", "options": ["docker compose up", "docker stack deploy", "docker service create", "docker swarm join"], "answer": 1, "explain": "docker stack deploy toma un archivo docker-compose.yml y despliega el conjunto de servicios como un Stack en el clúster." },
+    { "q": "Durante un rolling update de un Service, ¿qué controla cuántas réplicas se actualizan a la vez y con qué demora?", "options": ["update-parallelism y update-delay", "replicas y ports", "quorum y raft-timeout", "ingress y overlay"], "answer": 0, "explain": "Estos parámetros de la política de actualización controlan el ritmo del despliegue progresivo, evitando actualizar todas las réplicas de golpe." },
+    { "q": "¿Swarm incluye auto-scaling nativo basado en métricas de carga (CPU/memoria), igual que Kubernetes con HPA?", "options": ["Sí, de forma nativa e idéntica a HPA", "No; Swarm requiere herramientas externas para escalar automáticamente por métricas", "Solo en la edición Enterprise de Docker", "Solo para servicios en modo global"], "answer": 1, "explain": "Swarm permite escalar manualmente con docker service scale, pero no trae auto-scaling nativo basado en métricas como sí lo hace Kubernetes." },
+    { "q": "Un equipo pequeño ya domina Docker y quiere orquestación básica sin invertir tiempo en aprender un nuevo sistema de manifiestos. ¿Qué opción es razonable según el curso?", "options": ["Kubernetes autogestionado desde cero", "Docker Swarm, por su curva de aprendizaje corta y su integración nativa con Docker", "No usar ningún orquestador nunca", "Migrar directamente a funciones serverless"], "answer": 1, "explain": "Swarm reutiliza la CLI y los conceptos de Docker que el equipo ya conoce, siendo una opción pragmática quirúrgica para necesidades básicas de orquestación." },
+    { "q": "¿Por qué se considera un antipatrón dejar que todos los nodos manager acepten libremente cargas de trabajo en un clúster grande?", "options": ["Los managers no pueden ejecutar contenedores bajo ninguna circunstancia", "Puede saturar el plano de control del clúster, afectando su capacidad de tomar decisiones", "Reduce automáticamente el número de réplicas disponibles", "Provoca errores de sintaxis en el Compose file"], "answer": 1, "explain": "Sobrecargar los managers con tareas de aplicación compite por recursos con su función crítica de mantener el estado y el consenso del clúster." },
+    { "q": "¿Cuándo recomienda el curso dar el salto de Swarm a Kubernetes/ACK?", "options": ["Nunca, Swarm siempre es superior", "Cuando se necesita auto-scaling avanzado, ecosistema cloud-native rico o escalado a gran complejidad organizacional", "Solo si la aplicación usa exclusivamente Windows Containers", "Inmediatamente, sin importar el tamaño del equipo"], "answer": 1, "explain": "El curso posiciona a Kubernetes/ACK como la opción para necesidades avanzadas de escala y ecosistema, y a Swarm como la opción de simplicidad para necesidades más básicas." },
+    { "q": "¿Qué comando revierte un Service a la configuración anterior a su última actualización?", "options": ["docker service scale", "docker service rollback", "docker stack rm", "docker swarm leave"], "answer": 1, "explain": "docker service rollback revierte automáticamente el Service, sin necesidad de reconstruir manualmente la versión previa." },
+    { "q": "¿Qué red permite que contenedores de un mismo Service, corriendo en hosts físicos distintos, se comuniquen entre sí por nombre?", "options": ["Red bridge por defecto", "Red overlay", "Bind mount", "Red host"], "answer": 1, "explain": "La red overlay extiende la conectividad entre contenedores a través de múltiples hosts del clúster Swarm." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen suele evaluar: (a) roles de manager vs worker y quórum Raft, (b) Service vs contenedor suelto, (c) Stack vs Compose local, (d) rolling update y rollback, (e) cuándo Swarm es preferible frente a Kubernetes/ACK y sus límites (sin auto-scaling nativo por métricas).",
   "official_intro": "This course aims to help IT companies who want to container their business applications, and cloud computing engineers or enthusiasts who want to learn container technology and Swarm. By learning this course, you can fully understand what a Swarm is, some key concepts of Swarm, the basic architecture of Swarm, why we need Swarm, and the basic use of Alibaba Cloud Container Service for Swarm, so as to provide reference for the evaluation, design and implementation of application containerization.",
   "recommended_for": "Cloud computing architects, Cloud service providers, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_swarm",

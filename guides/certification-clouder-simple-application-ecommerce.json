@@ -2,477 +2,193 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-simple-application-ecommerce",
   "title_en": "Using SAS to Publish a Magento E-commerce Website",
-  "title_es": "Usar SAS para Publicar un E-commerce con Magento",
+  "title_es": "Usar SAS para Publicar una Tienda Online con Magento",
+  "title_es_html": "Usar SAS para Publicar una <em>Tienda Online con Magento</em>",
   "duration_es": "20 minutos",
   "level_es": "Principiante",
   "category_es": "Cómputo Elástico",
   "subcategory_es": "Servidor en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-simple-application-ecommerce",
-  "lead": "Guía completa en español para el curso «Using SAS to Publish a Magento E-commerce Website» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para «Using SAS to Publish a Magento E-commerce Website» de Alibaba Cloud Academy. Comparte plataforma (Simple Application Server) con el curso de OpenCart, pero Magento es un motor de e-commerce mucho más pesado: exige más memoria, depende de tareas cron para reindexar el catálogo, y su rendimiento real depende de una capa de caché bien configurada — decisiones que este curso trata como el núcleo del proyecto, no como un detalle opcional.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Comparar</strong> los requisitos de recursos de Magento frente a plataformas de e-commerce más ligeras, y elegir el plan de SAS adecuado.",
+    "<strong>Instalar</strong> Magento sobre Simple Application Server, ya sea desde una imagen de aplicación o con Composer sobre un stack limpio.",
+    "<strong>Configurar</strong> el catálogo inicial, el reindexado y las tareas cron que Magento necesita para funcionar correctamente.",
+    "<strong>Aplicar</strong> caché de página completa (Varnish) y de datos (Redis) para que el rendimiento de la tienda sea aceptable en un solo servidor.",
+    "<strong>Mantener</strong> Magento actualizado ante parches de seguridad, dada su frecuencia e importancia frente a otras plataformas de e-commerce.",
+    "<strong>Planificar</strong> la migración desde SAS hacia una arquitectura ECS distribuida cuando el catálogo o el tráfico superen lo que un solo servidor puede sostener."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Magento sobre un único SAS ejecuta en el mismo servidor: PHP-FPM sirviendo la aplicación, MySQL/MariaDB como base de datos, y —a diferencia de un stack LAMP simple— procesos adicionales de indexación y caché que compiten por los mismos recursos. La arquitectura recomendada incluso a pequeña escala añade Redis para sesiones y caché de datos, reduciendo la carga sobre la base de datos, y idealmente Varnish como caché de página completa delante de PHP-FPM para servir páginas de catálogo sin recalcularlas en cada visita. Un cron del sistema dispara los procesos programados de Magento (reindexado, envío de emails, limpieza de caché) a intervalos regulares. Cuando el catálogo o el tráfico crecen, el patrón de escalado separa la base de datos hacia RDS, mueve medios a OSS+CDN, y replica la capa de aplicación PHP detrás de un SLB, manteniendo Redis/Varnish como capa de caché compartida.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué Magento exige más recursos que otras plataformas",
+      "title_en": "Why Magento Needs More Resources",
+      "intro": "Antes de elegir un plan de SAS, hay que entender que Magento no es intercambiable con una plataforma de e-commerce ligera: su arquitectura interna asume más memoria, más procesos en segundo plano y más disciplina operativa.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Motor más complejo</strong>: Magento incluye un sistema de indexación de catálogo, gestión avanzada de atributos de producto, múltiples vistas de tienda (multi-store) y un framework de extensiones más pesado que plataformas de e-commerce más simples.",
+        "<strong>Memoria mínima recomendada</strong>: instalar y operar Magento con fluidez típicamente requiere considerablemente más memoria RAM que un stack LAMP básico — un plan de SAS de entrada puede no ser suficiente si el catálogo crece.",
+        "<strong>Procesos en segundo plano</strong>: reindexado de catálogo, generación de reportes y envío de notificaciones corren como tareas programadas (cron), no solo como respuesta directa a una petición HTTP.",
+        "<strong>Costo de esa complejidad</strong>: a cambio, Magento ofrece capacidades que OpenCart u otras plataformas ligeras no tienen de fábrica — gestión avanzada de catálogo multi-tienda, reglas de precio complejas, B2B — relevantes para negocios de mayor escala desde el día uno."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Cómputo Elástico en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen puede plantear «elegir plataforma de e-commerce según el tamaño del negocio» — Magento es la respuesta cuando el enunciado describe catálogos grandes o necesidades B2B/multi-tienda, no para una tienda pequeña simple."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Elegir el plan de SAS adecuado",
+      "title_en": "Choosing the Right SAS Plan",
+      "intro": "El asistente de compra de SAS obliga a decidir la capacidad del servidor antes de instalar nada — para Magento, esta decisión es más crítica que para otras plataformas más livianas.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Dimensionar por encima del mínimo</strong>: dado que Magento comparte CPU y memoria entre PHP-FPM, MySQL, indexación y caché en un solo servidor, conviene elegir un plan con margen sobre el mínimo teórico, no el más económico disponible.",
+        "<strong>Disco para medios e índices</strong>: el catálogo de productos, sus imágenes y los índices generados por Magento consumen disco de forma acumulativa; planificar el crecimiento del disco es más relevante aquí que en una tienda con catálogo pequeño.",
+        "<strong>Imagen de aplicación vs. instalación con Composer</strong>: si el catálogo de SAS ofrece una imagen con Magento preinstalado, acelera el arranque; instalar vía Composer desde una imagen de sistema limpio da control total sobre la versión exacta y las extensiones incluidas desde el inicio.",
+        "<strong>Validar el plan tras la instalación</strong>: una vez cargado un catálogo de prueba, revisar el uso real de CPU/memoria en el panel de SAS confirma si el plan elegido es suficiente antes de anunciar la tienda públicamente."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una tienda Magento que se vuelve lenta poco después de cargar el catálogo real, la primera hipótesis a evaluar es que el plan de SAS quedó subdimensionado, antes de sospechar de la red o el dominio."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Instalación de Magento y configuración del catálogo",
+      "title_en": "Installing Magento and Configuring the Catalog",
+      "intro": "La instalación de Magento tiene más pasos que la de una plataforma ligera: además del asistente web, suele involucrar Composer y la generación inicial de datos de ejemplo o de un catálogo propio.",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>Instalación vía Composer</strong>: Magento se distribuye como un conjunto de paquetes PHP gestionados por Composer, lo que permite fijar versiones exactas del núcleo y de cada extensión instalada.",
+        "<strong>Asistente de configuración</strong>: tras desplegar el código, el instalador web (o de línea de comandos) pide los datos de conexión a la base de datos, la URL de la tienda y las credenciales del administrador.",
+        "<strong>Datos de ejemplo (sample data)</strong>: útiles para practicar la configuración antes de cargar el catálogo real, pero deben eliminarse antes de publicar la tienda en producción.",
+        "<strong>Atributos de producto</strong>: a diferencia de plataformas más simples, Magento permite definir atributos personalizados reutilizables entre productos (talla, material, compatibilidad) — planificarlos antes de importar el catálogo evita reestructurarlo después.",
+        "<strong>Modo de despliegue</strong>: Magento distingue entre modo desarrollador (para depurar) y modo producción (código estático precompilado, más rápido); una tienda pública siempre debe operar en modo producción."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Dejar Magento en modo desarrollador en producción es un antipatrón evaluado directamente en el examen: expone información de depuración y es notablemente más lento que el modo producción."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Reindexado y tareas cron",
+      "title_en": "Reindexing and Cron Jobs",
+      "intro": "Magento no recalcula el catálogo en cada petición: usa índices precalculados que se actualizan mediante tareas programadas — entender este mecanismo es clave para diagnosticar por qué un cambio de producto no se refleja de inmediato.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Qué es el reindexado</strong>: Magento mantiene tablas de índice optimizadas para búsqueda, precios, categorías y stock; estas se recalculan tras cambios en el catálogo en vez de consultarse en vivo en cada visita.",
+        "<strong>Modo de indexación</strong>: puede configurarse para actualizar en tiempo real (más lento en cada cambio, siempre consistente) o mediante cron programado (más eficiente, con una ventana de desfase hasta la siguiente ejecución).",
+        "<strong>Cron del sistema operativo</strong>: Magento depende de que el cron del servidor dispare su propio programador de tareas a intervalos regulares — sin esto configurado, el reindexado, el envío de emails y la limpieza de caché simplemente no ocurren.",
+        "<strong>Síntoma típico de cron mal configurado</strong>: productos que se actualizan en el panel de administración pero no reflejan el cambio en la tienda pública, o emails transaccionales (confirmación de pedido) que no se envían."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe «cambié el precio de un producto y la tienda pública sigue mostrando el precio anterior», la causa esperada es un problema de reindexado o de cron, no un error de caché de navegador."
+      }
+    },
+    {
+      "title_es": "5 · Caché: Varnish y Redis",
+      "title_en": "Caching with Varnish and Redis",
+      "intro": "En un solo servidor SAS, la diferencia entre una tienda Magento utilizable y una lenta casi siempre está en la capa de caché — este módulo es, junto al reindexado, el corazón técnico del curso.",
+      "points": [
+        "<strong>Redis para sesiones y caché de datos</strong>: mover las sesiones de usuario y la caché de configuración/bloques a Redis en vez de al sistema de archivos reduce la carga sobre disco y mejora la concurrencia frente a múltiples visitantes simultáneos.",
+        "<strong>Varnish como caché de página completa</strong>: sirve páginas de catálogo ya renderizadas directamente desde memoria para visitantes anónimos, evitando que cada visita recalcule PHP y consulte la base de datos.",
+        "<strong>Contenido no cacheable</strong>: el carrito, el checkout y las páginas de cuenta de usuario no pueden servirse desde una caché de página completa compartida — Magento los excluye automáticamente del cacheo de Varnish.",
+        "<strong>Invalidación de caché</strong>: al actualizar un producto o precio, Magento debe invalidar selectivamente las páginas afectadas en Varnish; una invalidación mal configurada muestra precios desactualizados a los visitantes.",
+        "<strong>Impacto medible</strong>: activar correctamente Varnish y Redis suele ser la optimización de mayor impacto en tiempo de carga percibido para una tienda Magento en un solo servidor, más que aumentar el plan de SAS."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Antes de asumir que hace falta más CPU o memoria, verificar que Varnish y Redis están activos y correctamente configurados — es la causa más común de lentitud percibida en tiendas Magento pequeñas."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad y actualizaciones",
+      "title_en": "Security and Patch Management",
+      "intro": "Magento, por su popularidad y por procesar pagos, es un objetivo frecuente de ataques automatizados — el curso enfatiza la disciplina de parches más que en plataformas menos atacadas.",
+      "points": [
+        "<strong>Frecuencia de parches de seguridad</strong>: Magento publica parches de seguridad con relativa frecuencia; aplicarlos con prontitud es una de las medidas de mayor impacto contra ataques automatizados dirigidos a versiones conocidas vulnerables.",
+        "<strong>Panel de administración</strong>: debe protegerse con una URL no predecible, contraseña fuerte y, cuando sea posible, restricción por IP a nivel del firewall de SAS.",
+        "<strong>Extensiones de terceros</strong>: cada extensión instalada amplía la superficie de ataque; instalar solo las necesarias y mantenerlas actualizadas reduce el riesgo de una vulnerabilidad introducida por un módulo de terceros.",
+        "<strong>Modo producción</strong>: además de rendimiento, el modo producción reduce la exposición de información de depuración que podría ayudar a un atacante a identificar la versión exacta instalada.",
+        "<strong>Backups antes de parchear</strong>: tomar un snapshot del servidor y un export de la base de datos antes de aplicar cualquier parche o actualización de versión, dado que las actualizaciones de Magento pueden requerir pasos de migración de datos."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado menciona una tienda Magento comprometida, la causa raíz que el examen espera identificar suele ser un parche de seguridad no aplicado a tiempo, en línea con el patrón general de ataques a CMS/plataformas populares."
+      }
+    },
+    {
+      "title_es": "7 · De SAS a una arquitectura Magento distribuida",
+      "title_en": "Scaling Magento Beyond SAS",
+      "intro": "El proyecto del curso cabe en un solo servidor SAS, pero Magento está diseñado para escalar mucho más allá — el examen espera que reconozcas el camino natural de crecimiento.",
+      "points": [
+        "<strong>Base de datos separada</strong>: migrar MySQL/MariaDB a una instancia RDS gestionada es, igual que en otras plataformas, el primer paso de escalado, liberando CPU/memoria para PHP-FPM.",
+        "<strong>Caché compartida</strong>: al replicar la aplicación en varias instancias, Redis y Varnish deben vivir en instancias propias (o servicios gestionados) accesibles por todas las réplicas, en vez de vivir dentro de cada servidor de aplicación.",
+        "<strong>Medios en OSS + CDN</strong>: las imágenes de producto —que en Magento suelen ser numerosas por las múltiples vistas por producto— se benefician especialmente de moverse a OSS con CDN delante.",
+        "<strong>Instancias de aplicación detrás de SLB</strong>: varias instancias ECS ejecutando Magento en modo producción, detrás de un balanceador, permiten escalar horizontalmente para campañas de alto tráfico (Black Friday, lanzamientos).",
+        "<strong>Cron centralizado</strong>: al tener varias instancias de aplicación, las tareas cron de Magento deben ejecutarse desde un único punto (o coordinarse con un lock) para evitar que el reindexado se dispare de forma duplicada y conflictiva."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "El orden natural de escalado de Magento es: 1) separar base de datos a RDS, 2) centralizar Redis/Varnish, 3) mover medios a OSS+CDN, 4) replicar instancias de aplicación detrás de SLB, 5) centralizar el cron. Saltarse este orden suele generar inconsistencias de caché o de reindexado."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Negocio con catálogo grande y necesidades B2B — Magento sobre SAS con plan dimensionado con margen" },
+    { "title": "Escenario 2", "text": "Tienda lenta tras cargar el catálogo real — revisar Varnish/Redis antes de aumentar el plan" },
+    { "title": "Escenario 3", "text": "Precio actualizado en el panel que no se refleja en la tienda pública — diagnosticar reindexado y cron" },
+    { "title": "Escenario 4", "text": "Campaña de alto tráfico estacional — migrar a ECS con SLB, RDS y caché centralizada antes de la fecha" },
+    { "title": "Escenario 5", "text": "Parche de seguridad publicado para la versión instalada — snapshot previo y aplicación prioritaria" },
+    { "title": "Escenario 6", "text": "Tienda en modo desarrollador accidentalmente en producción — cambiar a modo producción de inmediato" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Elegir el plan de SAS más económico sin margen sobre el mínimo real que Magento necesita",
+    "Dejar la tienda en modo desarrollador en producción, exponiendo información de depuración y perdiendo rendimiento",
+    "No configurar el cron del sistema, dejando sin ejecutar el reindexado y el envío de emails transaccionales",
+    "Operar sin Varnish ni Redis y asumir que el problema de lentitud es de CPU",
+    "Retrasar la aplicación de parches de seguridad de Magento",
+    "Escalar añadiendo instancias de aplicación antes de centralizar caché y base de datos, generando inconsistencias"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun swas CreateInstance --PlanId sas-plan-standard --ImageId magento_app_image", "desc": "Crear un servidor SAS con capacidad suficiente para Magento" },
+    { "cmd": "composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition .", "desc": "Instalar Magento vía Composer sobre una imagen de SO limpio" },
+    { "cmd": "php bin/magento indexer:reindex", "desc": "Forzar un reindexado manual del catálogo tras cambios masivos" },
+    { "cmd": "php bin/magento deploy:mode:set production", "desc": "Cambiar Magento a modo producción antes de publicar la tienda" },
+    { "cmd": "aliyun swas CreateSnapshot --InstanceId sas-xxxxx", "desc": "Tomar un snapshot del servidor antes de aplicar un parche de seguridad" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Magento", "es": "Magento", "def": "Plataforma de e-commerce PHP orientada a catálogos grandes y necesidades B2B/multi-tienda, más pesada que alternativas ligeras." },
+    { "en": "Composer", "es": "Composer", "def": "Gestor de dependencias PHP usado para instalar y versionar el núcleo y las extensiones de Magento." },
+    { "en": "Reindexing", "es": "Reindexado", "def": "Proceso que recalcula las tablas de índice de catálogo, precios y stock tras cambios, en vez de consultarlos en vivo." },
+    { "en": "Cron job", "es": "Tarea programada (cron)", "def": "Mecanismo del sistema operativo que dispara el programador interno de Magento a intervalos regulares." },
+    { "en": "Varnish", "es": "Varnish", "def": "Caché de página completa que sirve contenido de catálogo ya renderizado desde memoria a visitantes anónimos." },
+    { "en": "Redis", "es": "Redis", "def": "Almacén en memoria usado por Magento para sesiones y caché de datos/configuración, reduciendo carga sobre disco y base de datos." },
+    { "en": "Full page cache invalidation", "es": "Invalidación de caché de página", "def": "Proceso de descartar selectivamente páginas cacheadas en Varnish cuando cambia el producto o precio que representan." },
+    { "en": "Developer mode / Production mode", "es": "Modo desarrollador / Modo producción", "def": "Modos de despliegue de Magento; producción precompila código estático y es el único adecuado para una tienda pública." },
+    { "en": "Sample data", "es": "Datos de ejemplo", "def": "Catálogo de prueba incluido opcionalmente en la instalación de Magento; debe eliminarse antes de producción." },
+    { "en": "Product attribute", "es": "Atributo de producto", "def": "Característica personalizable y reutilizable entre productos (talla, material) que Magento permite definir de forma avanzada." },
+    { "en": "Simple Application Server (SAS)", "es": "Simple Application Server", "def": "Servidor todo en uno con cómputo, disco, ancho de banda y firewall en un solo plan de precio fijo." },
+    { "en": "RDS", "es": "Base de datos gestionada", "def": "Servicio de base de datos administrado, primer paso de escalado al salir de SAS." },
+    { "en": "OSS + CDN", "es": "Almacenamiento de objetos con CDN", "def": "Combinación usada para servir las numerosas imágenes de producto de un catálogo Magento a escala." },
+    { "en": "SLB (Server Load Balancer)", "es": "Balanceador de carga", "def": "Distribuye tráfico entre varias instancias de aplicación Magento al escalar horizontalmente." },
+    { "en": "Security patch", "es": "Parche de seguridad", "def": "Actualización que corrige una vulnerabilidad conocida; su aplicación oportuna es crítica en Magento por su popularidad como objetivo de ataque." },
+    { "en": "Snapshot", "es": "Instantánea", "def": "Copia puntual del servidor completo, recomendada antes de aplicar parches o actualizaciones de versión." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Por qué Magento suele requerir un plan de SAS con más recursos que una plataforma de e-commerce más ligera?", "options": ["Porque Magento no funciona sobre PHP", "Porque su motor de indexación, multi-tienda y framework de extensiones exigen más memoria y procesos en segundo plano", "Porque Magento no se puede instalar en SAS", "Porque Magento solo funciona en instancias GPU"], "answer": 1, "explain": "La arquitectura interna de Magento (indexación, multi-store, extensiones) es más pesada que la de plataformas de e-commerce más simples." },
+    { "q": "¿Qué problema típico indica que el cron del sistema no está configurado correctamente en una instalación de Magento?", "options": ["El sitio carga más rápido de lo normal", "Los cambios de precio o stock no se reflejan en la tienda pública y no se envían emails transaccionales", "El certificado TLS deja de funcionar", "El panel de administración se vuelve inaccesible"], "answer": 1, "explain": "El reindexado y el envío de emails dependen del programador de tareas de Magento, que a su vez depende del cron del sistema operativo." },
+    { "q": "¿Qué función cumple Varnish en una instalación de Magento?", "options": ["Gestiona la base de datos de productos", "Sirve páginas de catálogo ya renderizadas desde memoria a visitantes anónimos, como caché de página completa", "Reemplaza la necesidad de PHP-FPM", "Envía los emails transaccionales de pedidos"], "answer": 1, "explain": "Varnish es la caché de página completa que evita recalcular PHP y consultar la base de datos en cada visita anónima." },
+    { "q": "¿Por qué el carrito y el checkout no pueden servirse desde la caché de página completa de Varnish?", "options": ["Porque Magento no lo permite técnicamente por limitación de licencia", "Porque su contenido es específico de cada usuario y no puede compartirse entre visitantes", "Porque Varnish solo funciona con imágenes", "Porque el carrito no usa PHP"], "answer": 1, "explain": "El contenido personalizado por usuario (carrito, cuenta) queda excluido del cacheo compartido de página completa." },
+    { "q": "Una tienda Magento se vuelve lenta tras cargar el catálogo real. Según el curso, ¿qué se debe verificar antes de aumentar el plan de SAS?", "options": ["El registro DNS del dominio", "Que Varnish y Redis estén activos y correctamente configurados", "El certificado TLS", "El nombre del usuario administrador"], "answer": 1, "explain": "La causa más común de lentitud en Magento en un solo servidor es una caché mal configurada, no necesariamente falta de CPU." },
+    { "q": "¿Qué diferencia al modo producción del modo desarrollador en Magento?", "options": ["Son idénticos, solo cambia el nombre", "El modo producción precompila código estático y reduce la exposición de información de depuración", "El modo desarrollador es el único apto para una tienda pública", "El modo producción desactiva completamente la caché"], "answer": 1, "explain": "El modo producción es más rápido y más seguro para exponer públicamente; el modo desarrollador es solo para depuración." },
+    { "q": "¿Por qué es especialmente importante aplicar parches de seguridad con prontitud en Magento?", "options": ["Porque Magento no tiene parches de seguridad", "Porque, por su popularidad, es un objetivo frecuente de ataques automatizados dirigidos a versiones vulnerables conocidas", "Porque los parches solo afectan el diseño visual", "Porque Magento se actualiza automáticamente sin intervención"], "answer": 1, "explain": "La popularidad de Magento lo convierte en blanco habitual de ataques automatizados que explotan vulnerabilidades ya conocidas y parcheadas." },
+    { "q": "¿Qué se recomienda hacer antes de aplicar un parche o actualización de versión en Magento?", "options": ["Nada especial, se aplica directamente en producción", "Tomar un snapshot del servidor y un export de la base de datos", "Desactivar el certificado TLS", "Eliminar todos los productos del catálogo"], "answer": 1, "explain": "Las actualizaciones de Magento pueden requerir migración de datos; respaldar antes reduce el riesgo de una actualización fallida." },
+    { "q": "¿Qué recurso migra primero al escalar Magento de un solo servidor SAS hacia una arquitectura distribuida?", "options": ["Los certificados TLS", "La base de datos, hacia una instancia RDS gestionada", "El firewall del panel de SAS", "El nombre de dominio"], "answer": 1, "explain": "Separar la base de datos es el primer paso de escalado también en Magento, liberando recursos para la capa de aplicación." },
+    { "q": "Al replicar Magento en varias instancias ECS detrás de un SLB, ¿qué debe hacerse con Redis y Varnish?", "options": ["Eliminarlos porque ya no son necesarios", "Deben vivir en instancias o servicios compartidos accesibles por todas las réplicas, no dentro de cada servidor individual", "Deben duplicarse de forma independiente en cada instancia sin comunicación entre ellas", "Solo se necesitan en la primera instancia creada"], "answer": 1, "explain": "Una caché compartida es necesaria para que todas las réplicas de la aplicación se beneficien del mismo estado de caché." },
+    { "q": "¿Qué riesgo existe si el cron de Magento se ejecuta simultáneamente sin coordinación en varias instancias de aplicación?", "options": ["Ninguno, Magento lo gestiona automáticamente sin configuración", "El reindexado puede dispararse de forma duplicada y conflictiva", "El sitio se vuelve más rápido", "Los certificados TLS se revocan"], "answer": 1, "explain": "Al escalar horizontalmente, el cron de Magento debe centralizarse o coordinarse para evitar ejecuciones duplicadas conflictivas." },
+    { "q": "¿Qué es un atributo de producto en Magento?", "options": ["Un tipo de instancia de servidor", "Una característica personalizable y reutilizable entre productos, como talla o material", "Un método de pago", "Una regla de firewall"], "answer": 1, "explain": "Los atributos de producto permiten a Magento modelar catálogos complejos de forma reutilizable entre productos." },
+    { "q": "¿Qué se debe hacer con los datos de ejemplo (sample data) de Magento antes de publicar una tienda real?", "options": ["Dejarlos como catálogo inicial permanente", "Eliminarlos antes de publicar la tienda en producción", "Convertirlos automáticamente en productos reales", "Usarlos como backup de la base de datos"], "answer": 1, "explain": "Los datos de ejemplo son solo para practicar la configuración y deben retirarse antes de operar con clientes reales." },
+    { "q": "¿Qué tienen en común los cursos de OpenCart y Magento sobre Simple Application Server según ambos materiales?", "options": ["Usan exactamente el mismo software de e-commerce", "Usan la misma plataforma base (SAS) pero con requisitos de recursos y complejidad operativa distintos", "Ninguno de los dos permite HTTPS", "Ninguno de los dos puede migrar a ECS"], "answer": 1, "explain": "Ambos cursos parten de SAS como plataforma, pero Magento exige más recursos, indexación y caché que OpenCart." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen evalúa: (a) por qué Magento exige más recursos que otras plataformas de e-commerce y cómo dimensionar el plan de SAS, (b) el papel del reindexado y el cron en la consistencia del catálogo, (c) cómo Varnish y Redis resuelven el rendimiento antes de escalar hardware, (d) disciplina de parches de seguridad y modo producción, (e) el orden correcto de escalado desde SAS hacia una arquitectura Magento distribuida.",
   "official_intro": "In this clouder we will discuss the use of a Simple Application Server to deploy an e-commerce website. After the server has been set up, we will run a web server running environment and install a Magento package. Magento is an easy-to-use e-commerce tool that allows you to design and monitor your e-commerce website simply and effiecently. Completing this clouder will give you all the tools necessary to begin your online business!",
   "recommended_for": "Web Developers, Business Owners, Novice Cloud Computing Users",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-simple-application-ecommerce",

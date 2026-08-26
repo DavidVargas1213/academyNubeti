@@ -2,398 +2,174 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-datav",
   "title_en": "Quickly Generate Large Dashboards for Data Visualization",
-  "title_es": "Quickly Generate Large Dashboards para Datos Visualization",
+  "title_es": "Generar Rápidamente Grandes Dashboards de Visualización de Datos",
+  "title_es_html": "Generar Rápidamente Grandes <em>Dashboards</em> de Visualización de Datos",
   "duration_es": "61 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Big Data Application and Visualization",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_datav",
-  "lead": "Guía completa en español para el curso «Quickly Generate Large Dashboards for Data Visualization» de Alibaba Cloud Academy. Cubre en profundidad DataV. DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Quickly Generate Large Dashboards for Data Visualization» de Alibaba Cloud Academy, centrado en DataV: la herramienta de Alibaba Cloud para construir pantallas grandes (big screens) tipo centro de comando, sin escribir una sola línea de código. A diferencia de Quick BI (reportes de negocio para consumo analítico) o de la visualización con Python (gráficos estáticos para un notebook), DataV está diseñado para salas de control, eventos en vivo y paredes de video con actualización en tiempo casi real.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>DataV</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Canvas, Widget, Data Source, Filter, Preview.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con DataV y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve DataV frente a un dashboard de BI convencional y cuándo elegir cada uno.",
+    "<strong>Distinguir</strong> los conceptos fundamentales: Canvas, Widget, Data Source, Filter y Preview.",
+    "<strong>Conectar</strong> un widget a distintas fuentes de datos: API REST, base de datos, archivo estático, WebSocket.",
+    "<strong>Diseñar</strong> un canvas responsivo con componentes 2D/3D (mapas, gauges, gráficos) para una pantalla de gran formato.",
+    "<strong>Configurar</strong> el refresco automático y proteger la publicación de un big screen con autenticación.",
+    "<strong>Aplicar</strong> buenas prácticas de rendimiento: preagregación de datos y límite de widgets pesados por canvas.",
+    "<strong>Responder</strong> con seguridad las preguntas de examen sobre el modelo de datos y publicación de DataV."
   ],
-  "architecture": "Fuentes: APIs, DBs, Excel, streams → widgets 2D/3D configurables → canvas responsive → publish con URL protegida por token. Refresco automático cada N segundos.",
+  "architecture": "Un canvas de DataV se construye arrastrando widgets desde una librería de componentes 2D/3D (mapas, gauges, gráficos de barras/líneas, tablas de ranking) sobre un lienzo con dimensiones fijas pensadas para una pantalla grande. Cada widget se conecta de forma independiente a una fuente de datos —una API REST, una base de datos (RDS, MaxCompute, AnalyticDB), un archivo estático (Excel/CSV) o un WebSocket para streaming— y aplica, opcionalmente, un Filter en JavaScript que transforma la respuesta cruda antes de renderizarla. El canvas completo se publica con una URL protegida por token, y cada widget se refresca automáticamente según un intervalo configurado, sin intervención manual. Para grandes volúmenes, se recomienda que el backend entregue datos ya preagregados (vía una vista o un proceso batch) en vez de que DataV ejecute consultas pesadas directamente en cada refresco.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a DataV",
-      "title_en": "Introduction to DataV",
-      "intro": "DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué problema resuelve DataV",
+      "title_en": "What Problem DataV Solves",
+      "intro": "Antes de arrastrar el primer widget, hay que entender la diferencia entre una 'pantalla grande' (big screen) y un dashboard de BI convencional — no son el mismo caso de uso, y confundirlos es el primer error de diseño.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo DataV se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Big screen vs. dashboard de BI</strong>: un dashboard de BI (Quick BI) está pensado para que un analista explore datos en su propia pantalla, con filtros interactivos y detalle bajo demanda; un big screen está pensado para observarse a distancia, en una sala de comando o un evento, sin interacción directa del espectador.",
+        "<strong>Casos de uso típicos</strong>: sala de control de operaciones logísticas, centro de comando de tráfico urbano, dashboard en vivo de un evento como una campaña de ventas (Double 11), sala de monitoreo de una red de sensores IoT.",
+        "<strong>Sin código, orientado a diseño visual</strong>: DataV es un editor drag-and-drop — el público objetivo no es solo un desarrollador, sino también un diseñador o analista que ensambla visualmente el canvas sin escribir la lógica de renderizado.",
+        "<strong>Componentes 2D y 3D</strong>: además de gráficos estándar (barras, líneas, gauges), DataV incluye componentes de mapa geográfico y visualizaciones 3D (edificios, flujos migratorios) pensadas específicamente para el impacto visual de una pantalla grande.",
+        "<strong>Refresco automático como requisito</strong>: a diferencia de un reporte estático, un big screen debe actualizarse solo, sin que nadie tenga que refrescar la página — este comportamiento es una configuración central del canvas, no un extra."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "DataV es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es DataV?» sino «¿el escenario pide un big screen de observación a distancia con refresco automático, o un dashboard analítico interactivo?». DataV responde al primer caso; Quick BI, al segundo."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando DataV no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Canvas, Widget y el modelo de composición visual",
+      "title_en": "Canvas, Widget and the Visual Composition Model",
+      "intro": "Antes de operar DataV hay que dominar su vocabulario — el examen distingue con precisión estos términos del editor visual.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes: APIs, DBs, Excel, streams → widgets 2D/3D configurables → canvas responsive → publish con URL protegida por token. Refresco automático cada N segundos.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → DataV (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Canvas</strong> <em>(Canvas)</em>: Área de diseño del big screen.",
-        "<strong>Widget</strong> <em>(Widget)</em>: Componente visual (mapa, gauge, chart 3D, etc.).",
-        "<strong>Data source</strong> <em>(Data Source)</em>: API, DB, WebSocket, static file.",
-        "<strong>Filtro</strong> <em>(Filter)</em>: Transformación JS del dato antes de mostrar.",
-        "<strong>Preview</strong> <em>(Preview)</em>: Modo edición con datos reales."
+        "<strong>Canvas</strong>: el lienzo de diseño con dimensiones fijas (normalmente pensadas para la resolución de la pantalla física de destino) donde se posicionan y dimensionan los widgets.",
+        "<strong>Widget</strong>: cada componente visual individual del canvas — un mapa, un gauge, un gráfico de barras 3D, una tabla de ranking. Cada widget es independiente: tiene su propia fuente de datos, su propio estilo y su propio intervalo de refresco.",
+        "<strong>Capas y superposición</strong>: los widgets pueden superponerse en distintas capas (z-index), permitiendo por ejemplo un mapa de fondo con gauges e indicadores flotando encima.",
+        "<strong>Plantillas (templates)</strong>: DataV ofrece plantillas prediseñadas por industria (logística, ciudad inteligente, retail) que aceleran el punto de partida en vez de construir un canvas desde cero.",
+        "<strong>Preview</strong>: modo de edición que renderiza el canvas con datos reales (no de ejemplo) tal como se vería publicado, permitiendo validar diseño y datos antes de publicar formalmente."
       ],
       "keypoint": {
         "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
+        "text": "Cada widget tiene su propia Data Source y su propio Filter — no existe una única 'fuente de datos del canvas'. Esto permite mezclar en la misma pantalla un mapa alimentado por una API con un gauge alimentado por una base de datos distinta."
       }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "3 · Fuentes de datos: API, base de datos, archivo y WebSocket",
+      "title_en": "Data Sources: API, Database, File and WebSocket",
+      "intro": "Un widget sin datos es solo una forma vacía — este módulo cubre las cuatro formas principales de alimentar un componente visual en DataV.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>API REST</strong>: la fuente más flexible — un widget consulta periódicamente un endpoint HTTP y espera una respuesta JSON con la estructura esperada; es la opción típica cuando el dato ya se sirve desde un backend propio.",
+        "<strong>Base de datos</strong>: conexión directa a RDS, MaxCompute, AnalyticDB u otras fuentes de Alibaba Cloud — DataV ejecuta la consulta configurada en cada intervalo de refresco y transforma el resultado en el formato que el widget espera.",
+        "<strong>Archivo estático</strong>: subir un Excel o CSV directamente — útil para datos que no cambian con frecuencia o para prototipar rápidamente el diseño antes de conectar una fuente en vivo.",
+        "<strong>WebSocket</strong>: conexión persistente para streaming de datos en tiempo real — el widget recibe actualizaciones push del servidor en vez de hacer polling periódico, ideal para métricas que cambian constantemente (tráfico de red, sensores IoT).",
+        "<strong>Filter (transformación JS)</strong>: entre la respuesta cruda de la fuente y el renderizado del widget, un Filter en JavaScript puede remodelar, filtrar o calcular campos derivados — necesario cuando el formato de la fuente no coincide exactamente con lo que el widget espera."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una métrica que 'cambia constantemente y debe reflejarse de inmediato sin esperar el próximo intervalo de polling', la fuente correcta es WebSocket — no una API REST con refresco cada N segundos."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Publicación, autenticación y refresco",
+      "title_en": "Publishing, Authentication and Refresh",
+      "intro": "Un canvas terminado en el editor no sirve de nada hasta que se publica — este módulo cubre cómo exponerlo de forma segura y mantenerlo actualizado sin intervención manual.",
       "points": [
-        "<strong>HA</strong>: Refresh intervals razonables",
-        "<strong>Buenas prácticas</strong>: Widgets ligeros — no cargar 100 componentes",
-        "<strong>Buenas prácticas</strong>: Autenticación en publicación",
-        "<strong>Buenas prácticas</strong>: Datos preagregados desde el backend"
+        "<strong>Publicación con URL</strong>: al publicar, DataV genera una URL única para el canvas, que se abre en cualquier navegador o se proyecta directamente en la pantalla física de destino (a menudo en modo kiosko, sin barra de navegador).",
+        "<strong>Protección por token</strong>: la URL publicada puede protegerse con un token de acceso, evitando que cualquiera con el enlace vea el big screen — relevante cuando el contenido incluye métricas de negocio sensibles.",
+        "<strong>Intervalo de refresco por widget</strong>: cada widget define cada cuántos segundos vuelve a consultar su fuente de datos — un intervalo demasiado corto sobre una fuente pesada genera carga innecesaria; uno demasiado largo hace que la pantalla se vea desactualizada.",
+        "<strong>Responsive vs. resolución fija</strong>: DataV permite diseñar para una resolución fija (pensada para una pantalla física específica) o de forma adaptable a distintos tamaños, según si el destino es un monitor conocido de antemano o dispositivos variados.",
+        "<strong>Dominio personalizado</strong>: al igual que otros servicios de Alibaba Cloud, es posible enlazar un dominio propio a la URL publicada para un branding más profesional en presentaciones externas."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Publicar un canvas sin protección por token cuando contiene métricas de negocio sensibles es un antipatrón de seguridad — cualquiera con la URL podría ver información que no debería ser pública."
+      }
+    },
+    {
+      "title_es": "5 · Rendimiento: preagregación y widgets ligeros",
+      "title_en": "Performance: Pre-aggregation and Lightweight Widgets",
+      "intro": "Un big screen corre indefinidamente en una pantalla, refrescándose constantemente — decisiones de rendimiento que en un reporte puntual pasarían desapercibidas aquí se notan de inmediato.",
+      "points": [
+        "<strong>Preagregación en el backend</strong>: en vez de que cada widget ejecute una consulta pesada de agregación directamente contra la base de datos en cada refresco, es preferible que un proceso batch (o una vista materializada) calcule de antemano los totales que el widget solo necesita leer.",
+        "<strong>Límite de widgets por canvas</strong>: cargar decenas de widgets pesados (mapas 3D, gráficos complejos) en un mismo canvas satura tanto el navegador que renderiza como las fuentes de datos que todos consultan simultáneamente — menos widgets, bien elegidos, comunican mejor que un canvas sobrecargado.",
+        "<strong>Proxy para APIs con credenciales</strong>: si un widget necesita autenticarse contra una API privada, la práctica correcta es que un backend propio actúe como proxy — nunca embeber credenciales directamente en la configuración del widget expuesta en el navegador.",
+        "<strong>Caché de resultados</strong>: para fuentes costosas de consultar, cachear el resultado durante el intervalo de refresco (en vez de recalcularlo en cada carga de página) reduce la carga sobre el sistema origen.",
+        "<strong>Detail overload</strong>: un big screen se observa a distancia y en movimiento — saturarlo de texto pequeño y decenas de métricas simultáneas derrota su propósito; menos elementos, más grandes y legibles, comunican mejor a distancia."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado describe un big screen que se vuelve lento o cuya fuente de datos se satura con el tráfico de refresco, la solución correcta es preagregar datos en el backend — no simplemente aumentar el intervalo de refresco, que sacrifica frescura sin atacar la causa."
       }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "El cierre del curso repasa los antipatrones más frecuentes al diseñar y publicar un big screen, que suelen aparecer como distractores en el examen.",
       "points": [
-        "<strong>Antipattern</strong>: Consultas directas pesadas cada refresco",
-        "<strong>Antipattern</strong>: Sin proxy para APIs con credenciales",
-        "<strong>Antipattern</strong>: Big screens con detail overload",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: ejecutar consultas pesadas directamente contra la base de datos en cada refresco de cada widget, sin preagregación en el backend.",
+        "<strong>Antipatrón</strong>: publicar un canvas con métricas de negocio sensibles sin protección por token de acceso.",
+        "<strong>Antipatrón</strong>: embeber credenciales de una API privada directamente en la configuración de un widget sin usar un proxy backend.",
+        "<strong>Antipatrón</strong>: sobrecargar el canvas con decenas de widgets pesados, degradando tanto el rendimiento como la legibilidad a distancia.",
+        "<strong>Estrategia</strong>: ante un escenario de examen sobre DataV, primero confirma que se trata de un caso de observación a distancia (no de exploración interactiva); luego revisa fuente de datos, protección de publicación y disciplina de preagregación."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "DataV brilla en comunicación visual de alto impacto para observación pasiva; para exploración analítica interactiva con filtros y detalle bajo demanda, la herramienta correcta sigue siendo un dashboard de BI como Quick BI."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Sala de comando de tráfico urbano"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Dashboard Double 11 en tiempo real"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Monitor de operaciones logísticas"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Sala financiera de mercados"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Centros de monitoreo de red"
-    }
+    { "title": "Escenario 1", "text": "Sala de comando de tráfico urbano con mapa 3D en tiempo casi real" },
+    { "title": "Escenario 2", "text": "Dashboard en vivo de una campaña de ventas (tipo Double 11) proyectado en un evento" },
+    { "title": "Escenario 3", "text": "Monitor de operaciones logísticas con métricas de flota actualizadas por WebSocket" },
+    { "title": "Escenario 4", "text": "Sala financiera con indicadores de mercado alimentados por una API REST externa" },
+    { "title": "Escenario 5", "text": "Centro de monitoreo de red con gauges de estado de infraestructura crítica" },
+    { "title": "Escenario 6", "text": "Pantalla de bienvenida corporativa con KPIs de negocio para visitantes en recepción" }
   ],
   "mistakes": [
-    "Consultas directas pesadas cada refresco",
-    "Sin proxy para APIs con credenciales",
-    "Big screens con detail overload"
+    "Ejecutar consultas pesadas de agregación directamente en cada refresco de widget, sin preagregar en el backend",
+    "Publicar un canvas con datos sensibles sin protección por token de acceso",
+    "Embeber credenciales de API directamente en la configuración de un widget sin un proxy backend",
+    "Sobrecargar el canvas con decenas de widgets pesados, degradando rendimiento y legibilidad",
+    "Usar DataV para un caso que en realidad necesita exploración interactiva propia de un dashboard de BI",
+    "Configurar un intervalo de refresco demasiado corto sobre una fuente de datos costosa de consultar"
   ],
   "cli": [
-    {
-      "cmd": "Consola DataV",
-      "desc": "UI drag&drop"
-    }
+    { "cmd": "Consola DataV → Editor de Canvas", "desc": "Interfaz drag-and-drop para diseñar el big screen" },
+    { "cmd": "aliyun datav ListScreens", "desc": "Listar los canvases (pantallas) creados en la cuenta" },
+    { "cmd": "aliyun datav PublishScreen --ScreenId scr-xxxxx", "desc": "Publicar un canvas y generar su URL pública" },
+    { "cmd": "aliyun datav DescribeScreen --ScreenId scr-xxxxx", "desc": "Consultar la configuración y estado de un canvas" }
   ],
   "glossary": [
-    {
-      "en": "Canvas",
-      "es": "Canvas",
-      "def": "Área de diseño del big screen."
-    },
-    {
-      "en": "Widget",
-      "es": "Widget",
-      "def": "Componente visual (mapa, gauge, chart 3D, etc.)."
-    },
-    {
-      "en": "Data Source",
-      "es": "Data source",
-      "def": "API, DB, WebSocket, static file."
-    },
-    {
-      "en": "Filter",
-      "es": "Filtro",
-      "def": "Transformación JS del dato antes de mostrar."
-    },
-    {
-      "en": "Preview",
-      "es": "Preview",
-      "def": "Modo edición con datos reales."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Canvas", "es": "Canvas", "def": "Lienzo de diseño con dimensiones fijas donde se posicionan los widgets de un big screen." },
+    { "en": "Widget", "es": "Widget", "def": "Componente visual individual del canvas, con su propia fuente de datos y estilo." },
+    { "en": "Data Source", "es": "Fuente de datos", "def": "Origen de datos de un widget: API REST, base de datos, archivo estático o WebSocket." },
+    { "en": "Filter (JS Transform)", "es": "Filtro (transformación JS)", "def": "Script JavaScript que remodela o calcula campos derivados antes de renderizar el widget." },
+    { "en": "Preview", "es": "Vista previa", "def": "Modo de edición que renderiza el canvas con datos reales antes de publicarlo." },
+    { "en": "Big Screen", "es": "Pantalla grande", "def": "Dashboard diseñado para observación a distancia, sin interacción directa del espectador." },
+    { "en": "WebSocket", "es": "WebSocket", "def": "Conexión persistente que entrega actualizaciones push en tiempo real a un widget." },
+    { "en": "Refresh Interval", "es": "Intervalo de refresco", "def": "Frecuencia con la que un widget vuelve a consultar su fuente de datos." },
+    { "en": "Access Token", "es": "Token de acceso", "def": "Mecanismo para proteger la URL publicada de un canvas frente a acceso no autorizado." },
+    { "en": "Pre-aggregation", "es": "Preagregación", "def": "Cálculo previo de totales en el backend, evitando que el widget ejecute agregaciones pesadas en cada refresco." },
+    { "en": "Proxy Backend", "es": "Backend proxy", "def": "Servicio intermedio que autentica contra una API privada, evitando exponer credenciales en el widget." },
+    { "en": "Template", "es": "Plantilla", "def": "Diseño prediseñado de canvas por industria que acelera el punto de partida." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de dashboards analíticos interactivos, alternativa a DataV para exploración de datos por un analista." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a DataV?",
-      "options": [
-        "DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DataV es la herramienta de visualización para pantallas grandes (big screens) tipo centro de comando. Ideal para war rooms, salas ejecutivas, event dashboards en tiempo real."
-    },
-    {
-      "q": "¿Qué es <strong>Canvas</strong> (Canvas) en DataV?",
-      "options": [
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "API, DB, WebSocket, static file.",
-        "Transformación JS del dato antes de mostrar."
-      ],
-      "answer": 0,
-      "explain": "Canvas (Canvas): Área de diseño del big screen."
-    },
-    {
-      "q": "¿Qué es <strong>Widget</strong> (Widget) en DataV?",
-      "options": [
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "Área de diseño del big screen.",
-        "API, DB, WebSocket, static file.",
-        "Transformación JS del dato antes de mostrar."
-      ],
-      "answer": 0,
-      "explain": "Widget (Widget): Componente visual (mapa, gauge, chart 3D, etc.)."
-    },
-    {
-      "q": "¿Qué es <strong>Data Source</strong> (Data source) en DataV?",
-      "options": [
-        "API, DB, WebSocket, static file.",
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "Transformación JS del dato antes de mostrar."
-      ],
-      "answer": 0,
-      "explain": "Data Source (Data source): API, DB, WebSocket, static file."
-    },
-    {
-      "q": "¿Qué es <strong>Filter</strong> (Filtro) en DataV?",
-      "options": [
-        "Transformación JS del dato antes de mostrar.",
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "API, DB, WebSocket, static file."
-      ],
-      "answer": 0,
-      "explain": "Filter (Filtro): Transformación JS del dato antes de mostrar."
-    },
-    {
-      "q": "¿Qué es <strong>Preview</strong> (Preview) en DataV?",
-      "options": [
-        "Modo edición con datos reales.",
-        "Área de diseño del big screen.",
-        "Componente visual (mapa, gauge, chart 3D, etc.).",
-        "API, DB, WebSocket, static file."
-      ],
-      "answer": 0,
-      "explain": "Preview (Preview): Modo edición con datos reales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con DataV, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar DataV en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con DataV, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde DataV es la elección típica:",
-      "options": [
-        "Sala de comando de tráfico urbano",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Sala de comando de tráfico urbano."
-    }
+    { "q": "¿Cuál es la diferencia principal entre un big screen de DataV y un dashboard de BI convencional?", "options": ["No hay diferencia real, son sinónimos", "El big screen está pensado para observación a distancia sin interacción directa; el dashboard de BI para exploración interactiva de un analista", "DataV no permite mostrar gráficos de barras", "Un dashboard de BI nunca se actualiza automáticamente"], "answer": 1, "explain": "DataV se diseña para salas de control y eventos observados a distancia; un dashboard de BI como Quick BI se diseña para exploración interactiva con filtros." },
+    { "q": "¿Qué elemento de DataV define el lienzo de diseño con dimensiones fijas donde se posicionan los widgets?", "options": ["Filter", "Canvas", "Data Source", "Preview"], "answer": 1, "explain": "El Canvas es el lienzo base sobre el que se arrastran y posicionan todos los widgets del big screen." },
+    { "q": "Una métrica cambia constantemente y debe reflejarse de inmediato en el big screen, sin esperar un intervalo de polling. ¿Qué tipo de fuente de datos es la más adecuada?", "options": ["Archivo estático (Excel/CSV)", "WebSocket, para recibir actualizaciones push en tiempo real", "API REST con intervalo de 60 segundos", "No es posible lograr actualización inmediata en DataV"], "answer": 1, "explain": "WebSocket entrega actualizaciones push del servidor, evitando la latencia de esperar al siguiente ciclo de polling de una API REST." },
+    { "q": "¿Qué función cumple un Filter en DataV?", "options": ["Cifra la conexión a la fuente de datos", "Transforma en JavaScript la respuesta cruda de la fuente antes de que el widget la renderice", "Define el intervalo de refresco del widget", "Protege la URL publicada con un token"], "answer": 1, "explain": "El Filter remodela o calcula campos derivados cuando el formato de la fuente no coincide exactamente con lo que el widget espera." },
+    { "q": "¿Por qué se recomienda proteger la URL publicada de un canvas con métricas de negocio sensibles?", "options": ["Porque DataV lo exige técnicamente sin excepción", "Porque sin un token de acceso, cualquiera con el enlace podría ver información que no debería ser pública", "Porque mejora el rendimiento de carga del canvas", "No es una práctica recomendada, ralentiza la publicación"], "answer": 1, "explain": "La protección por token evita que el contenido sensible del big screen quede accesible a cualquiera que obtenga la URL." },
+    { "q": "¿Cuál es la práctica correcta para que un widget consuma una API privada que requiere credenciales?", "options": ["Embeber la credencial directamente en la configuración del widget", "Usar un backend propio como proxy que maneje la autenticación, sin exponer credenciales en el navegador", "No es posible conectar DataV a APIs privadas", "Compartir la credencial de la cuenta raíz de Alibaba Cloud"], "answer": 1, "explain": "Un proxy backend evita exponer credenciales en la configuración del widget, visible potencialmente en el navegador del cliente." },
+    { "q": "Un big screen se vuelve lento y la base de datos que alimenta sus widgets se satura con el tráfico de refresco. ¿Cuál es la solución correcta?", "options": ["Aumentar el número de widgets para distribuir la carga", "Preagregar los datos en el backend, para que los widgets solo lean totales ya calculados", "Eliminar el intervalo de refresco por completo", "Cambiar todos los widgets a fuente de archivo estático"], "answer": 1, "explain": "Preagregar en el backend evita que cada widget dispare una consulta pesada de agregación en cada ciclo de refresco." },
+    { "q": "¿Por qué sobrecargar un canvas con decenas de widgets pesados es un antipatrón?", "options": ["Porque DataV limita técnicamente a 3 widgets por canvas", "Porque degrada tanto el rendimiento de renderizado como la legibilidad a distancia del big screen", "Porque cada widget adicional requiere una licencia separada", "No es un antipatrón, más widgets siempre comunican mejor"], "answer": 1, "explain": "Un big screen se observa a distancia; saturarlo de elementos pequeños derrota su propósito de comunicación visual de alto impacto." },
+    { "q": "¿Qué tipo de fuente de datos es más apropiada para prototipar rápidamente el diseño de un canvas antes de conectar datos en vivo?", "options": ["WebSocket", "Archivo estático (Excel/CSV)", "Una API REST con autenticación OAuth", "No es posible prototipar sin datos en vivo"], "answer": 1, "explain": "Subir un archivo estático permite avanzar en el diseño visual sin depender aún de una integración de datos en vivo." },
+    { "q": "¿Qué caso de uso es más apropiado para Quick BI en vez de DataV?", "options": ["Una pared de video en una sala de comando de tráfico urbano", "Un análisis interactivo donde un analista aplica filtros y explora el detalle de los datos", "Un dashboard proyectado en un evento de campaña de ventas", "Una pantalla de bienvenida corporativa observada a distancia"], "answer": 1, "explain": "La exploración interactiva con filtros y detalle bajo demanda es el caso de uso central de un dashboard de BI como Quick BI, no de un big screen de observación pasiva." },
+    { "q": "¿Qué determina si un canvas de DataV se diseña con resolución fija o de forma responsiva?", "options": ["Siempre debe ser responsiva, no existe modo fijo", "Depende de si el destino es una pantalla física conocida de antemano o dispositivos de tamaño variable", "Depende del número de widgets usados", "El modo se define automáticamente según la fuente de datos"], "answer": 1, "explain": "Un big screen proyectado en un monitor específico suele diseñarse con resolución fija; un canvas visto en dispositivos variados se beneficia de un diseño adaptable." }
   ],
-  "exam_focus": "Diferencia DataV vs Quick BI, widget composition, data source types.",
+  "exam_focus": "El examen suele evaluar: (a) distinguir cuándo un escenario pide un big screen (DataV) frente a un dashboard analítico interactivo (Quick BI), (b) las cuatro fuentes de datos de un widget y cuándo elegir cada una, (c) protección de la publicación con token y manejo seguro de credenciales de API, (d) buenas prácticas de rendimiento (preagregación, límite de widgets), (e) el modelo de composición Canvas-Widget con fuentes de datos independientes por widget.",
   "official_intro": "Data visualization refers to the techniques used to communicate data or information by encoding it as visual objects contained in graphics. By using data visualization, data can be displayed through a dashboard intuitively and understandably. This course can help the data scientists learn how to create a large panel using Alibaba Cloud's DataV.",
   "recommended_for": "Data Analyst, Data Operations Engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_datav",
@@ -401,6 +177,6 @@
     "duration_min": 30,
     "attempts": "2 Times",
     "type": "Online",
-    "language": ""
+    "language": "English"
   }
 }

@@ -2,485 +2,159 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-container",
   "title_en": "Implement Blue-Green Deployment with Container Service",
-  "title_es": "Implement Blue-Green Despliegue con Contenedor Servicio",
+  "title_es": "Implementar Despliegue Blue-Green con Container Service",
+  "title_es_html": "Implementar Despliegue <em>Blue-Green</em> con Container Service",
   "duration_es": "38 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Container",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_container",
-  "lead": "Guía completa en español para el curso «Implement Blue-Green Deployment with Container Service» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Implement Blue-Green Deployment with Container Service» de Alibaba Cloud Academy: un curso práctico centrado en una única técnica de despliegue —blue-green— sobre Container Service for Kubernetes (ACK). Cubre las diferencias entre contenedor y máquina virtual, los componentes mínimos de un clúster que hay que dominar, y cómo usar Deployment + Service para cortar el tráfico entre dos versiones de una aplicación sin downtime.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> la diferencia entre un contenedor y una máquina virtual como base para entender por qué Kubernetes orquesta contenedores y no VMs.",
+    "<strong>Identificar</strong> los componentes mínimos de un clúster Kubernetes necesarios para razonar sobre un despliegue: Pod, Deployment, Service, Label.",
+    "<strong>Explicar</strong> en qué consiste específicamente el patrón blue-green frente a rolling update y canary.",
+    "<strong>Desplegar</strong> una segunda versión (green) en paralelo a la versión activa (blue) sin afectar el tráfico en producción.",
+    "<strong>Cortar el tráfico</strong> de blue a green cambiando el selector de un Service, y revertir instantáneamente si algo falla.",
+    "<strong>Comparar</strong> blue-green con otras estrategias de despliegue para elegir la correcta según el escenario del examen."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Dos Deployments coexisten en el clúster con el mismo número de réplicas pero distinta versión de imagen: uno etiquetado <code>version: blue</code> (la versión activa actual) y otro <code>version: green</code> (la versión nueva, recién desplegada). Un único Service selecciona Pods por su Label — mientras el selector apunta a <code>version: blue</code>, todo el tráfico real llega solo a esa versión; green corre en paralelo, recibiendo tráfico de prueba directo a sus Pods o a través de un segundo Service temporal, pero no el tráfico de producción. Una vez validado green, se actualiza el selector del Service de producción a <code>version: green</code> — el corte es prácticamente instantáneo porque no se crean ni destruyen Pods, solo cambia a qué etiqueta apunta el Service. Si algo falla, revertir el selector a <code>version: blue</code> restaura el estado anterior en segundos.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Contenedor frente a máquina virtual",
+      "title_en": "Container vs Virtual Machine",
+      "intro": "Antes de razonar sobre despliegues en Kubernetes hay que tener clara la base: qué es exactamente lo que el clúster está programando y por qué eso lo hace distinto de orquestar máquinas virtuales.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Máquina virtual</strong>: un hipervisor virtualiza hardware completo, incluyendo un kernel de sistema operativo propio por VM — pesada, arranca en minutos, con aislamiento fuerte a nivel de hardware.",
+        "<strong>Contenedor</strong>: comparte el kernel del host y aísla procesos con namespaces y cgroups — ligero, arranca en segundos, ideal para crear y destruir réplicas rápidamente durante un despliegue.",
+        "<strong>Por qué importa para blue-green</strong>: el patrón blue-green depende de poder tener el doble de réplicas corriendo en paralelo (blue + green) de forma económica y rápida — eso es viable con contenedores livianos, mucho más costoso con VMs completas.",
+        "<strong>Inmutabilidad</strong>: cada versión (blue o green) es una imagen de contenedor inmutable con un tag distinto; nunca se modifica un contenedor en ejecución para 'actualizarlo' — se despliega una versión nueva junto a la anterior.",
+        "<strong>Consecuencia operativa</strong>: como los Pods son desechables y rápidos de crear, el costo de mantener temporalmente el doble de capacidad durante el corte blue-green es bajo comparado con hacer lo mismo con máquinas virtuales completas."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Blue-green es viable a bajo costo precisamente porque los contenedores son baratos y rápidos de escalar — con máquinas virtuales tradicionales, duplicar la capacidad temporalmente sería mucho más costoso y lento." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Componentes mínimos: Pod, Deployment, Service, Label",
+      "title_en": "Minimum Components: Pod, Deployment, Service, Label",
+      "intro": "Un despliegue blue-green se construye con solo cuatro conceptos de Kubernetes — dominarlos a fondo es más importante que memorizar el resto del vocabulario del clúster para este curso.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Pod</strong>: la unidad mínima ejecutable; en este curso, cada Pod corre un contenedor de la aplicación en una versión concreta (blue o green).",
+        "<strong>Deployment</strong>: mantiene un número fijo de réplicas de una versión determinada; en blue-green se crean dos Deployments independientes —uno por color— que coexisten sin interferirse.",
+        "<strong>Label (etiqueta)</strong>: par clave-valor asignado a los Pods (p.ej. <code>app: miapp, version: blue</code>) que permite a otros objetos —como un Service— seleccionar un subconjunto específico de Pods.",
+        "<strong>Service</strong>: expone un conjunto de Pods bajo una IP estable, seleccionándolos por Label mediante un <code>selector</code> — es precisamente este selector el que blue-green manipula para cambiar el tráfico de una versión a otra.",
+        "<strong>La clave del patrón</strong>: el Service no sabe ni le importa cuántas versiones existen en el clúster — solo enruta tráfico hacia los Pods que coincidan con su selector actual, sea cual sea la versión que eso represente en un momento dado."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta qué objeto de Kubernetes hay que modificar para cambiar de qué versión recibe tráfico un Service, la respuesta es el <em>selector de Labels</em> del Service, no el propio Deployment." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Qué es específicamente blue-green (y qué no es)",
+      "title_en": "What Blue-Green Specifically Is",
+      "intro": "Blue-green es una de varias estrategias de despliegue posibles en Kubernetes. Este módulo la define con precisión frente a las otras, porque el examen distingue con cuidado cada una.",
       "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
+        "<strong>Definición</strong>: mantener dos entornos completos e idénticos en capacidad —blue (activo) y green (nuevo)— y cortar el 100% del tráfico de uno al otro de una sola vez, tras validar que green funciona correctamente.",
+        "<strong>Corte instantáneo, no gradual</strong>: a diferencia de un rolling update, blue-green no reemplaza réplicas una por una — el tráfico pasa de blue a green (o viceversa) en un solo cambio de selector, por eso el rollback es igual de instantáneo.",
+        "<strong>No es lo mismo que canary</strong>: un despliegue canary envía un porcentaje pequeño de tráfico real a la nueva versión mientras la mayoría sigue en la anterior; blue-green no reparte tráfico entre versiones, todo va a una sola versión activa a la vez.",
+        "<strong>Doble capacidad temporal</strong>: durante la ventana de validación, ambas versiones existen a capacidad completa simultáneamente — esto cuesta el doble de recursos de cómputo mientras dura, a cambio de un rollback casi instantáneo.",
+        "<strong>Ideal para</strong>: cambios donde se necesita poder revertir al instante sin reconstruir nada (por ejemplo, tras detectar un error en producción recién liberada), y donde el costo de duplicar capacidad temporalmente es aceptable."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "La pregunta que distingue blue-green de canary en el examen es «¿todo el tráfico cambia de golpe, o solo un porcentaje?». Blue-green = todo de golpe; canary = porcentaje gradual." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Desplegar green en paralelo sin afectar producción",
+      "title_en": "Deploying Green Alongside Production",
+      "intro": "El primer paso operativo de blue-green es crear la nueva versión sin tocar en absoluto el tráfico que ya está sirviendo blue — esa separación es lo que hace seguro el patrón.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Crear el Deployment green</strong>: se despliega un segundo Deployment con la nueva imagen y la etiqueta <code>version: green</code>, con el mismo número de réplicas que blue para soportar la misma carga si se activa.",
+        "<strong>El Service de producción sigue apuntando a blue</strong>: mientras el selector del Service no cambie, los Pods de green existen y corren, pero no reciben ni un solo request del tráfico real de usuarios.",
+        "<strong>Validación de green antes del corte</strong>: se puede acceder directamente a los Pods de green (port-forward, un Service temporal de pruebas, o un Ingress con una ruta separada) para correr pruebas de humo sin exponer green a usuarios reales.",
+        "<strong>Nada se destruye todavía</strong>: a diferencia de un rolling update, en este punto blue sigue intacto a capacidad completa — si green falla la validación, simplemente se elimina el Deployment green sin haber afectado nunca a producción.",
+        "<strong>Costo de recursos durante la ventana</strong>: el clúster necesita capacidad de nodos suficiente para sostener blue y green simultáneamente a plena escala — hay que planificarlo en el dimensionamiento del node pool o del Cluster Autoscaler."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Antes del corte de tráfico, green debe estar validado de forma completamente aislada de producción — exponer green a usuarios reales antes de tiempo elimina la principal ventaja de seguridad de blue-green." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · El corte de tráfico y el rollback instantáneo",
+      "title_en": "Traffic Cutover and Instant Rollback",
+      "intro": "El momento decisivo de blue-green es un único cambio: actualizar el selector del Service — todo lo demás del patrón existe para que ese cambio sea seguro y reversible.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>El corte</strong>: se actualiza el <code>selector</code> del Service de producción de <code>version: blue</code> a <code>version: green</code> — en cuestión de segundos, el 100% del tráfico nuevo se enruta hacia los Pods de green.",
+        "<strong>Sin reconstruir nada</strong>: como ambos Deployments ya estaban corriendo a capacidad completa, el corte no espera a que se creen contenedores nuevos ni a que pasen probes de salud — la latencia del cambio es la de actualizar el objeto Service, prácticamente instantánea.",
+        "<strong>Rollback igual de rápido</strong>: si tras el corte aparecen errores, revertir el selector de vuelta a <code>version: blue</code> restaura el tráfico a la versión anterior con la misma velocidad — blue nunca se eliminó, sigue corriendo.",
+        "<strong>Después de confirmar green</strong>: una vez que green se valida en producción real durante un período razonable, se elimina el Deployment blue (ya obsoleto) liberando los recursos duplicados — y green pasa a ser, conceptualmente, el nuevo blue para el siguiente ciclo.",
+        "<strong>Conexiones en curso</strong>: dependiendo del tipo de Service y del cliente, las conexiones ya establecidas contra blue pueden mantenerse hasta cerrarse naturalmente, mientras que todo tráfico nuevo va a green — es importante diseñar la aplicación para tolerar ambas versiones activas brevemente durante la transición."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El rollback de blue-green no reconstruye nada: solo revierte el selector del Service. Es la razón principal por la que se elige este patrón cuando la velocidad de reversión es una prioridad del negocio." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Blue-green frente a otras estrategias de despliegue",
+      "title_en": "Blue-Green vs Other Deployment Strategies",
+      "intro": "El examen espera que sepas elegir la estrategia correcta según lo que describa el escenario — este módulo cierra comparando blue-green con rolling update y canary, y cuándo cada una es preferible.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Rolling update</strong>: reemplaza réplicas de forma incremental sin duplicar la capacidad total; usa menos recursos que blue-green pero el rollback no es instantáneo —requiere revertir gradualmente igual que se desplegó.",
+        "<strong>Canary</strong>: expone la nueva versión a un porcentaje pequeño de tráfico real primero, permitiendo detectar problemas con exposición limitada antes de un rollout completo — más lento en desplegarse al 100%, pero de menor riesgo por request.",
+        "<strong>Blue-green</strong>: máxima velocidad de rollback (instantáneo, sin reconstrucción) y máxima simplicidad conceptual, a cambio de duplicar temporalmente el consumo de recursos — la opción cuando el negocio prioriza poder revertir de inmediato.",
+        "<strong>Costo como criterio de decisión</strong>: si el presupuesto de cómputo es ajustado o el clúster no tiene margen para duplicar capacidad, rolling update es más eficiente aunque su rollback sea más lento.",
+        "<strong>Riesgo como criterio de decisión</strong>: si el cambio es de alto riesgo (una migración de base de datos incompatible hacia atrás, por ejemplo) y se necesita poder revertir en segundos, blue-green es la elección natural del examen."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "«Necesito poder revertir instantáneamente sin reconstruir nada» → blue-green. «Quiero minimizar el uso de recursos durante el despliegue» → rolling update. «Quiero validar con una fracción de tráfico real antes del 100%» → canary." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Cambio de alto riesgo (migración de esquema) que exige poder revertir en segundos si falla" },
+    { "title": "Escenario 2", "text": "Validar una nueva versión con pruebas de humo aisladas antes de exponerla a tráfico real" },
+    { "title": "Escenario 3", "text": "Rollback instantáneo tras detectar un aumento de errores justo después del corte de tráfico" },
+    { "title": "Escenario 4", "text": "Comparar blue-green con canary para un cambio de bajo riesgo donde se prefiere exposición gradual" },
+    { "title": "Escenario 5", "text": "Planificar capacidad del node pool para sostener blue y green simultáneamente a plena escala" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Exponer green a tráfico real de producción antes de validarlo de forma aislada",
+    "No dimensionar el clúster para sostener el doble de capacidad durante la ventana blue-green",
+    "Eliminar el Deployment blue inmediatamente después del corte, sin margen para un rollback rápido",
+    "Confundir blue-green con canary y repartir tráfico entre ambas versiones cuando el patrón exige un corte total",
+    "Modificar directamente los Pods en vez de cambiar el selector del Service para cortar el tráfico",
+    "No planear qué pasa con las conexiones ya establecidas contra blue durante la transición"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "kubectl apply -f deployment-green.yaml", "desc": "Desplegar la versión green en paralelo, sin afectar el Service de producción" },
+    { "cmd": "kubectl get pods -l version=green", "desc": "Verificar que los Pods de green están corriendo y sanos antes del corte" },
+    { "cmd": "kubectl patch service miapp -p '{\"spec\":{\"selector\":{\"version\":\"green\"}}}'", "desc": "Cortar el tráfico de blue a green cambiando el selector del Service" },
+    { "cmd": "kubectl patch service miapp -p '{\"spec\":{\"selector\":{\"version\":\"blue\"}}}'", "desc": "Rollback instantáneo: revertir el selector del Service de vuelta a blue" },
+    { "cmd": "kubectl delete deployment miapp-blue", "desc": "Eliminar el Deployment blue una vez confirmada la estabilidad de green" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Blue-Green Deployment", "es": "Despliegue Blue-Green", "def": "Mantener dos versiones completas en paralelo y cortar el 100% del tráfico de una a otra de una sola vez." },
+    { "en": "Cutover", "es": "Corte de tráfico", "def": "Momento en que se cambia el selector del Service para enrutar producción hacia la nueva versión." },
+    { "en": "Rollback", "es": "Reversión", "def": "Volver a la versión anterior; en blue-green es instantáneo porque la versión previa sigue corriendo." },
+    { "en": "Label", "es": "Etiqueta", "def": "Par clave-valor en un Pod usado por un Service para seleccionar a qué Pods enrutar tráfico." },
+    { "en": "Selector", "es": "Selector", "def": "Criterio de un Service que determina qué Pods, según sus Labels, reciben el tráfico." },
+    { "en": "Deployment", "es": "Deployment", "def": "Objeto que mantiene un número fijo de réplicas de una versión determinada de la aplicación." },
+    { "en": "Service", "es": "Service", "def": "IP virtual estable que enruta tráfico hacia los Pods que coinciden con su selector de Labels." },
+    { "en": "Rolling Update", "es": "Actualización progresiva", "def": "Estrategia que reemplaza réplicas de forma incremental, sin duplicar la capacidad total." },
+    { "en": "Canary Deployment", "es": "Despliegue canario", "def": "Estrategia que expone la nueva versión a un porcentaje pequeño de tráfico real antes del rollout completo." },
+    { "en": "Namespace de versión", "es": "Etiqueta de versión", "def": "Convención de Label (p.ej. version: blue/green) usada para distinguir Deployments de la misma app." },
+    { "en": "Smoke test", "es": "Prueba de humo", "def": "Verificación rápida de que las funciones críticas de green operan correctamente antes del corte." },
+    { "en": "Node Pool", "es": "Node Pool", "def": "Grupo de nodos worker cuya capacidad debe soportar blue y green simultáneamente durante la transición." },
+    { "en": "Cluster Autoscaler", "es": "Autoescalador de clúster", "def": "Añade nodos automáticamente si el clúster no tiene capacidad para sostener ambas versiones a la vez." },
+    { "en": "Immutable image", "es": "Imagen inmutable", "def": "Cada versión (blue o green) es una imagen de contenedor con tag distinto que nunca se modifica en ejecución." },
+    { "en": "Container Service for Kubernetes (ACK)", "es": "ACK", "def": "Servicio gestionado de Kubernetes de Alibaba Cloud donde se implementa el patrón blue-green de este curso." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Por qué blue-green es económicamente viable con contenedores pero sería mucho más costoso con máquinas virtuales completas?", "options": ["No hay ninguna diferencia real de costo", "Los contenedores son livianos y rápidos de escalar, permitiendo duplicar capacidad temporalmente a bajo costo", "Las máquinas virtuales no pueden ejecutar más de una versión de una app", "Blue-green no puede usarse con máquinas virtuales bajo ninguna circunstancia"], "answer": 1, "explain": "La ligereza y velocidad de los contenedores hace que mantener el doble de capacidad temporalmente sea mucho más barato que con VMs completas." },
+    { "q": "¿Qué objeto de Kubernetes se modifica exactamente para cortar el tráfico de blue a green?", "options": ["El Pod directamente", "El selector de Labels del Service", "El nombre del Namespace", "La imagen base del nodo worker"], "answer": 1, "explain": "Cambiar el selector del Service es lo que redirige el tráfico de una versión a otra sin tocar los Pods ni el Deployment." },
+    { "q": "¿Cuál es la diferencia principal entre blue-green y un despliegue canary?", "options": ["Son exactamente la misma estrategia con nombres distintos", "Blue-green corta el 100% del tráfico de una vez; canary expone un porcentaje gradual de tráfico real a la nueva versión", "Canary siempre es más rápido que blue-green", "Blue-green no permite hacer rollback"], "answer": 1, "explain": "Blue-green es un corte total e instantáneo; canary reparte tráfico gradualmente entre ambas versiones." },
+    { "q": "Durante la ventana de validación de blue-green, ¿qué porcentaje del tráfico de producción recibe la versión green antes del corte?", "options": ["50%", "Un porcentaje configurable creciente", "0% — green no recibe tráfico de producción hasta el corte", "100%, igual que blue"], "answer": 2, "explain": "Green permanece completamente aislado del tráfico real hasta que se decide y ejecuta el corte del selector." },
+    { "q": "¿Por qué el rollback en blue-green es prácticamente instantáneo?", "options": ["Porque Kubernetes reconstruye blue automáticamente en segundos", "Porque blue nunca se eliminó y sigue corriendo a capacidad completa; revertir es solo cambiar el selector de vuelta", "Porque blue-green no permite rollback", "Porque el rollback requiere reiniciar el clúster completo"], "answer": 1, "explain": "Como ambas versiones coexisten a capacidad completa, revertir el selector no requiere crear ni esperar contenedores nuevos." },
+    { "q": "¿Qué costo característico tiene el patrón blue-green frente a un rolling update?", "options": ["Ningún costo adicional", "Duplicar temporalmente el consumo de recursos de cómputo mientras ambas versiones coexisten", "Requiere licencias adicionales de Kubernetes", "Blue-green siempre es más lento de ejecutar"], "answer": 1, "explain": "Mantener blue y green a plena capacidad simultáneamente cuesta el doble de recursos durante la ventana de transición." },
+    { "q": "Un escenario del examen describe un cambio de alto riesgo donde se necesita poder revertir en segundos si algo falla. ¿Qué estrategia de despliegue es la más apropiada?", "options": ["Rolling update", "Blue-green", "Ninguna estrategia de despliegue automatizada, solo despliegue manual", "Eliminar el Deployment y crear uno nuevo desde cero"], "answer": 1, "explain": "La velocidad de rollback instantáneo es la ventaja distintiva de blue-green frente a las demás estrategias." },
+    { "q": "¿Qué se necesita planificar en el clúster antes de ejecutar un despliegue blue-green a gran escala?", "options": ["Nada especial, Kubernetes lo gestiona automáticamente sin configuración", "Capacidad de nodos suficiente (node pool o Cluster Autoscaler) para sostener ambas versiones a plena escala", "Un nuevo clúster completamente separado para cada color", "Deshabilitar el Service durante todo el proceso"], "answer": 1, "explain": "Si el clúster no tiene margen de capacidad, no podrá sostener blue y green simultáneamente a capacidad completa." },
+    { "q": "¿Cuándo es preferible un rolling update sobre blue-green según el curso?", "options": ["Siempre, rolling update es superior en todos los casos", "Cuando el presupuesto de cómputo es ajustado y no hay margen para duplicar capacidad temporalmente", "Nunca, blue-green siempre es mejor", "Solo si la aplicación no usa contenedores"], "answer": 1, "explain": "Rolling update consume menos recursos porque nunca duplica la capacidad total, a cambio de un rollback más lento." },
+    { "q": "¿Qué paso ocurre DESPUÉS de confirmar que green es estable en producción real durante blue-green?", "options": ["Se elimina inmediatamente green y se restaura blue", "Se elimina el Deployment blue, obsoleto, liberando los recursos duplicados", "Se crea automáticamente una tercera versión", "No se realiza ninguna acción adicional nunca"], "answer": 1, "explain": "Una vez validado green en producción, blue ya no es necesario y se elimina para liberar los recursos duplicados." },
+    { "q": "¿Qué papel cumple el Label 'version: blue' o 'version: green' en este patrón?", "options": ["Define el nombre del clúster", "Permite que el selector del Service distinga qué Pods pertenecen a cada versión", "Controla el número de réplicas del Deployment", "Determina la región donde se despliega el Pod"], "answer": 1, "explain": "El Label es el mecanismo que hace posible que un mismo Service pueda apuntar selectivamente a una versión u otra." },
+    { "q": "¿Es correcto exponer green directamente al tráfico de producción antes de validarlo de forma aislada?", "options": ["Sí, es la práctica recomendada para ahorrar tiempo", "No; hacerlo elimina la principal ventaja de seguridad del patrón blue-green", "Solo si green tiene menos réplicas que blue", "Es irrelevante para el resultado del despliegue"], "answer": 1, "explain": "Validar green de forma aislada antes del corte es lo que hace seguro al patrón; exponerlo antes de tiempo anula esa protección." },
+    { "q": "¿Qué diferencia clave distingue el corte de blue-green del reemplazo gradual de un rolling update?", "options": ["No hay ninguna diferencia real entre ambos", "Blue-green cambia el 100% del tráfico de una vez con un cambio de selector; rolling update reemplaza réplicas una por una", "Rolling update siempre es más rápido en cortar el tráfico", "Blue-green requiere reiniciar el clúster completo"], "answer": 1, "explain": "El corte de blue-green es atómico a nivel de selector; el rolling update sustituye Pods de forma incremental." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen suele evaluar: (a) diferencia técnica entre contenedor y VM como base del patrón, (b) qué objeto (Service selector) se modifica para cortar el tráfico, (c) blue-green frente a rolling update y canary según el escenario, (d) costo de recursos duplicados durante la ventana de transición, (e) por qué el rollback de blue-green es instantáneo.",
   "official_intro": "Through this certification course, you will understand the basic differences between the container and the virtual machine environment, learn Kubernetes cluster's main components, and learn how to use deployment and service to apply blue-green release.",
   "recommended_for": "Software developers and Devops engineers",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_container",

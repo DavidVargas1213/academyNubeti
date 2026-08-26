@@ -1,424 +1,166 @@
 {
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-shopping-technologies",
-  "title_en": "Explore the Technologies Behind the World’s Largest Shopping Festival",
-  "title_es": "Explore Technologies Behind World’s Largest Shopping Festival",
+  "title_en": "Explore the Technologies Behind the World's Largest Shopping Festival",
+  "title_es": "Explora las Tecnologías Detrás del Festival de Compras Más Grande del Mundo",
+  "title_es_html": "Explora las Tecnologías Detrás del <em>Doble 11</em>",
   "duration_es": "45 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Architecting",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-shopping-technologies",
-  "lead": "Guía completa en español para el curso «Explore the Technologies Behind the World’s Largest Shopping Festival» de Alibaba Cloud Academy. Cubre en profundidad Arquitectura Alibaba Cloud. Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Explore the Technologies Behind the World's Largest Shopping Festival» de Alibaba Cloud Academy, que usa el Doble 11 (Singles Day) como caso de estudio de arquitectura a escala extrema. En su edición de 2020, la plataforma alcanzó un récord de 583.000 pedidos creados por segundo y superó los mil millones de dólares en volumen de mercancía (GMV) en apenas 68 segundos desde el inicio — cifras que exigen un diseño de infraestructura muy distinto al de una aplicación de tráfico normal.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Arquitectura Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Well-Architected, Multi-region, Multi-AZ, Elastic, Fault Tolerance.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Arquitectura Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué el Doble 11 es un caso extremo de escalabilidad y qué lo diferencia de un pico de tráfico habitual.",
+    "<strong>Describir</strong> las capas de una arquitectura de referencia para tráfico masivo: edge, aplicación, cache, base de datos y analítica.",
+    "<strong>Aplicar</strong> estrategias de elasticidad (auto-scaling, pre-calentamiento, componentes serverless) para absorber picos sin sobreaprovisionar todo el año.",
+    "<strong>Diseñar</strong> mecanismos de resiliencia: circuit breakers, colas de espera virtual, degradación controlada de funciones no críticas.",
+    "<strong>Relacionar</strong> los 5 pilares del framework Well-Architected con decisiones reales tomadas para sostener el Doble 11.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre arquitecturas de alta escala y resiliencia."
   ],
-  "architecture": "Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
+  "architecture": "En la capa edge, CDN/DCDN sirven contenido estático cerca del usuario y WAF junto con protección Anti-DDoS filtran tráfico malicioso antes de que llegue a la aplicación. En la capa de aplicación, un Server Load Balancer distribuye tráfico hacia pods/instancias desplegados en múltiples zonas, con Auto Scaling (ECS) o Cluster Autoscaler (ACK) añadiendo capacidad antes de que empiece el evento, no durante. Una capa de cache (Redis/Tair) absorbe la mayoría de las lecturas para proteger la base de datos. La capa de datos usa PolarDB con separación de cómputo y almacenamiento y réplicas de lectura, capaz de sostener decenas de millones de solicitudes por segundo en el pico del evento. En paralelo, una capa de analítica (MaxCompute + Hologres) procesa el volumen de datos generado en tiempo real para alimentar los dashboards que el equipo de operaciones observa durante la noche del evento. Todo el conjunto se apoya en CloudMonitor y ActionTrail para observabilidad y auditoría, y en circuit breakers y colas de espera virtual para degradar el servicio de forma controlada si la demanda supera lo previsto.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Arquitectura Alibaba Cloud",
-      "title_en": "Introduction to Arquitectura Alibaba Cloud",
-      "intro": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · La escala del problema: qué significa el Doble 11",
+      "title_en": "The Scale of the Problem: What Double 11 Means",
+      "intro": "Antes de hablar de arquitectura, hay que dimensionar el problema real. El Doble 11 (Singles Day), iniciado por Alibaba en 2009, se convirtió en el evento de compras de un solo día más grande del mundo, y su crecimiento en más de una década volvió obsoleta cualquier arquitectura diseñada solo para tráfico «normal».",
       "points": [
-        "<strong>Problema que resuelve</strong>: Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Arquitectura Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Crecimiento acelerado</strong>: el volumen de transacciones del Doble 11 creció más de mil veces entre su primera edición en 2009 y sus ediciones más recientes.",
+        "<strong>Récord de creación de pedidos</strong>: en la edición de 2020, la plataforma alcanzó un pico de 583.000 pedidos creados por segundo, el mayor pico de tráfico de este tipo registrado hasta entonces — superando los 544.000 pedidos/segundo del año anterior.",
+        "<strong>Velocidad del volumen de negocio</strong>: se reportó más de mil millones de dólares en GMV (volumen bruto de mercancía) en los primeros 68 segundos del evento, y decenas de miles de millones de dólares en la primera media hora.",
+        "<strong>Presión sobre la base de datos</strong>: PolarDB, la base de datos distribuida de Alibaba Cloud, sostuvo picos de decenas de millones de solicitudes por segundo durante el evento — un orden de magnitud que ninguna base de datos relacional tradicional sin arquitectura distribuida podría absorber.",
+        "<strong>El problema no es solo el pico, es la ventana</strong>: a diferencia de un crecimiento gradual de tráfico a lo largo de meses, el Doble 11 concentra su pico máximo en los primeros segundos y minutos después de medianoche — la infraestructura no tiene margen para «ponerse al día»."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Arquitectura Alibaba Cloud es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El Doble 11 no es un problema de \"más tráfico\" — es un problema de tráfico que se multiplica por cientos en cuestión de segundos y que debe absorberse sin degradar la experiencia del usuario ni perder ninguna transacción." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Arquitectura Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Elasticidad extrema: absorber picos sin sobreaprovisionar",
+      "title_en": "Extreme Elasticity: Absorbing Peaks Without Overprovisioning",
+      "intro": "Mantener durante todo el año la capacidad necesaria para el pico de una sola noche sería económicamente absurdo. El reto de diseño real es escalar hacia arriba justo antes del evento y volver a escalar hacia abajo después, sin intervención manual masiva.",
       "points": [
-        "<strong>Patrón canónico</strong>: Capa edge: CDN + DCDN + WAF + GA. Capa app: SLB → ACK/SAE pods multi-AZ. Capa cache: Redis. Capa DB: PolarDB multi-AZ + read replicas. Capa storage: OSS. Capa analytics: MaxCompute + Hologres. Todo con RAM + KMS + ActionTrail + CloudMonitor.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Auto Scaling de ECS</strong>: grupos de auto-escalado que añaden y retiran instancias automáticamente según métricas de carga, evitando mantener el pico de capacidad de forma permanente.",
+        "<strong>Cluster Autoscaler en ACK</strong>: cuando la carga corre en contenedores, el autoescalador de clúster añade nodos worker cuando el Horizontal Pod Autoscaler ya no tiene dónde programar más réplicas.",
+        "<strong>Pre-calentamiento (pre-warming)</strong>: a diferencia de una carga que crece gradualmente, el pico del Doble 11 llega en segundos — por eso gran parte de la capacidad adicional se aprovisiona de forma predictiva horas antes del evento, basada en el historial de años anteriores, en vez de esperar a que las métricas disparen el auto-escalado reactivo.",
+        "<strong>Componentes serverless</strong>: funciones y aplicaciones serverless (Function Compute, Serverless App Engine) absorben picos de endpoints específicos sin necesidad de dimensionar servidores fijos para ellos.",
+        "<strong>Reducción de costo por transacción</strong>: al adoptar arquitecturas cloud-native y elásticas, Alibaba Cloud reportó una reducción de hasta un 80% en el costo por cada 10.000 pedidos procesados frente a arquitecturas de años anteriores — la elasticidad no es solo una cuestión de disponibilidad, también de eficiencia económica."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Arquitectura Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe «un pico de tráfico previsible y extremo que ocurre en una ventana de tiempo muy corta», la respuesta correcta combina auto-scaling reactivo CON aprovisionamiento predictivo (pre-warming) — el auto-scaling reactivo solo no reacciona a tiempo." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Arquitectura en capas para tráfico masivo",
+      "title_en": "Layered Architecture for Massive Traffic",
+      "intro": "Ninguna capa individual podría sostener el pico del Doble 11 por sí sola — la arquitectura distribuye la carga entre capas especializadas, cada una absorbiendo un tipo distinto de presión.",
       "points": [
-        "<strong>Well-Architected</strong> <em>(Well-Architected)</em>: 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "<strong>Multi-región</strong> <em>(Multi-region)</em>: Despliegue en varias regiones para DR/latencia.",
-        "<strong>Multi-AZ</strong> <em>(Multi-AZ)</em>: Múltiples zonas dentro de región.",
-        "<strong>Elástico</strong> <em>(Elastic)</em>: Auto-scale según demanda.",
-        "<strong>Tolerancia a fallos</strong> <em>(Fault Tolerance)</em>: Diseño que sobrevive a fallos parciales.",
-        "<strong>Blast radius</strong> <em>(Blast Radius)</em>: Alcance de una falla.",
-        "<strong>Chaos engineering</strong> <em>(Chaos Engineering)</em>: Introducir fallos controlados para validar resiliencia.",
-        "<strong>Landing zone</strong> <em>(Landing Zone)</em>: Baseline de cuenta lista para cargas."
+        "<strong>Capa edge</strong>: CDN/DCDN sirven contenido estático (imágenes de producto, assets) desde ubicaciones cercanas al usuario, evitando que ese tráfico llegue siquiera a los servidores de aplicación; WAF y protección Anti-DDoS filtran tráfico malicioso o bots antes de que consuman capacidad real.",
+        "<strong>Capa de aplicación</strong>: un Server Load Balancer distribuye las solicitudes entre instancias o pods desplegados en múltiples zonas, de forma que ninguna zona individual sea un punto único de falla durante el pico.",
+        "<strong>Capa de cache</strong>: un almacén en memoria (Redis/Tair) absorbe la inmensa mayoría de las lecturas repetidas (catálogo de productos, precios, disponibilidad), evitando que cada solicitud golpee directamente la base de datos.",
+        "<strong>Capa de base de datos</strong>: PolarDB, con separación de cómputo y almacenamiento, escala réplicas de lectura de forma independiente al nodo de escritura — el diseño que permitió sostener decenas de millones de solicitudes por segundo durante el pico del evento.",
+        "<strong>Capa de analítica</strong>: MaxCompute y Hologres procesan el flujo masivo de datos del evento casi en tiempo real, alimentando los dashboards que el equipo de operaciones observa para tomar decisiones durante la noche del Doble 11, no días después."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Cada capa existe para absorber un tipo de presión distinto: el edge reduce volumen antes de llegar a la aplicación, el cache reduce presión sobre la base de datos, y la separación cómputo-almacenamiento en la base de datos permite escalar lecturas sin reescribir la arquitectura de escritura." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Resiliencia y degradación controlada",
+      "title_en": "Resilience and Graceful Degradation",
+      "intro": "Incluso con toda la elasticidad posible, un sistema a esta escala debe asumir que algo va a fallar — la pregunta de diseño no es «¿cómo evitamos toda falla?» sino «¿cómo evitamos que una falla parcial se convierta en una caída total?».",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Circuit breakers</strong>: si un servicio dependiente empieza a fallar o responder lento, un circuit breaker corta las llamadas hacia él temporalmente en vez de dejar que las solicitudes se acumulen y arrastren también al servicio que lo llama.",
+        "<strong>Degradación de funciones no críticas</strong>: bajo carga extrema, funciones secundarias (recomendaciones personalizadas complejas, contadores de \"vistos recientemente\") se simplifican o desactivan temporalmente para proteger el flujo crítico: buscar, agregar al carrito y pagar.",
+        "<strong>Colas de espera virtual</strong>: en el instante de máxima demanda, en vez de dejar que todas las solicitudes golpeen el backend simultáneamente, se pone a los usuarios en una fila virtual que libera tráfico de forma controlada — mejor una espera visible y ordenada que una caída total.",
+        "<strong>Blast radius acotado (arquitectura celular/unitizada)</strong>: dividir la infraestructura en unidades autosuficientes que sirven a un subconjunto de usuarios permite que la falla de una unidad no arrastre a las demás, en vez de tener un único sistema monolítico que falla en bloque.",
+        "<strong>Chaos engineering</strong>: meses antes del evento, se inyectan fallos controlados (caída de un nodo, latencia artificial, pérdida de una zona) en ambientes de preproducción para verificar que los mecanismos de resiliencia realmente funcionan cuando se necesitan, no solo en el papel."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Cuando el enunciado describe «un servicio secundario lento que empieza a afectar a todo el sistema», la respuesta apunta a un circuit breaker o a aislar ese servicio — no a simplemente añadir más capacidad, que no resuelve una dependencia lenta." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Los 5 pilares de Well-Architected aplicados al caso",
+      "title_en": "The 5 Well-Architected Pillars Applied to the Case",
+      "intro": "El framework Well-Architected —también usado como referencia conceptual por Alibaba Cloud— resume en cinco pilares las decisiones que, juntas, hacen posible sostener un evento de esta escala sin sacrificar ninguna dimensión crítica.",
       "points": [
-        "<strong>HA</strong>: Multi-AZ default, multi-región para tier-1",
-        "<strong>HA</strong>: Chaos engineering en pre-prod",
-        "<strong>Buenas prácticas</strong>: Elasticidad automática (HPA + Cluster Autoscaler + Auto Scaling ECS)",
-        "<strong>Buenas prácticas</strong>: Blast radius pequeño (celdas independientes)",
-        "<strong>Buenas prácticas</strong>: Landing zone estándar antes de cargar"
+        "<strong>Excelencia operacional</strong>: ensayos y simulacros repetidos del evento (game days) antes de la fecha real, con runbooks claros para cada escenario de falla previsto.",
+        "<strong>Seguridad</strong>: WAF, Anti-DDoS y RAM con mínimo privilegio protegen tanto contra ataques externos como contra errores internos de configuración durante el periodo de mayor exposición del año.",
+        "<strong>Fiabilidad</strong>: despliegue multi-zona (y en componentes críticos, multi-región), circuit breakers y arquitectura celular para contener el radio de impacto de cualquier falla parcial.",
+        "<strong>Eficiencia de rendimiento</strong>: cache agresivo, separación de cómputo/almacenamiento en la base de datos y CDN en el edge para que cada capa procese solo lo estrictamente necesario.",
+        "<strong>Optimización de costos</strong>: auto-scaling y pre-calentamiento predictivo en vez de sobreaprovisionar capacidad fija los 365 días del año para un pico que dura minutos."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Regla mnemotécnica", "text": "Ningún pilar se sostiene sin los otros cuatro: la elasticidad (rendimiento/costo) sin resiliencia (fiabilidad) solo produce una caída más grande y más rápida." }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "El examen suele plantear escenarios de tráfico extremo donde hay que identificar qué falta en el diseño propuesto — reconocer el antipatrón es más rápido que rediseñar la arquitectura completa desde cero.",
       "points": [
-        "<strong>Antipattern</strong>: Single-AZ en producción tier-1",
-        "<strong>Antipattern</strong>: Sin auto-scale — capacity planning manual",
-        "<strong>Antipattern</strong>: Blast radius global (un servicio caído cae todo)",
-        "<strong>Antipattern</strong>: Sin ejercicios DR",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: depender únicamente de auto-scaling reactivo para un pico que llega en segundos — para cuando las métricas disparan el escalado, el pico ya pasó o el sistema ya cayó.",
+        "<strong>Antipatrón</strong>: no tener cache delante de la base de datos, dejando que cada lectura del catálogo golpee directamente el motor transaccional.",
+        "<strong>Antipatrón</strong>: una arquitectura monolítica sin aislamiento — la falla de un componente secundario arrastra a todo el sistema en vez de quedar contenida.",
+        "<strong>Antipatrón</strong>: no realizar simulacros de fallo (chaos engineering) antes del evento, descubriendo los puntos débiles en producción en vez de en preproducción.",
+        "<strong>Antipatrón</strong>: mantener la capacidad de pico todo el año, disparando el costo operativo sin necesidad real la mayor parte del tiempo.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, descarta la que depende solo de reacción automática ante la carga y elige la que combina aprovisionamiento predictivo + aislamiento de fallos + degradación controlada."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Ante un escenario de tráfico extremo, pregúntate: ¿la solución escala a tiempo (antes de que llegue el pico)?, ¿contiene el radio de impacto de una falla?, ¿degrada con elegancia en vez de caer por completo?" }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "E-commerce con picos estacionales (Double 11 pattern)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "SaaS multi-tenant global"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Fintech con requerimientos compliance"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "IoT + real-time analytics"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Media con content delivery global"
-    }
+    { "title": "Escenario 1", "text": "E-commerce con picos estacionales extremos (patrón Doble 11) — pre-calentamiento predictivo + auto-scaling multi-zona" },
+    { "title": "Escenario 2", "text": "Checkout que debe procesar millones de transacciones concurrentes sin perder ninguna — colas de espera virtual + circuit breakers" },
+    { "title": "Escenario 3", "text": "Catálogo de productos consultado millones de veces por segundo — cache agresivo (Redis/Tair) delante de la base de datos" },
+    { "title": "Escenario 4", "text": "Dashboards de negocio en tiempo real durante un evento masivo — MaxCompute + Hologres" },
+    { "title": "Escenario 5", "text": "Validar que la arquitectura resiste antes del día del evento — chaos engineering en preproducción" }
   ],
   "mistakes": [
-    "Single-AZ en producción tier-1",
-    "Sin auto-scale — capacity planning manual",
-    "Blast radius global (un servicio caído cae todo)",
-    "Sin ejercicios DR"
+    "Depender solo de auto-scaling reactivo para picos que llegan en segundos",
+    "No tener cache delante de la base de datos para el tráfico de lectura masivo",
+    "Arquitectura monolítica sin aislamiento de fallos entre componentes",
+    "No realizar simulacros de fallo (chaos engineering) antes del evento",
+    "Mantener capacidad de pico todo el año en vez de escalar de forma predictiva",
+    "No tener un plan de degradación controlada — todo o nada en vez de simplificar funciones no críticas bajo carga"
   ],
   "cli": [
-    {
-      "cmd": "Consulta Well-Architected Review",
-      "desc": "Framework"
-    },
-    {
-      "cmd": "aliyun sae CreateApplication",
-      "desc": "App SAE"
-    }
+    { "cmd": "aliyun ess DescribeScalingGroups --RegionId cn-hangzhou", "desc": "Consultar los grupos de Auto Scaling de ECS configurados" },
+    { "cmd": "aliyun ess ModifyScalingGroup --ScalingGroupId asg-xxxxx --MaxSize 500", "desc": "Aumentar la capacidad máxima de un grupo de auto-escalado antes del evento" },
+    { "cmd": "aliyun polardb DescribeDBClusterPerformance --DBClusterId pc-xxxxx --Key PolarDBQPS", "desc": "Consultar el rendimiento (QPS) de un clúster PolarDB" },
+    { "cmd": "aliyun slb CreateLoadBalancer --LoadBalancerName lb-doble11 --AddressType internet", "desc": "Crear un Server Load Balancer para distribuir tráfico entre zonas" },
+    { "cmd": "aliyun cms CreateAlarm --Name pico-latencia --Namespace acs_slb_dashboard --MetricName Latency --Threshold 500", "desc": "Crear una alarma de latencia para detectar degradación durante el pico" }
   ],
   "glossary": [
-    {
-      "en": "Well-Architected",
-      "es": "Well-Architected",
-      "def": "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "en": "Multi-region",
-      "es": "Multi-región",
-      "def": "Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "en": "Multi-AZ",
-      "es": "Multi-AZ",
-      "def": "Múltiples zonas dentro de región."
-    },
-    {
-      "en": "Elastic",
-      "es": "Elástico",
-      "def": "Auto-scale según demanda."
-    },
-    {
-      "en": "Fault Tolerance",
-      "es": "Tolerancia a fallos",
-      "def": "Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "en": "Blast Radius",
-      "es": "Blast radius",
-      "def": "Alcance de una falla."
-    },
-    {
-      "en": "Chaos Engineering",
-      "es": "Chaos engineering",
-      "def": "Introducir fallos controlados para validar resiliencia."
-    },
-    {
-      "en": "Landing Zone",
-      "es": "Landing zone",
-      "def": "Baseline de cuenta lista para cargas."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Double 11 / Singles Day", "es": "Doble 11", "def": "Festival de compras de un solo día iniciado por Alibaba en 2009, hoy el evento comercial de mayor volumen del mundo en 24 horas." },
+    { "en": "GMV (Gross Merchandise Volume)", "es": "GMV", "def": "Volumen bruto de mercancía transaccionada en la plataforma durante el evento." },
+    { "en": "Orders per second (peak)", "es": "Pedidos por segundo (pico)", "def": "Métrica clave de escala del Doble 11; en 2020 alcanzó 583.000 pedidos/segundo en su punto máximo." },
+    { "en": "Auto Scaling", "es": "Auto-escalado", "def": "Ajuste automático del número de instancias/réplicas según métricas de carga." },
+    { "en": "Pre-warming", "es": "Pre-calentamiento", "def": "Aprovisionamiento predictivo de capacidad antes de un pico previsto, en vez de esperar al auto-escalado reactivo." },
+    { "en": "PolarDB", "es": "PolarDB", "def": "Base de datos distribuida de Alibaba Cloud con separación de cómputo y almacenamiento, usada para sostener picos masivos de solicitudes." },
+    { "en": "CDN / DCDN", "es": "CDN / DCDN", "def": "Redes de distribución de contenido que sirven assets estáticos cerca del usuario final, reduciendo carga sobre el origen." },
+    { "en": "WAF (Web Application Firewall)", "es": "WAF", "def": "Firewall de aplicación web que filtra tráfico malicioso antes de que llegue a los servidores de aplicación." },
+    { "en": "Anti-DDoS", "es": "Anti-DDoS", "def": "Servicio de mitigación de ataques de denegación de servicio distribuido." },
+    { "en": "Circuit Breaker", "es": "Circuit breaker", "def": "Patrón que corta temporalmente las llamadas a un servicio que falla, evitando que la falla se propague." },
+    { "en": "Graceful Degradation", "es": "Degradación controlada", "def": "Simplificar o desactivar funciones no críticas bajo carga extrema para proteger el flujo principal del servicio." },
+    { "en": "Virtual Waiting Room", "es": "Cola de espera virtual", "def": "Mecanismo que retiene usuarios en una fila controlada en vez de dejar que todas las solicitudes lleguen simultáneamente al backend." },
+    { "en": "Blast Radius", "es": "Radio de impacto", "def": "Alcance de daño potencial de una falla; una arquitectura celular/unitizada lo acota a una porción del sistema." },
+    { "en": "Chaos Engineering", "es": "Chaos engineering", "def": "Práctica de inyectar fallos controlados en preproducción para validar que los mecanismos de resiliencia funcionan." },
+    { "en": "Well-Architected Framework", "es": "Framework Well-Architected", "def": "Marco de referencia con 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia de rendimiento y optimización de costos." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Motor de almacenamiento y cómputo masivo usado para procesar el volumen de datos generado durante el evento." },
+    { "en": "Hologres", "es": "Hologres", "def": "Motor de análisis interactivo de baja latencia usado para dashboards casi en tiempo real durante el evento." },
+    { "en": "Cluster Autoscaler", "es": "Autoescalador de clúster", "def": "Componente que añade o retira nodos worker de un clúster de contenedores según la capacidad requerida." },
+    { "en": "Multi-AZ", "es": "Multi-zona", "def": "Distribución de recursos en varias zonas de disponibilidad dentro de una región para tolerar la falla de una zona." },
+    { "en": "SLB (Server Load Balancer)", "es": "Balanceador de carga", "def": "Servicio que distribuye tráfico entrante entre múltiples instancias o pods backend." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Arquitectura Alibaba Cloud?",
-      "options": [
-        "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Arquitectura de referencia Alibaba Cloud: multi-región, multi-AZ, elástica, con capas separadas (edge/CDN, app, cache, DB, storage, analytics). Double 11 (Singles Day) es el estudio de caso más grande: picos de $84B USD en un día, con Alibaba Cloud manejando la carga."
-    },
-    {
-      "q": "¿Qué es <strong>Well-Architected</strong> (Well-Architected) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Well-Architected (Well-Architected): 5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-region</strong> (Multi-región) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Despliegue en varias regiones para DR/latencia.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Múltiples zonas dentro de región.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-region (Multi-región): Despliegue en varias regiones para DR/latencia."
-    },
-    {
-      "q": "¿Qué es <strong>Multi-AZ</strong> (Multi-AZ) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Múltiples zonas dentro de región.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Auto-scale según demanda."
-      ],
-      "answer": 0,
-      "explain": "Multi-AZ (Multi-AZ): Múltiples zonas dentro de región."
-    },
-    {
-      "q": "¿Qué es <strong>Elastic</strong> (Elástico) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Auto-scale según demanda.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Elastic (Elástico): Auto-scale según demanda."
-    },
-    {
-      "q": "¿Qué es <strong>Fault Tolerance</strong> (Tolerancia a fallos) en Arquitectura Alibaba Cloud?",
-      "options": [
-        "Diseño que sobrevive a fallos parciales.",
-        "5 pilares: excelencia operacional, seguridad, fiabilidad, eficiencia, costo.",
-        "Despliegue en varias regiones para DR/latencia.",
-        "Múltiples zonas dentro de región."
-      ],
-      "answer": 0,
-      "explain": "Fault Tolerance (Tolerancia a fallos): Diseño que sobrevive a fallos parciales."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Arquitectura Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Arquitectura Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Arquitectura Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Arquitectura Alibaba Cloud es la elección típica:",
-      "options": [
-        "E-commerce con picos estacionales (Double 11 pattern)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: E-commerce con picos estacionales (Double 11 pattern)."
-    }
+    { "q": "¿Qué récord de pedidos por segundo alcanzó Alibaba durante el Doble 11 de 2020, según cifras reportadas por Alibaba Cloud?", "options": ["58.300 pedidos/segundo", "583.000 pedidos/segundo", "5.830 pedidos/segundo", "58.300.000 pedidos/segundo"], "answer": 1, "explain": "En 2020 se reportó un pico récord de 583.000 pedidos creados por segundo, superando los 544.000 del año anterior." },
+    { "q": "¿Por qué el pico del Doble 11 es especialmente difícil de manejar comparado con un crecimiento gradual de tráfico?", "options": ["Porque ocurre solo una vez cada 5 años", "Porque se concentra en una ventana de segundos y minutos, sin margen para que la infraestructura reaccione gradualmente", "Porque solo afecta a usuarios de una sola ciudad", "Porque no involucra transacciones de pago"], "answer": 1, "explain": "A diferencia de un crecimiento gradual, el pico llega casi instantáneamente tras la medianoche, exigiendo capacidad ya lista de antemano." },
+    { "q": "¿Qué estrategia de escalado es más apropiada para un pico de tráfico previsible y extremo que llega en cuestión de segundos?", "options": ["Auto-scaling puramente reactivo basado en métricas en tiempo real", "Aprovisionamiento predictivo (pre-calentamiento) basado en el historial de eventos anteriores, combinado con auto-scaling reactivo", "No aprovisionar capacidad adicional y confiar en que el sistema absorberá la carga", "Reducir la capacidad justo antes del evento para ahorrar costos"], "answer": 1, "explain": "El auto-scaling reactivo puro reacciona demasiado tarde para un pico de segundos; se necesita pre-calentamiento predictivo además del escalado reactivo." },
+    { "q": "¿Qué función cumple una capa de cache (Redis/Tair) en una arquitectura de tráfico masivo como el Doble 11?", "options": ["Cifra el tráfico entre el usuario y el CDN", "Absorbe la mayoría de las lecturas repetidas, reduciendo la presión directa sobre la base de datos", "Reemplaza completamente a la base de datos", "Sirve únicamente para almacenar logs de auditoría"], "answer": 1, "explain": "El cache evita que cada solicitud de lectura (catálogo, precios) golpee directamente el motor transaccional." },
+    { "q": "¿Qué característica de PolarDB le permitió sostener decenas de millones de solicitudes por segundo durante el pico del evento?", "options": ["Ejecutarse en una única instancia sin réplicas", "La separación de cómputo y almacenamiento, que permite escalar réplicas de lectura de forma independiente", "No usar ningún tipo de replicación", "Estar limitado a una sola zona de disponibilidad"], "answer": 1, "explain": "La arquitectura de cómputo-almacenamiento desacoplado de PolarDB permite añadir réplicas de lectura sin rediseñar el nodo de escritura." },
+    { "q": "Un servicio secundario (por ejemplo, recomendaciones personalizadas) empieza a responder lento y amenaza con arrastrar a todo el sistema. ¿Qué patrón de resiliencia es el más adecuado?", "options": ["Aumentar la capacidad de todos los servicios por igual", "Un circuit breaker que corte temporalmente las llamadas hacia ese servicio", "Ignorar el problema porque es un servicio secundario", "Desactivar completamente el balanceador de carga"], "answer": 1, "explain": "El circuit breaker aísla la falla de un servicio dependiente, evitando que se propague al resto del sistema." },
+    { "q": "¿Qué logra una arquitectura celular o unitizada (blast radius acotado) en un evento de escala masiva?", "options": ["Aumenta el costo operativo sin ningún beneficio", "Limita el impacto de la falla de una unidad a un subconjunto de usuarios, en vez de afectar a todo el sistema", "Elimina por completo la necesidad de monitoreo", "Solo aplica a la capa de almacenamiento"], "answer": 1, "explain": "Dividir la infraestructura en unidades autosuficientes acota el radio de impacto de cualquier falla parcial." },
+    { "q": "¿Cuál es el propósito de una cola de espera virtual en el momento de máxima demanda?", "options": ["Aumentar artificialmente la latencia para todos los usuarios sin motivo", "Liberar tráfico hacia el backend de forma controlada en vez de dejar que todas las solicitudes lleguen simultáneamente", "Reemplazar al balanceador de carga", "Cifrar las transacciones de pago"], "answer": 1, "explain": "La cola virtual evita que un pico instantáneo sature el backend, ofreciendo una espera visible en vez de una caída del servicio." },
+    { "q": "¿Qué práctica permite validar antes del evento que los mecanismos de resiliencia realmente funcionan bajo falla?", "options": ["Chaos engineering en ambientes de preproducción", "Aumentar el precio de los productos", "Desactivar el monitoreo durante las pruebas", "Ejecutar pruebas solo después del evento"], "answer": 0, "explain": "Inyectar fallos controlados en preproducción (chaos engineering) revela puntos débiles antes de que ocurran en producción real." },
+    { "q": "¿Cuál de los 5 pilares de Well-Architected se relaciona directamente con no sobreaprovisionar capacidad de pico durante todo el año?", "options": ["Seguridad", "Optimización de costos", "Excelencia operacional", "Fiabilidad"], "answer": 1, "explain": "El pilar de optimización de costos busca escalar la capacidad según demanda real, evitando pagar por capacidad de pico permanente." },
+    { "q": "¿Qué rol cumplen MaxCompute y Hologres durante el Doble 11?", "options": ["Procesar pagos con tarjeta de crédito", "Procesar el volumen masivo de datos del evento y alimentar dashboards casi en tiempo real", "Servir como balanceador de carga principal", "Sustituir a PolarDB como base de datos transaccional"], "answer": 1, "explain": "MaxCompute y Hologres forman la capa de analítica que procesa datos a gran escala y permite observar el evento en tiempo casi real." },
+    { "q": "¿Qué antipatrón describe mantener la capacidad de infraestructura al nivel del pico del Doble 11 durante los 365 días del año?", "options": ["Es la práctica recomendada por Alibaba Cloud", "Un antipatrón que dispara el costo operativo sin necesidad real la mayor parte del tiempo", "No tiene ningún impacto económico", "Es obligatorio por regulación"], "answer": 1, "explain": "Mantener capacidad de pico todo el año es ineficiente; la elasticidad (auto-scaling + pre-calentamiento) es la alternativa recomendada." },
+    { "q": "¿Qué reducción de costo por cada 10.000 pedidos reportó Alibaba Cloud al adoptar arquitecturas cloud-native y elásticas para el Doble 11?", "options": ["Ningún cambio significativo", "Hasta un 80% frente a arquitecturas de años anteriores", "Un aumento del 80%", "Solo se redujo el costo de almacenamiento, no de cómputo"], "answer": 1, "explain": "Alibaba Cloud reportó una reducción de hasta el 80% en el costo por cada 10.000 pedidos gracias a la adopción de arquitecturas cloud-native." }
   ],
-  "exam_focus": "5 pilares Well-Architected, Multi-AZ vs Multi-Region, Elastic patterns, Double 11 lessons.",
+  "exam_focus": "El examen suele evaluar: (a) por qué un pico extremo y súbito requiere pre-calentamiento predictivo además de auto-scaling reactivo, (b) el rol de cada capa (edge, app, cache, DB, analítica) en absorber un tipo distinto de presión, (c) patrones de resiliencia (circuit breaker, degradación controlada, cola virtual, blast radius acotado), (d) relación entre los 5 pilares de Well-Architected y decisiones concretas de arquitectura a escala.",
   "official_intro": "Through this course, you will not only learn about the history of Alibaba's Double Eleven Shopping Festival, but also the Alibaba Cloud technologies behind this event-- What are the challenges of the Double 11 Shopping Festival which drives the technical advancements of Alibaba?",
   "recommended_for": "Solution Architecture, Big Data Engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-shopping-technologies",

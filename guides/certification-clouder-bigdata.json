@@ -2,442 +2,183 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-bigdata",
   "title_en": "Introduction to Big Data Platform on the Cloud",
-  "title_es": "Introducción a Big Datos Platform en Cloud",
+  "title_es": "Introducción a la Plataforma de Big Data en la Nube",
+  "title_es_html": "Introducción a la <em>Plataforma de Big Data</em> en la Nube",
   "duration_es": "37 minutos",
   "level_es": "Intermedio",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_bigdata",
-  "lead": "Guía completa en español para el curso «Introduction to Big Data Platform on the Cloud» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Introduction to Big Data Platform on the Cloud» de Alibaba Cloud Academy. Es la puerta de entrada conceptual a todo el stack de datos de Alibaba Cloud: por qué el modelo tradicional de data warehouse no escala, y cómo MaxCompute (el motor SQL serverless a escala petabyte) junto con DataWorks (la capa de orquestación) resuelven el problema sin que el cliente administre un solo servidor.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué un data warehouse tradicional deja de escalar frente a volúmenes de big data y qué modelo lo reemplaza en la nube.",
+    "<strong>Describir</strong> la arquitectura serverless de MaxCompute: Project, Table, Partition y el motor de cómputo distribuido detrás de cada query.",
+    "<strong>Distinguir</strong> el rol de MaxCompute (procesamiento) frente al de DataWorks (orquestación) y frente al de OSS (almacenamiento de objetos crudo).",
+    "<strong>Aplicar</strong> el particionamiento de tablas como técnica principal de control de costo y rendimiento.",
+    "<strong>Elegir</strong> el modelo de facturación de MaxCompute (Pay-As-You-Go vs. cuota reservada) según el patrón de carga.",
+    "<strong>Ubicar</strong> a MaxCompute dentro del ecosistema analítico de Alibaba Cloud (DataWorks, Quick BI, DataV, EMR, Hologres)."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Los datos fuente (bases de datos transaccionales, logs de aplicación, archivos en OSS) se sincronizan hacia MaxCompute mediante DataWorks Data Integration o la API Tunnel. Dentro de MaxCompute, los datos viven en tablas particionadas (normalmente por fecha) dentro de un Project, almacenadas en formato columnar comprimido y replicado automáticamente. Las consultas SQL —lanzadas desde DataWorks Data Studio, un cliente JDBC/ODBC o la CLI odpscmd— se ejecutan sobre un pool de cómputo compartido o una cuota reservada, sin que el usuario administre nodos. Los resultados alimentan herramientas de BI como Quick BI o DataV, o vuelven a OSS para consumo externo.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · El problema que resuelve el big data en la nube",
+      "title_en": "Why Traditional Warehousing Doesn't Scale",
+      "intro": "Antes de tocar un solo producto, el curso sitúa el problema: un data warehouse relacional clásico (Oracle, SQL Server on-premise) fue diseñado para gigabytes o pocos terabytes, no para los volúmenes que genera una empresa digital moderna. Entender esta limitación es lo que justifica todo lo que viene después.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Escalado vertical agotado</strong>: un warehouse tradicional crece añadiendo CPU/RAM/disco a una sola máquina — hay un techo físico y de costo que se alcanza rápido con datos de clickstream, IoT o logs.",
+        "<strong>Acoplamiento cómputo-almacenamiento</strong>: en arquitecturas on-premise, para tener más almacenamiento hay que comprar también más cómputo (y viceversa), aunque el patrón de uso no lo requiera.",
+        "<strong>Datos semi-estructurados y no estructurados</strong>: logs JSON, clickstreams o eventos de sensor no encajan bien en un esquema relacional rígido definido por adelantado.",
+        "<strong>La respuesta de la nube</strong>: separar almacenamiento (OSS, barato y elástico) de cómputo (MaxCompute, elástico y facturado por uso), y añadir una capa de orquestación (DataWorks) que mueve y transforma los datos entre ambos.",
+        "<strong>Big data no es solo 'mucho volumen'</strong>: las 3V clásicas —volumen, velocidad y variedad— son las que determinan si un problema requiere una plataforma de big data en vez de una base de datos relacional convencional."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen no es «¿qué es big data?» sino «¿por qué un warehouse tradicional no basta?». La respuesta esperada combina <em>volumen que excede la capacidad de una sola máquina</em> + <em>necesidad de separar cómputo y almacenamiento</em>."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · MaxCompute: el motor central de la plataforma",
+      "title_en": "MaxCompute as the Core Engine",
+      "intro": "MaxCompute (antes conocido como ODPS, Open Data Processing Service) es el data warehouse serverless de Alibaba Cloud: se escribe SQL, no se administra un clúster. Este módulo cubre su modelo mental básico.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Serverless de verdad</strong>: no hay instancias que aprovisionar ni parchear — se crea un Project, se cargan tablas y se lanzan queries; Alibaba Cloud gestiona el clúster subyacente de forma transparente.",
+        "<strong>Almacenamiento columnar</strong>: los datos se guardan por columna, no por fila, lo que acelera drásticamente las consultas analíticas que solo leen unas pocas columnas de tablas anchas.",
+        "<strong>MaxCompute SQL</strong>: dialecto SQL con extensiones propias para big data (funciones de ventana, tipos complejos como ARRAY/MAP/STRUCT) que se ejecuta como un plan distribuido sobre miles de nodos.",
+        "<strong>Motores de cómputo adicionales</strong>: además de SQL, MaxCompute soporta MapReduce nativo, Graph (algoritmos sobre grafos) y integración con PAI para machine learning sobre los mismos datos, sin moverlos.",
+        "<strong>Aislamiento por Project</strong>: cada Project tiene su propia cuota, sus propios permisos RAM y su propia facturación — es la unidad de gobernanza básica, útil para separar equipos o entornos."
       ],
       "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
+        "label": "Concepto clave",
+        "text": "MaxCompute cobra por <em>cómputo consumido</em> (bytes procesados o cuota reservada), no por tener el clúster encendido. Un Project sin queries no genera costo de cómputo, solo el de almacenamiento de sus tablas."
       }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Tablas, particiones y el impacto en el costo",
+      "title_en": "Tables, Partitions and Cost Impact",
+      "intro": "El particionamiento es, con diferencia, el concepto que más preguntas de examen genera en esta familia de cursos: es la palanca principal para controlar cuánto cuesta y cuánto tarda una consulta.",
       "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Tabla particionada vs. no particionada</strong>: una tabla particionada divide físicamente los datos por el valor de una o más columnas (típicamente fecha, ej. <code>pt=20260813</code>); una consulta que filtra por esa columna solo lee las particiones relevantes.",
+        "<strong>Partition pruning</strong>: si una query no incluye un filtro sobre la columna de partición, MaxCompute debe leer la tabla completa — en una tabla de años de histórico esto puede significar escanear terabytes innecesariamente.",
+        "<strong>Costo por bytes escaneados</strong>: en el modelo pay-as-you-go, el costo de una query es proporcional a los datos leídos; particionar y filtrar correctamente es la optimización de costo más directa disponible.",
+        "<strong>Sobre-particionamiento</strong>: particionar por una columna de altísima cardinalidad (p.ej. user_id) genera millones de particiones diminutas, lo que degrada el rendimiento del metastore — la partición debe ser una columna de baja cardinalidad y alto valor de filtrado, como fecha o región.",
+        "<strong>Lifecycle</strong>: se puede configurar que las particiones más antiguas expiren y se eliminen automáticamente, controlando el crecimiento de storage sin intervención manual."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe una tabla de eventos con años de historia y consultas que casi siempre filtran por día, la respuesta correcta es particionar por fecha; si describe un escaneo sin filtro de partición, el antipatrón a señalar es exactamente ese: falta de filtro de partición."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "4 · Ingesta de datos: Tunnel y DataWorks",
+      "title_en": "Data Ingestion: Tunnel and DataWorks",
+      "intro": "MaxCompute no tiene sentido sin datos dentro. Este módulo cubre las dos vías principales para llevar datos hacia sus tablas.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>Tunnel</strong>: API de alto rendimiento para cargas y descargas batch masivas — es la vía recomendada cuando se necesita mover grandes volúmenes de datos de forma programática (por ejemplo, desde un job de Python o un ETL custom).",
+        "<strong>DataWorks Data Integration</strong>: capa visual sobre Tunnel y decenas de otros conectores (RDS, Kafka, OSS, otras bases externas) que permite definir sincronizaciones sin escribir código, con reintentos y monitoreo incluidos.",
+        "<strong>Tablas externas</strong>: MaxCompute puede leer datos que físicamente residen en OSS mediante una tabla externa, evitando duplicar el dato — útil para explorar un data lake antes de decidir si conviene cargarlo formalmente.",
+        "<strong>Instance / Job</strong>: cada ejecución de una tarea SQL o Tunnel en MaxCompute genera una Instance con su propio Logview, el panel de diagnóstico donde se inspecciona el plan de ejecución y se detectan cuellos de botella.",
+        "<strong>UDF (funciones definidas por el usuario)</strong>: cuando SQL no alcanza, se registran funciones custom en Java o Python (UDF escalares, UDAF de agregación, UDTF que devuelven múltiples filas) como Resources del Project."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Tunnel es la API; DataWorks Data Integration es la interfaz de orquestación construida encima de conectores como Tunnel. En el examen, si se menciona 'sin escribir código' o 'monitoreo visual de sincronización', la respuesta es DataWorks, no Tunnel directo."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · MaxCompute dentro del ecosistema de Alibaba Cloud",
+      "title_en": "MaxCompute in the Alibaba Cloud Ecosystem",
+      "intro": "Ningún proyecto de big data real usa un solo servicio. Este módulo posiciona a MaxCompute frente a sus vecinos más cercanos, una distinción que el examen evalúa con frecuencia.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>MaxCompute vs. OSS</strong>: OSS almacena objetos crudos sin estructura de consulta; MaxCompute almacena tablas consultables por SQL. Un flujo típico usa OSS como zona de aterrizaje (landing zone) y MaxCompute como capa analítica.",
+        "<strong>MaxCompute vs. EMR</strong>: EMR ofrece clústeres Hadoop/Spark que el cliente configura con más control (versión de motor, tuning fino); MaxCompute es serverless con menos perillas pero cero administración de clúster.",
+        "<strong>MaxCompute vs. Hologres</strong>: Hologres es un motor de análisis interactivo de baja latencia (sub-segundo) pensado para dashboards en vivo; MaxCompute está optimizado para procesamiento batch a gran escala, no para respuestas instantáneas.",
+        "<strong>Salida hacia BI</strong>: los resultados de MaxCompute alimentan Quick BI (reportes de negocio) o DataV (pantallas grandes) para el consumo final por parte de usuarios no técnicos.",
+        "<strong>RAM y seguridad</strong>: el acceso a un Project de MaxCompute se controla con políticas RAM y Package (paquetes de autorización cruzada entre Projects) — nunca se comparten credenciales de cuenta raíz para dar acceso a un equipo."
+      ],
+      "keypoint": {
+        "label": "Diagrama típico",
+        "text": "OSS (landing) → DataWorks Data Integration (orquesta) → MaxCompute (procesa y almacena tablas) → Quick BI / DataV (visualiza). Hologres se añade en paralelo solo cuando se requiere latencia interactiva."
+      }
+    },
+    {
+      "title_es": "6 · Modelo de costos y errores comunes",
+      "title_en": "Cost Model and Common Mistakes",
+      "intro": "El cierre del curso conecta todo lo anterior con decisiones de costo, que es donde el examen suele poner los distractores más finos.",
+      "points": [
+        "<strong>Pay-As-You-Go</strong>: se cobra por los bytes que cada query escanea; ideal para cargas de trabajo esporádicas o impredecibles, pero puede salir caro si hay muchas queries mal optimizadas.",
+        "<strong>Cuota reservada (Subscription)</strong>: se paga por una capacidad de cómputo fija (medida en CU, compute units) disponible todo el mes; conviene cuando hay un volumen constante y predecible de queries.",
+        "<strong>Antipatrón</strong>: usar <code>SELECT *</code> sin filtro de partición sobre tablas históricas grandes — dispara el escaneo de toda la tabla y multiplica el costo sin necesidad.",
+        "<strong>Antipatrón</strong>: mezclar cargas de desarrollo y producción en el mismo Project — un query mal escrito en desarrollo puede agotar la cuota reservada de producción.",
+        "<strong>Antipatrón</strong>: no definir Lifecycle en tablas de logs — el almacenamiento crece indefinidamente aunque nadie consulte datos de hace tres años.",
+        "<strong>Estrategia de examen</strong>: ante una pregunta de costo, identifica primero si la carga es estable (reservada) o esporádica (pay-as-you-go), y luego revisa si el escenario ya viola una buena práctica de particionamiento."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Carga constante y predecible → cuota reservada. Carga esporádica o exploratoria → pay-as-you-go. En ambos casos, particionar y filtrar correctamente es lo que más impacta el costo real, más que el modelo de facturación elegido."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Data warehouse corporativo consolidando años de historial de ventas para reportes ejecutivos" },
+    { "title": "Escenario 2", "text": "ETL diario que transforma logs crudos de OSS en tablas particionadas por fecha listas para BI" },
+    { "title": "Escenario 3", "text": "Exploración ad-hoc de un data lake en OSS mediante tablas externas antes de decidir cargarlo" },
+    { "title": "Escenario 4", "text": "Feature engineering en SQL sobre históricos completos para alimentar un modelo de machine learning en PAI" },
+    { "title": "Escenario 5", "text": "Migración de un data warehouse on-premise que ya no escala hacia un modelo de cómputo elástico" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Consultar tablas históricas grandes sin filtro de partición, escaneando terabytes innecesarios",
+    "Particionar por una columna de altísima cardinalidad (como user_id), generando millones de particiones diminutas",
+    "Mezclar cargas de desarrollo y producción en el mismo Project, agotando cuota compartida",
+    "No configurar Lifecycle en tablas de logs, dejando crecer el almacenamiento sin control",
+    "Duplicar datos hacia MaxCompute cuando una tabla externa sobre OSS habría bastado para explorar",
+    "Elegir pay-as-you-go para una carga de consultas constante y predecible, pagando de más frente a una cuota reservada"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "odpscmd -e \"create table ventas (id bigint, monto double) partitioned by (pt string);\"", "desc": "Crear una tabla particionada por fecha" },
+    { "cmd": "odpscmd -e \"select * from ventas where pt='20260813';\"", "desc": "Consultar filtrando por partición" },
+    { "cmd": "tunnel upload ventas_20260813.csv ventas/pt=20260813", "desc": "Cargar un archivo local a una partición vía Tunnel" },
+    { "cmd": "odpscmd -e \"add jar mis_udfs.jar -f;\"", "desc": "Registrar un archivo JAR como Resource para UDFs" },
+    { "cmd": "aliyun odps DescribeProject --ProjectName mi_proyecto", "desc": "Consultar la cuota y configuración de un Project" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Data warehouse serverless a escala petabyte de Alibaba Cloud; antes conocido como ODPS." },
+    { "en": "Project", "es": "Proyecto", "def": "Unidad organizativa de MaxCompute con cuota, permisos RAM y facturación propios." },
+    { "en": "Partition", "es": "Partición", "def": "Segmentación física de una tabla por el valor de una columna (típicamente fecha); filtrar por ella evita escanear la tabla completa." },
+    { "en": "Partition Pruning", "es": "Poda de particiones", "def": "Optimización que descarta particiones irrelevantes de una consulta antes de escanear datos." },
+    { "en": "External Table", "es": "Tabla externa", "def": "Tabla de MaxCompute cuyos datos residen físicamente en OSS, sin duplicarlos dentro del Project." },
+    { "en": "Tunnel", "es": "Tunnel", "def": "API de alto rendimiento de MaxCompute para cargas y descargas batch masivas de datos." },
+    { "en": "UDF / UDAF / UDTF", "es": "Función definida por el usuario", "def": "Funciones custom en Java/Python: escalares (UDF), de agregación (UDAF) o que devuelven varias filas (UDTF)." },
+    { "en": "Resource", "es": "Resource", "def": "Archivo (JAR, script Python, tabla) registrado en un Project y referenciable desde UDFs o jobs." },
+    { "en": "Instance", "es": "Instancia (job)", "def": "Ejecución concreta de una tarea SQL, MapReduce o Tunnel dentro de MaxCompute, con su propio Logview." },
+    { "en": "Logview", "es": "Logview", "def": "Panel de diagnóstico que muestra el plan de ejecución distribuido de una Instance de MaxCompute." },
+    { "en": "Compute Unit (CU)", "es": "Unidad de cómputo", "def": "Unidad de medida de la cuota de cómputo reservada de MaxCompute." },
+    { "en": "Lifecycle", "es": "Ciclo de vida", "def": "Regla que expira y elimina automáticamente particiones antiguas de una tabla." },
+    { "en": "Pay-As-You-Go", "es": "Pago por uso", "def": "Modelo de facturación de MaxCompute por bytes escaneados en cada consulta." },
+    { "en": "Reserved Quota / Subscription", "es": "Cuota reservada", "def": "Capacidad de cómputo fija contratada por mes, medida en CU, para cargas estables." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Plataforma de orquestación, desarrollo y gobernanza de datos que actúa como front-end de MaxCompute." },
+    { "en": "Hologres", "es": "Hologres", "def": "Motor de análisis interactivo de baja latencia de Alibaba Cloud, complementario a MaxCompute para dashboards en vivo." },
+    { "en": "RAM", "es": "RAM", "def": "Resource Access Management: servicio de identidad y permisos de Alibaba Cloud, equivalente a IAM." },
+    { "en": "Package", "es": "Paquete de autorización", "def": "Mecanismo de MaxCompute para compartir objetos entre Projects distintos sin duplicar datos." },
+    { "en": "Columnar Storage", "es": "Almacenamiento columnar", "def": "Formato de almacenamiento por columna que acelera consultas analíticas sobre tablas anchas." },
+    { "en": "PAI", "es": "PAI", "def": "Platform for AI: plataforma de machine learning de Alibaba Cloud integrada con MaxCompute para entrenar modelos sobre los mismos datos." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "¿Por qué un data warehouse relacional tradicional on-premise deja de ser viable frente a grandes volúmenes de big data?", "options": ["Porque SQL no puede usarse para consultar datos", "Porque el escalado vertical de una sola máquina tiene un techo físico y de costo, y no separa cómputo de almacenamiento", "Porque los datos relacionales no pueden comprimirse", "Porque no admite particiones"], "answer": 1, "explain": "El cuello de botella es el escalado vertical y el acoplamiento entre cómputo y almacenamiento, no una limitación de SQL en sí." },
+    { "q": "¿Qué modelo de facturación describe mejor a MaxCompute en su uso estándar?", "options": ["Se cobra por tener el clúster encendido, esté en uso o no", "Se cobra principalmente por el cómputo consumido (bytes escaneados o cuota reservada), no por infraestructura ociosa", "Es gratuito hasta 1 TB de datos", "Se cobra por número de tablas creadas"], "answer": 1, "explain": "MaxCompute es serverless: el costo depende del cómputo realmente consumido, no de mantener un clúster encendido." },
+    { "q": "Una tabla de eventos tiene tres años de historial y casi todas las consultas filtran por día. ¿Cuál es el diseño correcto?", "options": ["No particionar, para simplificar el modelo", "Particionar por user_id para acelerar búsquedas por usuario", "Particionar la tabla por fecha (columna de baja cardinalidad y alto valor de filtrado)", "Crear una tabla nueva cada día"], "answer": 2, "explain": "Particionar por fecha permite la poda de particiones (partition pruning) en el patrón de consulta descrito, minimizando bytes escaneados." },
+    { "q": "¿Qué ocurre si una consulta sobre una tabla particionada por fecha no incluye un filtro sobre esa columna?", "options": ["MaxCompute rechaza la consulta automáticamente", "Se lee únicamente la partición más reciente", "MaxCompute debe escanear la tabla completa, incrementando costo y tiempo", "No hay ningún impacto en costo ni rendimiento"], "answer": 2, "explain": "Sin filtro de partición no hay poda posible: la consulta escanea todas las particiones, encareciendo la operación." },
+    { "q": "¿Por qué particionar una tabla por una columna de altísima cardinalidad como user_id es un antipatrón?", "options": ["Porque MaxCompute no permite particionar por columnas numéricas", "Porque genera millones de particiones diminutas que degradan el rendimiento del metastore", "Porque el particionamiento por user_id siempre es ilegal", "Porque duplica los datos automáticamente"], "answer": 1, "explain": "Una columna de muy alta cardinalidad produce demasiadas particiones pequeñas, lo cual es ineficiente de gestionar y consultar." },
+    { "q": "¿Cuál es la diferencia principal entre Tunnel y DataWorks Data Integration?", "options": ["Son el mismo servicio con dos nombres distintos", "Tunnel es la API de bajo nivel para carga/descarga batch; DataWorks Data Integration es la capa visual de orquestación construida sobre conectores como Tunnel", "DataWorks solo puede leer datos, no escribirlos", "Tunnel solo funciona con archivos CSV"], "answer": 1, "explain": "DataWorks Data Integration ofrece una interfaz sin código con monitoreo, construida encima de mecanismos como Tunnel." },
+    { "q": "¿Qué permite hacer una tabla externa (external table) en MaxCompute?", "options": ["Consultar datos que residen físicamente en OSS sin duplicarlos dentro del Project", "Compartir tablas entre distintas cuentas de Alibaba Cloud sin RAM", "Ejecutar queries sin costo de cómputo", "Crear automáticamente un backup en otra región"], "answer": 0, "explain": "Una tabla externa apunta a datos en OSS, útil para explorar un data lake antes de decidir cargarlo formalmente a MaxCompute." },
+    { "q": "Una empresa necesita una alternativa de baja latencia (sub-segundo) para dashboards en vivo, distinta del procesamiento batch. ¿Qué servicio de Alibaba Cloud es el más adecuado como complemento de MaxCompute?", "options": ["EMR", "Hologres", "OSS", "ActionTrail"], "answer": 1, "explain": "Hologres está diseñado para análisis interactivo de baja latencia, mientras MaxCompute está optimizado para procesamiento batch a gran escala." },
+    { "q": "¿Qué panel de MaxCompute permite inspeccionar el plan de ejecución distribuido de una consulta para diagnosticar cuellos de botella?", "options": ["CloudMonitor", "Logview", "ActionTrail", "Data Map"], "answer": 1, "explain": "Logview es el panel específico de MaxCompute para inspeccionar instancias (jobs) y su plan de ejecución." },
+    { "q": "Un equipo tiene un volumen de consultas constante y predecible mes a mes. ¿Qué modelo de facturación minimiza el costo?", "options": ["Pay-as-you-go puro", "Cuota reservada (subscription) medida en CU", "Instancias Spot", "Facturación por número de tablas"], "answer": 1, "explain": "Para cargas estables y predecibles, la cuota reservada suele ser más económica que pagar por bytes escaneados cada vez." },
+    { "q": "¿Qué mecanismo permite compartir objetos de MaxCompute entre distintos Projects sin duplicar los datos?", "options": ["Package (paquete de autorización)", "Lifecycle", "UDF", "Tunnel"], "answer": 0, "explain": "Package es el mecanismo de MaxCompute para autorizar el acceso cruzado a objetos entre Projects distintos." },
+    { "q": "¿Cuál es el propósito de configurar Lifecycle sobre una tabla de logs en MaxCompute?", "options": ["Cifrar automáticamente los datos", "Expirar y eliminar automáticamente particiones antiguas para controlar el crecimiento de almacenamiento", "Acelerar las consultas SQL", "Convertir la tabla en externa"], "answer": 1, "explain": "Lifecycle automatiza la retención de datos, evitando que el almacenamiento crezca indefinidamente sin intervención manual." },
+    { "q": "¿Qué tienen en común MapReduce nativo, Graph y la integración con PAI dentro de MaxCompute?", "options": ["Son motores de cómputo adicionales a SQL que operan sobre los mismos datos sin moverlos", "Son herramientas de visualización de datos", "Solo funcionan fuera de un Project", "Reemplazan completamente a MaxCompute SQL"], "answer": 0, "explain": "MaxCompute ofrece varios motores de procesamiento (SQL, MapReduce, Graph, integración con PAI) sobre el mismo almacenamiento de datos." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) por qué migrar de un warehouse tradicional a una arquitectura serverless, (b) el impacto del particionamiento en costo y rendimiento, (c) la diferencia entre Tunnel y DataWorks Data Integration, (d) cuándo usar tabla externa vs. carga completa, (e) elección entre pay-as-you-go y cuota reservada según el patrón de carga.",
   "official_intro": "Learn how to utilize data to make better business decisions. Optimize Alibaba Cloud's big data products to get the most value out of your data.",
   "recommended_for": "Mid-level Developers and Cloud Engineers",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_bigdata",

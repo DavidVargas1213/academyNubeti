@@ -2,469 +2,215 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-internetwork",
   "title_en": "Internetworking with VPC",
-  "title_es": "Interconexión de Redes con VPC",
+  "title_es": "Interconexión de una VPC: Rutas, Peering y Express Connect",
+  "title_es_html": "Interconexión de una VPC: Rutas, <em>Peering</em> y Express Connect",
   "duration_es": "65 minutos",
   "level_es": "Intermedio",
   "category_es": "Redes y CDN",
   "subcategory_es": "Red en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_Internetwork",
-  "lead": "Guía completa en español para el curso «Internetworking with VPC» de Alibaba Cloud Academy. Cubre en profundidad Virtual Private Cloud (VPC). VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Internetworking with VPC» de Alibaba Cloud Academy, centrada en cómo una Virtual Private Cloud (VPC) se conecta hacia afuera: tablas de rutas, VPC Peering para uniones directas entre dos VPC, y Express Connect/VBR para circuitos físicos dedicados hacia on-premise. A diferencia de una guía centrada solo en VPN Gateway, aquí el eje es el enrutamiento de la VPC mismo — qué hace que el tráfico realmente encuentre el camino correcto entre redes.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Virtual Private Cloud (VPC)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: VPC, VSwitch, Route Table, Custom Route, NAT Gateway.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Virtual Private Cloud (VPC) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Diseñar</strong> el plan de direccionamiento (CIDR) y la segmentación en VSwitches de una VPC antes de interconectarla con otras redes.",
+    "<strong>Explicar</strong> la diferencia entre la tabla de rutas del sistema y una tabla de rutas personalizada, y cuándo se necesita cada una.",
+    "<strong>Configurar</strong> una conexión VPC Peering 1:1 y entender por qué no es transitiva.",
+    "<strong>Distinguir</strong> Express Connect y VBR (Virtual Border Router) como el mecanismo de interconexión física dedicada hacia on-premise.",
+    "<strong>Comparar</strong> VPC Peering, Express Connect y VPN Gateway como tres mecanismos distintos de interconexión, y elegir el correcto según el escenario.",
+    "<strong>Aplicar</strong> control de tráfico entre redes interconectadas con Security Groups y Network ACL.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre interconexión de VPC."
   ],
-  "architecture": "Diseño típico: VPC con CIDR 10.0.0.0/16 → dos VSwitch (10.0.1.0/24 zona A, 10.0.2.0/24 zona B). Un NAT Gateway proporciona salida a internet para instancias sin EIP. Un SLB público en front. Peering o CEN conecta con VPCs de otras cuentas/regiones. VPN Gateway une la oficina.",
+  "architecture": "Una VPC con CIDR 10.0.0.0/16 se segmenta en VSwitches por zona (10.0.1.0/24 en zona A, 10.0.2.0/24 en zona B), cada uno asociado a una tabla de rutas. La tabla de rutas del sistema ya resuelve el tráfico interno de la VPC; para todo lo demás se añaden rutas personalizadas: hacia un NAT Gateway para salida a internet de instancias sin EIP, hacia una conexión VPC Peering para alcanzar el CIDR de otra VPC en la misma región, o hacia un VBR (Virtual Border Router) de Express Connect para alcanzar el rango de IP de un data center on-premise a través de un circuito físico dedicado. Cuando la empresa necesita unir más de dos o tres VPC entre sí, este modelo de conexiones punto a punto deja de escalar y da paso a Cloud Enterprise Network (CEN), que actúa como un hub central — el tema de un curso de certificación distinto centrado exclusivamente en ese servicio.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Virtual Private Cloud (VPC)",
-      "title_en": "Introduction to Virtual Private Cloud (VPC)",
-      "intro": "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · VPC como red privada lógica: CIDR y VSwitch",
+      "title_en": "VPC as a Logical Private Network: CIDR and VSwitch",
+      "intro": "Antes de conectar una VPC con el mundo exterior hay que diseñarla bien por dentro — un plan de direccionamiento mal pensado es la causa más común de que una interconexión, meses después, resulte imposible sin rehacer la red.",
       "points": [
-        "<strong>Problema que resuelve</strong>: VPC es la red lógica privada donde vive todo recurso Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Virtual Private Cloud (VPC) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>VPC</strong>: red privada lógica aislada, con un bloque CIDR propio dentro de los rangos privados RFC 1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16); todo recurso de cómputo o base de datos de Alibaba Cloud vive dentro de una VPC.",
+        "<strong>VSwitch</strong>: subred de la VPC, atada a una única zona de disponibilidad; los recursos (ECS, RDS) reciben su IP privada de un VSwitch concreto, nunca directamente de la VPC.",
+        "<strong>Elegir el tamaño del CIDR con margen</strong>: un CIDR demasiado ajustado (p.ej. /24 para toda la VPC) se agota rápido al crecer; Alibaba Cloud permite un bloque principal amplio (hasta /8) más bloques secundarios si se necesita ampliar después.",
+        "<strong>Planificar sin solapes desde el día uno</strong>: si dos VPC que algún día podrían interconectarse comparten el mismo rango CIDR, esa interconexión (Peering, CEN) se vuelve imposible sin renumerar una de las dos — un problema costoso de corregir en producción."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Virtual Private Cloud (VPC) es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El diseño de CIDR no es un detalle administrativo — es la decisión que determina si la VPC podrá interconectarse sin fricción en el futuro. El examen suele plantear escenarios donde dos redes NO pueden unirse precisamente por solape de CIDR."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Virtual Private Cloud (VPC) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Tablas de rutas: sistema, personalizadas y next-hop",
+      "title_en": "Route Tables: System, Custom and Next-Hop",
+      "intro": "La tabla de rutas es la pieza que convierte una VPC de un conjunto de subredes aisladas en una red que realmente sabe adónde enviar cada paquete — y es también donde más errores de configuración se cometen al interconectar redes.",
       "points": [
-        "<strong>Patrón canónico</strong>: Diseño típico: VPC con CIDR 10.0.0.0/16 → dos VSwitch (10.0.1.0/24 zona A, 10.0.2.0/24 zona B). Un NAT Gateway proporciona salida a internet para instancias sin EIP. Un SLB público en front. Peering o CEN conecta con VPCs de otras cuentas/regiones. VPN Gateway une la oficina.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Virtual Private Cloud (VPC) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>VPC</strong> <em>(VPC)</em>: Red privada lógica con rango CIDR RFC1918 propio.",
-        "<strong>VSwitch</strong> <em>(VSwitch)</em>: Subred atada a una zona; los recursos toman IP de aquí.",
-        "<strong>Tabla de rutas</strong> <em>(Route Table)</em>: Define dónde va el tráfico. Se asocia a VSwitches.",
-        "<strong>Ruta personalizada</strong> <em>(Custom Route)</em>: Entrada manual (destino → next-hop) para NAT/VPN/peering.",
-        "<strong>NAT Gateway</strong> <em>(NAT Gateway)</em>: Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto).",
-        "<strong>EIP</strong> <em>(Elastic IP)</em>: IP pública portable, asignable a ECS, NAT o SLB.",
-        "<strong>VPN Gateway</strong> <em>(VPN Gateway)</em>: Túnel IPsec o SSL con redes remotas.",
-        "<strong>Express Connect</strong> <em>(Express Connect)</em>: Circuito físico dedicado (10/40/100 Gbps) con on-premise."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Tabla de rutas del sistema</strong>: se crea automáticamente con la VPC y resuelve el tráfico dentro de ella (entre VSwitches); no se puede eliminar y sus rutas locales no se pueden borrar.",
+        "<strong>Tabla de rutas personalizada</strong>: tabla adicional que el usuario asocia a uno o más VSwitches cuando necesita un comportamiento distinto al de la tabla del sistema — por ejemplo, forzar que un VSwitch use un NAT Gateway específico o una ruta hacia una red on-premise.",
+        "<strong>Ruta personalizada (Custom Route)</strong>: entrada manual con destino (CIDR) y next-hop; el next-hop puede ser un NAT Gateway, una conexión VPC Peering, un VBR de Express Connect, un VPN Gateway o una instancia ECS actuando como appliance de red.",
+        "<strong>Ruta más específica gana</strong>: cuando dos rutas podrían aplicar al mismo destino, la tabla de rutas usa la entrada con el prefijo más específico (longest prefix match), igual que en el enrutamiento IP tradicional.",
+        "<strong>El error más común</strong>: crear la conexión (Peering, VPN, Express Connect) y olvidar añadir la ruta personalizada hacia el CIDR remoto — la conexión existe pero el tráfico simplemente no la usa."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el escenario dice «la conexión muestra estado activo pero el tráfico no llega», sospecha primero de una ruta personalizada faltante o mal apuntada en la tabla de rutas — no de la conexión en sí."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · VPC Peering: unión directa 1:1",
+      "title_en": "VPC Peering: Direct 1:1 Connection",
+      "intro": "Cuando solo hace falta unir dos VPC —de la misma cuenta o de cuentas distintas— sin pasar por internet, VPC Peering es la solución más simple, con una limitación estructural que el examen pregunta con frecuencia.",
       "points": [
-        "<strong>HA</strong>: Planificar CIDR sin solapes desde el inicio (evita rehacer red al conectar)",
-        "<strong>HA</strong>: Usar VSwitch por zona (mínimo 2) para HA",
-        "<strong>HA</strong>: Habilitar Flow Logs en subredes sensibles",
-        "<strong>Buenas prácticas</strong>: NAT Gateway compartido para todas las subredes privadas — más barato que EIPs individuales",
-        "<strong>Buenas prácticas</strong>: Aplicar Security Groups + Network ACL en capas defense-in-depth",
-        "<strong>Buenas prácticas</strong>: Nunca dar EIP directa a bases de datos — usarlas solo tras un bastion o SLB privado"
+        "<strong>Qué es</strong>: una conexión privada directa entre dos VPC (misma región o entre regiones distintas) que permite que se comuniquen usando IP privada, como si fueran parte de la misma red.",
+        "<strong>No transitiva</strong>: si la VPC A tiene Peering con la VPC B, y la VPC B tiene Peering con la VPC C, la VPC A NO puede alcanzar a la VPC C a través de B — cada par necesita su propia conexión de Peering explícita.",
+        "<strong>Escala mal con muchas VPC</strong>: conectar N VPC entre sí con Peering exige hasta N×(N-1)/2 conexiones — con 5 VPC ya son 10 conexiones que mantener; a partir de un puñado de VPC, Cloud Enterprise Network resulta más práctico.",
+        "<strong>CIDR sin solape obligatorio</strong>: dos VPC con rangos que se superponen no pueden establecer Peering entre ellas — otra razón de peso para planificar el direccionamiento desde el inicio.",
+        "<strong>Requiere ruta en ambos lados</strong>: al igual que con cualquier next-hop, cada VPC necesita una ruta personalizada hacia el CIDR de la otra apuntando a la conexión de Peering — no es automático."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "VPC Peering resuelve bien el caso «unir 2 o 3 VPC puntualmente». Si el escenario describe «decenas de VPC en distintas regiones que deben hablar entre sí», la arquitectura no transitiva de Peering deja de ser viable y el examen espera que reconozcas la necesidad de un hub central."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Express Connect y VBR: el circuito físico dedicado",
+      "title_en": "Express Connect and VBR: The Dedicated Physical Circuit",
+      "intro": "Cuando la interconexión no es entre dos VPC sino entre una VPC y un data center físico, y el requisito es la máxima estabilidad de latencia, Express Connect ofrece un circuito dedicado que no comparte camino con el internet público.",
       "points": [
-        "<strong>Antipattern</strong>: CIDR 10.0.0.0/8 completo — imposible peerar con otros que usen mismo rango",
-        "<strong>Antipattern</strong>: Todo en una sola VPC/zona — sin HA ni segmentación",
-        "<strong>Antipattern</strong>: Reglas de SG 0.0.0.0/0 → cualquier puerto → ataques triviales",
-        "<strong>Antipattern</strong>: Confundir SG (stateful, por instancia) con NACL (stateless, por subred)",
-        "<strong>Antipattern</strong>: Olvidar que NAT Gateway tiene cargo por hora + por GB procesado",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Express Connect</strong>: circuito físico dedicado entre el data center del cliente y Alibaba Cloud, contratado en capacidades típicas de 2 Mbps hasta decenas de Gbps, con latencia estable y predecible frente a una VPN sobre internet.",
+        "<strong>VBR (Virtual Border Router)</strong>: el punto de peering lógico entre el circuito físico y la VPC — es donde se configuran las rutas hacia el data center remoto, de forma análoga a como el VPN Gateway lo hace para un túnel cifrado.",
+        "<strong>Enrutamiento estático vs. BGP</strong>: las rutas hacia la red on-premise se pueden declarar de forma estática o intercambiarse dinámicamente vía BGP; con BGP, un límite típico de alrededor de 110 rutas anunciadas evita que una fuga de rutas masiva sature la tabla del VBR.",
+        "<strong>CIDR sin solapes, otra vez</strong>: el rango de IP del data center y el de la VPC deben ser disjuntos; además, el bloque 100.64.0.0/10 está reservado para uso interno de la nube y no puede usarse en la red del cliente ni en la dirección de interconexión del VBR.",
+        "<strong>Alta disponibilidad con conexiones activo/activo</strong>: se recomienda contratar dos circuitos físicos independientes (idealmente con proveedores de última milla distintos) para no depender de un único punto de falla físico."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Express Connect resuelve el problema de latencia estable y ancho de banda garantizado que una VPN sobre internet no puede prometer — a cambio de mayor costo y un tiempo de aprovisionamiento de días o semanas, frente a los minutos que toma levantar una VPN."
+      }
+    },
+    {
+      "title_es": "5 · Tres mecanismos de interconexión: cuándo usar cada uno",
+      "title_en": "Three Interconnection Mechanisms: When to Use Each",
+      "intro": "VPC Peering, Express Connect y VPN Gateway resuelven problemas de interconexión distintos — confundirlos es uno de los errores conceptuales más frecuentes en el examen.",
+      "points": [
+        "<strong>VPC Peering</strong>: conecta dos VPC entre sí (nube-a-nube), sin tocar ninguna red on-premise; no cifra el tráfico porque nunca sale de la red privada de Alibaba Cloud.",
+        "<strong>Express Connect</strong>: conecta una VPC con una red física externa (on-premise u otro proveedor cloud) mediante un circuito dedicado; ofrece la latencia más estable pero el mayor costo y tiempo de aprovisionamiento.",
+        "<strong>VPN Gateway</strong>: conecta una VPC con una red externa a través de un túnel cifrado sobre internet público; se aprovisiona en minutos y es la opción más económica, a costa de mayor latencia y jitter variables (el detalle completo de su configuración —IKE, fases, túneles duales— se cubre en el curso dedicado a VPN Gateway).",
+        "<strong>Patrón híbrido habitual</strong>: usar Express Connect como conexión primaria hacia el data center y VPN Gateway como respaldo económico que se activa automáticamente solo si el circuito físico falla.",
+        "<strong>Ninguno de los tres es transitivo por sí solo</strong>: ni Peering ni una conexión Express Connect/VPN dan automáticamente acceso a terceras redes — cada relación de confianza y cada ruta se declara explícitamente."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Pregunta de examen típica: «¿nube a nube, sin cifrado, mismo proveedor?» → Peering. «¿on-premise, máxima estabilidad, presupuesto amplio?» → Express Connect. «¿on-premise, rápido de desplegar, presupuesto ajustado?» → VPN Gateway."
+      }
+    },
+    {
+      "title_es": "6 · Diseño de una arquitectura híbrida completa",
+      "title_en": "Designing a Complete Hybrid Architecture",
+      "intro": "En la práctica, una VPC de producción rara vez usa un solo mecanismo de interconexión — el examen evalúa si sabes combinarlos coherentemente en un mismo diagrama.",
+      "points": [
+        "<strong>Capas del diseño</strong>: VPC con VSwitches multi-zona → tabla de rutas del sistema para tráfico interno → rutas personalizadas hacia NAT Gateway (salida a internet), VPC Peering (otras VPC internas) y VBR/VPN Gateway (redes externas).",
+        "<strong>NAT Gateway como salida controlada</strong>: instancias sin EIP propia salen a internet a través de un NAT Gateway compartido (SNAT), evitando exponer cada instancia individualmente con su propia IP pública.",
+        "<strong>Segmentación por función</strong>: separar VSwitches (y sus tablas de rutas) por capa de aplicación —web, backend, base de datos— permite aplicar reglas de enrutamiento y seguridad distintas a cada una.",
+        "<strong>Documentar el mapa de CIDR de toda la organización</strong>: a medida que crecen las interconexiones, mantener un registro centralizado de qué CIDR usa cada VPC evita colisiones futuras que bloquearían un nuevo Peering o una migración a CEN."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Una arquitectura híbrida bien diseñada nunca depende de un único mecanismo de interconexión ni de una única zona — el examen premia reconocer redundancia (circuito + VPN de respaldo) y segmentación (VSwitch por función) como signos de diseño maduro."
+      }
+    },
+    {
+      "title_es": "7 · Seguridad del tráfico entre redes interconectadas",
+      "title_en": "Securing Traffic Between Interconnected Networks",
+      "intro": "Que dos redes estén conectadas no significa que todo su tráfico deba fluir sin restricción — el control de acceso se aplica en capas independientes de la conectividad misma.",
+      "points": [
+        "<strong>Security Group</strong>: firewall stateful a nivel de instancia (o ENI); sigue aplicándose exactamente igual sin importar si el tráfico entrante viene de internet, de una VPC peereada o de un VBR.",
+        "<strong>Network ACL</strong>: reglas stateless a nivel de VSwitch, evaluadas antes que el Security Group; útil para bloquear explícitamente un rango de IP completo a nivel de subred, independientemente de qué instancia esté detrás.",
+        "<strong>Principio de mínimo acceso entre VPC peereadas</strong>: tener Peering activo no obliga a abrir todos los puertos entre ambas VPC — se recomienda restringir el Security Group a los puertos y protocolos estrictamente necesarios entre los dos entornos.",
+        "<strong>RAM y control de quién puede crear conexiones</strong>: crear o aceptar una conexión de Peering, un VBR o una ruta personalizada son operaciones sensibles; deben restringirse mediante políticas RAM a roles específicos, no dejarse abiertas a cualquier usuario de la cuenta."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Conectividad (routing) y seguridad (Security Group/NACL) son dos capas independientes: una ruta que permite el tráfico no implica que el firewall lo autorice, y viceversa — ambas deben configurarse correctamente para que la comunicación funcione de forma segura."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de preguntas difíciles sobre interconexión de VPC giran en torno a errores de planificación de red observados en clientes reales al crecer más allá de una sola VPC.",
+      "points": [
+        "<strong>Antipatrón</strong>: usar un CIDR completo tipo 10.0.0.0/8 para una sola VPC — imposible de peerar después con cualquier otra red que use un rango dentro de ese mismo bloque.",
+        "<strong>Antipatrón</strong>: crear una conexión de Peering o Express Connect y olvidar la ruta personalizada correspondiente en la tabla de rutas.",
+        "<strong>Antipatrón</strong>: esperar que el Peering sea transitivo entre tres o más VPC sin configurar una conexión explícita para cada par.",
+        "<strong>Antipatrón</strong>: dejar Security Groups en 0.0.0.0/0 sobre cualquier puerto, confiando únicamente en que el tráfico «viene de una red confiable» por estar interconectada.",
+        "<strong>Antipatrón</strong>: intentar escalar a decenas de VPC interconectadas solo con Peering en vez de migrar a un hub central como CEN.",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, descarta primero la que ignora el diseño de CIDR sin solapes o la que confunde «conexión activa» con «tráfico realmente enrutado»."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee cada pregunta identificando si el problema es de <em>direccionamiento</em> (CIDR/VSwitch), de <em>enrutamiento</em> (tabla de rutas/next-hop) o de <em>mecanismo de interconexión</em> (Peering vs. Express Connect vs. VPN) — cada categoría apunta a una familia distinta de respuestas correctas."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Aislamiento de entornos dev/staging/prod en VPCs separadas"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Extensión híbrida: on-premise ↔ Alibaba Cloud vía Express Connect"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-región con CEN para replicación y failover"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Zero-trust: cada microservicio en su propia subred con SG restrictivos"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Segmentación PCI-DSS: red de tarjetas aislada"
-    }
+    { "title": "Escenario 1", "text": "Dos VPC de la misma cuenta, entornos staging y producción, que deben compartir un servicio interno de autenticación vía VPC Peering" },
+    { "title": "Escenario 2", "text": "Data center corporativo con latencia crítica hacia una VPC de producción — Express Connect con VBR y circuitos activo/activo" },
+    { "title": "Escenario 3", "text": "Startup que necesita interconectar su data center en semanas y con presupuesto ajustado — VPN Gateway como primera fase, Express Connect como upgrade futuro" },
+    { "title": "Escenario 4", "text": "Migración de una VPC con CIDR solapado que bloquea un Peering planeado — renumeración de subredes antes de interconectar" },
+    { "title": "Escenario 5", "text": "Instancias sin IP pública que necesitan salir a internet para actualizaciones — NAT Gateway compartido con ruta personalizada" },
+    { "title": "Escenario 6", "text": "Organización que pasa de 3 a 12 VPC interconectadas y detecta que el número de conexiones Peering se ha vuelto inmanejable" }
   ],
   "mistakes": [
-    "CIDR 10.0.0.0/8 completo — imposible peerar con otros que usen mismo rango",
-    "Todo en una sola VPC/zona — sin HA ni segmentación",
-    "Reglas de SG 0.0.0.0/0 → cualquier puerto → ataques triviales",
-    "Confundir SG (stateful, por instancia) con NACL (stateless, por subred)",
-    "Olvidar que NAT Gateway tiene cargo por hora + por GB procesado"
+    "Usar un CIDR demasiado amplio o mal planificado que después bloquea un Peering por solape",
+    "Crear una conexión (Peering, Express Connect, VPN) y olvidar la ruta personalizada correspondiente",
+    "Asumir que el Peering es transitivo entre tres o más VPC",
+    "Dejar Security Groups abiertos a 0.0.0.0/0 confiando en que el tráfico viene de una red 'interna'",
+    "Intentar escalar a decenas de VPC solo con conexiones Peering en vez de migrar a un hub central",
+    "Confundir Security Group (stateful, por instancia) con Network ACL (stateless, por subred)"
   ],
   "cli": [
-    {
-      "cmd": "aliyun vpc CreateVpc --CidrBlock 10.0.0.0/16",
-      "desc": "Crear VPC"
-    },
-    {
-      "cmd": "aliyun vpc CreateVSwitch --VpcId ... --ZoneId ... --CidrBlock 10.0.1.0/24",
-      "desc": "Crear subred"
-    },
-    {
-      "cmd": "aliyun vpc CreateNatGateway --VpcId ... --NatType Enhanced",
-      "desc": "NAT Gateway"
-    },
-    {
-      "cmd": "aliyun vpc AllocateEipAddress --Bandwidth 5",
-      "desc": "Reservar EIP"
-    }
+    { "cmd": "aliyun vpc CreateVpc --CidrBlock 10.0.0.0/16 --VpcName vpc-produccion", "desc": "Crear una VPC con un bloque CIDR planificado" },
+    { "cmd": "aliyun vpc CreateVSwitch --VpcId vpc-xxxxx --ZoneId cn-hangzhou-a --CidrBlock 10.0.1.0/24", "desc": "Crear una subred (VSwitch) en una zona" },
+    { "cmd": "aliyun vpc CreateVpcPeerConnection --VpcId vpc-xxxxx --AcceptingVpcId vpc-yyyyy --AcceptingRegionId cn-hangzhou", "desc": "Crear una conexión VPC Peering entre dos VPC" },
+    { "cmd": "aliyun vpc CreateRouteEntry --RouteTableId vtb-xxxxx --DestinationCidrBlock 172.16.0.0/16 --NextHopType VpcPeer --NextHopId pcc-xxxxx", "desc": "Añadir la ruta personalizada hacia el CIDR de la VPC remota" },
+    { "cmd": "aliyun vpc CreateVirtualBorderRouter --PhysicalConnectionId pc-xxxxx --VlanId 100 --LocalGatewayIp 10.10.0.1 --PeerGatewayIp 10.10.0.2", "desc": "Crear un VBR sobre un circuito físico de Express Connect" },
+    { "cmd": "aliyun vpc DescribeRouteTables --VpcId vpc-xxxxx", "desc": "Consultar las tablas de rutas asociadas a una VPC" }
   ],
   "glossary": [
-    {
-      "en": "VPC",
-      "es": "VPC",
-      "def": "Red privada lógica con rango CIDR RFC1918 propio."
-    },
-    {
-      "en": "VSwitch",
-      "es": "VSwitch",
-      "def": "Subred atada a una zona; los recursos toman IP de aquí."
-    },
-    {
-      "en": "Route Table",
-      "es": "Tabla de rutas",
-      "def": "Define dónde va el tráfico. Se asocia a VSwitches."
-    },
-    {
-      "en": "Custom Route",
-      "es": "Ruta personalizada",
-      "def": "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-    },
-    {
-      "en": "NAT Gateway",
-      "es": "NAT Gateway",
-      "def": "Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto)."
-    },
-    {
-      "en": "Elastic IP",
-      "es": "EIP",
-      "def": "IP pública portable, asignable a ECS, NAT o SLB."
-    },
-    {
-      "en": "VPN Gateway",
-      "es": "VPN Gateway",
-      "def": "Túnel IPsec o SSL con redes remotas."
-    },
-    {
-      "en": "Express Connect",
-      "es": "Express Connect",
-      "def": "Circuito físico dedicado (10/40/100 Gbps) con on-premise."
-    },
-    {
-      "en": "VBR",
-      "es": "Virtual Border Router",
-      "def": "Punto de peering entre red física y VPC vía Express Connect."
-    },
-    {
-      "en": "CEN",
-      "es": "Cloud Enterprise Network",
-      "def": "Malla global que interconecta múltiples VPCs y VBRs."
-    },
-    {
-      "en": "VPC Peering",
-      "es": "Peering",
-      "def": "Conexión directa 1:1 entre dos VPCs en la misma región."
-    },
-    {
-      "en": "Security Group",
-      "es": "Grupo de seguridad",
-      "def": "Firewall stateful a nivel de instancia."
-    },
-    {
-      "en": "Network ACL",
-      "es": "ACL de red",
-      "def": "Reglas stateless a nivel de VSwitch."
-    },
-    {
-      "en": "PrivateLink",
-      "es": "PrivateLink",
-      "def": "Acceso privado a servicios sin exponer a internet."
-    },
-    {
-      "en": "Flow Log",
-      "es": "Flow Log",
-      "def": "Captura metadatos de tráfico para forensia."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "VPC", "es": "VPC", "def": "Red privada lógica aislada con un bloque CIDR propio dentro de los rangos RFC 1918." },
+    { "en": "VSwitch", "es": "VSwitch", "def": "Subred de la VPC atada a una zona; los recursos toman su IP privada de aquí." },
+    { "en": "CIDR", "es": "CIDR", "def": "Notación que define el rango de direcciones IP de una red o subred." },
+    { "en": "System Route Table", "es": "Tabla de rutas del sistema", "def": "Tabla creada automáticamente con la VPC que resuelve el tráfico interno entre VSwitches." },
+    { "en": "Custom Route Table", "es": "Tabla de rutas personalizada", "def": "Tabla adicional asociada a VSwitches específicos para un comportamiento de enrutamiento distinto al del sistema." },
+    { "en": "Custom Route / Next-hop", "es": "Ruta personalizada / next-hop", "def": "Entrada manual (destino CIDR → next-hop) hacia un NAT Gateway, Peering, VBR o VPN Gateway." },
+    { "en": "VPC Peering", "es": "Peering de VPC", "def": "Conexión privada directa 1:1 entre dos VPC, no transitiva." },
+    { "en": "Express Connect", "es": "Express Connect", "def": "Circuito físico dedicado entre un data center y Alibaba Cloud, con latencia estable y ancho de banda garantizado." },
+    { "en": "VBR (Virtual Border Router)", "es": "VBR", "def": "Punto de peering lógico entre un circuito de Express Connect y una VPC." },
+    { "en": "BGP Dynamic Routing", "es": "BGP dinámico", "def": "Intercambio automático de rutas entre el VBR y el router on-premise." },
+    { "en": "NAT Gateway", "es": "NAT Gateway", "def": "Recurso que traduce IP privadas a públicas para salida a internet (SNAT) o exposición controlada de un servicio (DNAT)." },
+    { "en": "Elastic IP (EIP)", "es": "EIP", "def": "IP pública portable, asignable a ECS, NAT Gateway o SLB de forma independiente del recurso." },
+    { "en": "Security Group", "es": "Grupo de seguridad", "def": "Firewall stateful a nivel de instancia/ENI, aplica sin importar el origen de la conexión." },
+    { "en": "Network ACL", "es": "ACL de red", "def": "Reglas stateless a nivel de VSwitch, evaluadas antes que el Security Group." },
+    { "en": "Transitividad", "es": "Transitividad", "def": "Propiedad que NO tiene el Peering: A-B y B-C conectados no implican que A alcance a C." },
+    { "en": "Cloud Enterprise Network (CEN)", "es": "CEN", "def": "Servicio que actúa como hub central para interconectar muchas VPC y VBR sin conexiones punto a punto." },
+    { "en": "VPN Gateway", "es": "VPN Gateway", "def": "Túnel cifrado sobre internet público como alternativa económica y rápida de desplegar frente a Express Connect." },
+    { "en": "Zona (AZ)", "es": "Zona de disponibilidad", "def": "Data center físicamente aislado dentro de una región; base de la segmentación de VSwitches." },
+    { "en": "Longest Prefix Match", "es": "Coincidencia de prefijo más largo", "def": "Regla de enrutamiento que prioriza la ruta con el CIDR más específico ante destinos superpuestos." },
+    { "en": "RAM (Resource Access Management)", "es": "RAM", "def": "Servicio de identidad y permisos usado para restringir quién puede crear o aceptar conexiones de red." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Virtual Private Cloud (VPC)?",
-      "options": [
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par",
-        "OSS es almacenamiento de objetos ilimitado y durable (11 nueves). Equivalente a S3. Guarda cualquier archivo con metadatos, ofrece 4 clases de almacenamiento con costos progresivos, replicación cross-"
-      ],
-      "answer": 0,
-      "explain": "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VPN/Express Connect y federar múltiples VPCs con CEN."
-    },
-    {
-      "q": "¿Qué es <strong>VPC</strong> (VPC) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "VPC (VPC): Red privada lógica con rango CIDR RFC1918 propio."
-    },
-    {
-      "q": "¿Qué es <strong>VSwitch</strong> (VSwitch) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "VSwitch (VSwitch): Subred atada a una zona; los recursos toman IP de aquí."
-    },
-    {
-      "q": "¿Qué es <strong>Route Table</strong> (Tabla de rutas) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Define dónde va el tráfico. Se asocia a VSwitches.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering."
-      ],
-      "answer": 0,
-      "explain": "Route Table (Tabla de rutas): Define dónde va el tráfico. Se asocia a VSwitches."
-    },
-    {
-      "q": "¿Qué es <strong>Custom Route</strong> (Ruta personalizada) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Entrada manual (destino → next-hop) para NAT/VPN/peering.",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches."
-      ],
-      "answer": 0,
-      "explain": "Custom Route (Ruta personalizada): Entrada manual (destino → next-hop) para NAT/VPN/peering."
-    },
-    {
-      "q": "¿Qué es <strong>NAT Gateway</strong> (NAT Gateway) en Virtual Private Cloud (VPC)?",
-      "options": [
-        "Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto).",
-        "Red privada lógica con rango CIDR RFC1918 propio.",
-        "Subred atada a una zona; los recursos toman IP de aquí.",
-        "Define dónde va el tráfico. Se asocia a VSwitches."
-      ],
-      "answer": 0,
-      "explain": "NAT Gateway (NAT Gateway): Salida NAT a internet; SNAT (salida) y DNAT (entrada por puerto)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Virtual Private Cloud (VPC), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Virtual Private Cloud (VPC) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Virtual Private Cloud (VPC), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Virtual Private Cloud (VPC) es la elección típica:",
-      "options": [
-        "Aislamiento de entornos dev/staging/prod en VPCs separadas",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Aislamiento de entornos dev/staging/prod en VPCs separadas."
-    }
+    { "q": "Dos VPC futuras podrían necesitar interconectarse por Peering, pero ambas se crearon con el mismo bloque CIDR 10.0.0.0/16. ¿Qué ocurre?", "options": ["No hay problema, Peering lo resuelve automáticamente", "El Peering no puede establecerse: los CIDR deben ser disjuntos", "Solo una de las dos VPC puede usar su CIDR original", "El problema se resuelve activando NAT Gateway"], "answer": 1, "explain": "VPC Peering exige rangos CIDR sin solape en ambos extremos; con CIDR idénticos, la conexión es imposible sin renumerar una de las VPC." },
+    { "q": "¿Qué diferencia a la tabla de rutas del sistema de una tabla de rutas personalizada?", "options": ["Son exactamente lo mismo", "La del sistema se crea automáticamente y resuelve el tráfico interno; la personalizada se asocia manualmente para un comportamiento distinto", "La personalizada solo aplica a instancias Windows", "La del sistema puede eliminarse libremente"], "answer": 1, "explain": "La tabla del sistema es obligatoria y automática; las tablas personalizadas se crean y asocian a VSwitches específicos para necesidades particulares de enrutamiento." },
+    { "q": "Una conexión VPC Peering entre A y B está activa, y B tiene Peering activo con C. ¿Puede A alcanzar a C a través de B?", "options": ["Sí, automáticamente, porque el Peering es transitivo", "No, cada par de VPC necesita su propia conexión de Peering explícita", "Solo si A y C están en la misma región", "Solo si se habilita BGP en B"], "answer": 1, "explain": "VPC Peering nunca es transitivo — A y C necesitarían su propia conexión Peering directa para comunicarse." },
+    { "q": "Una empresa necesita conectar 8 VPC entre sí en varias regiones y empieza a notar que gestionar cada conexión Peering se ha vuelto inmanejable. ¿Qué solución de arquitectura resuelve este problema de fondo?", "options": ["Crear más conexiones Peering manualmente", "Migrar a un servicio de hub central como Cloud Enterprise Network (CEN)", "Usar únicamente NAT Gateway", "Aumentar el ancho de banda de cada VPC"], "answer": 1, "explain": "A partir de varias VPC, el modelo punto a punto de Peering escala mal (N×(N-1)/2 conexiones); un hub central como CEN resuelve la interconexión de forma centralizada." },
+    { "q": "¿Qué distingue principalmente a Express Connect de VPN Gateway como mecanismo de interconexión con un data center on-premise?", "options": ["Son idénticos en costo y latencia", "Express Connect usa un circuito físico dedicado con latencia estable; VPN Gateway usa un túnel cifrado sobre internet público, más económico y rápido de desplegar", "VPN Gateway requiere semanas de aprovisionamiento y Express Connect minutos", "Express Connect no admite BGP"], "answer": 1, "explain": "Express Connect ofrece latencia estable a mayor costo y tiempo de aprovisionamiento; VPN Gateway se despliega en minutos sobre internet público, a costa de latencia menos predecible." },
+    { "q": "Se creó correctamente un VBR sobre un circuito de Express Connect, pero el tráfico hacia el data center no llega. ¿Qué es lo primero que hay que revisar?", "options": ["El certificado SSL del VBR", "Que exista una ruta personalizada en la VPC apuntando el CIDR remoto hacia el VBR como next-hop", "El tipo de instancia ECS del backend", "El Bandwidth Plan de Global Accelerator"], "answer": 1, "explain": "Como con cualquier conexión, el circuito puede estar activo pero sin una ruta que lo use como next-hop, el tráfico simplemente no lo atraviesa." },
+    { "q": "¿Qué rango de direcciones está reservado para uso interno de la nube y no puede usarse en la red on-premise ni en la interconexión de un VBR?", "options": ["192.168.0.0/16", "100.64.0.0/10", "10.0.0.0/8", "172.16.0.0/12"], "answer": 1, "explain": "El bloque 100.64.0.0/10 está reservado para servicios internos de la nube y no debe solaparse con la red del cliente ni usarse en la dirección de interconexión del VBR." },
+    { "q": "¿Qué combinación describe un patrón híbrido de alta disponibilidad habitual entre on-premise y Alibaba Cloud?", "options": ["Un único túnel VPN sin respaldo", "Express Connect como conexión primaria y VPN Gateway como respaldo económico ante su caída", "Dos conexiones VPC Peering redundantes", "Un solo VSwitch para toda la VPC"], "answer": 1, "explain": "Un patrón común es usar el circuito dedicado como conexión principal y una VPN como respaldo de bajo costo que se activa solo si el circuito físico falla." },
+    { "q": "¿Cuál es la diferencia principal entre un Security Group y una Network ACL en el contexto de VPC?", "options": ["Son sinónimos exactos", "Security Group es stateful y actúa a nivel de instancia; Network ACL es stateless y actúa a nivel de VSwitch", "Network ACL solo aplica a tráfico saliente", "Security Group requiere reiniciar la instancia para aplicar cambios"], "answer": 1, "explain": "El Security Group es un firewall stateful por instancia/ENI; la Network ACL es un conjunto de reglas stateless evaluado a nivel de subred." },
+    { "q": "Una VPC de producción tiene interconexión activa (Peering) con la VPC de un proveedor externo. ¿Es correcto asumir que se debe abrir todo el tráfico entre ambas por estar 'ya conectadas'?", "options": ["Sí, el Peering ya implica confianza total", "No, la conectividad de red y el control de acceso son capas independientes; se debe restringir el Security Group al mínimo necesario", "Solo si ambas VPC están en la misma cuenta", "El Peering cifra automáticamente todo el tráfico, así que no hace falta Security Group"], "answer": 1, "explain": "Enrutamiento y seguridad son capas separadas: una conexión activa no autoriza tráfico por sí sola, el Security Group sigue controlando qué se permite." },
+    { "q": "¿Qué recurso permite que instancias sin IP pública propia salgan a internet sin exponer cada una individualmente?", "options": ["VPC Peering", "NAT Gateway con SNAT", "Network ACL", "VBR"], "answer": 1, "explain": "El NAT Gateway centraliza la salida a internet (SNAT) de instancias privadas sin necesidad de asignarles una EIP individual." },
+    { "q": "¿Qué mecanismo de enrutamiento usa un VBR para intercambiar rutas automáticamente con el router on-premise, sin mantenerlas a mano?", "options": ["NAT estático", "BGP dinámico", "DNS round-robin", "Refresh de caché"], "answer": 1, "explain": "El intercambio dinámico de rutas vía BGP evita mantener rutas estáticas manualmente y facilita la convergencia ante cambios de topología." },
+    { "q": "Un ingeniero olvida crear la ruta personalizada tras aceptar una conexión VPC Peering. ¿Qué comportamiento se observa?", "options": ["El tráfico se enruta automáticamente de todas formas", "La conexión de Peering figura como activa, pero el tráfico entre las VPC no fluye", "La VPC deja de resolver DNS interno", "El Security Group bloquea la creación de la conexión"], "answer": 1, "explain": "Sin la ruta personalizada en la tabla de rutas, el Peering existe como conexión pero el tráfico no tiene por dónde enrutarse hacia la otra VPC." }
   ],
-  "exam_focus": "Preguntas: (a) diferencia SG vs NACL, (b) cuándo usar CEN vs Peering vs VPN, (c) diseño CIDR sin solapes, (d) NAT Gateway vs EIP individuales, (e) Express Connect vs VPN.",
+  "exam_focus": "El examen suele evaluar: (a) diseño de CIDR sin solapes como requisito previo a cualquier interconexión, (b) el rol de la tabla de rutas y el next-hop en que una conexión realmente transporte tráfico, (c) la no transitividad de VPC Peering, (d) cuándo elegir Peering, Express Connect o VPN Gateway según el escenario, (e) Security Group vs. Network ACL como capas de control independientes del enrutamiento.",
   "official_intro": "The Alibaba Cloud Interconnecting VPC with Express Connect and VPN Gateway course is designed to provide you with the fundamental knowledge to plan, configure and administer VPC connections. In this course we will discuss deployment best practices and use cases of interconnecting VPC using Express Connect and VPN Gateway.",
   "recommended_for": "Enterprise Architect, Cloud Administrator, Solution Architect",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_Internetwork",

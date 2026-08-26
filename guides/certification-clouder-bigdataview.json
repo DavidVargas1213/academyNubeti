@@ -2,443 +2,178 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-bigdataview",
   "title_en": "Alibaba Cloud Big Data Products Overview",
-  "title_es": "Alibaba Cloud Big Datos Products Visión General",
+  "title_es": "Panorama de Productos de Big Data de Alibaba Cloud",
+  "title_es_html": "Panorama de <em>Productos de Big Data</em> de Alibaba Cloud",
   "duration_es": "49 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Analytics Basics",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_bigdataview",
-  "lead": "Guía completa en español para el curso «Alibaba Cloud Big Data Products Overview» de Alibaba Cloud Academy. Cubre en profundidad MaxCompute. MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Alibaba Cloud Big Data Products Overview» de Alibaba Cloud Academy. A diferencia de «Introduction to Big Data Platform on the Cloud» (que profundiza específicamente en MaxCompute), este curso da el mapa completo del catálogo de productos de datos de Alibaba Cloud —MaxCompute, DataWorks, RDS/DRDS, AnalyticDB, Table Store, OSS y Quick BI— y, sobre todo, enseña a decidir cuál usar según el tipo de dato, el patrón de acceso y la latencia requerida.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>MaxCompute</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Project, Table, Partition, MaxCompute SQL, Tunnel.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con MaxCompute y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Ubicar</strong> cada producto del catálogo de big data de Alibaba Cloud dentro de una de tres categorías: almacenamiento, cómputo/procesamiento y consumo/visualización.",
+    "<strong>Distinguir</strong> cuándo usar una base transaccional (RDS/PolarDB) frente a un data warehouse analítico (MaxCompute) frente a un motor NoSQL (Table Store).",
+    "<strong>Explicar</strong> la diferencia entre AnalyticDB (analítica interactiva de baja latencia) y MaxCompute (procesamiento batch a gran escala).",
+    "<strong>Describir</strong> el rol de DataWorks como capa de orquestación que conecta todos los productos anteriores.",
+    "<strong>Reconocer</strong> OSS como la capa de almacenamiento de objetos que sirve de landing zone común para casi cualquier arquitectura de datos.",
+    "<strong>Ubicar</strong> Quick BI como la capa de consumo final para usuarios de negocio.",
+    "<strong>Responder</strong> con seguridad las preguntas de examen que piden elegir el producto correcto para un escenario descrito."
   ],
-  "architecture": "Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
+  "architecture": "Un flujo de datos típico en Alibaba Cloud combina varios productos, cada uno responsable de una etapa: los datos transaccionales viven en RDS o PolarDB (OLTP), los datos no estructurados o semi-estructurados aterrizan primero en OSS como landing zone, y los datos de alto volumen con acceso por clave viven en Table Store. DataWorks orquesta la sincronización desde esas fuentes hacia MaxCompute, el data warehouse donde se transforma y modela la mayoría de los datos analíticos batch. Cuando se necesita consulta interactiva de baja latencia sobre datos ya procesados —dashboards en vivo, aplicaciones de cara al usuario— los resultados se sirven desde AnalyticDB u Hologres en vez de directamente desde MaxCompute. Finalmente, Quick BI se conecta a estas fuentes analíticas para que un usuario de negocio consuma reportes sin necesidad de escribir una sola línea de SQL.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a MaxCompute",
-      "title_en": "Introduction to MaxCompute",
-      "intro": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Tres categorías para ordenar el catálogo",
+      "title_en": "Three Categories to Organize the Catalog",
+      "intro": "El catálogo de productos de datos de Alibaba Cloud puede parecer abrumador por su tamaño — este módulo da un marco simple de tres categorías que ordena cualquier producto nuevo que aparezca.",
       "points": [
-        "<strong>Problema que resuelve</strong>: MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo MaxCompute se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Almacenamiento</strong>: dónde viven los datos en reposo — OSS (objetos), RDS/PolarDB (relacional transaccional), Table Store (NoSQL de alto volumen), y las propias tablas de MaxCompute (analítico).",
+        "<strong>Cómputo/procesamiento</strong>: qué transforma y consulta esos datos — MaxCompute (batch a escala petabyte), EMR (Hadoop/Spark con más control), AnalyticDB/Hologres (consulta interactiva de baja latencia), DLA (SQL federado sin ETL).",
+        "<strong>Orquestación y consumo</strong>: DataWorks coordina el movimiento y transformación de datos entre las dos categorías anteriores; Quick BI y DataV son las capas finales donde un humano consume el resultado, como reporte o como pantalla visual.",
+        "<strong>Ningún producto vive aislado</strong>: casi cualquier arquitectura real combina al menos un producto de cada categoría — el examen rara vez pregunta por un producto en el vacío, sino por cómo encaja dentro de un flujo completo.",
+        "<strong>Regla de oro para clasificar un producto nuevo</strong>: preguntarse primero '¿esto guarda datos, los procesa, o los presenta a un humano?' resuelve la mayoría de las dudas de ubicación dentro del catálogo."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "MaxCompute es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "El examen no evalúa memorizar una lista de productos — evalúa poder ubicar cualquier producto dentro de almacenamiento, cómputo o consumo, y explicar cómo se conecta con sus vecinos en un flujo real."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando MaxCompute no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · OLTP vs. OLAP: RDS/PolarDB frente a MaxCompute",
+      "title_en": "OLTP vs. OLAP: RDS/PolarDB vs. MaxCompute",
+      "intro": "La distinción más fundamental de todo el curso, y la que más preguntas de examen genera: no es lo mismo una base de datos que soporta la aplicación en producción que un data warehouse que soporta el análisis histórico.",
       "points": [
-        "<strong>Patrón canónico</strong>: Ingesta: DataWorks Data Integration o Tunnel API mueve datos desde RDS/OSS/Kafka. Storage columnar comprimido. Tablas particionadas por fecha. Queries desde DataWorks Studio, JDBC o CLI. Resultados vuelven a OSS o alimentan Quick BI. UDFs custom en Java/Python.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → MaxCompute (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Proyecto</strong> <em>(Project)</em>: Unidad organizativa con quotas, permisos y facturación.",
-        "<strong>Tabla</strong> <em>(Table)</em>: Datos estructurados, típicamente particionados.",
-        "<strong>Partición</strong> <em>(Partition)</em>: Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "<strong>MC SQL</strong> <em>(MaxCompute SQL)</em>: Dialecto similar a Hive; extensiones propietarias.",
-        "<strong>Tunnel</strong> <em>(Tunnel)</em>: API alto rendimiento para ingesta/exportación batch.",
-        "<strong>Stream Tunnel</strong> <em>(Stream Tunnel)</em>: Ingesta en streaming con exactly-once.",
-        "<strong>UDF</strong> <em>(UDF/UDAF/UDTF)</em>: Funciones custom Java/Python/scalar/agregación/tabla.",
-        "<strong>Resource</strong> <em>(Resource)</em>: Archivos (JAR, py, tabla) referenciables desde UDFs."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>RDS / PolarDB (OLTP)</strong>: bases de datos relacionales optimizadas para transacciones cortas y frecuentes (crear un pedido, actualizar un saldo) con baja latencia por operación individual — el corazón operativo de una aplicación.",
+        "<strong>MaxCompute (OLAP)</strong>: optimizado para consultas analíticas que escanean grandes volúmenes de datos históricos (agregaciones sobre meses de transacciones) — no está diseñado para miles de escrituras pequeñas por segundo.",
+        "<strong>Por qué no se mezclan</strong>: ejecutar consultas analíticas pesadas directamente contra la base de producción (RDS) puede degradar el rendimiento de la aplicación real que sirve a los usuarios finales — de ahí la necesidad de sincronizar datos hacia un warehouse separado.",
+        "<strong>El puente entre ambos</strong>: DataWorks Data Integration sincroniza (batch o vía CDC en tiempo real) los datos transaccionales de RDS/PolarDB hacia tablas analíticas en MaxCompute, sin que el análisis histórico compita por recursos con la aplicación productiva.",
+        "<strong>DRDS / PolarDB-X</strong>: cuando una sola instancia de RDS no basta para el volumen transaccional (sharding horizontal necesario), PolarDB-X extiende el modelo relacional distribuido, pero sigue siendo OLTP, no un reemplazo de MaxCompute."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si el enunciado describe 'consultas analíticas lentas afectando el rendimiento de la aplicación', el antipatrón es ejecutar analítica directamente sobre RDS — la respuesta correcta es sincronizar hacia MaxCompute y analizar ahí."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Table Store: cuando ni lo relacional ni el warehouse encajan",
+      "title_en": "Table Store: When Neither Relational nor Warehouse Fits",
+      "intro": "Existe una tercera categoría de necesidad que ni RDS ni MaxCompute resuelven bien: acceso de altísimo volumen por clave, con un esquema flexible que evoluciona con el tiempo.",
       "points": [
-        "<strong>Seguridad</strong>: Permisos por proyecto con RAM roles + policies",
-        "<strong>Costo</strong>: Quotas reservadas para producción, pay-as-you-go para dev",
-        "<strong>Costo</strong>: Lifecycle policies para eliminar particiones antiguas",
-        "<strong>Buenas prácticas</strong>: SIEMPRE filtrar por partición — sin partición filter la tabla entera se lee",
-        "<strong>Buenas prácticas</strong>: Comprimir datos columnar antes de ingerir (ORC/PARQUET si posible)"
+        "<strong>Table Store</strong>: base de datos NoSQL de Alibaba Cloud, pensada para almacenar y recuperar por clave miles de millones de filas con un esquema semi-flexible — a diferencia de RDS, no requiere definir un esquema relacional rígido de antemano.",
+        "<strong>Caso de uso típico</strong>: perfiles de usuario a escala masiva, datos de sensores IoT, tablas de sesión de una app con millones de usuarios activos — acceso predecible por clave (user_id, device_id), no consultas analíticas complejas con joins.",
+        "<strong>No es un reemplazo de MaxCompute</strong>: Table Store está optimizado para lectura/escritura puntual por clave a baja latencia, no para escanear y agregar sobre históricos completos — para análisis, los datos de Table Store suelen sincronizarse igualmente hacia MaxCompute.",
+        "<strong>No es un reemplazo de RDS</strong>: al no ofrecer transacciones relacionales complejas con joins e integridad referencial estricta entre tablas, Table Store no sustituye a una base relacional cuando la aplicación necesita ese modelo.",
+        "<strong>Elegir entre los tres</strong>: transacciones relacionales de aplicación → RDS/PolarDB; acceso masivo por clave con esquema flexible → Table Store; análisis histórico agregado → MaxCompute."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Table Store resuelve un problema de escala y flexibilidad de esquema en el camino OLTP, no un problema analítico — sigue existiendo la necesidad de sincronizar hacia MaxCompute cuando se necesita analizar ese mismo dato en agregado."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · AnalyticDB/Hologres frente a MaxCompute: batch vs. interactivo",
+      "title_en": "AnalyticDB/Hologres vs. MaxCompute: Batch vs. Interactive",
+      "intro": "Dentro del propio mundo analítico existe una distinción de latencia que el examen evalúa con frecuencia: no todo análisis puede esperar el tiempo de un job batch de MaxCompute.",
       "points": [
-        "<strong>Antipattern</strong>: Queries sin filtro de partición — barrido petabyte y factura masiva",
-        "<strong>Antipattern</strong>: Un solo proyecto para todo — sin aislamiento de dev/prod",
-        "<strong>Antipattern</strong>: UDFs no optimizadas ejecutadas millones de veces",
-        "<strong>Antipattern</strong>: Confundir Tunnel (batch) con Stream Tunnel (real-time)",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>MaxCompute</strong>: optimizado para procesar volúmenes masivos con latencia de segundos a minutos por consulta — perfecto para ETL nocturno, reportes programados y exploración ad-hoc que tolera cierta espera.",
+        "<strong>AnalyticDB / Hologres</strong>: motores analíticos de baja latencia (sub-segundo) pensados para servir consultas interactivas repetidas — el motor detrás de un dashboard en vivo que decenas de usuarios consultan simultáneamente, o de una aplicación de cara al cliente que muestra métricas en tiempo casi real.",
+        "<strong>No compiten, se complementan</strong>: un flujo típico procesa y modela los datos pesados en MaxCompute, y luego exporta o sincroniza solo los resultados agregados finales hacia AnalyticDB/Hologres para servirlos con la latencia que un dashboard interactivo exige.",
+        "<strong>Costo de mantener ambos</strong>: duplicar la capa de servicio (MaxCompute + AnalyticDB) tiene un costo operativo adicional — se justifica solo cuando el requisito real de latencia interactiva lo exige, no como práctica por defecto para cualquier tabla.",
+        "<strong>Antipatrón de examen</strong>: intentar servir un dashboard con miles de consultas interactivas por minuto directamente desde MaxCompute — el motor no está diseñado para ese patrón de concurrencia y latencia."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado menciona 'dashboard en vivo', 'sub-segundo' o 'aplicación de cara al cliente con métricas en tiempo real', la respuesta apunta a AnalyticDB u Hologres, no a consultar MaxCompute directamente."
+      }
+    },
+    {
+      "title_es": "5 · OSS como landing zone universal y DataWorks como pegamento",
+      "title_en": "OSS as Universal Landing Zone and DataWorks as the Glue",
+      "intro": "Dos productos no encajan en una sola de las tres categorías anteriores porque cumplen un rol transversal en casi cualquier arquitectura: OSS almacena de todo, y DataWorks conecta todo lo demás.",
+      "points": [
+        "<strong>OSS como landing zone</strong>: antes de decidir el destino final de un dato (¿va a MaxCompute?, ¿a Table Store?, ¿se queda como archivo?), es común aterrizarlo primero en OSS en su formato crudo — desacoplando la ingesta de la decisión de modelado posterior.",
+        "<strong>OSS como destino de archivo frío</strong>: datos históricos que ya no se consultan activamente pueden moverse de vuelta a OSS (con clases de almacenamiento Archive/Cold Archive) en vez de ocupar espacio caro en un motor analítico activo.",
+        "<strong>DataWorks como capa de orquestación</strong>: sincroniza datos entre cualquier par de productos del catálogo (RDS→MaxCompute, OSS→MaxCompute, Table Store→MaxCompute), programa las transformaciones SQL, y gobierna calidad y catálogo — es el 'pegamento' operativo que conecta todo.",
+        "<strong>DataWorks no almacena ni sirve consultas por sí mismo</strong>: es exclusivamente la capa de desarrollo y orquestación — el examen distingue con precisión que DataWorks no es un motor de cómputo ni un almacén de datos.",
+        "<strong>Quick BI / DataV como capa final de consumo</strong>: una vez los datos están modelados y accesibles, Quick BI sirve reportes analíticos interactivos para usuarios de negocio, mientras DataV construye pantallas grandes de observación para salas de comando."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "OSS es horizontal (cualquier tipo de dato puede aterrizar ahí primero); DataWorks es horizontal (conecta cualquier par de productos). Ninguno de los dos compite con MaxCompute o AnalyticDB — los complementa desde un rol distinto."
+      }
+    },
+    {
+      "title_es": "6 · Ensamblando el flujo completo: escenario de referencia",
+      "title_en": "Assembling the Full Flow: Reference Scenario",
+      "intro": "El cierre del curso conecta todos los productos anteriores en un escenario end-to-end completo, el tipo de pregunta que el examen suele plantear como caso de arquitectura.",
+      "points": [
+        "<strong>Ingesta</strong>: transacciones de una app llegan a PolarDB (OLTP); eventos de clickstream se envían directo a OSS como archivos JSON crudos.",
+        "<strong>Sincronización</strong>: DataWorks Data Integration mueve ambos —PolarDB vía CDC casi en tiempo real, OSS vía sincronización batch nocturna— hacia tablas particionadas de MaxCompute.",
+        "<strong>Procesamiento</strong>: nodos SQL de DataWorks transforman y agregan esos datos en capas (staging → limpieza → agregación) dentro de MaxCompute, con reglas de Data Quality validando cada salida crítica.",
+        "<strong>Servicio</strong>: los agregados finales que un dashboard en vivo necesita consultar con baja latencia se sincronizan hacia Hologres; el resto de reportes periódicos se sirven directamente desde MaxCompute.",
+        "<strong>Consumo</strong>: un analista de negocio explora los reportes en Quick BI; un centro de operaciones observa el dashboard en vivo proyectado con DataV en una pantalla grande."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante cualquier pregunta de examen tipo '¿qué producto usarías para...?', ubica primero la etapa (¿es ingesta, almacenamiento, procesamiento batch, servicio interactivo, u orquestación/consumo?) y luego aplica los criterios de latencia y patrón de acceso cubiertos en este curso."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Data warehouse corporativo con TB-PB de datos históricos"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "ETL diario/horario de logs y eventos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc con SQL sobre historial completo"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Feature engineering para modelos ML"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Reportes de negocio con Quick BI"
-    }
+    { "title": "Escenario 1", "text": "Diseñar el flujo completo de datos de un e-commerce: transacciones, clickstream, analítica y dashboard en vivo" },
+    { "title": "Escenario 2", "text": "Elegir entre RDS, Table Store y MaxCompute para el perfil de usuario de una app con millones de usuarios activos" },
+    { "title": "Escenario 3", "text": "Explicar por qué un reporte analítico pesado no debe ejecutarse directamente contra la base de producción" },
+    { "title": "Escenario 4", "text": "Decidir si un dashboard interno requiere AnalyticDB/Hologres o si MaxCompute directo es suficiente" },
+    { "title": "Escenario 5", "text": "Diseñar una landing zone en OSS antes de decidir el destino final de un dataset heterogéneo" }
   ],
   "mistakes": [
-    "Queries sin filtro de partición — barrido petabyte y factura masiva",
-    "Un solo proyecto para todo — sin aislamiento de dev/prod",
-    "UDFs no optimizadas ejecutadas millones de veces",
-    "Confundir Tunnel (batch) con Stream Tunnel (real-time)"
+    "Ejecutar consultas analíticas pesadas directamente contra una base de datos de producción (RDS/PolarDB)",
+    "Usar Table Store esperando capacidades relacionales complejas con joins e integridad referencial",
+    "Intentar servir un dashboard interactivo de alta concurrencia directamente desde MaxCompute en vez de AnalyticDB/Hologres",
+    "Confundir DataWorks con un motor de cómputo o un almacén de datos",
+    "Duplicar innecesariamente datos hacia AnalyticDB cuando ningún caso de uso exige realmente baja latencia interactiva",
+    "No usar OSS como landing zone, acoplando la decisión de ingesta con la de modelado final desde el primer momento"
   ],
   "cli": [
-    {
-      "cmd": "odpscmd -e 'select ...'",
-      "desc": "Ejecutar SQL"
-    },
-    {
-      "cmd": "odpscmd -e 'add jar mi.jar -f;'",
-      "desc": "Registrar resource"
-    },
-    {
-      "cmd": "tunnel upload data.csv tabla/pt=20260721",
-      "desc": "Cargar datos"
-    }
+    { "cmd": "aliyun rds DescribeDBInstances", "desc": "Listar instancias RDS/PolarDB de la cuenta" },
+    { "cmd": "aliyun ots DescribeTable --InstanceName mi-instancia --TableName perfiles", "desc": "Consultar una tabla de Table Store" },
+    { "cmd": "odpscmd -e \"select count(*) from ventas where pt='20260824';\"", "desc": "Consulta analítica batch sobre MaxCompute" },
+    { "cmd": "aliyun hologres DescribeInstance --InstanceId hgpost-xxxxx", "desc": "Consultar una instancia de Hologres para servicio de baja latencia" },
+    { "cmd": "aliyun dataworks-public CreateDISyncTask --TaskContent @task.json", "desc": "Crear una tarea de sincronización entre dos productos del catálogo" }
   ],
   "glossary": [
-    {
-      "en": "Project",
-      "es": "Proyecto",
-      "def": "Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "en": "Table",
-      "es": "Tabla",
-      "def": "Datos estructurados, típicamente particionados."
-    },
-    {
-      "en": "Partition",
-      "es": "Partición",
-      "def": "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "en": "MaxCompute SQL",
-      "es": "MC SQL",
-      "def": "Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "en": "Tunnel",
-      "es": "Tunnel",
-      "def": "API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "en": "Stream Tunnel",
-      "es": "Stream Tunnel",
-      "def": "Ingesta en streaming con exactly-once."
-    },
-    {
-      "en": "UDF/UDAF/UDTF",
-      "es": "UDF",
-      "def": "Funciones custom Java/Python/scalar/agregación/tabla."
-    },
-    {
-      "en": "Resource",
-      "es": "Resource",
-      "def": "Archivos (JAR, py, tabla) referenciables desde UDFs."
-    },
-    {
-      "en": "Quota",
-      "es": "Quota",
-      "def": "Slots de cómputo reservados o pay-as-you-go."
-    },
-    {
-      "en": "Storage Class",
-      "es": "Storage class",
-      "def": "Standard, IA (menos I/O), Archive."
-    },
-    {
-      "en": "Lifecycle",
-      "es": "Lifecycle",
-      "def": "Regla de retención automática por tabla."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "OLTP", "es": "Procesamiento transaccional", "def": "Cargas de trabajo de transacciones cortas y frecuentes, típico de RDS/PolarDB." },
+    { "en": "OLAP", "es": "Procesamiento analítico", "def": "Cargas de trabajo de consultas agregadas sobre grandes volúmenes históricos, típico de MaxCompute." },
+    { "en": "RDS", "es": "RDS", "def": "Servicio de bases de datos relacionales gestionadas (MySQL, PostgreSQL, SQL Server) para OLTP." },
+    { "en": "PolarDB", "es": "PolarDB", "def": "Base de datos relacional cloud-native de Alibaba Cloud, compatible con MySQL/PostgreSQL." },
+    { "en": "PolarDB-X / DRDS", "es": "PolarDB-X", "def": "Solución relacional distribuida (sharding) para volúmenes que exceden una sola instancia." },
+    { "en": "Table Store", "es": "Table Store", "def": "Base de datos NoSQL para acceso masivo por clave con esquema semi-flexible." },
+    { "en": "MaxCompute", "es": "MaxCompute", "def": "Data warehouse serverless para procesamiento analítico batch a escala petabyte." },
+    { "en": "AnalyticDB", "es": "AnalyticDB", "def": "Motor analítico de baja latencia para consultas interactivas repetidas." },
+    { "en": "Hologres", "es": "Hologres", "def": "Motor de análisis interactivo sub-segundo, complementario a MaxCompute para servir dashboards en vivo." },
+    { "en": "OSS", "es": "OSS", "def": "Almacenamiento de objetos usado como landing zone universal y archivo frío." },
+    { "en": "DataWorks", "es": "DataWorks", "def": "Capa de orquestación, desarrollo y gobernanza que conecta los demás productos del catálogo." },
+    { "en": "Quick BI", "es": "Quick BI", "def": "Herramienta de dashboards analíticos interactivos para consumo por usuarios de negocio." },
+    { "en": "DataV", "es": "DataV", "def": "Editor de pantallas grandes (big screens) para observación visual a distancia." },
+    { "en": "CDC (Change Data Capture)", "es": "Captura de cambios", "def": "Técnica de sincronización en tiempo casi real desde una base transaccional hacia un warehouse." },
+    { "en": "Landing Zone", "es": "Zona de aterrizaje", "def": "Ubicación intermedia (típicamente OSS) donde los datos crudos aterrizan antes de decidir su destino final." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a MaxCompute?",
-      "options": [
-        "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML inte",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "MaxCompute es el data warehouse serverless a escala petabyte de Alibaba Cloud. Ejecuta SQL sobre datos particionados, integra con DataWorks para orquestación, y ofrece UDFs, MapReduce, Graph y ML integrado. Costo por query procesado — no pagas por cluster ocioso."
-    },
-    {
-      "q": "¿Qué es <strong>Project</strong> (Proyecto) en MaxCompute?",
-      "options": [
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Project (Proyecto): Unidad organizativa con quotas, permisos y facturación."
-    },
-    {
-      "q": "¿Qué es <strong>Table</strong> (Tabla) en MaxCompute?",
-      "options": [
-        "Datos estructurados, típicamente particionados.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Table (Tabla): Datos estructurados, típicamente particionados."
-    },
-    {
-      "q": "¿Qué es <strong>Partition</strong> (Partición) en MaxCompute?",
-      "options": [
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Dialecto similar a Hive; extensiones propietarias."
-      ],
-      "answer": 0,
-      "explain": "Partition (Partición): Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-    },
-    {
-      "q": "¿Qué es <strong>MaxCompute SQL</strong> (MC SQL) en MaxCompute?",
-      "options": [
-        "Dialecto similar a Hive; extensiones propietarias.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "MaxCompute SQL (MC SQL): Dialecto similar a Hive; extensiones propietarias."
-    },
-    {
-      "q": "¿Qué es <strong>Tunnel</strong> (Tunnel) en MaxCompute?",
-      "options": [
-        "API alto rendimiento para ingesta/exportación batch.",
-        "Unidad organizativa con quotas, permisos y facturación.",
-        "Datos estructurados, típicamente particionados.",
-        "Segmentación física (ej: pt=20260721). Filtro obligatorio para performance."
-      ],
-      "answer": 0,
-      "explain": "Tunnel (Tunnel): API alto rendimiento para ingesta/exportación batch."
-    },
-    {
-      "q": "Para maximizar disponibilidad con MaxCompute, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar MaxCompute en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con MaxCompute, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde MaxCompute es la elección típica:",
-      "options": [
-        "Data warehouse corporativo con TB-PB de datos históricos",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Data warehouse corporativo con TB-PB de datos históricos."
-    }
+    { "q": "Según el marco de tres categorías del curso, ¿en cuál de ellas se ubica MaxCompute?", "options": ["Almacenamiento", "Cómputo/procesamiento", "Orquestación y consumo", "Ninguna de las anteriores"], "answer": 1, "explain": "MaxCompute procesa y transforma datos analíticos, ubicándose en la categoría de cómputo, aunque también almacena las tablas resultantes." },
+    { "q": "¿Por qué no se recomienda ejecutar consultas analíticas pesadas directamente contra una base de datos RDS de producción?", "options": ["RDS no soporta SQL", "Puede degradar el rendimiento de la aplicación productiva que la base sirve en tiempo real", "RDS no permite más de una consulta simultánea", "No hay ningún problema en hacerlo"], "answer": 1, "explain": "RDS está optimizada para transacciones cortas de la aplicación; competir con analítica pesada afecta esa carga transaccional." },
+    { "q": "Una app tiene millones de usuarios activos y necesita almacenar y recuperar perfiles por user_id a muy alta escala, sin necesidad de joins complejos. ¿Qué producto es el más adecuado?", "options": ["RDS", "Table Store", "AnalyticDB", "DataV"], "answer": 1, "explain": "Table Store está diseñado para acceso masivo por clave con esquema flexible, exactamente el patrón descrito." },
+    { "q": "¿Cuál es la diferencia principal entre MaxCompute y AnalyticDB/Hologres?", "options": ["Son el mismo producto con nombres distintos", "MaxCompute procesa volúmenes masivos con latencia de segundos a minutos; AnalyticDB/Hologres sirve consultas interactivas de baja latencia (sub-segundo)", "AnalyticDB no soporta SQL", "MaxCompute es exclusivamente para datos no estructurados"], "answer": 1, "explain": "Ambos son analíticos, pero difieren en el perfil de latencia y concurrencia para el que están optimizados." },
+    { "q": "Un equipo necesita servir un dashboard en vivo con miles de consultas interactivas por minuto. ¿Cuál es la arquitectura recomendada?", "options": ["Consultar MaxCompute directamente en cada refresco del dashboard", "Procesar en MaxCompute y sincronizar los agregados finales hacia AnalyticDB/Hologres para servir el dashboard", "Usar únicamente Table Store para todo el flujo", "No es posible construir dashboards en vivo en Alibaba Cloud"], "answer": 1, "explain": "MaxCompute no está diseñado para ese patrón de concurrencia; sincronizar resultados agregados hacia un motor de baja latencia es la práctica recomendada." },
+    { "q": "¿Qué rol cumple OSS como 'landing zone' en una arquitectura de datos?", "options": ["Ejecuta transformaciones SQL complejas", "Es el lugar donde los datos crudos aterrizan primero, desacoplando la ingesta de la decisión de modelado final", "Reemplaza a MaxCompute como motor analítico", "Solo sirve para alojar sitios web estáticos"], "answer": 1, "explain": "OSS almacena datos crudos en cualquier formato antes de decidir su destino final, dando flexibilidad a la arquitectura." },
+    { "q": "¿Es correcto afirmar que DataWorks es un motor de cómputo que almacena y procesa datos por sí mismo?", "options": ["Sí, DataWorks reemplaza a MaxCompute", "No, DataWorks es la capa de orquestación y desarrollo que coordina otros productos, sin almacenar ni procesar datos pesados por sí mismo", "Solo almacena datos, no los procesa", "Solo procesa datos, no los orquesta"], "answer": 1, "explain": "DataWorks orquesta sincronización y transformación, pero el cómputo pesado real ocurre en motores como MaxCompute, Hologres o EMR." },
+    { "q": "¿Qué mecanismo de sincronización permite mover datos de una base transaccional (RDS/PolarDB) hacia MaxCompute casi en tiempo real?", "options": ["Sincronización batch nocturna exclusivamente", "CDC (Change Data Capture)", "Solo es posible mediante exportación manual de CSV", "OSS Lifecycle"], "answer": 1, "explain": "CDC captura cambios del log de transacciones de la base origen y los propaga casi de inmediato hacia el destino." },
+    { "q": "¿Qué diferencia a PolarDB-X (DRDS) de PolarDB estándar?", "options": ["PolarDB-X es un motor NoSQL", "PolarDB-X extiende el modelo relacional con sharding distribuido para volúmenes que exceden una sola instancia, pero sigue siendo OLTP", "PolarDB-X reemplaza completamente a MaxCompute", "No hay ninguna diferencia real"], "answer": 1, "explain": "PolarDB-X resuelve escala horizontal manteniendo el modelo relacional, sin convertirse en un data warehouse analítico." },
+    { "q": "¿Cuál es el rol de Quick BI dentro del flujo de datos descrito en el curso?", "options": ["Sincroniza datos entre RDS y MaxCompute", "Sirve como capa final de consumo, donde un usuario de negocio explora reportes analíticos interactivos", "Ejecuta el procesamiento batch de datos históricos", "Reemplaza a DataWorks como orquestador"], "answer": 1, "explain": "Quick BI es la capa de consumo final para usuarios de negocio, típicamente conectada a MaxCompute o AnalyticDB/Hologres." },
+    { "q": "¿Cuál es el antipatrón de duplicar innecesariamente datos hacia AnalyticDB/Hologres?", "options": ["Es siempre recomendable duplicar datos hacia AnalyticDB sin excepción", "Genera un costo operativo adicional que solo se justifica cuando existe un requisito real de latencia interactiva", "AnalyticDB no permite duplicar datos técnicamente", "No tiene ningún costo asociado"], "answer": 1, "explain": "Mantener una segunda capa de servicio tiene costo operativo; debe justificarse por una necesidad real de baja latencia, no aplicarse por defecto." }
   ],
-  "exam_focus": "Preguntas: (a) particionamiento y su impacto en costo, (b) Tunnel vs DataWorks integration, (c) UDFs y sandboxing, (d) quotas reservadas vs pay-as-you-go, (e) integración con OSS/DataWorks.",
+  "exam_focus": "El examen suele evaluar: (a) ubicar cada producto dentro de almacenamiento/cómputo/consumo, (b) distinguir OLTP (RDS/PolarDB) de OLAP (MaxCompute) y por qué no deben mezclarse, (c) cuándo Table Store es la opción correcta frente a RDS o MaxCompute, (d) MaxCompute batch frente a AnalyticDB/Hologres interactivo según la latencia requerida, (e) el rol transversal de OSS como landing zone y de DataWorks como orquestador, sin ser ninguno de los dos un motor de cómputo por sí mismo.",
   "official_intro": "This course briefly explains the basic knowledge of Alibaba Cloud big data product system and several products in large data applications, such as MaxCompute, DataWorks, RDS, DRDS, QuickBI, TS, Analytic DB, OSS, Data Integration, etc. Students can refer to the application scenarios explained, combine with the enterprise's own business and demand, apply what we have learned to practice. Recommended for System architect, Database engineer",
+  "recommended_for": "System architect, Database engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_bigdataview",
   "exam_meta": {
     "duration_min": 30,

@@ -2,398 +2,199 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-establishvirtual",
   "title_en": "Establish virtual private connection with VPN Gateway",
-  "title_es": "Establish virtual private connection con VPN Gateway",
+  "title_es": "Establecer una Conexión Privada Virtual con VPN Gateway",
+  "title_es_html": "Establecer una Conexión Privada Virtual con <em>VPN Gateway</em>",
   "duration_es": "40 minutos",
   "level_es": "Principiante",
   "category_es": "Redes y CDN",
   "subcategory_es": "Red en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_establishvirtual",
-  "lead": "Guía completa en español para el curso «Establish virtual private connection with VPN Gateway» de Alibaba Cloud Academy. Cubre en profundidad VPN Gateway. VPN Gateway habilita conexiones IPsec (sitio a sitio) y SSL (cliente a sitio) entre tu VPC y redes externas. Es la vía económica para hibridar sin contratar Express Connect. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Establish virtual private connection with VPN Gateway» de Alibaba Cloud Academy, centrada en VPN Gateway: el servicio que crea túneles cifrados IPsec (sitio a sitio) o SSL (cliente a sitio) entre tu VPC y una red externa. Cubre la negociación IKE/IPsec, el diseño de alta disponibilidad con túneles duales y BGP dinámico, el acceso remoto vía SSL-VPN y la seguridad de la conexión — con la profundidad que exige el examen de certificación.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>VPN Gateway</em>.",
-    "<strong>Dominar</strong> los conceptos clave: IPsec VPN, SSL VPN, IKE/IPsec, Customer Gateway, BGP Dinámico.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con VPN Gateway y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve VPN Gateway y cuándo conviene frente a Express Connect (línea dedicada).",
+    "<strong>Distinguir</strong> IPsec-VPN (sitio a sitio) de SSL-VPN (cliente a sitio) y elegir el adecuado según el escenario.",
+    "<strong>Configurar</strong> una conexión IPsec completa: Customer Gateway, VPN Gateway, VPN Connection y las rutas asociadas en la VPC.",
+    "<strong>Diseñar</strong> alta disponibilidad con túneles duales activo/en espera y, opcionalmente, BGP dinámico para failover automático.",
+    "<strong>Aplicar</strong> buenas prácticas de seguridad: algoritmos de cifrado robustos, gestión de claves precompartidas y certificados SSL individuales.",
+    "<strong>Diagnosticar</strong> una conexión IPsec caída revisando la negociación IKE, las fases 1 y 2 y las rutas asociadas.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre VPN Gateway."
   ],
-  "architecture": "Oficina ↔ Alibaba VPC: IPsec VPN Gateway ⇄ router on-premise. Empleados remotos: SSL VPN con certificados por usuario. Rutas propagadas a las tablas de la VPC. Health check + BGP dinámico opcional.",
+  "architecture": "Oficina o data center on-premise ⇄ router/firewall compatible con IPsec ⇄ VPN Gateway de Alibaba Cloud, con dos túneles (uno activo y uno en espera, o ambos activos vía ECMP) terminando en el mismo Customer Gateway lógico para tolerar la caída de un túnel. La VPC define una ruta personalizada que apunta el CIDR de la red remota hacia el VPN Gateway como next-hop; si se habilita BGP dinámico, las rutas se propagan automáticamente sin mantenerlas a mano. En paralelo, empleados individuales se conectan vía SSL-VPN usando un cliente con certificado propio, recibiendo una IP de un pool de direcciones dedicado y quedando sujetos a las mismas Security Groups que cualquier otro recurso de la VPC. VPN Gateway suele desplegarse también como respaldo económico de una conexión Express Connect dedicada, activándose solo si la línea física falla.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a VPN Gateway",
-      "title_en": "Introduction to VPN Gateway",
-      "intro": "VPN Gateway habilita conexiones IPsec (sitio a sitio) y SSL (cliente a sitio) entre tu VPC y redes externas. Es la vía económica para hibridar sin contratar Express Connect. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es VPN Gateway y cuándo usarlo",
+      "title_en": "What is VPN Gateway and When to Use It",
+      "intro": "VPN Gateway es la vía más rápida y económica para conectar una red externa con una VPC de Alibaba Cloud — pero no es la única, y el examen espera que sepas cuándo NO es la opción correcta.",
       "points": [
-        "<strong>Problema que resuelve</strong>: VPN Gateway habilita conexiones IPsec (sitio a sitio) y SSL (cliente a sitio) entre tu VPC y redes externas.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo VPN Gateway se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Problema que resuelve</strong>: extender una red privada (oficina, data center, otro cloud) hacia una VPC a través de internet público, cifrando el tráfico en tránsito con IPsec o SSL.",
+        "<strong>VPN Gateway vs. Express Connect</strong>: VPN Gateway usa internet público (más barato, aprovisionamiento en minutos, mayor latencia y jitter variable); Express Connect usa un circuito físico dedicado (más caro, aprovisionamiento de días/semanas, latencia estable y predecible) — para cargas sensibles a latencia o volúmenes muy altos, Express Connect es preferible.",
+        "<strong>Patrón híbrido más común</strong>: usar VPN Gateway como respaldo (backup) de una conexión Express Connect primaria, activándose automáticamente solo si la línea dedicada falla.",
+        "<strong>Dos modalidades dentro de VPN Gateway</strong>: IPsec-VPN para unir dos redes completas (sitio a sitio) y SSL-VPN para que dispositivos individuales de empleados remotos se conecten (cliente a sitio)."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "VPN Gateway es una pieza fundamental de Redes y CDN en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Si el enunciado menciona «conectar la oficina completa a la VPC», piensa en IPsec-VPN. Si menciona «empleados trabajando desde casa necesitan acceder a recursos internos», piensa en SSL-VPN."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando VPN Gateway no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Cómo funciona IPsec: IKE y las dos fases",
+      "title_en": "How IPsec Works: IKE and the Two Phases",
+      "intro": "IPsec no es un protocolo único sino un conjunto de protocolos que negocian y mantienen un túnel cifrado — entender sus dos fases ayuda a diagnosticar por qué un túnel no sube.",
       "points": [
-        "<strong>Patrón canónico</strong>: Oficina ↔ Alibaba VPC: IPsec VPN Gateway ⇄ router on-premise. Empleados remotos: SSL VPN con certificados por usuario. Rutas propagadas a las tablas de la VPC. Health check + BGP dinámico opcional.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → VPN Gateway (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>IPsec VPN</strong> <em>(IPsec VPN)</em>: Túnel cifrado sitio-a-sitio.",
-        "<strong>SSL VPN</strong> <em>(SSL VPN)</em>: Túnel cliente-a-sitio; usuarios individuales.",
-        "<strong>IKE/IPsec</strong> <em>(IKE/IPsec)</em>: Protocolos de negociación de claves y cifrado.",
-        "<strong>Customer Gateway</strong> <em>(Customer Gateway)</em>: Representación lógica del router remoto.",
-        "<strong>BGP dinámico</strong> <em>(BGP Dinámico)</em>: Ruteo automático entre VPC y on-premise."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>IKE (Internet Key Exchange)</strong>: protocolo que negocia automáticamente los parámetros de seguridad y las claves de cifrado entre los dos extremos, en versión IKEv1 o IKEv2 (esta última más moderna y con mejor manejo de reconexión).",
+        "<strong>Fase 1 (IKE SA)</strong>: los dos extremos autentican mutuamente y acuerdan un canal seguro para negociar el resto — aquí se valida la clave precompartida (PSK) o certificado.",
+        "<strong>Fase 2 (IPsec SA)</strong>: sobre el canal ya seguro de la fase 1, se negocian las claves específicas que cifrarán el tráfico de datos real, junto con las redes locales y remotas que el túnel va a interconectar.",
+        "<strong>Parámetros que deben coincidir en ambos extremos</strong>: algoritmo de cifrado, algoritmo de hash, grupo Diffie-Hellman, tiempo de vida de la SA (lifetime) — si algún parámetro no coincide entre el router on-premise y Alibaba Cloud, el túnel simplemente no sube.",
+        "<strong>DPD (Dead Peer Detection)</strong>: mecanismo de heartbeat que detecta si el extremo remoto dejó de responder, permitiendo derribar y renegociar el túnel proactivamente."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Un túnel IPsec que nunca sube casi siempre es un desajuste de parámetros de Fase 1/Fase 2 entre ambos extremos, no un problema de la VPC ni de Security Groups."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Configurar una conexión IPsec-VPN",
+      "title_en": "Configuring an IPsec-VPN Connection",
+      "intro": "La configuración práctica combina tres objetos distintos en la consola de Alibaba Cloud, más la ruta que hace que el tráfico realmente use el túnel.",
       "points": [
-        "<strong>HA</strong>: Doble túnel para HA",
-        "<strong>Buenas prácticas</strong>: IPsec con IKEv2 + AES-256-GCM",
-        "<strong>Buenas prácticas</strong>: BGP para failover automático",
-        "<strong>Buenas prácticas</strong>: SSL VPN con certificados individuales revocables"
+        "<strong>VPN Gateway</strong>: el recurso que se crea dentro de una VPC específica, con un ancho de banda contratado y una o dos IP públicas propias.",
+        "<strong>Customer Gateway</strong>: la representación lógica del router/firewall del lado on-premise — se registra su IP pública una sola vez y se reutiliza en varias conexiones si es necesario.",
+        "<strong>VPN Connection</strong>: une un VPN Gateway con un Customer Gateway; aquí se definen la clave precompartida, los parámetros de Fase 1/Fase 2 y las redes locales/remotas (CIDR) que el túnel interconecta.",
+        "<strong>Ruta personalizada en la VPC</strong>: sin una entrada en la tabla de rutas que apunte el CIDR remoto hacia el VPN Gateway como next-hop, el túnel puede estar «up» pero el tráfico simplemente no lo usa.",
+        "<strong>CIDR sin solapes</strong>: la red local (VPC) y la red remota (on-premise) deben tener rangos de IP que no se superpongan — de lo contrario el enrutamiento es ambiguo y el túnel resulta inútil en la práctica."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Tres piezas separadas — VPN Gateway, Customer Gateway y VPN Connection— más la ruta en la VPC. Olvidar la ruta es el error de configuración más común entre quienes recién aprenden VPN Gateway."
+      }
+    },
+    {
+      "title_es": "4 · Alta disponibilidad: túneles duales y BGP",
+      "title_en": "High Availability: Dual Tunnels and BGP",
+      "intro": "Un solo túnel IPsec es un punto único de falla — Alibaba Cloud resuelve esto por defecto con redundancia, y opcionalmente con ruteo dinámico para automatizar el failover.",
+      "points": [
+        "<strong>Túneles duales por defecto</strong>: cada conexión IPsec-VPN de Alibaba Cloud crea dos túneles (activo/en espera o ambos activos) hacia el mismo Customer Gateway; si uno cae, el tráfico conmuta automáticamente al otro sin intervención manual.",
+        "<strong>BGP dinámico</strong>: en vez de mantener rutas estáticas a mano, los dos extremos intercambian rutas automáticamente vía BGP — si un túnel cae, las rutas se retiran y el tráfico converge hacia el túnel sano sin reconfigurar nada.",
+        "<strong>Rutas estáticas con health check</strong>: alternativa a BGP cuando el equipo on-premise no soporta BGP — se configura un chequeo de salud sobre la ruta estática para que se desactive automáticamente si el túnel asociado cae.",
+        "<strong>Múltiples conexiones por VPN Gateway</strong>: un mismo VPN Gateway admite varias conexiones IPsec (hasta un límite por defecto de la cuenta, ampliable por ticket), útil para unir varias sucursales a la misma VPC."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Sin BGP, la alta disponibilidad depende de rutas estáticas con health check bien configurado. Con BGP, la convergencia ante fallas es automática y generalmente más rápida."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "5 · SSL-VPN: acceso remoto de clientes individuales",
+      "title_en": "SSL-VPN: Remote Client Access",
+      "intro": "Cuando quien se conecta no es una oficina completa sino una persona con su laptop, SSL-VPN es el mecanismo diseñado para ese caso.",
       "points": [
-        "<strong>Antipattern</strong>: Túnel único sin failover",
-        "<strong>Antipattern</strong>: Claves precompartidas débiles",
-        "<strong>Antipattern</strong>: Sin logging de conexiones VPN",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Servidor SSL-VPN</strong>: se crea dentro del VPN Gateway, definiendo el rango de IP (client CIDR pool) que se asignará a cada cliente que se conecte.",
+        "<strong>Certificados de cliente</strong>: cada usuario recibe un certificado individual generado a partir de una CA (autoridad certificadora) propia del VPN Gateway — revocable de forma individual si un empleado deja la empresa o pierde el dispositivo.",
+        "<strong>Cliente de conexión</strong>: el usuario final se conecta con un cliente SSL-VPN (compatible con OpenVPN) usando el certificado y un archivo de configuración descargado desde la consola.",
+        "<strong>Alcance de acceso</strong>: una vez conectado, el cliente queda dentro del espacio de red de la VPC y su tráfico hacia los recursos internos queda sujeto a los Security Groups de esos recursos, igual que cualquier otro origen interno."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "SSL-VPN resuelve «acceso remoto individual con revocación granular por persona» — si el escenario menciona revocar el acceso de UN empleado sin afectar al resto, la respuesta apunta a certificados SSL-VPN individuales, no a una clave compartida."
+      }
+    },
+    {
+      "title_es": "6 · Seguridad de la conexión",
+      "title_en": "Securing the Connection",
+      "intro": "Un túnel VPN mal asegurado da una falsa sensación de protección — el cifrado débil o las claves compartidas descuidadamente anulan buena parte del beneficio.",
+      "points": [
+        "<strong>Algoritmos recomendados</strong>: preferir IKEv2 sobre IKEv1 cuando el equipo remoto lo soporte, con cifrado AES-256 y hash SHA-2 en lugar de opciones legadas más débiles (DES, MD5).",
+        "<strong>Clave precompartida (PSK) robusta</strong>: una PSK corta o predecible es tan débil como una contraseña reutilizada — debe generarse con suficiente entropía y rotarse periódicamente.",
+        "<strong>Certificados en vez de PSK</strong>: para conexiones más sensibles, usar autenticación por certificado en lugar de clave precompartida reduce el riesgo si la clave se filtra.",
+        "<strong>Auditoría</strong>: registrar y monitorear los eventos de conexión/desconexión del túnel y del acceso SSL-VPN ayuda a detectar intentos de acceso anómalos o intermitencia de red no planificada."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "El cifrado del túnel no compensa una PSK débil — la seguridad de un IPsec-VPN es tan fuerte como el eslabón más débil de su negociación inicial."
+      }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "La mayoría de preguntas difíciles sobre VPN Gateway giran en torno a fallas de configuración observadas en clientes reales al conectar su primera oficina a la nube.",
+      "points": [
+        "<strong>Antipatrón</strong>: depender de un único túnel sin monitorear el segundo, perdiendo la redundancia que Alibaba Cloud ya provee por defecto.",
+        "<strong>Antipatrón</strong>: usar una clave precompartida débil o reutilizada entre varias conexiones.",
+        "<strong>Antipatrón</strong>: olvidar la ruta personalizada en la tabla de rutas de la VPC después de crear la VPN Connection — el túnel sube pero el tráfico nunca lo atraviesa.",
+        "<strong>Antipatrón</strong>: definir CIDR local y remoto que se solapan, generando ambigüedad de enrutamiento.",
+        "<strong>Antipatrón</strong>: no habilitar DPD ni monitoreo — una caída de túnel pasa desapercibida hasta que un usuario reporta que «la conexión no funciona».",
+        "<strong>Regla de oro</strong>: ante dos opciones plausibles, elige la que combina túneles redundantes + cifrado moderno (IKEv2/AES-256) + ruteo dinámico cuando el escenario lo permita."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Si la pregunta describe un túnel que no sube, sospecha primero de un desajuste de parámetros IKE/IPsec entre ambos extremos. Si describe tráfico que no llega pese al túnel «up», sospecha de la ruta faltante en la VPC."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Extender data center corporativo a la VPC"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Acceso remoto seguro de empleados a recursos internos"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Sitio de contingencia como backup de Express Connect"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Interconexión con otro cloud (AWS/Azure) vía IPsec"
-    }
+    { "title": "Escenario 1", "text": "Conectar la red de una oficina completa a la VPC vía IPsec-VPN con túneles duales" },
+    { "title": "Escenario 2", "text": "Acceso remoto seguro de empleados en home office mediante SSL-VPN con certificados individuales" },
+    { "title": "Escenario 3", "text": "VPN Gateway como respaldo económico ante la caída de una línea Express Connect" },
+    { "title": "Escenario 4", "text": "Interconexión con otro proveedor cloud (multi-cloud) mediante un túnel IPsec estándar" },
+    { "title": "Escenario 5", "text": "Varias sucursales conectándose a la misma VPC mediante múltiples conexiones IPsec en un mismo VPN Gateway" },
+    { "title": "Escenario 6", "text": "Failover automático de rutas mediante BGP dinámico ante la caída de un túnel" }
   ],
   "mistakes": [
-    "Túnel único sin failover",
-    "Claves precompartidas débiles",
-    "Sin logging de conexiones VPN"
+    "Depender de un único túnel sin monitorear la redundancia que Alibaba Cloud provee por defecto",
+    "Usar una clave precompartida (PSK) débil o reutilizada entre conexiones",
+    "Olvidar la ruta personalizada en la VPC tras crear la VPN Connection — el túnel sube pero el tráfico no lo usa",
+    "Definir CIDR local y remoto que se solapan, generando ambigüedad de enrutamiento",
+    "No habilitar DPD ni monitoreo de eventos de conexión/desconexión",
+    "Usar IKEv1 y algoritmos legados cuando el equipo remoto soporta IKEv2 con AES-256"
   ],
   "cli": [
-    {
-      "cmd": "aliyun vpc CreateVpnGateway",
-      "desc": "Crear VPN Gateway"
-    },
-    {
-      "cmd": "aliyun vpc CreateVpnConnection",
-      "desc": "Crear túnel IPsec"
-    }
+    { "cmd": "aliyun vpc CreateVpnGateway --VpcId vpc-xxxxx --Bandwidth 10 --InternetChargeType PayByTraffic", "desc": "Crear un VPN Gateway dentro de una VPC" },
+    { "cmd": "aliyun vpc CreateCustomerGateway --IpAddress 203.0.113.10 --Name office-router", "desc": "Registrar el router on-premise como Customer Gateway" },
+    { "cmd": "aliyun vpc CreateVpnConnection --VpnGatewayId vpn-xxxxx --CustomerGatewayId cgw-xxxxx --LocalSubnet 10.0.0.0/16 --RemoteSubnet 192.168.0.0/16", "desc": "Crear la conexión IPsec entre VPN Gateway y Customer Gateway" },
+    { "cmd": "aliyun vpc DescribeVpnConnections --VpnGatewayId vpn-xxxxx", "desc": "Consultar el estado de los túneles de una conexión" },
+    { "cmd": "aliyun vpc CreateSslVpnServer --VpnGatewayId vpn-xxxxx --ClientIpPool 10.99.0.0/24 --LocalSubnet 10.0.0.0/16", "desc": "Crear un servidor SSL-VPN para acceso remoto individual" },
+    { "cmd": "aliyun vpc CreateSslVpnClientCert --SslVpnServerId vpnsrv-xxxxx", "desc": "Generar un certificado de cliente para un usuario de SSL-VPN" }
   ],
   "glossary": [
-    {
-      "en": "IPsec VPN",
-      "es": "IPsec VPN",
-      "def": "Túnel cifrado sitio-a-sitio."
-    },
-    {
-      "en": "SSL VPN",
-      "es": "SSL VPN",
-      "def": "Túnel cliente-a-sitio; usuarios individuales."
-    },
-    {
-      "en": "IKE/IPsec",
-      "es": "IKE/IPsec",
-      "def": "Protocolos de negociación de claves y cifrado."
-    },
-    {
-      "en": "Customer Gateway",
-      "es": "Customer Gateway",
-      "def": "Representación lógica del router remoto."
-    },
-    {
-      "en": "BGP Dinámico",
-      "es": "BGP dinámico",
-      "def": "Ruteo automático entre VPC y on-premise."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "IPsec-VPN", "es": "IPsec-VPN", "def": "Túnel cifrado sitio a sitio entre una VPC y una red externa completa." },
+    { "en": "SSL-VPN", "es": "SSL-VPN", "def": "Túnel cifrado cliente a sitio para dispositivos individuales de usuarios remotos." },
+    { "en": "IKE (Internet Key Exchange)", "es": "IKE", "def": "Protocolo que negocia automáticamente claves y parámetros de seguridad del túnel, en versión IKEv1 o IKEv2." },
+    { "en": "Phase 1 / Phase 2 (IKE SA / IPsec SA)", "es": "Fase 1 / Fase 2", "def": "Fase 1 autentica y crea un canal seguro; Fase 2 negocia las claves que cifran el tráfico de datos real." },
+    { "en": "Customer Gateway", "es": "Customer Gateway", "def": "Representación lógica en Alibaba Cloud del router/firewall del extremo remoto (on-premise)." },
+    { "en": "VPN Connection", "es": "VPN Connection", "def": "Objeto que une un VPN Gateway con un Customer Gateway, definiendo PSK, parámetros IKE/IPsec y redes locales/remotas." },
+    { "en": "Pre-shared Key (PSK)", "es": "Clave precompartida", "def": "Secreto compartido usado para autenticar mutuamente ambos extremos del túnel en Fase 1." },
+    { "en": "Dead Peer Detection (DPD)", "es": "DPD", "def": "Mecanismo de heartbeat que detecta si el extremo remoto dejó de responder para renegociar el túnel." },
+    { "en": "BGP Dynamic Routing", "es": "BGP dinámico", "def": "Intercambio automático de rutas entre ambos extremos del túnel, permitiendo failover sin reconfiguración manual." },
+    { "en": "Dual Tunnel", "es": "Túnel dual", "def": "Redundancia por defecto de IPsec-VPN: dos túneles hacia el mismo Customer Gateway para tolerar la caída de uno." },
+    { "en": "Client CIDR Pool", "es": "Pool de IP de cliente", "def": "Rango de direcciones que SSL-VPN asigna a cada cliente que se conecta remotamente." },
+    { "en": "Custom Route", "es": "Ruta personalizada", "def": "Entrada en la tabla de rutas de la VPC que dirige el tráfico hacia el CIDR remoto a través del VPN Gateway." },
+    { "en": "Express Connect", "es": "Express Connect", "def": "Circuito físico dedicado; alternativa de mayor costo y estabilidad frente a una VPN sobre internet público." },
+    { "en": "Health Check (route)", "es": "Chequeo de salud de ruta", "def": "Verificación periódica que desactiva una ruta estática si el túnel asociado deja de responder." },
+    { "en": "Overlapping CIDR", "es": "CIDR solapado", "def": "Rangos de IP local y remota que se superponen, generando ambigüedad de enrutamiento en el túnel." },
+    { "en": "SA Lifetime", "es": "Tiempo de vida de la SA", "def": "Duración tras la cual las claves negociadas en Fase 1/Fase 2 deben renegociarse." },
+    { "en": "VPN Gateway", "es": "VPN Gateway", "def": "Recurso de Alibaba Cloud dentro de una VPC que termina túneles IPsec y sesiones SSL-VPN." },
+    { "en": "AES-256 / SHA-2", "es": "AES-256 / SHA-2", "def": "Algoritmos de cifrado y hash recomendados frente a opciones legadas más débiles (DES, MD5)." },
+    { "en": "Client Certificate", "es": "Certificado de cliente", "def": "Credencial individual de SSL-VPN, revocable por usuario sin afectar a otros clientes." },
+    { "en": "Bandwidth Spec", "es": "Especificación de ancho de banda", "def": "Capacidad contratada del VPN Gateway, que limita el throughput agregado de sus conexiones." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a VPN Gateway?",
-      "options": [
-        "VPN Gateway habilita conexiones IPsec (sitio a sitio) y SSL (cliente a sitio) entre tu VPC y redes externas. Es la vía económica para hibridar sin contratar Express Connect.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "VPN Gateway habilita conexiones IPsec (sitio a sitio) y SSL (cliente a sitio) entre tu VPC y redes externas. Es la vía económica para hibridar sin contratar Express Connect."
-    },
-    {
-      "q": "¿Qué es <strong>IPsec VPN</strong> (IPsec VPN) en VPN Gateway?",
-      "options": [
-        "Túnel cifrado sitio-a-sitio.",
-        "Túnel cliente-a-sitio; usuarios individuales.",
-        "Protocolos de negociación de claves y cifrado.",
-        "Representación lógica del router remoto."
-      ],
-      "answer": 0,
-      "explain": "IPsec VPN (IPsec VPN): Túnel cifrado sitio-a-sitio."
-    },
-    {
-      "q": "¿Qué es <strong>SSL VPN</strong> (SSL VPN) en VPN Gateway?",
-      "options": [
-        "Túnel cliente-a-sitio; usuarios individuales.",
-        "Túnel cifrado sitio-a-sitio.",
-        "Protocolos de negociación de claves y cifrado.",
-        "Representación lógica del router remoto."
-      ],
-      "answer": 0,
-      "explain": "SSL VPN (SSL VPN): Túnel cliente-a-sitio; usuarios individuales."
-    },
-    {
-      "q": "¿Qué es <strong>IKE/IPsec</strong> (IKE/IPsec) en VPN Gateway?",
-      "options": [
-        "Protocolos de negociación de claves y cifrado.",
-        "Túnel cifrado sitio-a-sitio.",
-        "Túnel cliente-a-sitio; usuarios individuales.",
-        "Representación lógica del router remoto."
-      ],
-      "answer": 0,
-      "explain": "IKE/IPsec (IKE/IPsec): Protocolos de negociación de claves y cifrado."
-    },
-    {
-      "q": "¿Qué es <strong>Customer Gateway</strong> (Customer Gateway) en VPN Gateway?",
-      "options": [
-        "Representación lógica del router remoto.",
-        "Túnel cifrado sitio-a-sitio.",
-        "Túnel cliente-a-sitio; usuarios individuales.",
-        "Protocolos de negociación de claves y cifrado."
-      ],
-      "answer": 0,
-      "explain": "Customer Gateway (Customer Gateway): Representación lógica del router remoto."
-    },
-    {
-      "q": "¿Qué es <strong>BGP Dinámico</strong> (BGP dinámico) en VPN Gateway?",
-      "options": [
-        "Ruteo automático entre VPC y on-premise.",
-        "Túnel cifrado sitio-a-sitio.",
-        "Túnel cliente-a-sitio; usuarios individuales.",
-        "Protocolos de negociación de claves y cifrado."
-      ],
-      "answer": 0,
-      "explain": "BGP Dinámico (BGP dinámico): Ruteo automático entre VPC y on-premise."
-    },
-    {
-      "q": "Para maximizar disponibilidad con VPN Gateway, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar VPN Gateway en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con VPN Gateway, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde VPN Gateway es la elección típica:",
-      "options": [
-        "Extender data center corporativo a la VPC",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Extender data center corporativo a la VPC."
-    }
+    { "q": "¿Cuál es la diferencia principal entre IPsec-VPN y SSL-VPN en Alibaba Cloud VPN Gateway?", "options": ["Son exactamente lo mismo con nombres distintos", "IPsec-VPN conecta redes completas (sitio a sitio); SSL-VPN conecta dispositivos individuales (cliente a sitio)", "SSL-VPN solo funciona dentro de China", "IPsec-VPN no admite cifrado"], "answer": 1, "explain": "IPsec-VPN une dos redes completas; SSL-VPN da acceso remoto a usuarios individuales con su propio certificado." },
+    { "q": "Una empresa necesita conectar su data center completo a una VPC con la latencia más estable posible y presupuesto amplio. ¿Qué opción es más adecuada que una VPN sobre internet?", "options": ["SSL-VPN", "Express Connect (circuito físico dedicado)", "Anycast EIP", "CDN"], "answer": 1, "explain": "Express Connect ofrece latencia estable y predecible mediante un circuito físico dedicado, a diferencia de una VPN sobre internet público." },
+    { "q": "¿Qué protocolo negocia automáticamente las claves y parámetros de seguridad de un túnel IPsec?", "options": ["BGP", "IKE (Internet Key Exchange)", "DNS", "HTTP"], "answer": 1, "explain": "IKE (en versión IKEv1 o IKEv2) es el protocolo responsable de negociar automáticamente las claves y parámetros del túnel." },
+    { "q": "Un túnel IPsec nunca llega a establecerse (estado 'down' persistente) entre el router on-premise y Alibaba Cloud. ¿Cuál es la causa más probable?", "options": ["La VPC tiene un Security Group mal configurado", "Un desajuste de parámetros de Fase 1 o Fase 2 (algoritmo de cifrado, hash o grupo DH) entre ambos extremos", "El bucket OSS está mal configurado", "El dominio CDN no resuelve"], "answer": 1, "explain": "Los parámetros de negociación IKE/IPsec deben coincidir exactamente en ambos extremos; un desajuste impide que el túnel suba." },
+    { "q": "Se creó correctamente la VPN Connection y el túnel muestra estado 'up', pero el tráfico hacia la red remota no llega. ¿Qué es lo más probable que falte?", "options": ["Un certificado SSL", "La ruta personalizada en la tabla de rutas de la VPC que apunta el CIDR remoto hacia el VPN Gateway", "Aumentar el ancho de banda del VPN Gateway", "Cambiar el algoritmo de cifrado"], "answer": 1, "explain": "Sin la ruta en la VPC, el túnel puede estar activo pero el tráfico simplemente no se enruta hacia él." },
+    { "q": "¿Qué proporciona por defecto una conexión IPsec-VPN de Alibaba Cloud para tolerar la caída de un túnel?", "options": ["Un único túnel sin redundancia", "Dos túneles hacia el mismo Customer Gateway (activo/en espera o ambos activos)", "Redundancia solo si se contrata Express Connect también", "Ningún mecanismo de redundancia automática"], "answer": 1, "explain": "Cada conexión IPsec-VPN crea dos túneles por defecto, dando redundancia sin configuración adicional." },
+    { "q": "¿Qué ventaja aporta habilitar BGP dinámico sobre una conexión VPN frente a usar solo rutas estáticas?", "options": ["Reduce el costo del ancho de banda", "Permite que las rutas se intercambien y converjan automáticamente ante la caída de un túnel, sin reconfiguración manual", "Elimina la necesidad de un Customer Gateway", "Sustituye la necesidad de cifrado IPsec"], "answer": 1, "explain": "BGP dinámico automatiza el failover de rutas; sin él, hay que depender de rutas estáticas con health check manual." },
+    { "q": "Un empleado deja la empresa y hay que revocar su acceso remoto sin afectar a los demás usuarios de SSL-VPN. ¿Qué mecanismo lo permite?", "options": ["Cambiar la clave precompartida (PSK) de todo el VPN Gateway", "Revocar el certificado de cliente individual de ese empleado", "Eliminar el VPN Gateway completo", "Bajar el ancho de banda del servidor SSL-VPN"], "answer": 1, "explain": "Cada usuario de SSL-VPN tiene un certificado individual revocable, sin afectar el acceso de otros usuarios." },
+    { "q": "¿Por qué es un antipatrón definir un CIDR local (VPC) que se solapa con el CIDR remoto (on-premise) en una conexión IPsec?", "options": ["No es un problema, el túnel lo resuelve automáticamente", "Genera ambigüedad de enrutamiento y el tráfico puede no llegar correctamente a su destino", "Aumenta automáticamente la latencia del túnel", "Impide crear el Customer Gateway"], "answer": 1, "explain": "Rangos de IP solapados hacen que el enrutamiento sea ambiguo, comprometiendo la utilidad práctica del túnel." },
+    { "q": "¿Qué mecanismo detecta si el extremo remoto de un túnel IPsec dejó de responder, permitiendo renegociar proactivamente?", "options": ["DPD (Dead Peer Detection)", "GSLB", "Anti-hotlinking", "TTL"], "answer": 0, "explain": "DPD envía heartbeats periódicos para detectar la pérdida de conectividad con el extremo remoto." },
+    { "q": "Desde el punto de vista de seguridad, ¿qué combinación es preferible para un túnel IPsec moderno?", "options": ["IKEv1 con DES y MD5", "IKEv2 con AES-256 y SHA-2", "Sin cifrado, solo autenticación", "PSK reutilizada en todas las conexiones de la empresa"], "answer": 1, "explain": "IKEv2 junto con AES-256 y SHA-2 representa una configuración de cifrado moderna y robusta frente a opciones legadas." },
+    { "q": "¿Cuál es un patrón de arquitectura común donde VPN Gateway complementa a Express Connect?", "options": ["VPN Gateway reemplaza siempre a Express Connect en producción", "VPN Gateway actúa como respaldo económico que se activa si la línea Express Connect dedicada falla", "Ambos servicios son incompatibles entre sí", "Express Connect solo funciona si existe una VPN Gateway previa"], "answer": 1, "explain": "Un patrón híbrido habitual es usar la VPN como respaldo de bajo costo ante una falla de la conexión dedicada." },
+    { "q": "¿Qué objeto de Alibaba Cloud representa lógicamente el router o firewall del lado on-premise en una conexión IPsec?", "options": ["VPN Gateway", "Customer Gateway", "VSwitch", "Security Group"], "answer": 1, "explain": "El Customer Gateway es el registro lógico de la IP pública y características del equipo remoto." },
+    { "q": "Un usuario remoto se conecta correctamente por SSL-VPN pero no puede alcanzar un servidor interno de la VPC. ¿Qué es lo primero que hay que revisar, asumiendo que el túnel SSL está activo?", "options": ["El certificado del servidor SSL-VPN", "Los Security Groups del recurso interno, que deben permitir tráfico desde el pool de IP del cliente SSL-VPN", "El ancho de banda contratado del VPN Gateway", "El algoritmo de hash de Fase 1"], "answer": 1, "explain": "Una vez conectado, el tráfico del cliente SSL-VPN queda sujeto a los Security Groups de los recursos internos como cualquier otro origen." }
   ],
-  "exam_focus": "IPsec vs SSL VPN, cuándo usar VPN vs Express Connect, BGP dinámico, HA con doble túnel.",
+  "exam_focus": "El examen suele evaluar: (a) IPsec-VPN vs. SSL-VPN según el escenario, (b) VPN Gateway vs. Express Connect, (c) diagnóstico de túneles caídos por desajuste de Fase 1/Fase 2 o por falta de ruta en la VPC, (d) alta disponibilidad con túneles duales y BGP dinámico, (e) revocación granular de acceso en SSL-VPN.",
   "official_intro": "What is VPN? It’s an extension of private network across a public network, and enables users to send and receive data across shared or public networks as if their computing devices were directly connected to the private network. In this clouder course, you’ll learn how to conveniently establish virtual private connection on Alibaba Cloud with VPN Gateway.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_establishvirtual",

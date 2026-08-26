@@ -2,404 +2,161 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-quickbi",
   "title_en": "Quickly Generate Business Intelligence Diagrams with QuickBI",
-  "title_es": "Quickly Generate Negocio Intelligence Diagrams con QuickBI",
+  "title_es": "Genera Rápidamente Diagramas de Business Intelligence con Quick BI",
+  "title_es_html": "Genera Rápidamente Diagramas de <em>Business Intelligence</em> con Quick BI",
   "duration_es": "94 minutos",
   "level_es": "Principiante",
   "category_es": "Analítica",
   "subcategory_es": "Big Data Application and Visualization",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_quickbi",
-  "lead": "Guía completa en español para el curso «Quickly Generate Business Intelligence Diagrams with QuickBI» de Alibaba Cloud Academy. Cubre en profundidad Quick BI. Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/PowerBI. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Quickly Generate Business Intelligence Diagrams with QuickBI» de Alibaba Cloud Academy, centrado en Quick BI: la herramienta self-service de dashboards y análisis de Alibaba Cloud. Cubre cómo conectar fuentes de datos, modelar datasets, construir dashboards y controlar quién ve qué mediante Row-Level Security.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Quick BI</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Data Source, Dataset, Workbook, Row-level Security, Portal.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Quick BI y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué es Quick BI y cuándo elegirlo frente a construir reportes a mano o exportar a Excel.",
+    "<strong>Conectar</strong> fuentes de datos (MaxCompute, RDS, Hologres, ADB, ClickHouse, Excel/CSV) y modelar un Dataset.",
+    "<strong>Construir</strong> un Workbook/Dashboard con los tipos de gráfico adecuados para cada pregunta de negocio.",
+    "<strong>Aplicar</strong> Row-Level Security para que cada usuario vea solo los datos que le corresponden.",
+    "<strong>Distribuir</strong> dashboards mediante Portal, embed o suscripción por correo.",
+    "<strong>Responder</strong> preguntas de certificación sobre los conceptos y el flujo de trabajo de Quick BI."
   ],
-  "architecture": "Fuentes de datos conectadas → data model (dimensiones + medidas) → workbooks/dashboards → distribución por email, web embed o app móvil. Row-level security por rol RAM. Cache automática.",
+  "architecture": "Fuente de datos (MaxCompute/RDS/Hologres/ADB/ClickHouse/archivo) → Dataset (capa de modelado: dimensiones, medidas, campos calculados, relaciones entre tablas) → Workbook (uno o más dashboards construidos sobre ese dataset) → distribución: Portal interno, enlace compartido, embed en una aplicación, o suscripción programada por correo. Row-Level Security se aplica a nivel de Dataset, así que un mismo dashboard muestra datos distintos según quién lo abre.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Quick BI",
+      "title_es": "1 · Qué es Quick BI y cuándo usarlo",
       "title_en": "Introduction to Quick BI",
-      "intro": "Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/PowerBI. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "intro": "Quick BI es la herramienta de business intelligence self-service de Alibaba Cloud: permite a un analista de negocio construir dashboards interactivos sin escribir código, conectando directamente contra las fuentes de datos ya existentes en la cuenta.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Quick BI se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Self-service</strong>: el usuario de negocio arrastra y suelta campos para construir gráficos, sin depender de un ingeniero de datos para cada reporte nuevo.",
+        "<strong>Sin mover los datos</strong>: Quick BI consulta las fuentes en vivo (o mediante extracción programada) — no requiere duplicar los datos en un almacén propio del BI.",
+        "<strong>Conectores nativos</strong>: MaxCompute, Hologres, AnalyticDB, ApsaraDB RDS, PolarDB, ClickHouse, y carga directa de archivos Excel/CSV para análisis puntuales.",
+        "<strong>Alternativa a</strong>: herramientas como Tableau o Power BI, con la ventaja de integración nativa con el resto del ecosistema de datos de Alibaba Cloud.",
+        "<strong>Ediciones</strong>: desde un plan gratuito/personal limitado hasta ediciones Pro/Enterprise con más conectores, mayor concurrencia y funciones de gobierno de datos."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Quick BI es una pieza fundamental de Analítica en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Quick BI es la capa de <em>consumo</em> de la analítica: no procesa ni transforma datos a gran escala (eso lo hacen MaxCompute/DataWorks) — su trabajo es visualizar y distribuir lo que otros servicios ya calcularon." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Quick BI no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Fuentes de datos y modelado de Datasets",
+      "title_en": "Data Sources and Dataset Modeling",
+      "intro": "Antes de construir un solo gráfico, hay que conectar la fuente y modelar un Dataset — la decisión de modelado aquí determina qué tan rápido y correcto será todo lo que se construya después.",
       "points": [
-        "<strong>Patrón canónico</strong>: Fuentes de datos conectadas → data model (dimensiones + medidas) → workbooks/dashboards → distribución por email, web embed o app móvil. Row-level security por rol RAM. Cache automática.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Data Source</strong>: la conexión configurada hacia una base de datos o servicio (credenciales, host, puerto). Un Data Source puede alimentar varios Datasets.",
+        "<strong>Dataset</strong>: la capa de modelado lógico sobre una o más tablas — define dimensiones (campos categóricos: región, producto) y medidas (campos numéricos agregables: ventas, unidades).",
+        "<strong>Campos calculados</strong>: fórmulas definidas dentro del Dataset (ratios, clasificaciones, fechas relativas) que no existen como columna en la tabla origen.",
+        "<strong>Relaciones entre tablas</strong>: un Dataset puede combinar varias tablas mediante joins definidos una sola vez, para que los usuarios de negocio no tengan que escribir SQL.",
+        "<strong>Modo de consulta</strong>: en vivo (cada apertura del dashboard consulta la fuente) o con extracción/cache programada (mejor rendimiento, datos con cierto rezago)."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Quick BI (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Un Dataset mal modelado (sin relaciones claras, con demasiados campos calculados redundantes) se nota en cada dashboard construido sobre él — el examen suele preguntar qué se debe resolver primero: modelo o dashboard." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Construcción de Workbooks y dashboards",
+      "title_en": "Building Workbooks and Dashboards",
+      "intro": "Un Workbook es donde se ensamblan los gráficos en un dashboard — la elección del tipo de visualización correcto para cada pregunta de negocio es tan importante como tener los datos correctos.",
       "points": [
-        "<strong>Data source</strong> <em>(Data Source)</em>: Conexión a base de datos o dataset.",
-        "<strong>Dataset</strong> <em>(Dataset)</em>: Modelo lógico con dimensiones/medidas.",
-        "<strong>Workbook</strong> <em>(Workbook)</em>: Dashboard o reporte.",
-        "<strong>RLS</strong> <em>(Row-level Security)</em>: Filtrado por identidad del usuario.",
-        "<strong>Portal</strong> <em>(Portal)</em>: Sitio unificado de dashboards.",
-        "<strong>Data preparation</strong> <em>(Data Preparation)</em>: ETL ligero antes de análisis."
+        "<strong>Workbook</strong>: contenedor de una o más hojas/dashboards construidos sobre uno o varios Datasets.",
+        "<strong>Tipos de gráfico</strong>: líneas para tendencias en el tiempo, barras para comparar categorías, mapas de calor para densidad, tablas dinámicas para desglose detallado, indicadores (KPI cards) para métricas únicas.",
+        "<strong>Filtros e interactividad</strong>: filtros globales del dashboard, drill-down (clic en una barra para ver el detalle) y parámetros que cambian qué muestra el gráfico.",
+        "<strong>Smart Insights / preguntas en lenguaje natural</strong>: Quick BI permite hacer preguntas en texto libre sobre un Dataset y generar automáticamente el gráfico correspondiente, sin construirlo manualmente.",
+        "<strong>Diseño responsivo</strong>: los dashboards se adaptan a pantallas de escritorio, tablet y móvil desde el mismo diseño base."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El tipo de gráfico comunica el tipo de pregunta: una tendencia en el tiempo pide una línea, una comparación entre categorías pide barras — usar el gráfico equivocado es un error común que el examen suele señalar." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · Row-Level Security y control de acceso",
+      "title_en": "Row-Level Security and Access Control",
+      "intro": "El mismo dashboard puede (y debe) mostrar datos distintos según quién lo abre — eso se resuelve con Row-Level Security, no construyendo un dashboard por cada usuario.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Row-Level Security (RLS)</strong>: regla aplicada a nivel de Dataset que filtra automáticamente las filas visibles según la identidad del usuario que consulta.",
+        "<strong>Reglas por rol o por atributo</strong>: por ejemplo, un gerente regional solo ve filas donde región = su región, sin necesidad de un Dataset separado por región.",
+        "<strong>Permisos de Workbook</strong>: independiente de RLS, controla quién puede ver, editar o compartir un Workbook completo.",
+        "<strong>Integración con RAM</strong>: la identidad del usuario que abre Quick BI puede mapearse a las reglas de RLS, reutilizando la gestión de usuarios ya existente en la cuenta de Alibaba Cloud.",
+        "<strong>Auditoría</strong>: quién accedió a qué dashboard y cuándo, relevante para escenarios de compliance con datos sensibles."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Antipatrón frecuente", "text": "Construir un Workbook idéntico por cada región o cliente en vez de usar RLS sobre un único Dataset — esto multiplica el trabajo de mantenimiento cada vez que cambia una métrica." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Distribución y consumo de dashboards",
+      "title_en": "Distribution and Consumption",
+      "intro": "Un dashboard solo genera valor si llega a quien toma la decisión, en el momento correcto — Quick BI ofrece varios canales de distribución más allá de que el usuario entre manualmente a mirarlo.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Un dataset central por dominio",
-        "<strong>Buenas prácticas</strong>: RLS obligatorio para datos sensibles",
-        "<strong>Buenas prácticas</strong>: Cache configurada para queries lentas",
-        "<strong>Buenas prácticas</strong>: Naming convention consistente"
+        "<strong>Portal</strong>: sitio interno donde se organizan y navegan todos los dashboards de la organización, agrupados por área o audiencia.",
+        "<strong>Enlace compartido / embed</strong>: un dashboard puede compartirse por URL o incrustarse dentro de otra aplicación interna (intranet, portal de cliente).",
+        "<strong>Suscripción programada</strong>: envío automático del dashboard (o una captura) por correo en una frecuencia definida, para ejecutivos que no entran a la herramienta directamente.",
+        "<strong>Pantallas grandes / TV</strong>: modo de presentación pensado para monitores operacionales en salas de control o áreas de trabajo.",
+        "<strong>Exportación</strong>: descarga a Excel/PDF/imagen para incluir en presentaciones o reportes externos."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el escenario describe un ejecutivo que necesita ver un KPI cada mañana sin abrir ninguna herramienta, la respuesta es suscripción programada por correo, no un dashboard interactivo." }
     },
     {
       "title_es": "6 · Errores comunes y estrategia de examen",
       "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "intro": "La mayoría de las preguntas difíciles giran en torno a decisiones de modelado y gobierno de datos mal tomadas, no en botones de la interfaz.",
       "points": [
-        "<strong>Antipattern</strong>: Un dashboard por request de negocio (crecimiento sin gobierno)",
-        "<strong>Antipattern</strong>: Sin RLS — todos ven todo",
-        "<strong>Antipattern</strong>: Queries costosas sin cache",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Antipatrón</strong>: construir un dashboard nuevo por cada solicitud puntual de negocio, en vez de un modelo de Dataset reutilizable — el catálogo crece sin control ni consistencia.",
+        "<strong>Antipatrón</strong>: no aplicar Row-Level Security en datos sensibles — cualquier usuario con acceso al Workbook ve todo.",
+        "<strong>Antipatrón</strong>: dejar el modo de consulta en vivo para dashboards de alto tráfico sobre una fuente pesada — genera carga innecesaria en la base de datos origen; conviene cache/extracción programada.",
+        "<strong>Antipatrón</strong>: usar el tipo de gráfico incorrecto para el tipo de pregunta (p. ej. un gráfico de torta con 20 categorías, ilegible).",
+        "<strong>Antipatrón</strong>: modelar el mismo cálculo de negocio de formas distintas en Datasets separados — genera números que no cuadran entre dashboards.",
+        "<strong>Regla de oro</strong>: ante dos opciones del examen, prioriza la que resuelve el problema en el Dataset (una sola vez) sobre la que lo resuelve en cada dashboard (repetido)."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Identifica primero en qué capa del flujo (fuente → dataset → dashboard → distribución) ocurre el problema descrito — la mayoría de las preguntas se resuelven ubicando correctamente esa capa." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Reportes ejecutivos con KPIs"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Dashboards operacionales en TV/monitor"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Análisis ad-hoc por área de negocio"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Reportes automáticos por correo"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Embed en aplicaciones internas"
-    }
+    { "title": "Escenario 1", "text": "Dashboard ejecutivo de KPIs con suscripción semanal por correo" },
+    { "title": "Escenario 2", "text": "Pantalla operacional en tiempo real en una sala de control" },
+    { "title": "Escenario 3", "text": "Análisis ad-hoc de un analista sobre datos exportados a Excel" },
+    { "title": "Escenario 4", "text": "Portal de cliente con métricas propias, aisladas por Row-Level Security" },
+    { "title": "Escenario 5", "text": "Embed de un dashboard dentro de una aplicación interna de la empresa" }
   ],
   "mistakes": [
-    "Un dashboard por request de negocio (crecimiento sin gobierno)",
-    "Sin RLS — todos ven todo",
-    "Queries costosas sin cache"
+    "Un dashboard nuevo por cada solicitud de negocio en vez de un Dataset reutilizable",
+    "No aplicar Row-Level Security en datos sensibles",
+    "Modo de consulta en vivo sobre una fuente pesada con alto tráfico de dashboard",
+    "Elegir un tipo de gráfico que no comunica la pregunta de negocio",
+    "Duplicar la lógica de un cálculo de negocio en varios Datasets distintos"
   ],
   "cli": [
-    {
-      "cmd": "Consola Quick BI",
-      "desc": "UI principal"
-    }
+    { "cmd": "Quick BI — Nueva fuente de datos", "desc": "Conectar MaxCompute/RDS/Hologres/ADB/ClickHouse desde la consola" },
+    { "cmd": "Quick BI — Nuevo Dataset", "desc": "Modelar dimensiones, medidas y relaciones sobre una fuente" },
+    { "cmd": "Quick BI — Nuevo Workbook", "desc": "Construir dashboards sobre un Dataset" },
+    { "cmd": "Quick BI — Reglas de Row-Level Security", "desc": "Definir filtrado de filas por identidad de usuario" },
+    { "cmd": "Quick BI — Suscripción programada", "desc": "Configurar envío periódico de un dashboard por correo" }
   ],
   "glossary": [
-    {
-      "en": "Data Source",
-      "es": "Data source",
-      "def": "Conexión a base de datos o dataset."
-    },
-    {
-      "en": "Dataset",
-      "es": "Dataset",
-      "def": "Modelo lógico con dimensiones/medidas."
-    },
-    {
-      "en": "Workbook",
-      "es": "Workbook",
-      "def": "Dashboard o reporte."
-    },
-    {
-      "en": "Row-level Security",
-      "es": "RLS",
-      "def": "Filtrado por identidad del usuario."
-    },
-    {
-      "en": "Portal",
-      "es": "Portal",
-      "def": "Sitio unificado de dashboards."
-    },
-    {
-      "en": "Data Preparation",
-      "es": "Data preparation",
-      "def": "ETL ligero antes de análisis."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Data Source", "es": "Fuente de datos", "def": "Conexión configurada hacia una base de datos o servicio de origen." },
+    { "en": "Dataset", "es": "Dataset", "def": "Modelo lógico sobre una o más tablas: dimensiones, medidas, campos calculados y relaciones." },
+    { "en": "Workbook", "es": "Workbook", "def": "Contenedor de uno o más dashboards construidos sobre uno o varios Datasets." },
+    { "en": "Row-Level Security (RLS)", "es": "Seguridad a nivel de fila", "def": "Filtrado automático de filas visibles según la identidad del usuario que consulta." },
+    { "en": "Portal", "es": "Portal", "def": "Sitio interno donde se organizan y navegan los dashboards de la organización." },
+    { "en": "Data Preparation", "es": "Preparación de datos", "def": "Transformación ligera de datos antes de modelarlos como Dataset." },
+    { "en": "Dimension", "es": "Dimensión", "def": "Campo categórico usado para agrupar o segmentar (región, producto, fecha)." },
+    { "en": "Measure", "es": "Medida", "def": "Campo numérico agregable (ventas, unidades, conteo)." },
+    { "en": "Calculated Field", "es": "Campo calculado", "def": "Fórmula definida dentro del Dataset que no existe como columna en la fuente." },
+    { "en": "Live Query Mode", "es": "Modo de consulta en vivo", "def": "Cada apertura del dashboard consulta la fuente de datos directamente." },
+    { "en": "Extract / Cache Mode", "es": "Modo de extracción / cache", "def": "Los datos se cargan y refrescan en un horario programado en vez de consultarse en vivo." },
+    { "en": "Drill-down", "es": "Desglose", "def": "Interacción que permite hacer clic en un elemento del gráfico para ver el detalle subyacente." },
+    { "en": "Smart Insights", "es": "Preguntas en lenguaje natural", "def": "Generación automática de gráficos a partir de una pregunta escrita en texto libre." },
+    { "en": "KPI Card", "es": "Tarjeta de indicador", "def": "Visualización de una métrica única, sin desglose, para lectura rápida." },
+    { "en": "Embed", "es": "Incrustación", "def": "Insertar un dashboard de Quick BI dentro de otra aplicación web." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Quick BI?",
-      "options": [
-        "Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/Powe",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Quick BI es la herramienta de business intelligence de Alibaba Cloud: dashboards, reportes y análisis self-service sobre MaxCompute, RDS, PolarDB, Hologres, ClickHouse, ADB. Alternativa a Tableau/PowerBI."
-    },
-    {
-      "q": "¿Qué es <strong>Data Source</strong> (Data source) en Quick BI?",
-      "options": [
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Dashboard o reporte.",
-        "Filtrado por identidad del usuario."
-      ],
-      "answer": 0,
-      "explain": "Data Source (Data source): Conexión a base de datos o dataset."
-    },
-    {
-      "q": "¿Qué es <strong>Dataset</strong> (Dataset) en Quick BI?",
-      "options": [
-        "Modelo lógico con dimensiones/medidas.",
-        "Conexión a base de datos o dataset.",
-        "Dashboard o reporte.",
-        "Filtrado por identidad del usuario."
-      ],
-      "answer": 0,
-      "explain": "Dataset (Dataset): Modelo lógico con dimensiones/medidas."
-    },
-    {
-      "q": "¿Qué es <strong>Workbook</strong> (Workbook) en Quick BI?",
-      "options": [
-        "Dashboard o reporte.",
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Filtrado por identidad del usuario."
-      ],
-      "answer": 0,
-      "explain": "Workbook (Workbook): Dashboard o reporte."
-    },
-    {
-      "q": "¿Qué es <strong>Row-level Security</strong> (RLS) en Quick BI?",
-      "options": [
-        "Filtrado por identidad del usuario.",
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Dashboard o reporte."
-      ],
-      "answer": 0,
-      "explain": "Row-level Security (RLS): Filtrado por identidad del usuario."
-    },
-    {
-      "q": "¿Qué es <strong>Portal</strong> (Portal) en Quick BI?",
-      "options": [
-        "Sitio unificado de dashboards.",
-        "Conexión a base de datos o dataset.",
-        "Modelo lógico con dimensiones/medidas.",
-        "Dashboard o reporte."
-      ],
-      "answer": 0,
-      "explain": "Portal (Portal): Sitio unificado de dashboards."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Quick BI, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Quick BI en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Quick BI, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Quick BI es la elección típica:",
-      "options": [
-        "Reportes ejecutivos con KPIs",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Reportes ejecutivos con KPIs."
-    }
+    { "q": "¿Cuál describe mejor el rol de Quick BI dentro del flujo de datos de Alibaba Cloud?", "options": ["Es la capa de consumo/visualización sobre datos ya procesados por otros servicios", "Es el motor que ejecuta el procesamiento masivo de datos", "Es un servicio de almacenamiento de objetos", "Es un orquestador de pipelines ETL"], "answer": 0, "explain": "Quick BI visualiza y distribuye datos que MaxCompute, RDS u otros servicios ya calcularon — no procesa datos a gran escala por sí mismo." },
+    { "q": "¿Qué es un Dataset en Quick BI?", "options": ["La conexión de credenciales hacia una base de datos", "El modelo lógico de dimensiones, medidas y relaciones construido sobre una o más tablas", "Un dashboard ya publicado", "Una regla de seguridad por fila"], "answer": 1, "explain": "El Dataset es la capa de modelado: define qué campos son dimensiones, cuáles son medidas y cómo se relacionan las tablas." },
+    { "q": "Un equipo necesita que un mismo dashboard muestre solo las ventas de la región de cada gerente que lo abre. ¿Qué mecanismo de Quick BI resuelve esto sin duplicar el dashboard?", "options": ["Row-Level Security", "Modo de consulta en vivo", "Smart Insights", "Embed"], "answer": 0, "explain": "RLS filtra automáticamente las filas visibles según la identidad del usuario, evitando construir un dashboard por región." },
+    { "q": "¿Cuál es la diferencia entre modo de consulta en vivo y modo de extracción/cache?", "options": ["Son sinónimos", "En vivo consulta la fuente en cada apertura; extracción carga y refresca los datos en un horario programado", "Extracción solo funciona con archivos Excel", "En vivo solo aplica a dashboards embebidos"], "answer": 1, "explain": "El modo en vivo golpea la fuente en cada consulta; la extracción programada mejora el rendimiento a costa de cierto rezago en los datos." },
+    { "q": "Un ejecutivo necesita ver un KPI cada mañana sin entrar a ninguna herramienta. ¿Qué función de Quick BI es la adecuada?", "options": ["Row-Level Security", "Suscripción programada por correo", "Campo calculado", "Modo de consulta en vivo"], "answer": 1, "explain": "La suscripción envía el dashboard (o una captura) automáticamente por correo en una frecuencia definida." },
+    { "q": "¿Qué tipo de gráfico es más apropiado para mostrar una tendencia de ventas a lo largo de 12 meses?", "options": ["Gráfico de líneas", "Tabla dinámica sin ordenar", "Mapa de calor geográfico", "Tarjeta de indicador único"], "answer": 0, "explain": "Las líneas comunican tendencias en el tiempo de forma más clara que otros tipos de visualización." },
+    { "q": "¿Qué antipatrón describe construir un Workbook idéntico por cada cliente en vez de usar RLS?", "options": ["Es la práctica recomendada por Alibaba Cloud", "Multiplica el trabajo de mantenimiento cada vez que cambia una métrica", "Mejora el rendimiento de las consultas", "Es obligatorio para cumplir con auditoría"], "answer": 1, "explain": "Duplicar Workbooks en vez de usar RLS sobre un Dataset único genera trabajo repetido y riesgo de inconsistencias." },
+    { "q": "¿Dónde se organiza y navega el catálogo completo de dashboards de una organización en Quick BI?", "options": ["En el Data Source", "En el Portal", "En el campo calculado", "En la suscripción por correo"], "answer": 1, "explain": "El Portal es el sitio interno donde se agrupan y navegan todos los dashboards disponibles." },
+    { "q": "¿Qué es un campo calculado dentro de un Dataset?", "options": ["Una columna que ya existe en la tabla origen", "Una fórmula definida en el Dataset que no existe como columna en la fuente", "Una regla de Row-Level Security", "Un tipo de gráfico"], "answer": 1, "explain": "Los campos calculados son fórmulas (ratios, clasificaciones, fechas relativas) creadas dentro del Dataset, no columnas originales." },
+    { "q": "¿Qué fuentes de datos puede conectar Quick BI de forma nativa?", "options": ["Solo archivos Excel/CSV", "MaxCompute, RDS, Hologres, ADB, ClickHouse y archivos, entre otros", "Solo bases de datos on-premise vía VPN", "Ninguna, requiere exportación manual siempre"], "answer": 1, "explain": "Quick BI ofrece conectores nativos hacia los principales servicios de datos de Alibaba Cloud, además de carga de archivos." },
+    { "q": "Un dashboard de alto tráfico consulta en modo vivo una base de datos RDS ya cargada de trabajo transaccional. ¿Cuál es el riesgo?", "options": ["Ninguno, es la práctica recomendada", "Genera carga adicional innecesaria sobre la base transaccional", "Row-Level Security deja de funcionar", "El dashboard no podrá tener gráficos de líneas"], "answer": 1, "explain": "Consultar en vivo una fuente con alto tráfico transaccional puede degradar su rendimiento; conviene cache o extracción programada." },
+    { "q": "¿Qué función de Quick BI genera un gráfico automáticamente a partir de una pregunta escrita en texto libre?", "options": ["Row-Level Security", "Smart Insights", "Embed", "Suscripción programada"], "answer": 1, "explain": "Smart Insights interpreta preguntas en lenguaje natural sobre un Dataset y genera la visualización correspondiente." },
+    { "q": "¿Qué distingue a los permisos de Workbook de las reglas de Row-Level Security?", "options": ["Son exactamente lo mismo", "Los permisos de Workbook controlan quién ve/edita el dashboard completo; RLS filtra las filas dentro de él", "RLS controla quién edita el Workbook", "Los permisos de Workbook solo aplican a Datasets"], "answer": 1, "explain": "Son controles complementarios: uno decide el acceso al Workbook, el otro filtra qué datos ve cada usuario dentro de él." },
+    { "q": "Un equipo quiere mostrar un dashboard de Quick BI dentro de su propia intranet corporativa. ¿Qué función usan?", "options": ["Row-Level Security", "Embed", "Campo calculado", "Modo de extracción"], "answer": 1, "explain": "El embed permite incrustar un dashboard de Quick BI dentro de otra aplicación web." },
+    { "q": "¿Por qué modelar el mismo cálculo de negocio de formas distintas en Datasets separados es un antipatrón?", "options": ["Porque está prohibido técnicamente", "Porque genera números inconsistentes entre dashboards distintos", "Porque impide usar Row-Level Security", "Porque duplica el Data Source"], "answer": 1, "explain": "Cuando la misma métrica se calcula de formas distintas en cada Dataset, distintos dashboards terminan mostrando cifras que no cuadran entre sí." }
   ],
-  "exam_focus": "Dataset modeling, RLS, cache, integración con MaxCompute/Hologres.",
+  "exam_focus": "El examen suele evaluar: (a) diferenciar Data Source, Dataset y Workbook, (b) cuándo usar Row-Level Security en vez de duplicar dashboards, (c) modo de consulta en vivo vs. extracción/cache, (d) elegir el canal de distribución correcto (Portal, embed, suscripción) según el escenario, (e) elegir el tipo de gráfico correcto para la pregunta de negocio.",
   "official_intro": "Quickly learn how to use QuickBI to generate visual charts. This course offers a complete explanation of how to import data sources, create datasets, and produce dashboards.",
   "recommended_for": "Junior Developers and Cloud Beginners",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_quickbi",

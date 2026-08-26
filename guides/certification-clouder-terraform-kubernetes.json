@@ -2,485 +2,160 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-terraform-kubernetes",
   "title_en": "Provisioning a Multi-zone ACK Kubernetes Cluster Using Terraform",
-  "title_es": "Provisioning a Multi-zone ACK Kubernetes Cluster Usar Terraform",
+  "title_es": "Aprovisionar un Clúster ACK Multi-zona con Terraform",
+  "title_es_html": "Aprovisionar un Clúster ACK <em>Multi-zona</em> con Terraform",
   "duration_es": "128 minutos",
   "level_es": "Avanzado",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Container",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-terraform-kubernetes",
-  "lead": "Guía completa en español para el curso «Provisioning a Multi-zone ACK Kubernetes Cluster Using Terraform» de Alibaba Cloud Academy. Cubre en profundidad Container Service for Kubernetes (ACK). ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Provisioning a Multi-zone ACK Kubernetes Cluster Using Terraform» de Alibaba Cloud Academy: un curso avanzado de Infraestructura como Código (IaC) centrado en usar Terraform —no la consola ni ROS— para definir, versionar y reproducir un clúster ACK de alta disponibilidad distribuido en varias zonas. El foco no es Kubernetes en sí (cubierto en otros cursos de este lote), sino cómo declarar su infraestructura de forma reproducible y cómo Terraform habilita despliegues blue-green a nivel de clúster.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Container Service for Kubernetes (ACK)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Pod, Deployment, Service, Ingress, Namespace.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Container Service for Kubernetes (ACK) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué declarar infraestructura como código (Terraform) es preferible a crear un clúster manualmente desde la consola para un entorno productivo.",
+    "<strong>Estructurar</strong> un proyecto Terraform con el provider de Alibaba Cloud, sus variables y su backend de estado remoto.",
+    "<strong>Declarar</strong> los recursos necesarios para un clúster ACK multi-zona: VPC, VSwitches por zona, el clúster gestionado y sus node pools.",
+    "<strong>Razonar</strong> sobre el ciclo de vida de Terraform — plan, apply, destroy — y su relación con el archivo de estado.",
+    "<strong>Aplicar</strong> el patrón de módulos para reutilizar la definición del clúster entre entornos (dev/staging/prod).",
+    "<strong>Comparar</strong> Terraform con ROS (Resource Orchestration Service) y con la creación manual vía consola para justificar cuándo usar cada uno.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre aprovisionamiento de ACK con Terraform."
   ],
-  "architecture": "Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
+  "architecture": "Un proyecto Terraform declara, usando el provider <code>alicloud</code>, una VPC con un VSwitch por cada zona de disponibilidad objetivo (mínimo dos, para tolerancia a fallos de zona), el recurso <code>alicloud_cs_managed_kubernetes</code> (o su variante Pro) que aprovisiona el control plane gestionado de ACK, y uno o más <code>alicloud_cs_kubernetes_node_pool</code> distribuidos entre esas mismas zonas. El estado de Terraform —qué recursos existen y su configuración actual— se guarda en un backend remoto (p.ej. un bucket de OSS con locking) en vez de en el disco local, para que el equipo completo trabaje sobre el mismo estado sin conflictos. Un cambio de infraestructura se propone con <code>terraform plan</code> (mostrando qué cambiaría sin aplicarlo), se aplica con <code>terraform apply</code>, y el propio código versionado en Git sirve como historial auditable de cada cambio de infraestructura realizado.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Container Service for Kubernetes (ACK)",
-      "title_en": "Introduction to Container Service for Kubernetes (ACK)",
-      "intro": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué declarar el clúster como código en vez de crearlo manualmente",
+      "title_en": "Why Declare the Cluster as Code Instead of Creating It Manually",
+      "intro": "Crear un clúster ACK desde la consola web funciona para una prueba rápida, pero introduce un problema de fondo en cuanto ese clúster debe reproducirse, auditarse o mantenerse en el tiempo.",
       "points": [
-        "<strong>Problema que resuelve</strong>: ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Container Service for Kubernetes (ACK) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de la configuración manual</strong>: un clúster creado clic a clic en la consola no deja un registro exacto y versionado de qué se configuró — reproducirlo en otra región o recrearlo tras un desastre depende de que alguien recuerde (o documente perfectamente) cada decisión tomada.",
+        "<strong>Infraestructura como código (IaC)</strong>: describir el clúster deseado en archivos de texto declarativos versionados en Git — el código es la única fuente de verdad de cómo debería lucir la infraestructura, no la memoria de quien lo configuró.",
+        "<strong>Reproducibilidad entre entornos</strong>: el mismo código Terraform, con variables distintas, puede crear un clúster idéntico en estructura para dev, staging y producción — eliminando discrepancias por configuración manual inconsistente entre ambientes.",
+        "<strong>Revisión de cambios como código</strong>: un cambio de infraestructura pasa por Pull Request y revisión igual que un cambio de aplicación, en vez de aplicarse directamente en la consola sin registro de quién lo hizo ni por qué.",
+        "<strong>Terraform específicamente</strong>: a diferencia de scripts imperativos (una secuencia de comandos que ejecutar en orden), Terraform es declarativo — se describe el estado final deseado y la herramienta calcula qué crear, modificar o destruir para llegar a él."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Container Service for Kubernetes (ACK) es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "El valor central de IaC no es 'ahorrar clics' — es convertir la infraestructura en un artefacto versionado, revisable y reproducible, con el mismo rigor que se aplica al código de la aplicación." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Container Service for Kubernetes (ACK) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Estructura de un proyecto Terraform para Alibaba Cloud",
+      "title_en": "Structuring a Terraform Project for Alibaba Cloud",
+      "intro": "Antes de declarar el clúster en sí, hay que entender las piezas que componen cualquier proyecto Terraform sobre Alibaba Cloud — provider, variables y backend de estado.",
       "points": [
-        "<strong>Patrón canónico</strong>: Cluster ACK Pro: control plane gestionado + node pools (spot + on-demand) en 2 zonas. Ingress NGINX con SLB público. Pods usan Terway CNI (IPs de VPC directamente). Storage: NAS compartido + ESSD por pod. Logs a SLS. Métricas a ARMS/Prometheus. Autoscaling: HPA + Cluster Autoscaler.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Provider <code>alicloud</code></strong>: el plugin que traduce los recursos declarados en HCL (el lenguaje de Terraform) a llamadas reales a la API de Alibaba Cloud — se configura con la región objetivo y credenciales (idealmente via variables de entorno o un rol, nunca hardcodeadas en el código).",
+        "<strong>Variables (<code>variables.tf</code>)</strong>: parámetros externalizados (región, CIDR de la VPC, número de zonas, tipo de instancia de los nodos) que permiten reutilizar la misma definición de clúster para distintos entornos sin duplicar código.",
+        "<strong>Archivo de estado (<code>terraform.tfstate</code>)</strong>: el mapa que Terraform mantiene entre los recursos declarados en el código y los recursos reales existentes en la cuenta — es lo que le permite saber qué ya existe y qué falta crear o modificar.",
+        "<strong>Backend remoto</strong>: en vez de guardar el estado en el disco local de un desarrollador (riesgo de pérdida y de conflictos si varias personas aplican cambios), se configura un backend remoto —típicamente un bucket de OSS con locking— para que el equipo comparta un único estado consistente.",
+        "<strong>Módulos</strong>: unidades reutilizables de configuración Terraform (por ejemplo, un módulo 'clúster-ack-multi-zona') que encapsulan la definición completa y se instancian con distintos parámetros para cada entorno, evitando copiar y pegar la misma configuración tres veces."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Container Service for Kubernetes (ACK) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Guardar el estado de Terraform solo en el disco local de un desarrollador es un antipatrón citado con frecuencia en el examen — sin backend remoto con locking, dos personas aplicando cambios simultáneamente pueden corromper el estado del clúster." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · Declarar VPC, VSwitches y el clúster ACK multi-zona",
+      "title_en": "Declaring VPC, VSwitches and the Multi-zone ACK Cluster",
+      "intro": "Con la estructura del proyecto lista, este módulo cubre los recursos concretos que componen la topología multi-zona del clúster — la parte central del curso.",
       "points": [
-        "<strong>Pod</strong> <em>(Pod)</em>: Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "<strong>Deployment</strong> <em>(Deployment)</em>: Gestiona ReplicaSets y rolling updates.",
-        "<strong>Service</strong> <em>(Service)</em>: IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "<strong>Ingress</strong> <em>(Ingress)</em>: L7 routing HTTP externo (host/path).",
-        "<strong>Namespace</strong> <em>(Namespace)</em>: Aislamiento lógico; base de RBAC y quotas.",
-        "<strong>ConfigMap/Secret</strong> <em>(ConfigMap / Secret)</em>: Configuración y credenciales inyectadas al pod.",
-        "<strong>Horizontal Pod Autoscaler</strong> <em>(HPA)</em>: Escala réplicas por CPU/memoria/métricas custom.",
-        "<strong>Vertical Pod Autoscaler</strong> <em>(VPA)</em>: Ajusta requests/limits de pods."
+        "<strong>VPC y VSwitches por zona</strong>: se declara una VPC con un rango CIDR, y dentro de ella un VSwitch (subred) por cada zona de disponibilidad donde se quiere distribuir el clúster — mínimo dos zonas distintas para que una falla de zona no derribe el clúster completo.",
+        "<strong>Recurso del clúster gestionado</strong>: <code>alicloud_cs_managed_kubernetes</code> (o su equivalente Pro) declara el control plane, que Alibaba Cloud gestiona por completo — el recurso Terraform crea la referencia al clúster, no un servidor que el cliente administre directamente.",
+        "<strong>Node pools distribuidos</strong>: uno o más recursos <code>alicloud_cs_kubernetes_node_pool</code> declaran los grupos de nodos worker, cada uno asociado a los VSwitches de las zonas objetivo — Terraform y el clúster se encargan de distribuir las instancias entre esas zonas según la configuración.",
+        "<strong>Dependencias implícitas y explícitas</strong>: Terraform infiere automáticamente que el node pool depende del clúster y de los VSwitches (porque los referencia en su configuración), creando los recursos en el orden correcto sin que el autor tenga que especificarlo manualmente.",
+        "<strong>Salidas (<code>outputs.tf</code>)</strong>: tras aplicar la configuración, se pueden exponer valores útiles (el endpoint del API Server del clúster, el kubeconfig) como outputs, consumibles por otros procesos de automatización o por el propio operador."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Distribuir el clúster en múltiples zonas no es una casilla que se marca — requiere declarar explícitamente un VSwitch por zona y asociar el node pool a todos ellos; omitir una zona en la declaración es el error más citado del examen para este tema." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · El ciclo de vida: plan, apply, destroy",
+      "title_en": "The Lifecycle: Plan, Apply, Destroy",
+      "intro": "Terraform separa deliberadamente 'proponer un cambio' de 'ejecutarlo' — entender ese ciclo es lo que hace segura la gestión de infraestructura crítica como un clúster de producción.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>terraform plan</strong>: calcula y muestra qué recursos se crearían, modificarían o destruirían para llevar la infraestructura real al estado declarado en el código, sin aplicar ningún cambio todavía — el paso de revisión antes de tocar producción.",
+        "<strong>terraform apply</strong>: ejecuta los cambios mostrados en el plan — en un flujo de equipo maduro, el plan se revisa (a menudo en un Pull Request o pipeline de CI) antes de que alguien autorice el apply.",
+        "<strong>terraform destroy</strong>: elimina todos los recursos declarados en la configuración — una operación irreversible que debe protegerse especialmente en entornos de producción, típicamente restringida por permisos y nunca automatizada sin salvaguardas.",
+        "<strong>Drift de configuración</strong>: si alguien modifica un recurso manualmente desde la consola después de haberlo creado con Terraform, el estado real diverge del declarado — el siguiente <code>plan</code> detecta esa diferencia (drift) y propone revertirla al estado declarado en el código.",
+        "<strong>Cambios in-place vs. reemplazo</strong>: algunos cambios de configuración se aplican en caliente sobre el recurso existente (in-place); otros obligan a Terraform a destruir y recrear el recurso (por ejemplo, cambiar el CIDR de una VPC) — el plan siempre indica cuál de los dos ocurrirá antes de aplicar."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado describe que alguien cambió manualmente un recurso desde la consola después de crearlo con Terraform, el concepto que se está evaluando es 'drift de configuración', detectable con un terraform plan posterior." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Módulos y despliegue blue-green a nivel de clúster",
+      "title_en": "Modules and Cluster-Level Blue-Green Deployment",
+      "intro": "Con la definición del clúster ya reutilizable como módulo, este curso cierra con cómo Terraform habilita un patrón blue-green a nivel de infraestructura completa, no solo a nivel de Deployment dentro de un clúster ya existente.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Requests y limits en cada contenedor",
-        "<strong>Buenas prácticas</strong>: Liveness + Readiness probes reales",
-        "<strong>Buenas prácticas</strong>: PDB para apps stateful",
-        "<strong>Buenas prácticas</strong>: HPA + Cluster Autoscaler juntos",
-        "<strong>Buenas prácticas</strong>: Network Policies default-deny + allow explícito",
-        "<strong>Buenas prácticas</strong>: Node pools separados por tipo de carga (system, apps, batch)",
-        "<strong>Buenas prácticas</strong>: Version updates escalonados: dev → staging → prod"
+        "<strong>Módulo de clúster reutilizable</strong>: encapsular VPC, VSwitches, clúster y node pools en un módulo parametrizado permite instanciar un segundo clúster idéntico en estructura con un simple cambio de variables (nombre, CIDR), sin duplicar la definición completa.",
+        "<strong>Blue-green a nivel de infraestructura</strong>: en vez de aplicar cambios sobre el clúster de producción existente, se aprovisiona un clúster 'green' completo en paralelo usando el mismo módulo, se migra la carga de trabajo, y solo después se destruye el clúster 'blue' anterior — útil para cambios de infraestructura de alto riesgo (versión de Kubernetes, cambio de VPC) que no se pueden aplicar in-place con seguridad.",
+        "<strong>Versionado del módulo</strong>: al versionar el módulo de clúster (p.ej. en un registro de módulos o con tags de Git), se puede rastrear con precisión qué versión de la definición de infraestructura generó cada clúster desplegado.",
+        "<strong>Costo del enfoque</strong>: igual que el blue-green a nivel de aplicación, mantener dos clústeres completos en paralelo durante la migración duplica temporalmente el costo de infraestructura — una decisión consciente para cambios donde el riesgo de un cambio in-place fallido es inaceptable.",
+        "<strong>Diferencia con blue-green de Deployment</strong>: el patrón de este curso opera sobre la infraestructura del clúster mismo (control plane, node pools); el patrón de blue-green dentro de un clúster ya existente (cubierto en otro curso de este lote) opera sobre los Deployments de una aplicación corriendo en él — son capas distintas del mismo principio."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Terraform hace posible tratar el propio clúster como un recurso reemplazable en vez de único e irreemplazable — un cambio de alto riesgo en la infraestructura del clúster puede probarse en un clúster green completo antes de migrar tráfico real hacia él." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Terraform frente a ROS y la consola, y estrategia de examen",
+      "title_en": "Terraform vs ROS and the Console, and Exam Strategy",
+      "intro": "El examen espera que sepas justificar cuándo Terraform es la elección correcta frente a las otras dos formas de crear infraestructura en Alibaba Cloud.",
       "points": [
-        "<strong>Antipattern</strong>: Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-        "<strong>Antipattern</strong>: Todo en namespace default — sin aislamiento",
-        "<strong>Antipattern</strong>: Ingress sin TLS — tráfico plano",
-        "<strong>Antipattern</strong>: Cluster con solo 1 zona — falla de zona = downtime total",
-        "<strong>Antipattern</strong>: Cluster autoscaler sin límite superior — factura sorpresa",
-        "<strong>Antipattern</strong>: Secrets en ConfigMaps o en imágenes — leak de credenciales",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Consola web</strong>: adecuada para exploración, aprendizaje o un recurso verdaderamente único y desechable — no deja un artefacto versionado ni es reproducible de forma confiable para infraestructura crítica.",
+        "<strong>ROS (Resource Orchestration Service)</strong>: el servicio de IaC nativo de Alibaba Cloud, equivalente a CloudFormation — ofrece integración más profunda con servicios exclusivos de Alibaba Cloud y no requiere gestionar un backend de estado externo, pero solo funciona dentro de Alibaba Cloud.",
+        "<strong>Terraform</strong>: multi-nube por diseño — la misma herramienta y lenguaje (HCL) gestionan infraestructura en Alibaba Cloud y otros proveedores simultáneamente, valioso para equipos con infraestructura híbrida o que priorizan portabilidad de herramientas sobre integración exclusiva con un solo proveedor.",
+        "<strong>Cuándo elegir cada uno</strong>: solo Alibaba Cloud y se prioriza la integración nativa más profunda → ROS; infraestructura multi-nube o el equipo ya tiene experiencia y tooling construido alrededor de Terraform → Terraform; prototipos rápidos o aprendizaje → consola.",
+        "<strong>Regla de oro del examen</strong>: ante un escenario que menciona gestión de infraestructura reproducible, versionada y auditable para un clúster productivo, la respuesta correcta es IaC (Terraform o ROS) frente a configuración manual — la elección entre Terraform y ROS específicamente depende de si el escenario menciona multi-nube."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Estrategia final", "text": "Si el escenario menciona explícitamente múltiples proveedores de nube o portabilidad de herramientas, la respuesta es Terraform; si es exclusivamente Alibaba Cloud sin esa restricción, tanto Terraform como ROS son válidos, pero ROS puede ser la respuesta más 'nativa' esperada." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con service mesh (ASM/Istio)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cargas batch con Job/CronJob controladas por prioridades"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Multi-tenancy con namespaces + Network Policies"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CI/CD con Jenkins/GitLab runners en pods"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "ML serving con GPUs compartidas y colas"
-    },
-    {
-      "title": "Escenario 6",
-      "text": "Edge computing con ACK@Edge"
-    }
+    { "title": "Escenario 1", "text": "Reproducir el mismo clúster ACK multi-zona en dev, staging y producción con un único módulo Terraform" },
+    { "title": "Escenario 2", "text": "Detectar drift tras un cambio manual accidental hecho desde la consola sobre un node pool" },
+    { "title": "Escenario 3", "text": "Actualizar la versión de Kubernetes del clúster mediante un clúster green completo en paralelo, sin tocar in-place el de producción" },
+    { "title": "Escenario 4", "text": "Configurar un backend remoto en OSS con locking para que el equipo comparta el mismo estado de Terraform" },
+    { "title": "Escenario 5", "text": "Comparar Terraform con ROS para una organización con infraestructura híbrida en varios proveedores de nube" }
   ],
   "mistakes": [
-    "Sin resource requests — scheduler no puede balancear, OOMKills frecuentes",
-    "Todo en namespace default — sin aislamiento",
-    "Ingress sin TLS — tráfico plano",
-    "Cluster con solo 1 zona — falla de zona = downtime total",
-    "Cluster autoscaler sin límite superior — factura sorpresa",
-    "Secrets en ConfigMaps o en imágenes — leak de credenciales"
+    "Guardar el archivo de estado de Terraform solo en el disco local de un desarrollador, sin backend remoto ni locking",
+    "Omitir una zona al declarar los VSwitches, perdiendo la tolerancia a fallos de zona del clúster",
+    "Modificar recursos manualmente desde la consola después de crearlos con Terraform, generando drift no controlado",
+    "Ejecutar terraform apply directamente en producción sin revisar antes el terraform plan",
+    "Hardcodear credenciales del provider alicloud directamente en el código versionado",
+    "No versionar el módulo de clúster, perdiendo trazabilidad de qué definición generó cada clúster desplegado"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cs CreateCluster",
-      "desc": "Crear cluster"
-    },
-    {
-      "cmd": "kubectl get pods -A",
-      "desc": "Ver pods de todos los namespaces"
-    },
-    {
-      "cmd": "kubectl apply -f deployment.yaml",
-      "desc": "Desplegar"
-    },
-    {
-      "cmd": "kubectl top pod",
-      "desc": "Uso de recursos"
-    },
-    {
-      "cmd": "kubectl rollout undo deployment/api",
-      "desc": "Rollback"
-    }
+    { "cmd": "terraform init", "desc": "Inicializar el proyecto, descargando el provider alicloud y configurando el backend remoto" },
+    { "cmd": "terraform plan -out=cluster.tfplan", "desc": "Calcular y revisar los cambios propuestos antes de aplicarlos" },
+    { "cmd": "terraform apply cluster.tfplan", "desc": "Aplicar exactamente el plan previamente revisado" },
+    { "cmd": "terraform state list", "desc": "Listar los recursos actualmente gestionados en el estado de Terraform" },
+    { "cmd": "terraform destroy -target=module.cluster_blue", "desc": "Destruir selectivamente el clúster blue tras confirmar la migración a green" }
   ],
   "glossary": [
-    {
-      "en": "Pod",
-      "es": "Pod",
-      "def": "Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "en": "Deployment",
-      "es": "Deployment",
-      "def": "Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "en": "Service",
-      "es": "Service",
-      "def": "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "en": "Ingress",
-      "es": "Ingress",
-      "def": "L7 routing HTTP externo (host/path)."
-    },
-    {
-      "en": "Namespace",
-      "es": "Namespace",
-      "def": "Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "en": "ConfigMap / Secret",
-      "es": "ConfigMap/Secret",
-      "def": "Configuración y credenciales inyectadas al pod."
-    },
-    {
-      "en": "HPA",
-      "es": "Horizontal Pod Autoscaler",
-      "def": "Escala réplicas por CPU/memoria/métricas custom."
-    },
-    {
-      "en": "VPA",
-      "es": "Vertical Pod Autoscaler",
-      "def": "Ajusta requests/limits de pods."
-    },
-    {
-      "en": "Cluster Autoscaler",
-      "es": "Cluster Autoscaler",
-      "def": "Añade/quita nodos según demanda de pods."
-    },
-    {
-      "en": "Node Pool",
-      "es": "Node Pool",
-      "def": "Grupo de VMs con misma spec/labels/taints."
-    },
-    {
-      "en": "Terway",
-      "es": "Terway CNI",
-      "def": "CNI de Alibaba: IPs de VPC nativas por pod."
-    },
-    {
-      "en": "StatefulSet",
-      "es": "StatefulSet",
-      "def": "Para apps con identidad persistente (DBs, colas)."
-    },
-    {
-      "en": "DaemonSet",
-      "es": "DaemonSet",
-      "def": "Un pod por nodo (agentes de log/monitor)."
-    },
-    {
-      "en": "Network Policy",
-      "es": "Network Policy",
-      "def": "Firewall entre pods (L3/L4)."
-    },
-    {
-      "en": "PDB",
-      "es": "Pod Disruption Budget",
-      "def": "Mínimo de pods vivos durante drain/upgrade."
-    },
-    {
-      "en": "ACK Serverless",
-      "es": "ACK Serverless",
-      "def": "Sin nodos; usa ECI (Elastic Container Instances)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Infrastructure as Code (IaC)", "es": "Infraestructura como código", "def": "Describir la infraestructura deseada en archivos declarativos versionados, en vez de configurarla manualmente." },
+    { "en": "Terraform", "es": "Terraform", "def": "Herramienta de IaC declarativa y multi-nube que calcula y aplica cambios para alcanzar el estado deseado." },
+    { "en": "Provider (alicloud)", "es": "Provider alicloud", "def": "Plugin de Terraform que traduce recursos HCL en llamadas a la API de Alibaba Cloud." },
+    { "en": "State file (tfstate)", "es": "Archivo de estado", "def": "Mapa que Terraform mantiene entre los recursos declarados y los recursos reales existentes." },
+    { "en": "Remote backend", "es": "Backend remoto", "def": "Almacenamiento compartido del estado (p.ej. OSS con locking) para que un equipo trabaje sobre el mismo estado." },
+    { "en": "State locking", "es": "Bloqueo de estado", "def": "Mecanismo que evita que dos aplicaciones concurrentes de Terraform corrompan el mismo estado." },
+    { "en": "Module", "es": "Módulo", "def": "Unidad reutilizable de configuración Terraform, instanciable con distintos parámetros por entorno." },
+    { "en": "terraform plan", "es": "terraform plan", "def": "Calcula y muestra los cambios propuestos sin aplicarlos todavía." },
+    { "en": "terraform apply", "es": "terraform apply", "def": "Ejecuta los cambios de infraestructura calculados por el plan." },
+    { "en": "terraform destroy", "es": "terraform destroy", "def": "Elimina todos los recursos declarados en la configuración; operación irreversible." },
+    { "en": "Configuration drift", "es": "Drift de configuración", "def": "Divergencia entre el estado declarado en código y el estado real, típicamente por cambios manuales." },
+    { "en": "alicloud_cs_managed_kubernetes", "es": "Recurso de clúster gestionado", "def": "Recurso Terraform que aprovisiona el control plane gestionado de ACK." },
+    { "en": "alicloud_cs_kubernetes_node_pool", "es": "Recurso de node pool", "def": "Recurso Terraform que declara un grupo de nodos worker asociado a zonas específicas." },
+    { "en": "VSwitch", "es": "VSwitch", "def": "Subred dentro de una VPC, asociada a una zona de disponibilidad concreta." },
+    { "en": "ROS (Resource Orchestration Service)", "es": "ROS", "def": "Servicio de IaC nativo de Alibaba Cloud, equivalente a CloudFormation." },
+    { "en": "Cluster-level blue-green", "es": "Blue-green a nivel de clúster", "def": "Aprovisionar un clúster completo en paralelo para migrar cambios de infraestructura de alto riesgo sin aplicar in-place." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Container Service for Kubernetes (ACK)?",
-      "options": [
-        "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standar",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "ACK es Kubernetes gestionado por Alibaba Cloud con integración nativa: SLB para Services, VPC para networking, CSI drivers para EBS/NAS/OSS, control plane gestionado con SLA 99.95%. Ediciones: Standard, Pro (más features), Serverless (sin nodos, pagas por pod)."
-    },
-    {
-      "q": "¿Qué es <strong>Pod</strong> (Pod) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Pod (Pod): Unidad mínima: 1+ contenedores compartiendo red/storage."
-    },
-    {
-      "q": "¿Qué es <strong>Deployment</strong> (Deployment) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Gestiona ReplicaSets y rolling updates.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Deployment (Deployment): Gestiona ReplicaSets y rolling updates."
-    },
-    {
-      "q": "¿Qué es <strong>Service</strong> (Service) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "L7 routing HTTP externo (host/path)."
-      ],
-      "answer": 0,
-      "explain": "Service (Service): IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-    },
-    {
-      "q": "¿Qué es <strong>Ingress</strong> (Ingress) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "L7 routing HTTP externo (host/path).",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Ingress (Ingress): L7 routing HTTP externo (host/path)."
-    },
-    {
-      "q": "¿Qué es <strong>Namespace</strong> (Namespace) en Container Service for Kubernetes (ACK)?",
-      "options": [
-        "Aislamiento lógico; base de RBAC y quotas.",
-        "Unidad mínima: 1+ contenedores compartiendo red/storage.",
-        "Gestiona ReplicaSets y rolling updates.",
-        "IP estable virtual + LB interno. Tipos: ClusterIP, NodePort, LoadBalancer."
-      ],
-      "answer": 0,
-      "explain": "Namespace (Namespace): Aislamiento lógico; base de RBAC y quotas."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Container Service for Kubernetes (ACK), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Container Service for Kubernetes (ACK) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Container Service for Kubernetes (ACK), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Container Service for Kubernetes (ACK) es la elección típica:",
-      "options": [
-        "Microservicios con service mesh (ASM/Istio)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con service mesh (ASM/Istio)."
-    }
+    { "q": "¿Cuál es el valor central de declarar el clúster ACK como código (IaC) en vez de crearlo manualmente desde la consola?", "options": ["Reduce el número de clics necesarios únicamente", "Convierte la infraestructura en un artefacto versionado, revisable y reproducible entre entornos", "Elimina por completo la necesidad de un control plane gestionado", "Solo aplica a clústeres de un único nodo"], "answer": 1, "explain": "El beneficio principal de IaC es la reproducibilidad y auditabilidad, no simplemente ahorrar pasos manuales." },
+    { "q": "¿Qué riesgo específico existe si el estado de Terraform se guarda solo en el disco local de un desarrollador, sin backend remoto?", "options": ["Ningún riesgo real, es una práctica recomendada", "Pérdida del estado y conflictos si varias personas aplican cambios simultáneamente sobre la misma infraestructura", "Terraform deja de funcionar por completo sin backend remoto", "Aumenta automáticamente el costo del clúster"], "answer": 1, "explain": "Sin un backend remoto con locking, el equipo no comparte una única fuente de verdad del estado, arriesgando corrupción y conflictos." },
+    { "q": "¿Qué recurso de Terraform se usa para declarar el control plane gestionado de un clúster ACK?", "options": ["alicloud_vpc", "alicloud_cs_managed_kubernetes", "alicloud_ecs_instance", "alicloud_oss_bucket"], "answer": 1, "explain": "Este recurso declara específicamente el clúster gestionado de Kubernetes en Alibaba Cloud." },
+    { "q": "Para lograr tolerancia a fallos de zona en un clúster ACK definido con Terraform, ¿qué se debe declarar explícitamente?", "options": ["Un único VSwitch en la zona con menor latencia", "Un VSwitch por cada zona objetivo, asociando el node pool a todas ellas", "Solo el nombre del clúster, el resto es automático", "Ningún recurso de red adicional es necesario"], "answer": 1, "explain": "Omitir una zona en la declaración de VSwitches es el error más citado que reduce la tolerancia a fallos del clúster." },
+    { "q": "¿Qué hace exactamente 'terraform plan' antes de aplicar un cambio?", "options": ["Aplica los cambios directamente sin mostrar nada antes", "Calcula y muestra qué se crearía, modificaría o destruiría, sin ejecutar ningún cambio todavía", "Elimina automáticamente los recursos no declarados", "Solo funciona después de haber ejecutado terraform apply"], "answer": 1, "explain": "El plan es el paso de revisión previo, separando deliberadamente 'proponer' de 'ejecutar' un cambio de infraestructura." },
+    { "q": "Alguien modifica manualmente un node pool desde la consola después de haberlo creado con Terraform. ¿Cómo se llama la divergencia resultante entre el código y la infraestructura real?", "options": ["State locking", "Configuration drift (drift de configuración)", "Module versioning", "Remote backend"], "answer": 1, "explain": "El drift de configuración es exactamente esa divergencia entre lo declarado en código y el estado real de la infraestructura." },
+    { "q": "¿Qué comando de Terraform detecta el drift de configuración causado por un cambio manual?", "options": ["terraform destroy", "terraform plan, en su siguiente ejecución", "terraform init exclusivamente", "No existe forma de detectar drift con Terraform"], "answer": 1, "explain": "Un plan posterior compara el estado real con el declarado y expone cualquier divergencia detectada como drift." },
+    { "q": "¿Qué permite encapsular un módulo Terraform de clúster ACK reutilizable entre dev, staging y producción?", "options": ["Reescribir la configuración completa desde cero para cada entorno", "Instanciar el mismo módulo con distintos valores de variables, sin duplicar la definición completa", "Los módulos de Terraform solo funcionan en un único entorno a la vez", "Terraform no admite el concepto de módulos"], "answer": 1, "explain": "Un módulo parametrizado se reutiliza cambiando solo variables (nombre, CIDR, etc.), evitando duplicación de código entre entornos." },
+    { "q": "¿En qué consiste el patrón de blue-green a nivel de clúster descrito en el curso?", "options": ["Cambiar el color de las etiquetas de los nodos en la consola", "Aprovisionar un clúster 'green' completo en paralelo usando el mismo módulo, migrar la carga y luego destruir el clúster 'blue'", "Aplicar el cambio directamente in-place sobre el clúster de producción existente", "Es idéntico al blue-green de Deployments dentro de un clúster ya existente"], "answer": 1, "explain": "El blue-green a nivel de infraestructura opera sobre el propio clúster como unidad reemplazable, distinto del blue-green de Deployments dentro de un clúster fijo." },
+    { "q": "¿Cuál es la ventaja distintiva de Terraform frente a ROS (Resource Orchestration Service) según el curso?", "options": ["Terraform solo funciona dentro de Alibaba Cloud, igual que ROS", "Terraform es multi-nube por diseño, gestionando infraestructura en varios proveedores con la misma herramienta", "ROS no puede gestionar clústeres ACK bajo ninguna circunstancia", "No existe ninguna diferencia relevante entre ambos"], "answer": 1, "explain": "La portabilidad multi-nube es la ventaja distintiva de Terraform frente a ROS, que es exclusivo de Alibaba Cloud." },
+    { "q": "¿Por qué se recomienda revisar el terraform plan antes de ejecutar terraform apply en un clúster de producción?", "options": ["No es necesario revisarlo, apply siempre es seguro sin revisión previa", "Para confirmar exactamente qué cambios se aplicarán antes de ejecutarlos sobre infraestructura crítica", "El plan modifica automáticamente la infraestructura sin necesidad de apply", "Revisar el plan solo es relevante en entornos de desarrollo"], "answer": 1, "explain": "El plan expone con precisión el impacto del cambio antes de ejecutarlo, crítico para infraestructura productiva." },
+    { "q": "¿Qué operación de Terraform es irreversible y debe protegerse especialmente en un clúster de producción?", "options": ["terraform plan", "terraform destroy", "terraform init", "terraform validate"], "answer": 1, "explain": "destroy elimina todos los recursos declarados de forma irreversible, por lo que requiere salvaguardas especiales en producción." }
   ],
-  "exam_focus": "Preguntas: (a) Deployment vs StatefulSet vs DaemonSet, (b) Service types y cuándo usar cada uno, (c) HPA con métricas custom, (d) Network Policies, (e) ACK Pro vs Serverless.",
+  "exam_focus": "El examen suele evaluar: (a) por qué IaC es preferible a configuración manual para infraestructura productiva, (b) estructura de un proyecto Terraform (provider, variables, backend de estado remoto), (c) declaración correcta de VPC/VSwitches multi-zona para tolerancia a fallos, (d) el ciclo plan/apply/destroy y el concepto de drift de configuración, (e) Terraform frente a ROS y el patrón de blue-green a nivel de clúster mediante módulos.",
   "official_intro": "Through this course, you will not only learn about Alibaba Cloud Container Service for Kubernetes and its applicable scenarios, but also learn how to use Terraform to flexibly deploy of ACK clusters and realize blue and green deployment.",
   "recommended_for": "Solution Architect, DevOps Engineer",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-terraform-kubernetes",

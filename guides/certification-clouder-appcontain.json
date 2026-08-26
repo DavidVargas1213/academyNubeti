@@ -2,417 +2,167 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-appcontain",
   "title_en": "An Introduction to Application Containerization",
-  "title_es": "An Introducción a Aplicación Containerization",
+  "title_es": "Introducción a la Contenerización de Aplicaciones",
+  "title_es_html": "Introducción a la <em>Contenerización</em> de Aplicaciones",
   "duration_es": "55 minutos",
   "level_es": "Principiante",
   "category_es": "Contenedores y Middleware",
   "subcategory_es": "Container",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_appcontain",
-  "lead": "Guía completa en español para el curso «An Introduction to Application Containerization» de Alibaba Cloud Academy. Cubre en profundidad Contenedores en Alibaba Cloud. Alibaba Cloud provee múltiples runtimes de contenedores: ACK (Kubernetes gestionado), ACK Serverless (sin nodos), SAE (app engine), ECI (Elastic Container Instance) y Container Registry (ACR) para imágenes. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «An Introduction to Application Containerization» de Alibaba Cloud Academy, un curso conceptual que explica qué es contenerizar una aplicación, la teoría de capas de una imagen, la sintaxis del Dockerfile y el panorama de herramientas alrededor de la contenerización, antes de aterrizar en cómo desplegar el resultado sobre Container Service en Alibaba Cloud.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Contenedores en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Image, Container, Registry (ACR), Dockerfile, Layer.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Contenedores en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué significa «contenerizar» una aplicación y qué problema de portabilidad resuelve.",
+    "<strong>Describir</strong> la teoría de capas de una imagen de contenedor y por qué es inmutable y reutilizable.",
+    "<strong>Reconocer</strong> las instrucciones más comunes de un Dockerfile y el efecto de cada una sobre las capas.",
+    "<strong>Comparar</strong> las herramientas del ecosistema de contenerización: motor de contenedores, registry, orquestador.",
+    "<strong>Identificar</strong> los criterios para decidir si una aplicación es candidata a contenerizarse.",
+    "<strong>Ubicar</strong> el flujo completo — de código fuente a contenedor corriendo — sobre los servicios de Alibaba Cloud."
   ],
-  "architecture": "Build imagen → push a ACR con scan → deploy a ACK/SAE/ECI según necesidad → observabilidad ARMS → networking con Service+Ingress → storage con CSI (NAS/EBS). GitOps con ArgoCD/Flux.",
+  "architecture": "El flujo de contenerización de una aplicación sigue siempre la misma secuencia lógica: (1) se parte de código fuente y sus dependencias declaradas; (2) un Dockerfile describe, capa por capa, cómo construir una imagen a partir de una imagen base; (3) el motor de contenedores (Docker/containerd) construye la imagen y la etiqueta con una versión; (4) la imagen se publica en un registry — Container Registry (ACR) en Alibaba Cloud — quedando disponible para cualquier entorno que tenga acceso; (5) un runtime de destino (una instancia ECS con Docker, un clúster ACK, o Elastic Container Instance) descarga la imagen y arranca el contenedor. La aplicación nunca «vive» en un servidor concreto: vive en la imagen, y el runtime es intercambiable.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Contenedores en Alibaba Cloud",
-      "title_en": "Introduction to Contenedores en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee múltiples runtimes de contenedores: ACK (Kubernetes gestionado), ACK Serverless (sin nodos), SAE (app engine), ECI (Elastic Container Instance) y Container Registry (ACR) para imágenes. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué significa contenerizar una aplicación",
+      "title_en": "What Does It Mean to Containerize an Application",
+      "intro": "Antes de tocar un Dockerfile hace falta entender el problema de fondo: una aplicación tradicional depende de un entorno específico (versión de librerías, variables de sistema, rutas de archivos) que rara vez es idéntico entre desarrollo, pruebas y producción.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee múltiples runtimes de contenedores: ACK (Kubernetes gestionado), ACK Serverless (sin nodos), SAE (app engine), ECI (Elastic Container Instance) y Container Registry (ACR) para imágenes.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Contenedores en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>El problema de la portabilidad</strong>: una aplicación que «funciona en mi máquina» puede fallar en otra por diferencias de versión de runtime, librerías del sistema operativo o configuración implícita no documentada.",
+        "<strong>Contenerizar</strong>: empaquetar la aplicación junto con su runtime, sus dependencias exactas y su configuración en una única unidad — la imagen — que se ejecuta de forma idéntica sin importar el host subyacente.",
+        "<strong>No es lo mismo que virtualizar</strong>: contenerizar no crea una máquina virtual nueva; el contenedor comparte el kernel del sistema operativo host y solo aísla procesos, red y sistema de archivos.",
+        "<strong>Beneficio inmediato</strong>: el mismo artefacto (la imagen) que un desarrollador probó en su portátil es exactamente lo que se ejecuta en pruebas y producción — elimina una categoría entera de bugs de entorno.",
+        "<strong>No toda aplicación es buena candidata de inmediato</strong>: apps con fuerte dependencia de estado local en disco, licencias atadas a hardware específico o interfaces gráficas de escritorio requieren rediseño antes de contenerizarse con beneficio real."
       ],
-      "keypoint": {
-        "label": "Concepto clave",
-        "text": "Contenedores en Alibaba Cloud es una pieza fundamental de Contenedores y Middleware en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Contenerizar no es «meter la app en Docker» sin más — es rediseñar cómo la app declara sus dependencias para que la imagen resultante sea autocontenida y reproducible." }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Contenedores en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Teoría de capas de una imagen",
+      "title_en": "The Layering Theory of a Container Image",
+      "intro": "Una imagen de contenedor no es un archivo monolítico: es una pila ordenada de capas de solo lectura, y entender esa estructura explica por qué las imágenes se construyen rápido la segunda vez y por qué comparten espacio en disco entre sí.",
       "points": [
-        "<strong>Patrón canónico</strong>: Build imagen → push a ACR con scan → deploy a ACK/SAE/ECI según necesidad → observabilidad ARMS → networking con Service+Ingress → storage con CSI (NAS/EBS). GitOps con ArgoCD/Flux.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
+        "<strong>Capa (layer)</strong>: cada instrucción del Dockerfile que modifica el sistema de archivos genera una capa nueva, inmutable, identificada por un hash de su contenido.",
+        "<strong>Copy-on-write</strong>: cuando un contenedor corre, se añade encima de las capas de la imagen una capa de escritura efímera; los cambios del contenedor en ejecución nunca modifican las capas de la imagen original.",
+        "<strong>Reutilización entre imágenes</strong>: si dos imágenes comparten la misma imagen base y las mismas primeras instrucciones, el motor de contenedores reutiliza esas capas en disco en vez de duplicarlas.",
+        "<strong>Orden importa para el cache de build</strong>: las instrucciones que cambian con menos frecuencia (instalar dependencias del sistema) deben ir antes que las que cambian todo el tiempo (copiar el código fuente), para maximizar la reutilización del cache.",
+        "<strong>Tamaño acumulado</strong>: el tamaño final de una imagen es la suma de todas sus capas; borrar un archivo en una capa posterior no reduce el tamaño de la imagen porque el archivo sigue presente en una capa anterior."
       ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Contenedores en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "Si el enunciado pregunta por qué una imagen con un archivo 'borrado' sigue pesando lo mismo, la respuesta es la teoría de capas: el borrado ocurre en una capa nueva, pero el archivo sigue existiendo en la capa anterior." }
     },
     {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
+      "title_es": "3 · El Dockerfile: instrucciones comunes",
+      "title_en": "Dockerfile: Common Instructions",
+      "intro": "El Dockerfile es la receta de construcción de una imagen. Este módulo repasa las instrucciones que el examen espera que reconozcas por nombre y por efecto.",
       "points": [
-        "<strong>Imagen</strong> <em>(Image)</em>: Empaquetado inmutable de app.",
-        "<strong>Container</strong> <em>(Container)</em>: Instancia ejecutable de una imagen.",
-        "<strong>ACR</strong> <em>(Registry (ACR))</em>: Registry de imágenes con scan integrado.",
-        "<strong>Dockerfile</strong> <em>(Dockerfile)</em>: Definición de build de imagen.",
-        "<strong>Layer</strong> <em>(Layer)</em>: Capa de imagen (cacheable).",
-        "<strong>Multi-stage build</strong> <em>(Multi-stage build)</em>: Reduce tamaño final.",
-        "<strong>Signed image</strong> <em>(Signed Image)</em>: Firma criptográfica de imagen (supply chain)."
+        "<strong>FROM</strong>: define la imagen base sobre la que se construyen las capas siguientes; toda imagen (salvo <code>scratch</code>) parte de otra imagen existente.",
+        "<strong>RUN</strong>: ejecuta un comando durante la construcción y confirma el resultado como una capa nueva — se usa para instalar paquetes o compilar.",
+        "<strong>COPY / ADD</strong>: copian archivos del contexto de build hacia la imagen; <code>ADD</code> además puede descomprimir archivos y descargar URLs, por lo que <code>COPY</code> es la opción preferida cuando no se necesita esa magia adicional.",
+        "<strong>WORKDIR</strong>: fija el directorio de trabajo para las instrucciones siguientes, evitando rutas absolutas repetidas.",
+        "<strong>ENV / ARG</strong>: <code>ENV</code> define variables de entorno disponibles en tiempo de build y en el contenedor en ejecución; <code>ARG</code> solo existe durante el build.",
+        "<strong>EXPOSE</strong>: documenta qué puerto usa la aplicación dentro del contenedor — es metadata informativa, no publica el puerto por sí sola.",
+        "<strong>CMD / ENTRYPOINT</strong>: definen el comando que se ejecuta al arrancar el contenedor; <code>ENTRYPOINT</code> fija el ejecutable principal y <code>CMD</code> aporta argumentos por defecto que se pueden sobreescribir."
       ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
+      "keypoint": { "label": "Memoriza", "text": "El examen distingue con precisión estas instrucciones: si describe 'documentar un puerto sin abrirlo', es EXPOSE; si describe 'copiar archivos con soporte de descompresión automática', es ADD, no COPY." }
     },
     {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
+      "title_es": "4 · El panorama de herramientas de contenerización",
+      "title_en": "The Containerization Tooling Landscape",
+      "intro": "Docker popularizó los contenedores, pero el ecosistema actual tiene varias piezas especializadas — el examen espera que sepas ubicar cada herramienta en su categoría correcta.",
       "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Motor de contenedores</strong>: el software que construye y ejecuta contenedores en un host — Docker Engine es el más conocido; containerd es el runtime de bajo nivel que Docker usa internamente y que Kubernetes también consume directamente.",
+        "<strong>Formato estándar OCI</strong>: la Open Container Initiative define un formato común de imagen y de runtime, permitiendo que herramientas de distintos proveedores (Docker, Podman, containerd) sean interoperables.",
+        "<strong>Registry</strong>: repositorio versionado de imágenes; Docker Hub es el público de referencia, Container Registry (ACR) es el registry privado gestionado de Alibaba Cloud con escaneo de vulnerabilidades integrado.",
+        "<strong>Orquestador</strong>: la pieza que decide dónde y cuántas réplicas de un contenedor corren a través de múltiples hosts — Kubernetes (ACK en Alibaba Cloud) es el estándar de facto.",
+        "<strong>Herramientas de build alternativas</strong>: Buildah y Kaniko permiten construir imágenes sin necesitar un daemon Docker corriendo, útil en pipelines CI/CD restringidos por seguridad."
       ],
-      "keypoint": {
-        "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Motor de contenedores, registry y orquestador son tres capas distintas del mismo problema: cómo construir, cómo almacenar/distribuir y cómo ejecutar a escala. Ninguna reemplaza a la otra." }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "5 · Buenas prácticas de una imagen contenerizada",
+      "title_en": "Best Practices for a Containerized Image",
+      "intro": "Una imagen técnicamente funcional no siempre es una imagen lista para producción; este módulo cubre los criterios de calidad que el examen suele preguntar de forma indirecta.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Imagen inmutable + tag semantic version",
-        "<strong>Buenas prácticas</strong>: Scan en ACR (Trivy)",
-        "<strong>Buenas prácticas</strong>: Non-root user en contenedor",
-        "<strong>Buenas prácticas</strong>: Multi-stage builds → imagen pequeña",
-        "<strong>Buenas prácticas</strong>: Signed images en producción"
+        "<strong>Imagen base mínima</strong>: partir de una base ligera (alpine, distroless) reduce superficie de ataque y tamaño de descarga frente a una base completa de sistema operativo.",
+        "<strong>Multi-stage build</strong>: compilar en una etapa con todo el toolchain y copiar solo el artefacto final a la imagen de producción, evitando arrastrar compiladores y dependencias de desarrollo.",
+        "<strong>Un proceso principal por contenedor</strong>: cada contenedor debería tener una única responsabilidad clara — facilita el reinicio, el escalado y el diagnóstico independiente de cada componente.",
+        "<strong>Sin credenciales en la imagen</strong>: nunca hornear contraseñas, tokens o claves API dentro de una capa — quedan grabadas de forma permanente en el historial de la imagen aunque se 'borren' después.",
+        "<strong>Etiquetado versionado</strong>: usar tags semánticos (<code>1.2.0</code>) en vez de depender de <code>latest</code>, para poder rastrear y revertir exactamente qué versión está desplegada."
       ],
-      "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
-      }
+      "keypoint": { "label": "Tip de examen", "text": "'Reducir el tamaño de una imagen de producción' casi siempre apunta a multi-stage build + imagen base mínima; 'evitar fuga de credenciales' apunta a nunca incluirlas en ninguna capa del Dockerfile." }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · De la imagen al contenedor corriendo en Alibaba Cloud",
+      "title_en": "From Image to a Running Container on Alibaba Cloud",
+      "intro": "El curso cierra conectando la teoría de imágenes con las opciones reales de ejecución que ofrece Alibaba Cloud, sentando la base para los cursos más operativos de esta categoría (Docker, Swarm, ACK).",
       "points": [
-        "<strong>Antipattern</strong>: latest tag en producción",
-        "<strong>Antipattern</strong>: Contenedores como root",
-        "<strong>Antipattern</strong>: Secrets baked en la imagen",
-        "<strong>Antipattern</strong>: Imagen bloated de GB",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Container Registry (ACR)</strong>: destino natural de <code>docker push</code>; ofrece repositorios privados, control de acceso vía RAM y escaneo automático de vulnerabilidades conocidas en las capas de la imagen.",
+        "<strong>Ejecutar en una sola instancia</strong>: sobre una ECS con Docker instalado, adecuado para pruebas o cargas simples sin necesidad de orquestación.",
+        "<strong>Ejecutar en un clúster</strong>: Container Service for Kubernetes (ACK) toma la misma imagen y la programa a escala, con auto-recuperación y balanceo de carga integrados.",
+        "<strong>Ejecutar sin gestionar servidores</strong>: Elastic Container Instance (ECI) arranca un contenedor aislado bajo demanda sin que el usuario administre ninguna instancia subyacente, útil para cargas esporádicas o batch.",
+        "<strong>La imagen no cambia entre opciones</strong>: la misma imagen construida y probada localmente es la que se despliega en cualquiera de los tres destinos — esa portabilidad es la garantía central del modelo de contenedores."
       ],
-      "keypoint": {
-        "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
-      }
+      "keypoint": { "label": "Concepto clave", "text": "Elegir 'dónde' correr una imagen (ECS suelta, ACK, ECI) es una decisión de escala y operación, no una decisión que afecte al contenido de la imagen en sí." }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Microservicios con K8s (ACK)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Batch efímero (ECI, sin cluster)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "App Java con service mesh (SAE)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "ML serving con GPU (ACK GPU)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Edge (ACK@Edge)"
-    }
+    { "title": "Escenario 1", "text": "Migrar una aplicación monolítica legada a una imagen versionada como primer paso hacia microservicios" },
+    { "title": "Escenario 2", "text": "Reducir una imagen de 1.2 GB a 150 MB aplicando multi-stage build y una base alpine" },
+    { "title": "Escenario 3", "text": "Estandarizar el entorno de desarrollo de un equipo distribuido con una imagen común versionada" },
+    { "title": "Escenario 4", "text": "Publicar una imagen firmada y escaneada en Container Registry (ACR) antes de habilitarla para despliegue" },
+    { "title": "Escenario 5", "text": "Detectar que una imagen sigue pesando igual después de borrar un archivo grande, por la teoría de capas" }
   ],
   "mistakes": [
-    "latest tag en producción",
-    "Contenedores como root",
-    "Secrets baked en la imagen",
-    "Imagen bloated de GB"
+    "Confundir contenerizar con virtualizar — el contenedor comparte kernel, no es una VM ligera",
+    "Usar ADD quirúrgicamente en vez de COPY sin necesitar descompresión ni descarga de URLs, generando comportamiento inesperado",
+    "Ordenar el Dockerfile copiando el código fuente antes de instalar dependencias, invalidando el cache en cada cambio",
+    "Incluir credenciales en una capa del Dockerfile, asumiendo que un RUN posterior que las borra las elimina del historial",
+    "Construir imágenes con toda la cadena de compilación incluida en producción por no usar multi-stage build",
+    "Depender del tag latest para saber qué versión está corriendo en cada entorno"
   ],
   "cli": [
-    {
-      "cmd": "docker build -t ...",
-      "desc": "Build local"
-    },
-    {
-      "cmd": "aliyun cr GetInstance",
-      "desc": "ACR info"
-    }
+    { "cmd": "docker build -t registry.cn-hangzhou.aliyuncs.com/ns/app:1.0 .", "desc": "Construir una imagen etiquetada con destino a ACR" },
+    { "cmd": "docker history registry.cn-hangzhou.aliyuncs.com/ns/app:1.0", "desc": "Inspeccionar las capas y su tamaño individual" },
+    { "cmd": "docker push registry.cn-hangzhou.aliyuncs.com/ns/app:1.0", "desc": "Publicar la imagen en Container Registry (ACR)" },
+    { "cmd": "aliyun cr GetRepoList --InstanceId <id>", "desc": "Listar repositorios de una instancia ACR" },
+    { "cmd": "docker run -d --name app -p 8080:80 registry.cn-hangzhou.aliyuncs.com/ns/app:1.0", "desc": "Ejecutar un contenedor de prueba a partir de la imagen publicada" }
   ],
   "glossary": [
-    {
-      "en": "Image",
-      "es": "Imagen",
-      "def": "Empaquetado inmutable de app."
-    },
-    {
-      "en": "Container",
-      "es": "Container",
-      "def": "Instancia ejecutable de una imagen."
-    },
-    {
-      "en": "Registry (ACR)",
-      "es": "ACR",
-      "def": "Registry de imágenes con scan integrado."
-    },
-    {
-      "en": "Dockerfile",
-      "es": "Dockerfile",
-      "def": "Definición de build de imagen."
-    },
-    {
-      "en": "Layer",
-      "es": "Layer",
-      "def": "Capa de imagen (cacheable)."
-    },
-    {
-      "en": "Multi-stage build",
-      "es": "Multi-stage build",
-      "def": "Reduce tamaño final."
-    },
-    {
-      "en": "Signed Image",
-      "es": "Signed image",
-      "def": "Firma criptográfica de imagen (supply chain)."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Containerization", "es": "Contenerización", "def": "Empaquetar una aplicación con su runtime y dependencias exactas en una imagen portable y reproducible." },
+    { "en": "Image", "es": "Imagen", "def": "Plantilla inmutable de solo lectura compuesta por capas apiladas, base para crear contenedores." },
+    { "en": "Layer", "es": "Capa", "def": "Cambio inmutable en el sistema de archivos generado por una instrucción del Dockerfile; se cachea y reutiliza." },
+    { "en": "Copy-on-write", "es": "Copia en escritura", "def": "Mecanismo que añade una capa de escritura efímera sobre las capas de solo lectura de la imagen al correr un contenedor." },
+    { "en": "Dockerfile", "es": "Dockerfile", "def": "Archivo de texto con instrucciones que definen paso a paso cómo construir una imagen." },
+    { "en": "Build context", "es": "Contexto de build", "def": "Conjunto de archivos locales que el motor de contenedores puede referenciar durante la construcción de la imagen." },
+    { "en": "Multi-stage build", "es": "Build multi-etapa", "def": "Técnica de Dockerfile con varias secciones FROM para separar compilación de la imagen final y reducir tamaño." },
+    { "en": "OCI (Open Container Initiative)", "es": "OCI", "def": "Estándar abierto que define el formato de imagen y runtime, garantizando interoperabilidad entre herramientas." },
+    { "en": "Registry", "es": "Registry", "def": "Repositorio versionado de imágenes; ACR es el registry privado gestionado de Alibaba Cloud." },
+    { "en": "Container Registry (ACR)", "es": "Container Registry", "def": "Servicio de Alibaba Cloud para almacenar imágenes privadas con escaneo de vulnerabilidades integrado." },
+    { "en": "Tag", "es": "Etiqueta", "def": "Identificador de versión de una imagen; latest no garantiza ser la versión más reciente de forma fiable." },
+    { "en": "Base image", "es": "Imagen base", "def": "Imagen de partida declarada en la instrucción FROM sobre la que se construyen las capas siguientes." },
+    { "en": "Distroless / Alpine", "es": "Imágenes mínimas", "def": "Imágenes base reducidas que minimizan tamaño y superficie de ataque frente a un sistema operativo completo." },
+    { "en": "Entrypoint", "es": "Punto de entrada", "def": "Instrucción que fija el ejecutable principal de un contenedor al arrancar." },
+    { "en": "Orchestrator", "es": "Orquestador", "def": "Sistema que decide dónde y cuántas réplicas de un contenedor corren a través de múltiples hosts (ej. Kubernetes/ACK)." },
+    { "en": "Container Engine", "es": "Motor de contenedores", "def": "Software que construye y ejecuta contenedores en un host, como Docker Engine." },
+    { "en": "containerd", "es": "containerd", "def": "Runtime de contenedores de bajo nivel usado internamente por Docker y directamente por Kubernetes." },
+    { "en": "Elastic Container Instance (ECI)", "es": "ECI", "def": "Servicio de Alibaba Cloud que ejecuta un contenedor aislado bajo demanda sin gestionar instancias subyacentes." },
+    { "en": "Kaniko / Buildah", "es": "Herramientas de build sin daemon", "def": "Herramientas que construyen imágenes OCI sin necesitar un daemon Docker corriendo, útiles en pipelines CI/CD." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Contenedores en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee múltiples runtimes de contenedores: ACK (Kubernetes gestionado), ACK Serverless (sin nodos), SAE (app engine), ECI (Elastic Container Instance) y Container Registry (ACR) para imá",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee múltiples runtimes de contenedores: ACK (Kubernetes gestionado), ACK Serverless (sin nodos), SAE (app engine), ECI (Elastic Container Instance) y Container Registry (ACR) para imágenes."
-    },
-    {
-      "q": "¿Qué es <strong>Image</strong> (Imagen) en Contenedores en Alibaba Cloud?",
-      "options": [
-        "Empaquetado inmutable de app.",
-        "Instancia ejecutable de una imagen.",
-        "Registry de imágenes con scan integrado.",
-        "Definición de build de imagen."
-      ],
-      "answer": 0,
-      "explain": "Image (Imagen): Empaquetado inmutable de app."
-    },
-    {
-      "q": "¿Qué es <strong>Container</strong> (Container) en Contenedores en Alibaba Cloud?",
-      "options": [
-        "Instancia ejecutable de una imagen.",
-        "Empaquetado inmutable de app.",
-        "Registry de imágenes con scan integrado.",
-        "Definición de build de imagen."
-      ],
-      "answer": 0,
-      "explain": "Container (Container): Instancia ejecutable de una imagen."
-    },
-    {
-      "q": "¿Qué es <strong>Registry (ACR)</strong> (ACR) en Contenedores en Alibaba Cloud?",
-      "options": [
-        "Registry de imágenes con scan integrado.",
-        "Empaquetado inmutable de app.",
-        "Instancia ejecutable de una imagen.",
-        "Definición de build de imagen."
-      ],
-      "answer": 0,
-      "explain": "Registry (ACR) (ACR): Registry de imágenes con scan integrado."
-    },
-    {
-      "q": "¿Qué es <strong>Dockerfile</strong> (Dockerfile) en Contenedores en Alibaba Cloud?",
-      "options": [
-        "Definición de build de imagen.",
-        "Empaquetado inmutable de app.",
-        "Instancia ejecutable de una imagen.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Dockerfile (Dockerfile): Definición de build de imagen."
-    },
-    {
-      "q": "¿Qué es <strong>Layer</strong> (Layer) en Contenedores en Alibaba Cloud?",
-      "options": [
-        "Capa de imagen (cacheable).",
-        "Empaquetado inmutable de app.",
-        "Instancia ejecutable de una imagen.",
-        "Registry de imágenes con scan integrado."
-      ],
-      "answer": 0,
-      "explain": "Layer (Layer): Capa de imagen (cacheable)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Contenedores en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Contenedores en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Contenedores en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Contenedores en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Microservicios con K8s (ACK)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Microservicios con K8s (ACK)."
-    }
+    { "q": "¿Qué significa exactamente 'contenerizar' una aplicación?", "options": ["Convertirla en una máquina virtual completa", "Empaquetarla junto con su runtime, dependencias exactas y configuración en una imagen portable", "Reescribirla completamente en otro lenguaje de programación", "Instalarla directamente en el kernel del sistema operativo host"], "answer": 1, "explain": "Contenerizar empaqueta la app y todo lo que necesita para ejecutarse igual en cualquier host, sin virtualizar hardware completo." },
+    { "q": "Según la teoría de capas, ¿qué ocurre si se borra un archivo grande en una instrucción RUN posterior de un Dockerfile?", "options": ["El tamaño de la imagen se reduce inmediatamente", "El archivo sigue ocupando espacio porque persiste en una capa anterior de solo lectura", "Docker rechaza la instrucción", "La imagen deja de ser válida"], "answer": 1, "explain": "Cada capa es inmutable; borrar un archivo en una capa nueva no elimina el espacio que ocupa en una capa previa ya construida." },
+    { "q": "¿Por qué conviene copiar los archivos de dependencias e instalarlas ANTES de copiar el resto del código fuente en un Dockerfile?", "options": ["Es un requisito obligatorio de sintaxis", "Para maximizar la reutilización del cache de capas cuando solo cambia el código fuente", "Porque Docker no permite el orden inverso", "No tiene ningún efecto práctico"], "answer": 1, "explain": "Las capas se cachean en orden; si las dependencias no cambian, esa capa se reutiliza aunque el código fuente sí cambie." },
+    { "q": "¿Cuál es la diferencia principal entre COPY y ADD en un Dockerfile?", "options": ["Son exactamente idénticas", "ADD además puede descomprimir archivos y descargar URLs; COPY solo copia archivos del contexto de build", "COPY solo funciona con imágenes Linux", "ADD está deprecada y no debe usarse nunca"], "answer": 1, "explain": "ADD tiene funcionalidad adicional (descompresión, URLs remotas); por eso se recomienda COPY cuando no se necesita esa magia, para evitar comportamiento inesperado." },
+    { "q": "¿Qué técnica reduce más eficazmente el tamaño de una imagen de producción que requiere compilar código con un toolchain pesado?", "options": ["Aumentar el número de capas", "Multi-stage build: compilar en una etapa y copiar solo el artefacto a una imagen base mínima", "Usar siempre la imagen base más completa disponible", "Ejecutar todas las instrucciones en un único RUN gigante sin excepción"], "answer": 1, "explain": "El multi-stage build separa el entorno de compilación del entorno de ejecución final, dejando fuera el toolchain de la imagen productiva." },
+    { "q": "¿Qué estándar garantiza que una imagen construida con Docker sea interoperable con otras herramientas como Podman o containerd?", "options": ["HTTP/2", "OCI (Open Container Initiative)", "TCP/IP", "REST"], "answer": 1, "explain": "OCI define un formato común de imagen y runtime que distintas herramientas del ecosistema implementan de forma compatible." },
+    { "q": "¿Cuál es el destino natural de una imagen construida localmente cuando se quiere compartirla de forma privada en Alibaba Cloud?", "options": ["Object Storage Service (OSS)", "Container Registry (ACR)", "Resource Access Management (RAM)", "Server Load Balancer (SLB)"], "answer": 1, "explain": "ACR es el registry privado gestionado de Alibaba Cloud, con control de acceso y escaneo de vulnerabilidades integrado." },
+    { "q": "¿Qué instrucción del Dockerfile documenta un puerto usado por la aplicación pero NO lo publica automáticamente hacia el host?", "options": ["PUBLISH", "EXPOSE", "PORT", "BIND"], "answer": 1, "explain": "EXPOSE es documentación informativa; la publicación real del puerto ocurre al ejecutar el contenedor con la opción -p." },
+    { "q": "¿Por qué incluir una contraseña en una instrucción RUN del Dockerfile es peligroso incluso si una instrucción posterior la borra?", "options": ["Docker la cifra automáticamente de todas formas", "Queda grabada de forma permanente en el historial de la capa donde se creó", "Las contraseñas nunca pueden usarse dentro de un Dockerfile", "Solo es un problema en imágenes Windows"], "answer": 1, "explain": "Cada capa conserva su contenido de forma inmutable; borrar el dato en una capa posterior no elimina su presencia en la capa anterior." },
+    { "q": "¿Qué diferencia a Elastic Container Instance (ECI) de ejecutar un contenedor sobre una instancia ECS tradicional?", "options": ["ECI requiere instalar Docker manualmente en cada instancia", "ECI ejecuta el contenedor sin que el usuario administre ninguna instancia subyacente", "ECI solo funciona con imágenes públicas de Docker Hub", "No hay ninguna diferencia real"], "answer": 1, "explain": "ECI abstrae por completo la instancia subyacente: el usuario solo especifica la imagen y los recursos, sin gestionar servidores." },
+    { "q": "¿Qué rol cumple un orquestador como Kubernetes/ACK frente al motor de contenedores?", "options": ["Reemplaza por completo al motor de contenedores en cada nodo", "Decide dónde y cuántas réplicas de un contenedor corren a través de múltiples hosts", "Solo sirve para construir imágenes, no para ejecutarlas", "Es idéntico en función a un registry de imágenes"], "answer": 1, "explain": "El orquestador opera una capa por encima del motor de contenedores: programa y gestiona contenedores a escala en un clúster de hosts." },
+    { "q": "¿Por qué depender del tag 'latest' es una práctica desaconsejada en producción?", "options": ["Docker no permite usar ese tag fuera de desarrollo", "No identifica de forma fiable qué versión exacta del código está desplegada", "Aumenta el tamaño de la imagen automáticamente", "Provoca que el build falle siempre"], "answer": 1, "explain": "'latest' es solo un nombre de tag más; no garantiza ser la versión más reciente ni permite rastrear con certeza qué código corre en cada entorno." },
+    { "q": "¿Qué es una imagen base 'distroless' o tipo alpine, y por qué se recomienda en producción?", "options": ["Una imagen sin ningún sistema de archivos, inutilizable", "Una imagen mínima que reduce tamaño y superficie de ataque frente a un sistema operativo completo", "Una imagen exclusiva para desarrollo, prohibida en producción", "Una imagen que solo funciona con Kubernetes"], "answer": 1, "explain": "Las imágenes base mínimas incluyen solo lo estrictamente necesario, reduciendo el tamaño de descarga y las vulnerabilidades potenciales heredadas del sistema operativo base." },
+    { "q": "Una aplicación tiene fuerte dependencia de estado local en disco y una interfaz gráfica de escritorio. Según el curso, ¿qué implica esto para contenerizarla?", "options": ["No existe ninguna consideración especial, se conteneriza igual que cualquier otra app", "Probablemente requiere rediseño antes de obtener un beneficio real de la contenerización", "Es imposible contenerizar cualquier aplicación con estas características", "Solo puede contenerizarse usando máquinas virtuales anidadas"], "answer": 1, "explain": "No toda aplicación es candidata inmediata; fuerte estado local o dependencias de interfaz gráfica suelen requerir rediseño arquitectónico previo." },
+    { "q": "¿Qué diferencia principal existe entre el motor de contenedores, el registry y el orquestador?", "options": ["Son tres nombres distintos para el mismo componente", "Cada uno resuelve una capa distinta del problema: construir/ejecutar, almacenar/distribuir, y programar a escala", "El orquestador reemplaza siempre al registry", "El registry solo se usa en entornos de desarrollo, nunca en producción"], "answer": 1, "explain": "Motor de contenedores, registry y orquestador son piezas complementarias, no intercambiables, del ecosistema de contenerización." }
   ],
-  "exam_focus": "ACK vs SAE vs ECI, ACR con scan, image security supply chain.",
+  "exam_focus": "El examen suele evaluar: (a) la teoría de capas y su efecto en el cache de build y el tamaño de imagen, (b) instrucciones del Dockerfile y su propósito exacto, (c) diferencia entre motor de contenedores, registry y orquestador, (d) buenas prácticas de imágenes (multi-stage, base mínima, sin credenciales), (e) opciones de ejecución en Alibaba Cloud (ECS, ACK, ECI) y cuándo aplica cada una.",
   "official_intro": "This course is designed to help IT companies who want to containerize their business applications, as well as cloud computing engineers and cloud computing enthusiasts who want to learn container technologies. By learning this course, you can fully understand what the application containerization is, the layering theory of Docker image, the principle and common instructions of Dockerfile, common tools of application containerization, and how to deploy a containerized application based on Alibaba Cloud Container Service. So as to provide a reference for the evaluation, design and implementation of containerized applications.",
   "recommended_for": "Cloud Computing Architects, Cloud Service Providers, Cloud Computing Enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_appcontain",

@@ -3,415 +3,184 @@
   "course_id": "Curso Nº certification-clouder-introduction-api",
   "title_en": "Introduction to API Gateway on Alibaba Cloud",
   "title_es": "Introducción a API Gateway en Alibaba Cloud",
+  "title_es_html": "Introducción a <em>API Gateway</em> en Alibaba Cloud",
   "duration_es": "47 minutos",
   "level_es": "Principiante",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "DevOps",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-introduction-api",
-  "lead": "Guía completa en español para el curso «Introduction to API Gateway on Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad API Gateway. API Gateway es el punto de entrada gestionado para APIs REST/WebSocket/gRPC. Provee autenticación, rate limiting, transformación de requests, monetización, versionado y catalog. Diseñada para preparación de certificación ACA/ACP con fundamentos operacionales: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Introduction to API Gateway on Alibaba Cloud» de Alibaba Cloud Academy. API Gateway es el punto de entrada gestionado que se coloca delante de tus backends (HTTP, VPC, Function Compute) para centralizar autenticación, control de tráfico y transformación de peticiones, sin escribir ese código una y otra vez en cada microservicio.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>API Gateway</em>.",
-    "<strong>Dominar</strong> los conceptos clave: API Group, Stage, Plugin, Throttling, App Key.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con API Gateway y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> qué problema resuelve API Gateway frente a exponer un backend directamente a internet.",
+    "<strong>Distinguir</strong> los conceptos base: API Group, API, Stage, Deployment y App consumidora.",
+    "<strong>Configurar</strong> autenticación por firma HMAC (AppKey/AppSecret) o JWT según el tipo de consumidor.",
+    "<strong>Aplicar</strong> throttling y cuotas a nivel de API, de App y global para proteger el backend.",
+    "<strong>Definir</strong> backends HTTP, VPC (sin IP pública) y Function Compute con mapeo de parámetros.",
+    "<strong>Publicar y versionar</strong> APIs entre entornos (TEST/PRE/RELEASE) de forma segura y auditable."
   ],
-  "architecture": "Consumidor → API Gateway (auth + throttle + cache) → backends (FC, SAE, ECS, HTTP externo). Métricas a CloudMonitor. Logs a SLS. RAM roles para IAM. Plans con SLA y cuotas por app key.",
+  "architecture": "Cliente (app móvil, SPA, servidor de terceros) → API Gateway: valida firma/JWT del App consumidor → aplica throttling (por API + por App + global) → mapea parámetros de entrada → invoca el backend registrado (servicio HTTP público, servicio dentro de una VPC vía autorización de acceso, o una función de Function Compute) → mapea la respuesta → responde al cliente. En paralelo, cada invocación genera métricas hacia CloudMonitor y, si se habilita, logs de acceso hacia SLS. Un dominio personalizado con certificado SSL se coloca delante del endpoint por defecto para exponer una URL de marca propia.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a API Gateway",
-      "title_en": "Introduction to API Gateway",
-      "intro": "API Gateway es el punto de entrada gestionado para APIs REST/WebSocket/gRPC. Provee autenticación, rate limiting, transformación de requests, monetización, versionado y catalog. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Qué es API Gateway y por qué existe",
+      "title_en": "What is API Gateway and why it exists",
+      "intro": "Antes de tocar la consola conviene entender el problema que resuelve el servicio: cuando varios equipos exponen sus propios endpoints sin un punto de control común, cada uno reimplementa autenticación, límites de tráfico y logging a su manera, con resultados inconsistentes.",
       "points": [
-        "<strong>Problema que resuelve</strong>: API Gateway es el punto de entrada gestionado para APIs REST/WebSocket/gRPC.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo API Gateway se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Punto de entrada único</strong>: API Gateway centraliza autenticación, throttling, transformación y monitoreo para todas las APIs de una organización, en vez de dejar esa lógica dispersa en cada microservicio.",
+        "<strong>Desacoplamiento</strong>: el cliente nunca conoce la IP ni la implementación real del backend — solo consume una URL estable publicada por el gateway, lo que permite cambiar el backend sin romper a los consumidores.",
+        "<strong>Reutilización</strong>: reglas de seguridad, cuotas y transformación se definen una vez a nivel de plataforma y se aplican de forma consistente a docenas o cientos de APIs.",
+        "<strong>Monetización y control de acceso</strong>: al modelar cada consumidor como una App con su propia AppKey, es posible ofrecer distintos planes de cuota o incluso cobrar por volumen de llamadas.",
+        "<strong>No sustituye a un load balancer</strong>: SLB/ALB distribuye tráfico entre servidores a nivel de red; API Gateway opera a nivel de aplicación (HTTP), entendiendo rutas, parámetros y contratos de API."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "API Gateway es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen típica no es «¿qué hace API Gateway?» sino «¿por qué no exponer el backend directamente?». La respuesta siempre gira en torno a <em>seguridad centralizada + control de tráfico + desacoplamiento cliente-backend</em>."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando API Gateway no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Arquitectura y flujo de una petición",
+      "title_en": "Architecture and request lifecycle",
+      "intro": "Cada llamada que llega a API Gateway atraviesa una secuencia fija de etapas antes de tocar el backend real. Entender este flujo es indispensable para depurar errores 4xx/5xx en el examen y en producción.",
       "points": [
-        "<strong>Patrón canónico</strong>: Consumidor → API Gateway (auth + throttle + cache) → backends (FC, SAE, ECS, HTTP externo). Métricas a CloudMonitor. Logs a SLS. RAM roles para IAM. Plans con SLA y cuotas por app key.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → API Gateway (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Grupo de API</strong> <em>(API Group)</em>: Namespace de APIs con dominio propio.",
-        "<strong>Stage</strong> <em>(Stage)</em>: Ambiente (test, pre, release).",
-        "<strong>Plugin</strong> <em>(Plugin)</em>: Módulo de auth/CORS/rate limit.",
-        "<strong>Throttling</strong> <em>(Throttling)</em>: Límite de requests por segundo.",
-        "<strong>App Key</strong> <em>(App Key)</em>: Credencial del cliente consumidor.",
-        "<strong>Signature</strong> <em>(Signature)</em>: Firma HMAC de request.",
-        "<strong>Mapping</strong> <em>(Mapping)</em>: Transformación request/response."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>API Group</strong>: espacio de nombres que agrupa APIs relacionadas y comparte un dominio base (subdominio *.aliyuncs.com por defecto, o un dominio propio).",
+        "<strong>API</strong>: la definición individual — método HTTP, ruta, parámetros esperados, tipo de autenticación y backend asociado.",
+        "<strong>Stage</strong>: entorno de publicación (normalmente TEST, PRE, RELEASE). La misma API puede tener configuraciones distintas por Stage, lo que permite probar cambios sin afectar producción.",
+        "<strong>Deployment (Publicación)</strong>: acto de promover una versión de la API a un Stage concreto; sin publicar, los cambios guardados no tienen efecto para los consumidores.",
+        "<strong>Orden de evaluación</strong>: primero autenticación, luego throttling, luego validación de parámetros, y solo si todo pasa se invoca el backend — un fallo de firma nunca llega a consumir cuota de throttling."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Un error 401 casi siempre es de autenticación (firma/JWT inválidos); un 429 es throttling; un 4XX de parámetro suele ser un mapeo mal definido. Diferenciarlos rápido ahorra tiempo en preguntas de troubleshooting."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Autenticación y control de acceso",
+      "title_en": "Authentication and access control",
+      "intro": "API Gateway no reemplaza a RAM, pero sí necesita su propio mecanismo para verificar la identidad de cada App consumidora en cada petición HTTP.",
       "points": [
-        "<strong>Buenas prácticas</strong>: JWT o app key + signature (nunca sin auth)",
-        "<strong>Buenas prácticas</strong>: Throttling por app + global",
-        "<strong>Buenas prácticas</strong>: Cache para GET idempotentes",
-        "<strong>Buenas prácticas</strong>: Versionado por stage",
-        "<strong>Buenas prácticas</strong>: Monitoreo por API"
+        "<strong>App</strong>: la identidad de un consumidor (una aplicación móvil, un servicio de un tercero). Cada App recibe un par <strong>AppKey/AppSecret</strong>.",
+        "<strong>Firma HMAC</strong>: el modo clásico — el cliente firma la petición con el AppSecret y API Gateway valida la firma sin que el secreto viaje por la red.",
+        "<strong>JWT</strong>: alternativa moderna para APIs consumidas por aplicaciones web/móviles ya integradas con un proveedor de identidad — el gateway valida el token sin mantener estado de sesión.",
+        "<strong>Autorización por App a nivel de API</strong>: que una App tenga credenciales válidas no basta; además debe estar explícitamente autorizada a invocar esa API concreta.",
+        "<strong>Restricción por IP</strong>: listas blancas/negras adicionales a la autenticación, útiles cuando el consumidor tiene rango de IP fijo conocido.",
+        "<strong>RAM vs autenticación de API</strong>: RAM controla quién puede administrar (crear/publicar) APIs dentro de la cuenta; la autenticación de API controla quién puede invocarlas en tiempo de ejecución — son capas distintas."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Nunca se envía el AppSecret en cada petición: se usa para <em>firmar</em> localmente, y el gateway verifica esa firma. Compartir el AppSecret con el cliente final (una app móvil pública) es un antipatrón de seguridad."
+      }
+    },
+    {
+      "title_es": "4 · Backends, mapeo y tipos de integración",
+      "title_en": "Backends, mapping and integration types",
+      "intro": "Definir una API implica decidir qué recibe el cliente, qué necesita el backend real, y cómo se traduce una petición en la otra — ese es el trabajo del mapeo de parámetros.",
+      "points": [
+        "<strong>Backend HTTP/HTTPS público</strong>: el caso más simple — un servicio accesible por su propia URL pública, típicamente detrás de un SLB.",
+        "<strong>Backend en VPC</strong>: mediante una autorización de acceso a VPC, API Gateway invoca un servicio con IP privada dentro de una VPC sin exponerlo nunca a internet directamente.",
+        "<strong>Backend Function Compute</strong>: integración serverless — cada API invoca una función; ideal para endpoints con tráfico esporádico donde no se justifica mantener un servidor encendido.",
+        "<strong>Backend Mock</strong>: respuesta simulada configurada en el propio gateway, útil para que equipos frontend empiecen a integrar antes de que el backend real exista.",
+        "<strong>Mapeo de parámetros</strong>: los parámetros de la petición del cliente (query string, path, header, body) se transforman a lo que espera el backend, y la respuesta del backend se transforma de vuelta al formato que espera el cliente."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el enunciado dice «exponer un servicio interno de una VPC sin darle IP pública», la respuesta es <em>autorización de acceso a VPC</em>, no una EIP en el backend."
+      }
+    },
+    {
+      "title_es": "5 · Throttling, cuotas y publicación por entornos",
+      "title_en": "Throttling, quotas and staged rollout",
+      "intro": "Sin límites de tráfico, un solo consumidor mal comportado (o un ataque) puede saturar un backend que otros consumidores comparten. API Gateway aplica throttling en varios niveles simultáneamente.",
+      "points": [
+        "<strong>Throttling por API</strong>: límite de peticiones por segundo aplicado a todos los consumidores de esa API en conjunto.",
+        "<strong>Throttling por App</strong>: cuota individual asignada a un consumidor específico — permite dar planes distintos (free tier vs plan pagado).",
+        "<strong>Throttling global</strong>: límite agregado a nivel de cuenta o Group como última línea de defensa.",
+        "<strong>Publicación por Stage</strong>: cambios se prueban primero en TEST, luego PRE, y solo después se promueven a RELEASE — reduce el riesgo de romper producción con un cambio no probado.",
+        "<strong>Rollback</strong>: al ser Stage una configuración versionada, revertir a la definición anterior de una API es una operación rápida si algo falla tras publicar."
       ],
       "keypoint": {
         "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "text": "Tres capas de throttling: <strong>App</strong> (por consumidor) → <strong>API</strong> (por endpoint) → <strong>Global</strong> (por cuenta). Una petición debe pasar las tres para llegar al backend."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "6 · Monitoreo, dominios y buenas prácticas",
+      "title_en": "Monitoring, custom domains and best practices",
+      "intro": "Operar API Gateway en producción exige visibilidad sobre qué APIs se usan, con qué latencia y con qué tasa de error, además de una identidad de dominio propia para los consumidores externos.",
       "points": [
-        "<strong>Antipattern</strong>: Backend expuesto sin gateway",
-        "<strong>Antipattern</strong>: Sin throttling → DoS trivial",
-        "<strong>Antipattern</strong>: API keys en repo público",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>CloudMonitor</strong>: expone QPS, latencia y tasa de error por API de forma nativa, con alarmas configurables sobre umbrales.",
+        "<strong>Dominio personalizado + SSL</strong>: reemplaza el endpoint por defecto de Alibaba Cloud por un dominio propio con certificado, dando una identidad de marca consistente a los consumidores.",
+        "<strong>CORS</strong>: debe habilitarse explícitamente cuando la API se consume desde JavaScript en el navegador; olvidarlo es una causa común de fallos silenciosos en integraciones frontend.",
+        "<strong>Versionado</strong>: mantener rutas o Groups separados por versión mayor (v1, v2) evita romper a consumidores existentes cuando cambia el contrato de una API.",
+        "<strong>Manejo de fallback</strong>: definir una respuesta de error controlada (o un backend Mock temporal) cuando el servicio real está caído, en vez de dejar que el consumidor reciba un timeout crudo."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante una pregunta de diseño, prioriza en este orden: autenticación correcta → throttling en las tres capas → mapeo de datos válido → observabilidad. Un diseño que omite cualquiera de estos no se considera «producción-ready» en el examen."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Backend for frontend (BFF)"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Monetización de APIs (marketplace)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Consolidación de microservicios detrás de un endpoint"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Autenticación central con JWT"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Rate limiting por cliente"
-    }
+    { "title": "Escenario 1", "text": "Backend for Frontend (BFF): una app móvil consume un único endpoint que internamente agrega varios microservicios" },
+    { "title": "Escenario 2", "text": "Exponer un servicio interno de una VPC a un socio externo sin asignarle IP pública" },
+    { "title": "Escenario 3", "text": "Monetizar un dataset como API con distintos planes de cuota por App consumidora" },
+    { "title": "Escenario 4", "text": "Endpoint serverless: API Gateway + Function Compute para picos de tráfico esporádicos" },
+    { "title": "Escenario 5", "text": "Publicación progresiva: probar una nueva versión en Stage TEST antes de promoverla a RELEASE" },
+    { "title": "Escenario 6", "text": "Frontend web (SPA) que consume la API desde el navegador — requiere CORS habilitado" }
   ],
   "mistakes": [
-    "Backend expuesto sin gateway",
-    "Sin throttling → DoS trivial",
-    "API keys en repo público"
+    "Exponer el backend directamente a internet sin gateway → sin auth ni throttling centralizados",
+    "No configurar throttling por App → un solo consumidor abusivo satura el backend compartido",
+    "Publicar cambios directo en Stage RELEASE sin pasar por TEST/PRE",
+    "Compartir el AppSecret dentro de una app móvil pública (se puede extraer del binario)",
+    "Olvidar habilitar CORS en una API consumida desde un navegador",
+    "No definir un dominio personalizado ni certificado SSL para APIs expuestas a clientes externos"
   ],
   "cli": [
-    {
-      "cmd": "aliyun cloudapi DescribeApis",
-      "desc": "Listar APIs"
-    },
-    {
-      "cmd": "aliyun cloudapi CreateApi",
-      "desc": "Crear API"
-    }
+    { "cmd": "aliyun cloudapi CreateApiGroup --GroupName mi-grupo --Description 'APIs publicas'", "desc": "Crear un API Group" },
+    { "cmd": "aliyun cloudapi CreateApi --GroupId <id> --ApiName GetOrder --Visibility PUBLIC", "desc": "Definir una nueva API" },
+    { "cmd": "aliyun cloudapi DeployApi --ApiId <id> --GroupId <id> --StageName RELEASE", "desc": "Publicar la API en el Stage de producción" },
+    { "cmd": "aliyun cloudapi CreateApp --AppName app-partner-1", "desc": "Crear una App consumidora con AppKey/AppSecret" },
+    { "cmd": "aliyun cloudapi AuthorizeApp --AppId <id> --ApiId <id> --StageName RELEASE", "desc": "Autorizar a una App a invocar una API concreta" },
+    { "cmd": "aliyun cloudapi DescribeApiHistories --ApiId <id>", "desc": "Ver el historial de versiones publicadas de una API" }
   ],
   "glossary": [
-    {
-      "en": "API Group",
-      "es": "Grupo de API",
-      "def": "Namespace de APIs con dominio propio."
-    },
-    {
-      "en": "Stage",
-      "es": "Stage",
-      "def": "Ambiente (test, pre, release)."
-    },
-    {
-      "en": "Plugin",
-      "es": "Plugin",
-      "def": "Módulo de auth/CORS/rate limit."
-    },
-    {
-      "en": "Throttling",
-      "es": "Throttling",
-      "def": "Límite de requests por segundo."
-    },
-    {
-      "en": "App Key",
-      "es": "App Key",
-      "def": "Credencial del cliente consumidor."
-    },
-    {
-      "en": "Signature",
-      "es": "Signature",
-      "def": "Firma HMAC de request."
-    },
-    {
-      "en": "Mapping",
-      "es": "Mapping",
-      "def": "Transformación request/response."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "API Group", "es": "Grupo de API", "def": "Espacio de nombres que agrupa APIs relacionadas bajo un dominio base común." },
+    { "en": "API", "es": "API", "def": "Definición individual de un endpoint: método, ruta, parámetros, autenticación y backend." },
+    { "en": "Stage", "es": "Entorno de publicación", "def": "Entorno (TEST/PRE/RELEASE) donde se publica una versión concreta de la configuración de una API." },
+    { "en": "Deployment", "es": "Publicación", "def": "Acto de promover una definición de API a un Stage para que tenga efecto real." },
+    { "en": "App", "es": "App consumidora", "def": "Identidad de un cliente/consumidor de la API, con su propio AppKey/AppSecret." },
+    { "en": "AppKey / AppSecret", "es": "Clave / Secreto de App", "def": "Par de credenciales usado para firmar peticiones sin transmitir el secreto en la red." },
+    { "en": "Signature (HMAC)", "es": "Firma HMAC", "def": "Mecanismo de autenticación donde el cliente firma la petición con su AppSecret y el gateway valida la firma." },
+    { "en": "JWT Auth", "es": "Autenticación JWT", "def": "Alternativa a la firma HMAC basada en tokens firmados, común en integraciones web/móviles." },
+    { "en": "Throttling", "es": "Control de tráfico", "def": "Límite de peticiones por segundo aplicado por App, por API o de forma global." },
+    { "en": "Backend Service", "es": "Servicio backend", "def": "Implementación real detrás del gateway: HTTP público, servicio en VPC, función de Function Compute o Mock." },
+    { "en": "VPC Access Authorization", "es": "Autorización de acceso a VPC", "def": "Mecanismo que permite a API Gateway invocar un backend con IP privada dentro de una VPC." },
+    { "en": "Parameter Mapping", "es": "Mapeo de parámetros", "def": "Transformación de los parámetros de entrada/salida entre el contrato expuesto al cliente y el que espera el backend." },
+    { "en": "Custom Domain", "es": "Dominio personalizado", "def": "Dominio propio con certificado SSL que reemplaza el endpoint por defecto del gateway." },
+    { "en": "CORS", "es": "CORS", "def": "Cabeceras que permiten que una API sea consumida desde JavaScript en un origen distinto (navegador)." },
+    { "en": "IP Whitelist/Blacklist", "es": "Lista blanca/negra de IP", "def": "Restricción adicional de acceso basada en el rango de IP del consumidor." },
+    { "en": "Mock Backend", "es": "Backend simulado", "def": "Respuesta configurada directamente en el gateway sin invocar un servicio real, útil para pruebas." },
+    { "en": "CloudMonitor", "es": "CloudMonitor", "def": "Servicio de métricas y alarmas nativo, usado para observar QPS, latencia y errores por API." },
+    { "en": "SLS (Log Service)", "es": "SLS", "def": "Servicio de logs donde se pueden centralizar los registros de acceso de API Gateway." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a API Gateway?",
-      "options": [
-        "API Gateway es el punto de entrada gestionado para APIs REST/WebSocket/gRPC. Provee autenticación, rate limiting, transformación de requests, monetización, versionado y catalog.",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "API Gateway es el punto de entrada gestionado para APIs REST/WebSocket/gRPC. Provee autenticación, rate limiting, transformación de requests, monetización, versionado y catalog."
-    },
-    {
-      "q": "¿Qué es <strong>API Group</strong> (Grupo de API) en API Gateway?",
-      "options": [
-        "Namespace de APIs con dominio propio.",
-        "Ambiente (test, pre, release).",
-        "Módulo de auth/CORS/rate limit.",
-        "Límite de requests por segundo."
-      ],
-      "answer": 0,
-      "explain": "API Group (Grupo de API): Namespace de APIs con dominio propio."
-    },
-    {
-      "q": "¿Qué es <strong>Stage</strong> (Stage) en API Gateway?",
-      "options": [
-        "Ambiente (test, pre, release).",
-        "Namespace de APIs con dominio propio.",
-        "Módulo de auth/CORS/rate limit.",
-        "Límite de requests por segundo."
-      ],
-      "answer": 0,
-      "explain": "Stage (Stage): Ambiente (test, pre, release)."
-    },
-    {
-      "q": "¿Qué es <strong>Plugin</strong> (Plugin) en API Gateway?",
-      "options": [
-        "Módulo de auth/CORS/rate limit.",
-        "Namespace de APIs con dominio propio.",
-        "Ambiente (test, pre, release).",
-        "Límite de requests por segundo."
-      ],
-      "answer": 0,
-      "explain": "Plugin (Plugin): Módulo de auth/CORS/rate limit."
-    },
-    {
-      "q": "¿Qué es <strong>Throttling</strong> (Throttling) en API Gateway?",
-      "options": [
-        "Límite de requests por segundo.",
-        "Namespace de APIs con dominio propio.",
-        "Ambiente (test, pre, release).",
-        "Módulo de auth/CORS/rate limit."
-      ],
-      "answer": 0,
-      "explain": "Throttling (Throttling): Límite de requests por segundo."
-    },
-    {
-      "q": "¿Qué es <strong>App Key</strong> (App Key) en API Gateway?",
-      "options": [
-        "Credencial del cliente consumidor.",
-        "Namespace de APIs con dominio propio.",
-        "Ambiente (test, pre, release).",
-        "Módulo de auth/CORS/rate limit."
-      ],
-      "answer": 0,
-      "explain": "App Key (App Key): Credencial del cliente consumidor."
-    },
-    {
-      "q": "Para maximizar disponibilidad con API Gateway, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar API Gateway en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con API Gateway, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde API Gateway es la elección típica:",
-      "options": [
-        "Backend for frontend (BFF)",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Backend for frontend (BFF)."
-    }
+    { "q": "¿Cuál es la razón principal para colocar API Gateway delante de un backend en vez de exponerlo directamente?", "options": ["Reduce el tamaño del código del backend", "Centraliza autenticación, throttling y transformación sin duplicar esa lógica en cada servicio", "Elimina la necesidad de tener un dominio propio", "Convierte automáticamente el backend en serverless"], "answer": 1, "explain": "API Gateway centraliza preocupaciones transversales (auth, límites, mapeo) que de otro modo se reimplementarían en cada microservicio." },
+    { "q": "¿Qué representa el concepto de 'Stage' en API Gateway?", "options": ["El servidor físico donde corre el backend", "Un entorno de publicación (TEST/PRE/RELEASE) con su propia configuración de la API", "Una App consumidora autorizada", "El certificado SSL del dominio personalizado"], "answer": 1, "explain": "Stage es el entorno donde se publica una versión concreta de la API, permitiendo probar cambios antes de promoverlos a producción." },
+    { "q": "Un desarrollador necesita exponer un servicio que vive dentro de una VPC sin asignarle jamás una IP pública. ¿Qué mecanismo de API Gateway usa?", "options": ["Backend Mock", "Autorización de acceso a VPC", "Dominio personalizado", "Throttling global"], "answer": 1, "explain": "La autorización de acceso a VPC permite que el gateway invoque directamente un backend con IP privada." },
+    { "q": "¿Por qué es un antipatrón incluir el AppSecret dentro del código de una app móvil pública?", "options": ["Porque aumenta la latencia de las peticiones", "Porque el binario de la app puede analizarse y extraer el secreto, comprometiendo la firma", "Porque el AppSecret caduca cada 24 horas", "Porque las apps móviles no admiten HMAC"], "answer": 1, "explain": "Cualquier secreto embebido en un cliente distribuido públicamente puede ser extraído mediante ingeniería inversa del binario." },
+    { "q": "Una API recibe tráfico normal, pero un solo consumidor empieza a enviar miles de peticiones por segundo y satura el backend compartido. ¿Qué mecanismo debió configurarse para evitarlo?", "options": ["Throttling por App", "CORS", "Backend Mock", "Dominio personalizado"], "answer": 0, "explain": "El throttling por App aplica una cuota individual a cada consumidor, evitando que uno solo agote la capacidad compartida." },
+    { "q": "¿Qué tipo de backend es más apropiado para un endpoint con tráfico esporádico donde no se justifica mantener un servidor encendido 24/7?", "options": ["Backend HTTP público en un ECS dedicado", "Backend Function Compute (serverless)", "Backend Mock permanente", "Ninguno, API Gateway no soporta backends serverless"], "answer": 1, "explain": "Function Compute solo cobra por invocación, ideal para tráfico esporádico o impredecible." },
+    { "q": "Una API es consumida desde JavaScript ejecutándose en el navegador de los usuarios finales. ¿Qué se debe habilitar para que las peticiones no sean bloqueadas por el navegador?", "options": ["JWT Auth", "CORS", "IP Whitelist", "Backend Mock"], "answer": 1, "explain": "CORS permite que un origen distinto (el dominio del sitio web) invoque la API desde el navegador sin ser bloqueado por la política de mismo origen." },
+    { "q": "¿En qué orden evalúa típicamente API Gateway una petición entrante?", "options": ["Throttling → autenticación → backend", "Autenticación → throttling → mapeo de parámetros → backend", "Backend → autenticación → throttling", "Mapeo de parámetros → backend → autenticación"], "answer": 1, "explain": "Primero se valida la identidad del consumidor, luego se aplican los límites de tráfico, después se mapean los parámetros, y solo entonces se invoca el backend." },
+    { "q": "¿Cuál es la diferencia entre autenticación de API y permisos RAM en el contexto de API Gateway?", "options": ["Son exactamente lo mismo", "RAM controla quién administra las APIs (crear/publicar); la autenticación de API controla quién puede invocarlas en runtime", "RAM solo aplica a instancias ECS, nunca a API Gateway", "La autenticación de API reemplaza completamente a RAM"], "answer": 1, "explain": "Son capas distintas: RAM es control administrativo sobre el recurso; la autenticación de API es control de invocación en tiempo de ejecución." },
+    { "q": "Un equipo quiere que el frontend empiece a integrar contra una API antes de que el backend real esté terminado. ¿Qué tipo de backend permite esto?", "options": ["Backend HTTP público", "Backend en VPC", "Backend Mock", "Backend Function Compute"], "answer": 2, "explain": "El backend Mock devuelve una respuesta simulada configurada en el propio gateway, sin requerir un servicio real." },
+    { "q": "¿Qué mecanismo de autenticación es más común para integraciones donde el consumidor ya usa tokens de un proveedor de identidad?", "options": ["Firma HMAC con AppSecret", "JWT", "IP Whitelist únicamente", "Backend Mock"], "answer": 1, "explain": "JWT es la alternativa habitual cuando el consumidor ya maneja tokens firmados de un sistema de identidad existente." },
+    { "q": "¿Qué práctica reduce el riesgo de romper producción al publicar cambios en una API?", "options": ["Publicar siempre directo en RELEASE para ahorrar tiempo", "Probar en Stage TEST y PRE antes de promover a RELEASE", "Desactivar el throttling durante los despliegues", "Eliminar el Stage anterior antes de publicar el nuevo"], "answer": 1, "explain": "El flujo TEST → PRE → RELEASE permite detectar problemas antes de que afecten a los consumidores de producción." },
+    { "q": "¿Qué servicio de Alibaba Cloud se usa nativamente para observar QPS, latencia y tasa de error de las APIs publicadas?", "options": ["ActionTrail", "CloudMonitor", "Resource Directory", "OSS"], "answer": 1, "explain": "CloudMonitor expone las métricas operativas nativas de API Gateway con alarmas configurables." },
+    { "q": "¿Qué diferencia a un dominio personalizado de usar el endpoint por defecto de API Gateway?", "options": ["El dominio personalizado desactiva la autenticación automáticamente", "El dominio personalizado permite exponer las APIs bajo una URL de marca propia con certificado SSL", "No hay ninguna diferencia funcional", "El endpoint por defecto no admite HTTPS bajo ninguna circunstancia"], "answer": 1, "explain": "Un dominio personalizado da identidad de marca y control del certificado, en lugar de exponer el subdominio genérico de Alibaba Cloud." }
   ],
-  "exam_focus": "Autenticación, throttling, plugins, integración con FC/backends, versioning.",
-  "official_intro": "This course is designed to help developers and engineers who want to open APIs or call APIs, as well as cloud computing technology enthusiasts who are interested in API Gateway. Through this course, learners can fully understand what API gateway is, how to call APIs, how to open APIs, and the scenarios of using API Gateway on Alibaba Cloud, so as to provide a reference of using APIs and API gateway.",
+  "exam_focus": "El examen suele evaluar: (a) el flujo de evaluación de una petición (auth → throttling → mapeo → backend), (b) diferencia entre firma HMAC y JWT, (c) cuándo usar backend VPC vs HTTP público vs Function Compute vs Mock, (d) las tres capas de throttling (App/API/global), (e) buenas prácticas de publicación por Stage y de seguridad de credenciales.",
+  "official_intro": "This course is designed to help developers and engineers who want to open APIs or call APIs, as well as cloud computing technology enthusiasts who are interested in API Gateway. Through this course, learners can fully understand what api gateway is, how to call APIs, how to open APIs, and the scenarios of using API Gateway on Alibaba Cloud, so as to provide a reference of using APIs and API gateway.",
   "recommended_for": "Cloud Computing Engineers and Architects, Cloud Service Providers, Cloud computing enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-introduction-api",
   "exam_meta": {

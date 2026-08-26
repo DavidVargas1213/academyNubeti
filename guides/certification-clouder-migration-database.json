@@ -2,417 +2,193 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-migration-database",
   "title_en": "Migration of Cloud Database from Third-party Platforms to Alibaba Cloud",
-  "title_es": "Migración of Base de Datos en la Nube from Third-party Platforms to Alibaba Cloud",
+  "title_es": "Migración de Bases de Datos desde Otros Proveedores Cloud a Alibaba Cloud",
+  "title_es_html": "Migración de Bases de Datos desde <em>Otros Proveedores Cloud</em> a Alibaba Cloud",
   "duration_es": "46 minutos",
   "level_es": "Intermedio",
   "category_es": "Arquitectura, DevOps y Soluciones",
   "subcategory_es": "Cloud Migration",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder-migration-database",
-  "lead": "Guía completa en español para el curso «Migration of Cloud Database from Third-party Platforms to Alibaba Cloud» de Alibaba Cloud Academy. Cubre en profundidad Data Transmission Service (DTS). DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas. Diseñada para preparación de certificación ACA/ACP con casos prácticos y diseño de soluciones: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español para el curso «Migration of Cloud Database from Third-party Platforms to Alibaba Cloud» de Alibaba Cloud Academy. Este curso se enfoca en un caso muy específico: una base de datos que ya vive en un servicio gestionado de OTRO proveedor cloud (AWS RDS, Azure Database, Google Cloud SQL) y necesita moverse a ApsaraDB for RDS, con los retos particulares de conectividad entre nubes, compatibilidad de motores y control de costos de egress que ese escenario implica — distinto de migrar una base de datos on-premise o de migrar datos estructurados en general.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Data Transmission Service (DTS)</em>.",
-    "<strong>Dominar</strong> los conceptos clave: Migration Task, Structure Migration, Full Migration, Incremental Migration, Change Tracking.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Data Transmission Service (DTS) y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Explicar</strong> por qué una empresa migra su base de datos gestionada de otro cloud hacia ApsaraDB for RDS.",
+    "<strong>Establecer</strong> conectividad segura entre el proveedor cloud origen y Alibaba Cloud para la transferencia de datos.",
+    "<strong>Aplicar</strong> las tres fases de DTS (estructura, full, incremental) en un escenario cross-cloud.",
+    "<strong>Verificar</strong> la compatibilidad de motor y versión entre el servicio gestionado origen y ApsaraDB for RDS.",
+    "<strong>Anticipar</strong> los costos de transferencia de salida (egress) que cobra el proveedor origen durante la migración.",
+    "<strong>Ejecutar</strong> el cutover cross-cloud validando integridad de datos y redirigiendo la cadena de conexión de la aplicación.",
+    "<strong>Responder</strong> con seguridad las preguntas del examen Apsara Clouder sobre migración de bases de datos entre nubes."
   ],
-  "architecture": "Estructura → data → incremental (CDC binlog): DTS crea schema en target, hace initial load, luego aplica cambios binlog en tiempo real. Al cortar, apps se apuntan al nuevo. RPO segundos, RTO minutos.",
+  "architecture": "Base de datos gestionada en el proveedor origen (p.ej. AWS RDS MySQL) → se habilita el acceso público o vía túnel privado hacia esa instancia (abriendo el Security Group del proveedor origen a las IPs salientes de DTS) → DTS en Alibaba Cloud se conecta como cliente externo, migra primero el esquema (Structure Migration), luego una copia completa de los datos (Full Migration), y finalmente aplica los cambios incrementales leyendo el binlog/WAL del origen en tiempo real (Incremental Migration) hacia una instancia ApsaraDB for RDS ya aprovisionada en una VPC de Alibaba Cloud → Data Verification compara checksums entre origen y destino → una vez el lag incremental es cercano a cero, se detiene la escritura en el origen, se espera a que el lag llegue a cero, y se actualiza la cadena de conexión de la aplicación hacia el nuevo endpoint RDS.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Data Transmission Service (DTS)",
-      "title_en": "Introduction to Data Transmission Service (DTS)",
-      "intro": "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas. Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Por qué migrar entre proveedores cloud",
+      "title_en": "Why migrate between cloud providers",
+      "intro": "Migrar una base de datos que ya está en la nube —solo que en la nube de otro proveedor— tiene motivaciones distintas a una migración desde on-premise, y el examen espera que sepas identificarlas.",
       "points": [
-        "<strong>Problema que resuelve</strong>: DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Data Transmission Service (DTS) se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Consolidación de infraestructura</strong>: si el resto de la aplicación ya corre en Alibaba Cloud, mantener la base de datos en otro proveedor añade latencia de red entre capas y una factura de egress cruzada innecesaria.",
+        "<strong>Evitar vendor lock-in</strong>: depender de características propietarias de un solo proveedor dificulta negociar costos o cambiar de estrategia más adelante.",
+        "<strong>Optimización de costo</strong>: comparar el costo total (cómputo + almacenamiento + egress) de mantener la base de datos donde está frente a moverla y colocarla junto al resto de la arquitectura.",
+        "<strong>Diferencia clave con una migración on-premise</strong>: aquí el origen YA es un servicio gestionado (con sus propios backups, alta disponibilidad y APIs), por lo que el reto no es 'sacar los datos de un servidor propio' sino conectar dos plataformas gestionadas distintas entre sí de forma segura y eficiente."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Data Transmission Service (DTS) es una pieza fundamental de Arquitectura, DevOps y Soluciones en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "Este escenario no es 'lift-and-shift de un servidor': es reconectar dos servicios gestionados de proveedores distintos, cada uno con su propio modelo de red, seguridad y facturación."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Data Transmission Service (DTS) no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Conectividad cross-cloud",
+      "title_en": "Cross-cloud connectivity",
+      "intro": "Antes de mover un solo byte de datos, DTS necesita poder alcanzar la base de datos origen desde fuera del proveedor donde vive — y eso implica decisiones de red y seguridad específicas de este escenario.",
       "points": [
-        "<strong>Patrón canónico</strong>: Estructura → data → incremental (CDC binlog): DTS crea schema en target, hace initial load, luego aplica cambios binlog en tiempo real. Al cortar, apps se apuntan al nuevo. RPO segundos, RTO minutos.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Data Transmission Service (DTS) (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Tarea de migración</strong> <em>(Migration Task)</em>: One-shot o continua.",
-        "<strong>Migración de estructura</strong> <em>(Structure Migration)</em>: Schemas, tablas, índices.",
-        "<strong>Migración full</strong> <em>(Full Migration)</em>: Copia inicial de datos.",
-        "<strong>Migración incremental</strong> <em>(Incremental Migration)</em>: Aplica binlog/WAL cambios continuos.",
-        "<strong>Change Tracking</strong> <em>(Change Tracking)</em>: Publica CDC hacia consumidores (Kafka, código).",
-        "<strong>Sync bidireccional</strong> <em>(Bidirectional Sync)</em>: Ambas puntas escriben; DTS resuelve conflictos.",
-        "<strong>Verificación de datos</strong> <em>(Data Verification)</em>: Compara integridad source vs target."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>Acceso público con cifrado</strong>: la forma más simple es habilitar temporalmente el acceso público en la instancia origen y permitir la conexión únicamente desde el rango de IPs salientes de DTS, con TLS habilitado en tránsito.",
+        "<strong>Whitelisting en el proveedor origen</strong>: cada proveedor cloud tiene su propio mecanismo de firewall (Security Group en AWS, NSG en Azure); hay que autorizar explícitamente las IPs de DTS ahí, no solo en Alibaba Cloud.",
+        "<strong>Conectividad privada</strong>: para volúmenes grandes o requisitos de compliance, se puede establecer una conexión dedicada o VPN sitio a sitio entre ambas nubes en vez de exponer la base de datos a internet.",
+        "<strong>Latencia y throughput</strong>: la velocidad de migración depende del ancho de banda real disponible entre ambos proveedores, no solo de la capacidad de DTS — debe medirse antes de comprometerse con una ventana de tiempo.",
+        "<strong>Revertir el acceso público</strong>: una vez completada la migración, el acceso público habilitado temporalmente en el origen debe deshabilitarse de nuevo si ya no es necesario."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Si un job de DTS cross-cloud falla en conectar, la causa más común no es un error de configuración en Alibaba Cloud, sino que las IPs de DTS no fueron autorizadas en el firewall del proveedor ORIGEN."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Las tres fases de DTS aplicadas a este escenario",
+      "title_en": "The three DTS phases in this scenario",
+      "intro": "DTS sigue el mismo flujo de tres fases sin importar el origen, pero en un escenario cross-cloud cada fase tiene matices propios de estar leyendo desde un servicio gestionado ajeno.",
       "points": [
-        "<strong>Buenas prácticas</strong>: Migration en 3 fases: structure → full → incremental",
-        "<strong>Buenas prácticas</strong>: Verificación al final",
-        "<strong>Buenas prácticas</strong>: Ventana de cutover corta",
-        "<strong>Buenas prácticas</strong>: Binlog retention suficiente en la fuente",
-        "<strong>Buenas prácticas</strong>: Monitorear lag continuamente"
+        "<strong>Structure Migration</strong>: DTS lee el esquema (tablas, índices, constraints) directamente vía el protocolo del motor, sin necesitar acceso administrativo al sistema operativo del proveedor origen — algo que de todas formas no se tiene en un servicio gestionado de terceros.",
+        "<strong>Full Migration</strong>: copia completa de los datos existentes en el momento de iniciar; en este escenario, su duración depende fuertemente del ancho de banda cross-cloud disponible, no solo del volumen de datos.",
+        "<strong>Incremental Migration</strong>: aplica los cambios posteriores leyendo el binlog (MySQL), WAL (PostgreSQL) u oplog equivalente del origen — requiere que el servicio gestionado origen tenga habilitada la retención de binlog/WAL con una ventana suficiente, algo que a veces hay que activar explícitamente en la consola del otro proveedor.",
+        "<strong>Retención de binlog insuficiente</strong>: si el proveedor origen rota o purga el binlog antes de que DTS lo consuma, la migración incremental se rompe y hay que reiniciar la Full Migration completa — es el fallo operativo más común en este tipo de proyecto."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Memoriza",
+        "text": "El flujo Structure → Full → Incremental es el mismo que en cualquier migración con DTS; lo que cambia en un escenario cross-cloud es que la retención de binlog/WAL y el firewall del origen están fuera del control directo de Alibaba Cloud."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Compatibilidad de motor y versión",
+      "title_en": "Engine and version compatibility",
+      "intro": "Que ambos proveedores ofrezcan 'MySQL' o 'PostgreSQL' no garantiza compatibilidad total — cada plataforma gestionada añade sus propias extensiones, límites y comportamientos por defecto.",
       "points": [
-        "<strong>Antipattern</strong>: Cutover sin ventana de verificación",
-        "<strong>Antipattern</strong>: Binlog retention muy corto — DTS se queda atrás",
-        "<strong>Antipattern</strong>: Sync bidireccional sin resolver conflictos por diseño",
-        "<strong>Antipattern</strong>: No probar rollback",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Versión del motor</strong>: migrar de una versión mayor más reciente en el origen hacia una versión soportada más antigua en ApsaraDB for RDS puede requerir downgrade de features o ajustes de esquema antes del corte.",
+        "<strong>Extensiones y plugins propietarios</strong>: funciones específicas del proveedor origen (por ejemplo ciertas extensiones de PostgreSQL disponibles solo en un proveedor) pueden no tener equivalente directo en ApsaraDB for RDS y requieren reescritura.",
+        "<strong>Parámetros de configuración</strong>: variables del motor (charset por defecto, modo SQL, zona horaria) deben revisarse y replicarse explícitamente en la instancia ApsaraDB for RDS destino, ya que rara vez se migran automáticamente.",
+        "<strong>Migración heterogénea</strong>: si además del proveedor cambia el motor (p.ej. de un motor propietario a PostgreSQL), DTS ofrece migración heterogénea con conversión de tipos de datos, pero requiere una revisión manual del esquema resultante antes de confiar en él para producción."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Ante un enunciado donde 'la aplicación falla tras la migración por un error de sintaxis SQL o de tipo de dato', la causa suele ser una diferencia de versión o de motor no validada antes del cutover, no un fallo de DTS en sí."
+      }
+    },
+    {
+      "title_es": "5 · Costos de egress y planificación",
+      "title_en": "Egress costs and planning",
+      "intro": "Un aspecto que distingue a este escenario de una migración on-premise es que el proveedor origen también cobra por sacar datos de su plataforma — un costo que hay que presupuestar antes de empezar.",
+      "points": [
+        "<strong>Egress del proveedor origen</strong>: la mayoría de proveedores cloud cobran por el tráfico de salida hacia internet o hacia otra nube; una Full Migration de varios terabytes puede generar un cargo significativo en la factura del proveedor origen, no en la de Alibaba Cloud.",
+        "<strong>Ventana de migración y costo</strong>: mantener la migración incremental corriendo por semanas mientras se decide el cutover implica seguir pagando por ambas plataformas simultáneamente — conviene acotar esa ventana.",
+        "<strong>Estimación previa</strong>: calcular el volumen aproximado de datos a transferir y el costo de egress asociado antes de iniciar el proyecto evita sorpresas en la factura del proveedor origen al final del mes.",
+        "<strong>Aprovechar horarios de bajo tráfico</strong>: iniciar la Full Migration en horarios de baja actividad reduce el impacto sobre el rendimiento de la base de datos origen mientras sigue sirviendo producción."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "En una migración cross-cloud, el costo total del proyecto no es solo lo que cobra Alibaba Cloud por DTS y ApsaraDB for RDS — incluye lo que el proveedor origen cobra por dejar salir los datos."
+      }
+    },
+    {
+      "title_es": "6 · Validación y cutover",
+      "title_en": "Validation and cutover",
+      "intro": "El corte final entre dos plataformas gestionadas de proveedores distintos exige una disciplina de validación mayor que dentro de un mismo proveedor, porque revertir implica volver a apuntar a una infraestructura completamente distinta.",
+      "points": [
+        "<strong>Data Verification</strong>: DTS compara checksums o conteos de filas entre origen y destino antes del corte, detectando divergencias que deben resolverse previamente.",
+        "<strong>Lag cercano a cero</strong>: el corte solo debe ejecutarse cuando el retraso (lag) de la migración incremental es prácticamente nulo, garantizando que el destino refleja el estado más reciente del origen.",
+        "<strong>Ventana de solo lectura</strong>: durante el corte se recomienda poner la aplicación en modo de solo lectura (o detener temporalmente las escrituras) hasta confirmar que el lag llegó a cero y el destino está listo.",
+        "<strong>Redirección de la cadena de conexión</strong>: el cambio final es actualizar el endpoint de conexión de la aplicación del origen (otro proveedor) hacia el nuevo endpoint de ApsaraDB for RDS — normalmente vía configuración externa, nunca hardcoded.",
+        "<strong>Retención del origen como respaldo</strong>: mantener el proveedor origen accesible (aunque sea de solo lectura) durante un periodo de observación tras el corte, por si se necesita comparar datos o revertir."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "El criterio para ejecutar el corte nunca es 'ya pasó suficiente tiempo' — es que el lag de la migración incremental esté verificado en cero y la validación de datos haya pasado."
+      }
+    },
+    {
+      "title_es": "7 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Las preguntas más específicas del examen sobre este curso distinguen entre errores propios de cualquier migración de base de datos y errores exclusivos de mover datos entre dos proveedores cloud distintos.",
+      "points": [
+        "<strong>Antipatrón</strong>: no autorizar las IPs de DTS en el firewall del proveedor ORIGEN, asumiendo que solo hace falta configurar el lado de Alibaba Cloud.",
+        "<strong>Antipatrón</strong>: no verificar la retención de binlog/WAL en el origen antes de iniciar, provocando que la migración incremental se rompa a mitad de camino.",
+        "<strong>Antipatrón</strong>: asumir compatibilidad total de motor solo porque el nombre del motor coincide (p.ej. 'MySQL es MySQL en cualquier proveedor').",
+        "<strong>Antipatrón</strong>: no presupuestar el costo de egress que cobra el proveedor origen por la transferencia de datos salientes.",
+        "<strong>Antipatrón</strong>: ejecutar el cutover sin verificar que el lag incremental llegó a cero.",
+        "<strong>Regla de oro</strong>: en cualquier escenario cross-cloud, valida primero la conectividad y permisos en AMBOS lados antes de asumir que el problema está en Alibaba Cloud."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Ante un problema descrito en el examen, pregúntate primero si el origen es un servicio gestionado de OTRO proveedor — si es así, sospecha primero de firewall del origen, retención de binlog, o compatibilidad de versión antes de cualquier otra causa."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Migración lift-and-shift on-premise → Alibaba Cloud"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Cross-cloud (AWS RDS → Alibaba RDS)"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Sincronización dual (activo-activo)"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "CDC hacia data lake (MySQL → OSS/MaxCompute)"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "DR con réplica cross-región continua"
-    }
+    { "title": "Escenario 1", "text": "Consolidar una base de datos AWS RDS MySQL hacia ApsaraDB for RDS junto al resto de la arquitectura en Alibaba Cloud" },
+    { "title": "Escenario 2", "text": "Migración cross-cloud con requisito de compliance que exige conectividad privada en vez de acceso público" },
+    { "title": "Escenario 3", "text": "Migración heterogénea desde un motor propietario de otro proveedor hacia PostgreSQL en ApsaraDB for RDS" },
+    { "title": "Escenario 4", "text": "Base de datos crítica 24/7 que requiere ventana de corte de minutos usando migración incremental" },
+    { "title": "Escenario 5", "text": "Proyecto con presupuesto ajustado que debe estimar el costo de egress del proveedor origen antes de iniciar" },
+    { "title": "Escenario 6", "text": "Fallo de migración incremental por retención de binlog insuficiente en el proveedor origen" }
   ],
   "mistakes": [
-    "Cutover sin ventana de verificación",
-    "Binlog retention muy corto — DTS se queda atrás",
-    "Sync bidireccional sin resolver conflictos por diseño",
-    "No probar rollback"
+    "No autorizar las IPs salientes de DTS en el firewall del proveedor cloud origen",
+    "No verificar ni extender la retención de binlog/WAL en el origen antes de iniciar",
+    "Asumir compatibilidad total de motor solo por compartir el mismo nombre entre proveedores",
+    "No presupuestar el costo de egress que cobra el proveedor origen por la migración",
+    "Ejecutar el cutover sin confirmar que el lag de la migración incremental llegó a cero",
+    "Deshabilitar el acceso al proveedor origen inmediatamente después del corte, sin ventana de observación"
   ],
   "cli": [
-    {
-      "cmd": "aliyun dts CreateMigrationJob",
-      "desc": "Crear job de migración"
-    },
-    {
-      "cmd": "aliyun dts DescribeMigrationJobs",
-      "desc": "Estado"
-    }
+    { "cmd": "aliyun dts DescribeMigrationJobs --MigrationJobId dtsxxxxx", "desc": "Consultar el estado y el lag de un job de migración cross-cloud" },
+    { "cmd": "aliyun dts ConfigureMigrationJob --SourceEndpoint.InstanceType 'others' --SourceEndpoint.IP <ip-publica-origen>", "desc": "Configurar el endpoint origen en otro proveedor cloud" },
+    { "cmd": "aliyun dts StartMigrationJob --MigrationJobId dtsxxxxx", "desc": "Iniciar la migración tras validar la conectividad" },
+    { "cmd": "aliyun rds DescribeDBInstanceAttribute --DBInstanceId rm-xxxxx", "desc": "Verificar la versión y parámetros de la instancia ApsaraDB for RDS destino" },
+    { "cmd": "aliyun dts DescribeDataCompareReport --DtsJobId dtsxxxxx", "desc": "Revisar el reporte de verificación de integridad de datos" },
+    { "cmd": "aliyun alidns UpdateDomainRecord --RecordId <id> --Value <nuevo-endpoint-rds>", "desc": "Redirigir la cadena de conexión de la aplicación tras el corte" }
   ],
   "glossary": [
-    {
-      "en": "Migration Task",
-      "es": "Tarea de migración",
-      "def": "One-shot o continua."
-    },
-    {
-      "en": "Structure Migration",
-      "es": "Migración de estructura",
-      "def": "Schemas, tablas, índices."
-    },
-    {
-      "en": "Full Migration",
-      "es": "Migración full",
-      "def": "Copia inicial de datos."
-    },
-    {
-      "en": "Incremental Migration",
-      "es": "Migración incremental",
-      "def": "Aplica binlog/WAL cambios continuos."
-    },
-    {
-      "en": "Change Tracking",
-      "es": "Change Tracking",
-      "def": "Publica CDC hacia consumidores (Kafka, código)."
-    },
-    {
-      "en": "Bidirectional Sync",
-      "es": "Sync bidireccional",
-      "def": "Ambas puntas escriben; DTS resuelve conflictos."
-    },
-    {
-      "en": "Data Verification",
-      "es": "Verificación de datos",
-      "def": "Compara integridad source vs target."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Third-party Cloud Platform", "es": "Plataforma cloud de terceros", "def": "El proveedor cloud distinto de Alibaba Cloud donde reside originalmente la base de datos gestionada." },
+    { "en": "Cross-cloud Connectivity", "es": "Conectividad entre nubes", "def": "Mecanismos (acceso público cifrado, VPN, conexión dedicada) que permiten a DTS alcanzar el origen en otro proveedor." },
+    { "en": "IP Whitelisting", "es": "Lista blanca de IP", "def": "Autorización explícita de las IPs de DTS en el firewall del proveedor origen para permitir la conexión." },
+    { "en": "Structure Migration", "es": "Migración de estructura", "def": "Fase de DTS que replica esquema, tablas e índices del origen en el destino." },
+    { "en": "Full Migration", "es": "Migración completa", "def": "Fase de DTS que copia el conjunto de datos existente al iniciar la migración." },
+    { "en": "Incremental Migration", "es": "Migración incremental", "def": "Fase de DTS que aplica los cambios posteriores leyendo binlog/WAL del origen en tiempo real." },
+    { "en": "Binlog / WAL Retention", "es": "Retención de binlog/WAL", "def": "Tiempo que el origen conserva su log de cambios; insuficiente retención rompe la migración incremental." },
+    { "en": "Engine Compatibility", "es": "Compatibilidad de motor", "def": "Grado en que el motor y versión del origen coinciden en comportamiento con ApsaraDB for RDS destino." },
+    { "en": "Heterogeneous Migration", "es": "Migración heterogénea", "def": "Migración entre motores de base de datos distintos, con conversión de tipos de datos y esquema." },
+    { "en": "Egress Cost", "es": "Costo de egress", "def": "Cargo que cobra el proveedor origen por la transferencia de datos saliente hacia otra nube." },
+    { "en": "Data Verification", "es": "Verificación de datos", "def": "Comparación de checksums o conteos entre origen y destino antes de confiar en la migración." },
+    { "en": "Migration Lag", "es": "Retraso de migración", "def": "Diferencia de tiempo entre el estado del destino y el estado más reciente del origen durante la fase incremental." },
+    { "en": "Cutover Window", "es": "Ventana de corte", "def": "Periodo breve, idealmente de solo lectura, en que se confirma el lag en cero y se redirige la aplicación." },
+    { "en": "ApsaraDB for RDS", "es": "ApsaraDB for RDS", "def": "Servicio de base de datos relacional gestionado de Alibaba Cloud, destino típico de este tipo de migración." },
+    { "en": "Connection String Redirection", "es": "Redirección de cadena de conexión", "def": "Actualización del endpoint que usa la aplicación para conectarse, del proveedor origen al nuevo destino." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Data Transmission Service (DTS)?",
-      "options": [
-        "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migracio",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "DTS provee tres capacidades: migración one-shot entre bases heterogéneas (MySQL→PolarDB, Oracle→PostgreSQL, etc.), replicación continua CDC, y sincronización bidireccional. Cero downtime para migraciones críticas."
-    },
-    {
-      "q": "¿Qué es <strong>Migration Task</strong> (Tarea de migración) en Data Transmission Service (DTS)?",
-      "options": [
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Copia inicial de datos.",
-        "Aplica binlog/WAL cambios continuos."
-      ],
-      "answer": 0,
-      "explain": "Migration Task (Tarea de migración): One-shot o continua."
-    },
-    {
-      "q": "¿Qué es <strong>Structure Migration</strong> (Migración de estructura) en Data Transmission Service (DTS)?",
-      "options": [
-        "Schemas, tablas, índices.",
-        "One-shot o continua.",
-        "Copia inicial de datos.",
-        "Aplica binlog/WAL cambios continuos."
-      ],
-      "answer": 0,
-      "explain": "Structure Migration (Migración de estructura): Schemas, tablas, índices."
-    },
-    {
-      "q": "¿Qué es <strong>Full Migration</strong> (Migración full) en Data Transmission Service (DTS)?",
-      "options": [
-        "Copia inicial de datos.",
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Aplica binlog/WAL cambios continuos."
-      ],
-      "answer": 0,
-      "explain": "Full Migration (Migración full): Copia inicial de datos."
-    },
-    {
-      "q": "¿Qué es <strong>Incremental Migration</strong> (Migración incremental) en Data Transmission Service (DTS)?",
-      "options": [
-        "Aplica binlog/WAL cambios continuos.",
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Copia inicial de datos."
-      ],
-      "answer": 0,
-      "explain": "Incremental Migration (Migración incremental): Aplica binlog/WAL cambios continuos."
-    },
-    {
-      "q": "¿Qué es <strong>Change Tracking</strong> (Change Tracking) en Data Transmission Service (DTS)?",
-      "options": [
-        "Publica CDC hacia consumidores (Kafka, código).",
-        "One-shot o continua.",
-        "Schemas, tablas, índices.",
-        "Copia inicial de datos."
-      ],
-      "answer": 0,
-      "explain": "Change Tracking (Change Tracking): Publica CDC hacia consumidores (Kafka, código)."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Data Transmission Service (DTS), ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Data Transmission Service (DTS) en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Data Transmission Service (DTS), el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Data Transmission Service (DTS) es la elección típica:",
-      "options": [
-        "Migración lift-and-shift on-premise → Alibaba Cloud",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Migración lift-and-shift on-premise → Alibaba Cloud."
-    }
+    { "q": "¿Qué distingue principalmente a este escenario de una migración de base de datos on-premise?", "options": ["No requiere ninguna herramienta de Alibaba Cloud", "El origen ya es un servicio gestionado de otro proveedor cloud, con su propio firewall, backups y facturación", "Nunca se puede usar DTS en este caso", "Solo aplica a bases de datos NoSQL"], "answer": 1, "explain": "El reto central es conectar dos plataformas gestionadas de proveedores distintos, no extraer datos de un servidor propio." },
+    { "q": "Un job de DTS cross-cloud falla al intentar conectarse al origen. ¿Cuál es la causa más común según el curso?", "options": ["DTS nunca puede conectarse a otro proveedor cloud", "Las IPs salientes de DTS no fueron autorizadas en el firewall del proveedor ORIGEN", "El destino ApsaraDB for RDS está mal configurado siempre", "Falta instalar un agente en Alibaba Cloud"], "answer": 1, "explain": "El firewall que hay que configurar frecuentemente se olvida es el del lado origen, en la plataforma del otro proveedor." },
+    { "q": "¿Qué consecuencia tiene que el proveedor origen purgue el binlog antes de que DTS lo haya consumido por completo?", "options": ["Ninguna, DTS lo regenera automáticamente", "La migración incremental se rompe y suele requerir reiniciar la Full Migration completa", "Solo afecta a la migración de estructura", "Mejora el rendimiento de la migración"], "answer": 1, "explain": "Sin el binlog necesario, DTS pierde la capacidad de aplicar los cambios incrementales y normalmente hay que reiniciar el proceso desde la carga completa." },
+    { "q": "¿Por qué no basta con que ambos proveedores llamen 'MySQL' a su motor de base de datos para asumir compatibilidad total?", "options": ["Porque MySQL no existe como servicio gestionado", "Porque cada plataforma puede diferir en versión, extensiones propietarias y parámetros de configuración por defecto", "Porque DTS solo soporta un proveedor a la vez", "Porque el nombre del motor determina el precio, no la compatibilidad"], "answer": 1, "explain": "La compatibilidad real depende de versión, extensiones y configuración, no solo del nombre del motor." },
+    { "q": "¿Quién cobra típicamente el costo de egress durante una migración cross-cloud de base de datos?", "options": ["Únicamente Alibaba Cloud", "El proveedor cloud ORIGEN, por sacar los datos hacia otra nube", "Nadie, la transferencia entre nubes siempre es gratuita", "Solo se cobra si se usa DTS en modo incremental"], "answer": 1, "explain": "La mayoría de proveedores cobran por el tráfico de salida hacia fuera de su plataforma, un costo que hay que presupuestar en el proyecto." },
+    { "q": "¿Cuál es el criterio correcto para ejecutar el cutover en una migración con DTS?", "options": ["Que haya pasado al menos una semana desde que empezó la migración", "Que el lag de la migración incremental esté verificado en cero y la validación de datos haya pasado", "Que el equipo tenga disponibilidad ese día", "Que el proveedor origen lo solicite"], "answer": 1, "explain": "El corte debe basarse en evidencia técnica (lag cero + verificación), no en el paso del tiempo." },
+    { "q": "¿Qué recomienda el curso hacer con la aplicación durante la ventana de corte final?", "options": ["Aumentar la carga de escritura para probar el nuevo destino", "Ponerla en modo de solo lectura hasta confirmar que el lag llegó a cero", "Apagar completamente la aplicación por una semana", "No es necesario ningún cambio en la aplicación"], "answer": 1, "explain": "Una breve ventana de solo lectura evita que sigan entrando escrituras al origen mientras se confirma que el destino está sincronizado." },
+    { "q": "¿Qué fase de DTS lee el esquema (tablas, índices, constraints) del origen hacia el destino?", "options": ["Full Migration", "Incremental Migration", "Structure Migration", "Data Verification"], "answer": 2, "explain": "Structure Migration es la fase que replica la definición del esquema antes de copiar los datos en sí." },
+    { "q": "¿Qué mecanismo de DTS compara checksums o conteos entre origen y destino antes de confiar en la migración?", "options": ["Structure Migration", "Data Verification", "Egress billing", "IP Whitelisting"], "answer": 1, "explain": "Data Verification detecta divergencias de datos entre ambos extremos antes del corte definitivo." },
+    { "q": "¿Qué se recomienda respecto al acceso público habilitado temporalmente en la instancia origen para la migración?", "options": ["Dejarlo abierto de forma permanente después del proyecto", "Deshabilitarlo de nuevo una vez completada la migración si ya no es necesario", "Nunca debe habilitarse bajo ninguna circunstancia", "Solo se habilita después del cutover, nunca antes"], "answer": 1, "explain": "El acceso público es una necesidad temporal del proyecto; dejarlo abierto sin necesidad es un riesgo de seguridad innecesario." },
+    { "q": "En una migración heterogénea (motor distinto entre origen y destino), ¿qué se recomienda antes de confiar el esquema resultante a producción?", "options": ["Nada, DTS garantiza compatibilidad perfecta siempre", "Una revisión manual del esquema convertido, ya que la conversión automática de tipos puede no ser exacta", "Omitir la fase de Structure Migration por completo", "Ejecutar solo la fase incremental"], "answer": 1, "explain": "La conversión automática entre motores distintos ayuda mucho, pero no sustituye una revisión manual antes de producción." },
+    { "q": "¿Qué se debe mantener disponible tras el cutover, según las buenas prácticas del curso?", "options": ["Nada, se puede eliminar todo del proveedor origen de inmediato", "El proveedor origen accesible (aunque sea de solo lectura) durante un periodo de observación", "Solo el firewall del origen, sin la base de datos", "El AccessKey usado durante la migración"], "answer": 1, "explain": "Mantener el origen disponible temporalmente permite comparar datos o revertir si aparece algún problema tras el corte." },
+    { "q": "¿Qué factor, además del volumen de datos, determina fuertemente la duración de la Full Migration en un escenario cross-cloud?", "options": ["El color del dashboard de DTS", "El ancho de banda real disponible entre ambos proveedores cloud", "El número de tablas vacías en el esquema", "El nombre de la base de datos"], "answer": 1, "explain": "La velocidad de transferencia entre dos proveedores distintos depende del throughput real de red disponible entre ellos, no solo de la capacidad de DTS." }
   ],
-  "exam_focus": "3 fases de migración, CDC vs bulk, sync bidireccional caveats, ventana de cutover.",
+  "exam_focus": "El examen suele evaluar: (a) conectividad y firewall del lado del proveedor ORIGEN, distinto del lado Alibaba Cloud, (b) retención de binlog/WAL como requisito para la migración incremental, (c) compatibilidad de motor/versión entre plataformas gestionadas distintas, (d) costos de egress del proveedor origen, (e) criterio de cutover basado en lag cero y verificación de datos.",
   "official_intro": "This course aims to help users and engineers who want to migrate databases from third-party cloud platforms to Alibaba Cloud. By learning this course, you can get a comprehensive understanding of what cross-platform database migration is, the DTS, a common tool of database migration on Alibaba Cloud, and the scenarios for migrating cloud databases from third-party cloud platforms to Alibaba Cloud ApsaraDB for RDS, so as to provide a reference for database migration across cloud platforms.",
   "recommended_for": "Cloud Computing Engineers, Cloud Service Providers, Cloud Computing Enthusiasts",
   "source_url": "https://edu.alibabacloud.com/certification/clouder-migration-database",

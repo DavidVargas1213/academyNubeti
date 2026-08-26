@@ -2,477 +2,223 @@
   "detailed": true,
   "course_id": "Curso Nº certification-clouder-maliciouscode",
   "title_en": "Malicious Code Mechanism Deep Dive",
-  "title_es": "Malicious Code Mechanism Profundización",
+  "title_es": "Profundización en los Mecanismos del Código Malicioso",
+  "title_es_html": "Profundización en los <em>Mecanismos del Código Malicioso</em>",
   "duration_es": "58 minutos",
   "level_es": "Avanzado",
   "category_es": "Seguridad",
   "subcategory_es": "Seguridad en la Nube",
   "language_es": "Inglés",
   "url": "https://edu.alibabacloud.com/certification/clouder_maliciouscode",
-  "lead": "Guía completa en español para el curso «Malicious Code Mechanism Deep Dive» de Alibaba Cloud Academy. Cubre en profundidad Seguridad en Alibaba Cloud. Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Diseñada para preparación de certificación ACA/ACP con arquitecturas de alta escala: 6 lecciones, arquitectura de referencia, escenarios reales, errores comunes, comandos CLI, glosario y batería de preguntas tipo examen.",
+  "lead": "Guía en español sobre cómo funciona el código malicioso por dentro: desde la taxonomía clásica (virus, gusano, troyano) hasta las amenazas que más golpean a las cargas de trabajo en la nube hoy — troyanos de acceso remoto, ransomware, webshells y cryptojacking. El objetivo no es solo reconocer nombres, sino entender el mecanismo de infección, persistencia y comunicación de cada familia para poder detectarla y contenerla.",
   "objectives": [
-    "<strong>Comprender</strong> el propósito, arquitectura y componentes de <em>Seguridad en Alibaba Cloud</em>.",
-    "<strong>Dominar</strong> los conceptos clave: WAF, Anti-DDoS Basic, Anti-DDoS Pro, Anti-DDoS Premium, Cloud Firewall.",
-    "<strong>Diseñar</strong> arquitecturas HA multi-zona con Seguridad en Alibaba Cloud y servicios relacionados.",
-    "<strong>Configurar</strong> el servicio siguiendo mejores prácticas de seguridad (RAM, KMS, cifrado).",
-    "<strong>Optimizar</strong> costos eligiendo modelo de facturación adecuado al patrón de carga.",
-    "<strong>Identificar</strong> y evitar los errores comunes de operación en producción.",
-    "<strong>Responder</strong> preguntas de certificación ACA/ACP con confianza."
+    "<strong>Clasificar</strong> el código malicioso por su mecanismo de propagación (virus, gusano, troyano) y distinguirlo de malware por objetivo (ransomware, spyware, cryptominer).",
+    "<strong>Explicar</strong> cómo un atacante obtiene ejecución inicial en una instancia cloud: credenciales filtradas, servicios expuestos, vulnerabilidades de aplicación y cadenas de suministro de software.",
+    "<strong>Describir</strong> el ciclo de vida de un troyano de acceso remoto (RAT): entrega, persistencia, comunicación con C2 y exfiltración.",
+    "<strong>Analizar</strong> la mecánica técnica del ransomware moderno, incluida la doble extorsión, y por qué el backup inmutable es la defensa que realmente importa.",
+    "<strong>Reconocer</strong> cómo se planta y opera un webshell tras explotar una vulnerabilidad de subida de archivos o ejecución remota de código.",
+    "<strong>Entender</strong> el cryptojacking como la amenaza más común en cuentas cloud mal aseguradas, y su relación directa con AccessKeys filtradas.",
+    "<strong>Aplicar</strong> el vocabulario de detección y respuesta (IOC, EDR, sandboxing) que exige el examen de certificación."
   ],
-  "architecture": "Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
+  "architecture": "Cadena de ataque típica sobre una carga de trabajo cloud: (1) el atacante obtiene un punto de entrada — credenciales filtradas en un repositorio público, un puerto de gestión expuesto, o una vulnerabilidad de aplicación sin parchear; (2) planta un artefacto inicial (webshell, script de descarga, binario) que le da ejecución persistente; (3) establece comunicación saliente hacia infraestructura de Comando y Control (C2), normalmente disfrazada de tráfico HTTPS legítimo; (4) escala el compromiso — busca credenciales adicionales, se mueve lateralmente, o despliega la carga final (minero, ransomware, exfiltración de datos); (5) en paralelo, agentes de detección como Security Center (SAS) comparan el comportamiento de la instancia contra líneas base conocidas, generan Indicadores de Compromiso (IOC) y disparan alertas que deberían activar un procedimiento de contención y erradicación.",
   "lessons": [
     {
-      "title_es": "1 · Introducción a Seguridad en Alibaba Cloud",
-      "title_en": "Introduction to Seguridad en Alibaba Cloud",
-      "intro": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR). Antes de entrar en detalles operativos, es fundamental entender POR QUÉ existe este servicio y qué lo diferencia de alternativas. Un ingeniero cloud debe poder justificar la elección del servicio ante un arquitecto o cliente.",
+      "title_es": "1 · Taxonomía del código malicioso",
+      "title_en": "Malicious Code Taxonomy",
+      "intro": "Antes de hablar de amenazas específicas hace falta un vocabulario preciso. El examen distingue familias de malware por su mecanismo de propagación, no solo por el daño que causan — dos preguntas pueden describir el mismo síntoma (archivos cifrados, CPU al 100%) y esperar respuestas distintas según cómo llegó el código malicioso al sistema.",
       "points": [
-        "<strong>Problema que resuelve</strong>: Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR).",
-        "<strong>Alternativas</strong>: comparar con soluciones tradicionales on-premise y con otros servicios cloud.",
-        "<strong>Ecosistema</strong>: cómo Seguridad en Alibaba Cloud se integra con VPC, RAM, KMS, CloudMonitor, ActionTrail.",
-        "<strong>Modelo de responsabilidad compartida</strong>: qué gestiona Alibaba Cloud y qué es del cliente.",
-        "<strong>Regiones y zonas</strong>: dónde está disponible y consideraciones de latencia.",
-        "<strong>SLA</strong>: garantías de disponibilidad, generalmente 99.95%+ para HA editions."
+        "<strong>Virus</strong>: código que se adjunta a un archivo o programa anfitrión y necesita que ese anfitrión se ejecute para propagarse; no viaja de forma autónoma por la red.",
+        "<strong>Gusano (worm)</strong>: se propaga de forma autónoma explotando vulnerabilidades de red o servicios expuestos, sin necesitar interacción humana ni un archivo anfitrión — por eso los gusanos pueden saturar una red entera en minutos.",
+        "<strong>Troyano (trojan)</strong>: se presenta como software legítimo o útil, pero oculta funcionalidad maliciosa; a diferencia del virus y el gusano, depende del engaño para que la víctima lo ejecute voluntariamente.",
+        "<strong>Clasificación por objetivo, no por propagación</strong>: ransomware (cifra y extorsiona), spyware (roba información silenciosamente), adware (inyecta publicidad), rootkit (oculta la presencia de otro malware al sistema operativo) — estas categorías se superponen con virus/gusano/troyano según cómo se distribuyan.",
+        "<strong>Malware sin archivo (fileless)</strong>: opera en memoria o abusa de herramientas legítimas del sistema (PowerShell, WMI) sin dejar un binario detectable en disco, dificultando la detección basada en firmas.",
+        "<strong>Por qué importa la taxonomía en producción</strong>: la familia determina la respuesta — un gusano exige aislar la red inmediatamente; un troyano exige auditar qué credenciales tocó; un rootkit exige reconstruir la instancia desde una imagen limpia porque no se puede confiar en las herramientas del sistema comprometido."
       ],
       "keypoint": {
         "label": "Concepto clave",
-        "text": "Seguridad en Alibaba Cloud es una pieza fundamental de Seguridad en Alibaba Cloud. Cualquier arquitectura real lo combina con RAM (identidad), VPC (red) y CloudMonitor (observabilidad)."
+        "text": "La pregunta de examen distingue virus, gusano y troyano por su <em>mecanismo de propagación</em> (necesita archivo anfitrión / se propaga solo por red / necesita engañar al usuario), no por la gravedad del daño."
       }
     },
     {
-      "title_es": "2 · Arquitectura de referencia",
-      "title_en": "Reference Architecture",
-      "intro": "La arquitectura ideal usando Seguridad en Alibaba Cloud no es opcional en el examen — hay preguntas donde debes elegir el diagrama correcto. Este módulo describe el patrón canónico y sus variantes.",
+      "title_es": "2 · Vectores de infección en entornos cloud",
+      "title_en": "Infection Vectors in Cloud Environments",
+      "intro": "En la nube, el vector de entrada más común no es un correo de phishing sino un error de configuración o una credencial expuesta. Entender esto cambia por completo dónde se invierte el esfuerzo de defensa.",
       "points": [
-        "<strong>Patrón canónico</strong>: Defensa en capas: Anti-DDoS scrubs tráfico volumétrico → WAF filtra OWASP → SLB con TLS → Security Groups y NACLs restringen a nivel red → RAM controla API → KMS cifra en reposo → SAS detecta compromisos en instancias → ActionTrail registra todo → SLS agrega y alerta.",
-        "<strong>Multi-AZ</strong>: distribución en 2+ zonas para tolerar fallas de data center.",
-        "<strong>Componentes de soporte</strong>: SLB al frente, RDS/OSS para datos, CDN para edge, KMS para claves.",
-        "<strong>Networking</strong>: VPC dedicada, subredes por zona, Security Groups en capas.",
-        "<strong>Observabilidad</strong>: CloudMonitor métricas + SLS logs + ActionTrail audit + ARMS APM.",
-        "<strong>Automatización</strong>: ROS/Terraform para IaC — nunca configurar producción a mano."
-      ],
-      "keypoint": {
-        "label": "Diagrama típico",
-        "text": "Internet → SLB (multi-zona) → Seguridad en Alibaba Cloud (zonas A+B) → RDS HA + OSS. RAM controla acceso, KMS cifra, CloudMonitor observa, ActionTrail audita."
-      }
-    },
-    {
-      "title_es": "3 · Conceptos y componentes esenciales",
-      "title_en": "Core Concepts and Components",
-      "intro": "El grueso del examen evalúa dominio conceptual: nombres exactos, diferencias sutiles, cuándo aplica cada componente. Este módulo desglosa los conceptos que DEBES memorizar.",
-      "points": [
-        "<strong>Web Application Firewall</strong> <em>(WAF)</em>: Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "<strong>Anti-DDoS Basic</strong> <em>(Anti-DDoS Basic)</em>: Protección gratuita hasta 5 Gbps.",
-        "<strong>Anti-DDoS Pro</strong> <em>(Anti-DDoS Pro)</em>: Scrubbing centers para ataques grandes.",
-        "<strong>Anti-DDoS Premium</strong> <em>(Anti-DDoS Premium)</em>: Global, para negocios fuera de China.",
-        "<strong>Cloud Firewall</strong> <em>(Cloud Firewall)</em>: Firewall centralizado inter-VPC, internet, host.",
-        "<strong>Security Center</strong> <em>(SAS / Security Center)</em>: EDR + gestión vulnerabilidades + baseline check.",
-        "<strong>Key Management Service</strong> <em>(KMS)</em>: Gestión de claves; integrado con OSS, RDS, EBS.",
-        "<strong>Secrets Manager</strong> <em>(Secrets Manager)</em>: Almacén de secretos con rotación automática."
-      ],
-      "keypoint": {
-        "label": "Memoriza",
-        "text": "Los distractores del examen usan nombres reales del producto en contextos incorrectos. Distinguir con precisión gana puntos rápido."
-      }
-    },
-    {
-      "title_es": "4 · Configuración y operación práctica",
-      "title_en": "Configuration and Operations",
-      "intro": "La certificación asume que has operado el servicio: creado recursos, ajustado parámetros, resuelto problemas. Este módulo cubre el day-1 y day-2 típicos.",
-      "points": [
-        "<strong>Creación</strong>: consola web para exploración, CLI/SDK para automatización, ROS/Terraform para producción.",
-        "<strong>Configuración segura</strong>: RAM roles (nunca AccessKey embebida), Security Groups restrictivos, cifrado por defecto.",
-        "<strong>Networking</strong>: VPC/VSwitch correcto, endpoints privados (PrivateLink) cuando aplique.",
-        "<strong>Backups y snapshots</strong>: política automática + prueba de restauración periódica.",
-        "<strong>Monitoreo</strong>: métricas base + alarmas en umbrales críticos + dashboards en CloudMonitor.",
-        "<strong>Logs</strong>: envío a SLS con retention adecuada; ActionTrail cross-región.",
-        "<strong>Facturación</strong>: elegir entre pay-as-you-go, subscription, reserved o savings plan según patrón."
+        "<strong>AccessKey filtrada</strong>: subir una clave de acceso a un repositorio público de código (GitHub, GitLab) es, en la práctica, el vector de compromiso de cuenta cloud más común — bots automatizados escanean repositorios públicos en minutos buscando patrones de credenciales.",
+        "<strong>Servicios de gestión expuestos</strong>: SSH (22) o RDP (3389) abiertos a 0.0.0.0/0 reciben intentos de fuerza bruta desde el primer minuto; una contraseña débil o reutilizada es la puerta de entrada.",
+        "<strong>Vulnerabilidades de aplicación</strong>: subida de archivos sin validación, deserialización insegura o inyección de comandos permiten a un atacante ejecutar código arbitrario en el servidor sin necesitar credenciales.",
+        "<strong>Cadena de suministro de software</strong>: una dependencia de terceros (librería, imagen de contenedor, plugin) comprometida introduce código malicioso de forma transitiva, sin que el equipo haya cometido ningún error directo.",
+        "<strong>Imágenes de disco no verificadas</strong>: usar una imagen de máquina de un origen no confiable (Marketplace de terceros, imagen compartida) puede introducir malware preinstalado antes incluso de la primera conexión."
       ],
       "keypoint": {
         "label": "Tip de examen",
-        "text": "Cuando una pregunta pide 'la manera más segura Y económica', prioriza siempre seguridad si hay tensión. Alibaba Cloud (como AWS/Azure) evalúa arquitecto responsable, no el más barato."
+        "text": "Cuando el enunciado describe un compromiso de cuenta cloud sin mencionar phishing ni ingeniería social, la causa más probable que el examen espera es una <em>AccessKey filtrada</em> o un servicio de gestión expuesto, no un vector tradicional de endpoint."
       }
     },
     {
-      "title_es": "5 · Alta disponibilidad, seguridad y optimización",
-      "title_en": "HA, Security and Cost Optimization",
-      "intro": "La diferencia entre un ingeniero cloud junior y un arquitecto es la capacidad de balancear disponibilidad, seguridad y costo. Este módulo profundiza esas tres dimensiones.",
+      "title_es": "3 · Troyanos de acceso remoto (RAT) y comunicación C2",
+      "title_en": "Remote Access Trojans (RAT) and C2 Communication",
+      "intro": "Un RAT le da al atacante control interactivo persistente sobre el sistema comprometido, como si tuviera una sesión remota abierta permanentemente. Su valor para el atacante depende de dos cosas: sobrevivir a un reinicio (persistencia) y poder recibir órdenes sin ser detectado (comunicación C2).",
       "points": [
-        "<strong>Seguridad</strong>: Nunca usar AccessKey de cuenta raíz — crear usuarios RAM",
-        "<strong>Seguridad</strong>: MFA obligatorio en todo usuario humano",
-        "<strong>Seguridad</strong>: RAM roles para servicios (no AccessKeys embebidas)",
-        "<strong>Seguridad</strong>: Rotación automática de credenciales con Secrets Manager",
-        "<strong>Seguridad</strong>: Cifrado en reposo por defecto (OSS, RDS, EBS)",
-        "<strong>Buenas prácticas</strong>: WAF antes de cualquier app pública",
-        "<strong>Buenas prácticas</strong>: ActionTrail en TODAS las regiones + destino inmutable"
+        "<strong>Entrega</strong>: normalmente llega como troyano — un binario disfrazado, un script descargado tras explotar una vulnerabilidad, o una tarea programada creada por un atacante ya presente en el sistema.",
+        "<strong>Persistencia</strong>: se registra como servicio del sistema, tarea programada, entrada de arranque automático o hook en un proceso legítimo, para sobrevivir a un reinicio de la instancia.",
+        "<strong>Comando y Control (C2)</strong>: el RAT inicia conexiones salientes periódicas (beaconing) hacia un servidor controlado por el atacante, normalmente disfrazadas de tráfico HTTPS normal para evadir firewalls básicos que solo inspeccionan el destino y no el contenido.",
+        "<strong>Beaconing de bajo y lento perfil</strong>: RATs sofisticados esperan minutos u horas entre conexiones, y varían el intervalo, precisamente para no generar un patrón de tráfico periódico fácil de detectar por reglas simples.",
+        "<strong>Capacidades típicas</strong>: ejecución remota de comandos, captura de pantalla o teclado, transferencia de archivos, y pivote hacia otros sistemas de la misma red — el RAT es a menudo el punto de apoyo desde el que se lanza el resto del ataque.",
+        "<strong>Detección</strong>: el indicio más confiable no siempre es el binario (puede evadir firmas), sino el tráfico de red saliente anómalo hacia dominios o IPs de reputación desconocida, visible en logs de flujo o en un firewall con inspección de capa de aplicación."
       ],
       "keypoint": {
-        "label": "Regla mnemotécnica",
-        "text": "<strong>D-S-C</strong>: primero Disponibilidad (multi-AZ, backups, DR), segundo Seguridad (RAM least-privilege, KMS, TLS, ActionTrail), tercero Costo (reservas, spot, lifecycle, right-sizing)."
+        "label": "Concepto clave",
+        "text": "Un RAT no es dañino por sí mismo — es una <em>plataforma de acceso</em>. El daño real (robo de datos, ransomware, minería) llega después, entregado a través del canal C2 que el RAT ya estableció."
       }
     },
     {
-      "title_es": "6 · Errores comunes y estrategia de examen",
-      "title_en": "Common Mistakes and Exam Strategy",
-      "intro": "Los exámenes ACA/ACP están diseñados a partir de errores reales observados en clientes. Conocer los antipatterns es tan valioso como conocer las buenas prácticas.",
+      "title_es": "4 · Ransomware: cifrado y doble extorsión",
+      "title_en": "Ransomware: Encryption and Double Extortion",
+      "intro": "El ransomware moderno rara vez es un ataque de oportunidad aislado — suele ser la etapa final de un compromiso que empezó con un RAT o credenciales filtradas, ejecutado cuando el atacante ya identificó qué sistemas causarán más presión si se cifran.",
       "points": [
-        "<strong>Antipattern</strong>: AccessKey de root en código — la peor pesadilla",
-        "<strong>Antipattern</strong>: SG 0.0.0.0/0 en puertos administrativos",
-        "<strong>Antipattern</strong>: Sin MFA en usuarios administradores",
-        "<strong>Antipattern</strong>: Anti-DDoS Basic asumido como suficiente para negocio crítico",
-        "<strong>Antipattern</strong>: KMS keys sin rotación",
-        "<strong>Antipattern</strong>: ActionTrail solo en región principal",
-        "<strong>Regla de oro</strong>: cuando dudes entre 2 opciones del examen, elige la que combina Multi-AZ + RAM least-privilege + cifrado.",
-        "<strong>Estrategia</strong>: lee la pregunta buscando palabras clave — 'más económico', 'crítico', 'compliance', 'multi-región'."
+        "<strong>Mecánica de cifrado</strong>: el malware cifra archivos con una clave simétrica generada localmente, que a su vez se cifra con la clave pública del atacante — sin la clave privada correspondiente (en manos del atacante), la recuperación matemática es inviable.",
+        "<strong>Reconocimiento previo</strong>: antes de cifrar, un atacante sofisticado suele mapear la red, identificar y eliminar o cifrar primero los backups accesibles, y localizar los sistemas más críticos — maximizando la presión antes de activar el cifrado.",
+        "<strong>Doble extorsión</strong>: además de cifrar, el atacante exfiltra una copia de los datos antes de cifrarlos, y amenaza con publicarlos si no se paga — esto vuelve inútil restaurar desde backup como única respuesta, porque la amenaza de fuga persiste.",
+        "<strong>Por qué pagar no garantiza nada</strong>: no hay garantía de que el atacante entregue una clave funcional, ni de que no vuelva a extorsionar, ni de que no venda igualmente los datos exfiltrados — la mayoría de guías de respuesta a incidentes desaconsejan pagar como primera opción.",
+        "<strong>La defensa real es el backup inmutable y aislado</strong>: un backup accesible desde la misma red o cuenta comprometida puede cifrarse o borrarse junto con el resto; la mitigación efectiva requiere copias en almacenamiento con retención inmutable (WORM) o en una cuenta/región separada, con acceso mínimo.",
+        "<strong>Prueba de restauración</strong>: un backup nunca probado es una promesa, no una garantía — la certificación espera que sepas que restaurar periódicamente (no solo respaldar) forma parte de cualquier plan serio de continuidad."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Si el escenario menciona que el atacante exfiltró datos ANTES de cifrarlos y amenaza con publicarlos, es <em>doble extorsión</em> — restaurar desde backup soluciona la disponibilidad, pero no elimina el riesgo de fuga."
+      }
+    },
+    {
+      "title_es": "5 · Webshell: plantado, operación y detección",
+      "title_en": "Webshell: Deployment, Operation, and Detection",
+      "intro": "Un webshell es, en esencia, una puerta trasera escrita en el mismo lenguaje que la aplicación web comprometida (PHP, JSP, ASPX), subida al servidor tras explotar una vulnerabilidad — y accesible después simplemente visitando su URL.",
+      "points": [
+        "<strong>Cómo se planta</strong>: normalmente a través de una vulnerabilidad de subida de archivos sin validación de tipo/extensión, una vulnerabilidad de ejecución remota de código, o credenciales de administración web comprometidas que permiten editar archivos del sitio.",
+        "<strong>Cómo opera</strong>: una vez subido, el atacante interactúa con el webshell por HTTP/HTTPS normal — desde su perspectiva es indistinguible de tráfico web legítimo, lo que lo hace difícil de detectar solo con reglas de firewall de red.",
+        "<strong>Capacidades típicas</strong>: ejecución de comandos del sistema operativo, navegación del sistema de archivos, subida/descarga de archivos adicionales, y a menudo un punto de apoyo para escalar privilegios o moverse lateralmente.",
+        "<strong>Ofuscación</strong>: los webshells modernos codifican su contenido (base64, cifrado simple) y usan nombres de archivo que imitan archivos legítimos del framework, dificultando la detección visual en el código fuente.",
+        "<strong>Relación con Web Tampering Protection</strong>: un módulo de protección contra manipulación web (como el de WAF) detecta el webshell como una desviación no autorizada del contenido publicado frente a una línea base — pero la alerta es un síntoma; la causa raíz (la vulnerabilidad que permitió subirlo) debe investigarse y cerrarse aparte.",
+        "<strong>Persistencia adicional</strong>: un atacante experimentado no deja solo un webshell — suele crear cuentas de administrador ocultas o tareas programadas como respaldo, por lo que eliminar el webshell encontrado no garantiza haber cerrado todos los accesos."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Encontrar un webshell nunca es el final de la investigación — implica que existió una vulnerabilidad de ejecución de código o subida de archivos, y esa causa raíz debe cerrarse o el atacante simplemente sube otro."
+      }
+    },
+    {
+      "title_es": "6 · Cryptojacking y botnets en la nube",
+      "title_en": "Cryptojacking and Cloud Botnets",
+      "intro": "El cryptojacking es, en volumen, una de las amenazas más comunes contra cuentas cloud mal aseguradas — no roba datos ni pide rescate, simplemente secuestra cómputo para minar criptomonedas, generando una factura inesperada en lugar de una fuga visible.",
+      "points": [
+        "<strong>Mecánica</strong>: tras obtener ejecución (típicamente vía AccessKey filtrada o servicio expuesto), el atacante despliega un binario de minería que consume CPU/GPU al máximo, a veces disfrazado con un nombre de proceso legítimo del sistema.",
+        "<strong>Automatización a escala</strong>: los atacantes escanean rangos de IP y repositorios públicos de forma masiva y automatizada — muchas cuentas comprometidas nunca fueron un objetivo específico, simplemente coincidieron con un patrón vulnerable detectado por un bot.",
+        "<strong>Señal de alerta típica</strong>: un salto repentino e inexplicable en la factura de cómputo, o instancias con CPU sostenida al 100% sin una carga de trabajo legítima que lo justifique.",
+        "<strong>Botnets cloud-native</strong>: además de minar, el atacante puede reclutar la instancia comprometida en una botnet más amplia, usándola para lanzar ataques DDoS contra terceros o para escanear otras cuentas — la instancia se convierte en atacante sin que su dueño lo sepa.",
+        "<strong>Por qué las AccessKeys son el objetivo número uno</strong>: una AccessKey con permisos amplios permite al atacante crear instancias nuevas directamente vía API específicamente para minar, sin necesitar comprometer ninguna instancia existente — de ahí la importancia de rotarlas y nunca embeberlas en código."
+      ],
+      "keypoint": {
+        "label": "Tip de examen",
+        "text": "Cuando el enunciado describe una factura de cómputo anómala sin exfiltración de datos evidente, la respuesta suele ser <em>cryptojacking</em>, casi siempre originado en una AccessKey filtrada o expuesta públicamente."
+      }
+    },
+    {
+      "title_es": "7 · Detección y respuesta",
+      "title_en": "Detection and Response",
+      "intro": "Reconocer la familia de malware es solo la mitad del examen — la otra mitad evalúa el vocabulario y el proceso para detectarlo y responder ante él en un entorno cloud real.",
+      "points": [
+        "<strong>Indicador de Compromiso (IOC)</strong>: un artefacto observable (hash de archivo, IP de C2, patrón de tráfico, nombre de proceso) que sugiere que un sistema fue comprometido — se comparten entre organizaciones para detección proactiva.",
+        "<strong>EDR (Endpoint Detection and Response)</strong>: agente que monitorea comportamiento a nivel de proceso/sistema en tiempo real, más allá de firmas estáticas — detecta patrones como un proceso de Office lanzando PowerShell, típico de ataques fileless.",
+        "<strong>Security Center / SAS</strong>: el servicio de Alibaba Cloud que combina detección de vulnerabilidades, comparación contra líneas base de configuración, y alertas de comportamiento anómalo (webshell, minería, fuerza bruta) sobre instancias ECS.",
+        "<strong>Sandboxing</strong>: ejecutar un artefacto sospechoso en un entorno aislado para observar su comportamiento (qué archivos toca, a qué IPs se conecta) sin arriesgar el sistema de producción — clave cuando el análisis estático no es concluyente.",
+        "<strong>Aislamiento como primer paso de contención</strong>: ante una infección confirmada, aislar la instancia a nivel de red (Security Group restrictivo o desconexión de VPC) suele preceder a cualquier intento de limpieza, para cortar la comunicación C2 mientras se investiga.",
+        "<strong>Reconstruir, no limpiar, ante compromiso profundo</strong>: si hay evidencia de rootkit o acceso de administrador comprometido, la recomendación estándar es destruir la instancia y reconstruirla desde una imagen limpia, no intentar eliminar el malware manualmente — no se puede confiar en las herramientas de un sistema potencialmente comprometido a nivel de kernel."
+      ],
+      "keypoint": {
+        "label": "Concepto clave",
+        "text": "Ante compromiso confirmado, el orden operativo es: aislar → investigar (IOC) → contener/erradicar → reconstruir desde imagen limpia si el compromiso es profundo → revisar la causa raíz del vector de entrada."
+      }
+    },
+    {
+      "title_es": "8 · Errores comunes y estrategia de examen",
+      "title_en": "Common Mistakes and Exam Strategy",
+      "intro": "Las preguntas más difíciles de este curso combinan dos conceptos — por ejemplo, un vector de entrada con una familia de malware — y esperan que reconozcas ambos en el mismo enunciado.",
+      "points": [
+        "<strong>Antipatrón</strong>: tratar todo el malware como \"un virus\" en el reporte de incidente, perdiendo la distinción entre propagación (virus/gusano/troyano) y objetivo (ransomware/spyware/miner) que el examen sí distingue.",
+        "<strong>Antipatrón</strong>: asumir que restaurar desde backup cierra un incidente de ransomware sin investigar si hubo doble extorsión (exfiltración previa).",
+        "<strong>Antipatrón</strong>: intentar \"limpiar\" manualmente una instancia con evidencia de rootkit o webshell con persistencia adicional, en vez de reconstruirla desde una imagen limpia.",
+        "<strong>Antipatrón</strong>: no rotar AccessKeys expuestas accidentalmente en un repositorio público, asumiendo que borrarlas del historial de Git es suficiente (los bots ya las capturaron).",
+        "<strong>Antipatrón</strong>: ignorar picos anómalos de CPU o de factura como \"un bug\", sin investigar cryptojacking.",
+        "<strong>Regla de oro</strong>: cuando el enunciado combina un vector de entrada (credencial filtrada, servicio expuesto, vulnerabilidad de aplicación) con un síntoma (CPU alta, archivos cifrados, tráfico saliente anómalo), identifica primero el vector — ahí está la causa raíz que el examen espera que cierres."
       ],
       "keypoint": {
         "label": "Estrategia final",
-        "text": "Lee cada pregunta dos veces. Descarta las 2 opciones obviamente incorrectas. Entre las 2 finalistas, elige la que sigue el modelo de <em>responsabilidad compartida</em> y prioriza HA + seguridad."
+        "text": "Lee cada escenario buscando dos piezas de información: cómo entró el atacante y qué hizo una vez dentro. La respuesta correcta casi siempre atiende ambas, no solo el síntoma más visible."
       }
     }
   ],
   "scenarios": [
-    {
-      "title": "Escenario 1",
-      "text": "Protección web PCI-DSS con WAF + Anti-DDoS"
-    },
-    {
-      "title": "Escenario 2",
-      "text": "Zero trust interno con Cloud Firewall entre VPCs"
-    },
-    {
-      "title": "Escenario 3",
-      "text": "Detección de PII automática con SDDP"
-    },
-    {
-      "title": "Escenario 4",
-      "text": "Rotación automática de secretos con KMS"
-    },
-    {
-      "title": "Escenario 5",
-      "text": "Audit trail completo para compliance ISO 27001"
-    }
+    { "title": "Escenario 1", "text": "Un desarrollador sube accidentalmente una AccessKey a un repositorio público de GitHub; minutos después aparecen decenas de instancias ECS nuevas minando criptomoneda" },
+    { "title": "Escenario 2", "text": "Un formulario de subida de archivos sin validación de extensión permite plantar un webshell en PHP, detectado luego por una alerta de web tampering" },
+    { "title": "Escenario 3", "text": "Una base de datos de producción aparece cifrada junto con una nota de rescate; los logs muestran exfiltración de datos hacia una IP externa horas antes del cifrado" },
+    { "title": "Escenario 4", "text": "Security Center detecta un proceso desconocido con conexiones salientes periódicas hacia un dominio de reputación desconocida — indicio de un RAT con beaconing" },
+    { "title": "Escenario 5", "text": "Una instancia comprometida se usa para escanear otras cuentas cloud y lanzar tráfico DDoS de bajo volumen — reclutada en una botnet sin que el dueño lo note" },
+    { "title": "Escenario 6", "text": "Tras erradicar un webshell, el equipo descubre una cuenta de administrador oculta creada por el atacante como acceso de respaldo" }
   ],
   "mistakes": [
-    "AccessKey de root en código — la peor pesadilla",
-    "SG 0.0.0.0/0 en puertos administrativos",
-    "Sin MFA en usuarios administradores",
-    "Anti-DDoS Basic asumido como suficiente para negocio crítico",
-    "KMS keys sin rotación",
-    "ActionTrail solo en región principal"
+    "Confundir mecanismo de propagación (virus/gusano/troyano) con objetivo del ataque (ransomware/spyware/miner) en el análisis de un incidente",
+    "Restaurar desde backup sin investigar si hubo exfiltración previa (doble extorsión)",
+    "Intentar limpiar manualmente una instancia con evidencia de rootkit en vez de reconstruirla desde imagen limpia",
+    "No rotar una AccessKey filtrada asumiendo que basta con eliminarla del historial de Git",
+    "Ignorar picos de CPU o de factura como ruido en vez de investigar cryptojacking",
+    "Dar por cerrado un incidente tras eliminar el webshell encontrado, sin buscar accesos de persistencia adicionales"
   ],
   "cli": [
-    {
-      "cmd": "aliyun ram CreateUser --UserName ...",
-      "desc": "Crear usuario RAM"
-    },
-    {
-      "cmd": "aliyun ram AttachPolicyToUser",
-      "desc": "Adjuntar policy"
-    },
-    {
-      "cmd": "aliyun kms CreateKey",
-      "desc": "Crear clave KMS"
-    },
-    {
-      "cmd": "aliyun actiontrail CreateTrail",
-      "desc": "Crear trail multi-región"
-    }
+    { "cmd": "aliyun sas DescribeSuspEvents", "desc": "Consultar eventos sospechosos detectados por Security Center" },
+    { "cmd": "aliyun sas DescribeWebLockStatus", "desc": "Consultar el estado de protección contra manipulación web (webshell/tampering)" },
+    { "cmd": "aliyun ram ListAccessKeys --UserName usuario", "desc": "Listar AccessKeys de un usuario RAM para auditar antigüedad y detectar claves no rotadas" },
+    { "cmd": "aliyun ram DeleteAccessKey --UserAccessKeyId AKID... --UserName usuario", "desc": "Revocar de inmediato una AccessKey filtrada o comprometida" },
+    { "cmd": "aliyun ecs ModifySecurityGroupRule --SecurityGroupId sg-xxxxx --Policy drop", "desc": "Aislar una instancia comprometida restringiendo su Security Group como contención inicial" },
+    { "cmd": "aliyun actiontrail LookupEvents --EventName CreateInstance", "desc": "Auditar en ActionTrail la creación reciente de instancias, útil para detectar minería no autorizada" }
   ],
   "glossary": [
-    {
-      "en": "WAF",
-      "es": "Web Application Firewall",
-      "def": "Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "en": "Anti-DDoS Basic",
-      "es": "Anti-DDoS Basic",
-      "def": "Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "en": "Anti-DDoS Pro",
-      "es": "Anti-DDoS Pro",
-      "def": "Scrubbing centers para ataques grandes."
-    },
-    {
-      "en": "Anti-DDoS Premium",
-      "es": "Anti-DDoS Premium",
-      "def": "Global, para negocios fuera de China."
-    },
-    {
-      "en": "Cloud Firewall",
-      "es": "Cloud Firewall",
-      "def": "Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "en": "SAS / Security Center",
-      "es": "Security Center",
-      "def": "EDR + gestión vulnerabilidades + baseline check."
-    },
-    {
-      "en": "KMS",
-      "es": "Key Management Service",
-      "def": "Gestión de claves; integrado con OSS, RDS, EBS."
-    },
-    {
-      "en": "Secrets Manager",
-      "es": "Secrets Manager",
-      "def": "Almacén de secretos con rotación automática."
-    },
-    {
-      "en": "SDDP",
-      "es": "Sensitive Data Discovery",
-      "def": "Descubre y clasifica PII en OSS/RDS/MaxCompute."
-    },
-    {
-      "en": "RAM",
-      "es": "Resource Access Management",
-      "def": "IAM: usuarios, grupos, roles, políticas."
-    },
-    {
-      "en": "RAM Role",
-      "es": "RAM Role",
-      "def": "Identidad asumible; sin AccessKey de larga vida."
-    },
-    {
-      "en": "MFA",
-      "es": "MFA",
-      "def": "2FA obligatorio para consola root y críticos."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Log de todas las llamadas API — equivalente a CloudTrail."
-    },
-    {
-      "en": "STS",
-      "es": "Security Token Service",
-      "def": "Credenciales temporales para federación."
-    },
-    {
-      "en": "Bastion Host",
-      "es": "Bastion Host",
-      "def": "Punto único de acceso SSH/RDP con grabación de sesión."
-    },
-    {
-      "en": "Config",
-      "es": "Cloud Config",
-      "def": "Detecta desvíos de configuración vs baseline."
-    },
-    {
-      "en": "Region",
-      "es": "Región",
-      "def": "Área geográfica con múltiples zonas independientes."
-    },
-    {
-      "en": "Zone / AZ",
-      "es": "Zona",
-      "def": "Data center aislado dentro de una región."
-    },
-    {
-      "en": "RAM",
-      "es": "RAM",
-      "def": "Resource Access Management (IAM): usuarios, roles y policies."
-    },
-    {
-      "en": "KMS",
-      "es": "KMS",
-      "def": "Key Management Service para claves criptográficas."
-    },
-    {
-      "en": "CloudMonitor",
-      "es": "CloudMonitor",
-      "def": "Servicio de métricas, alertas y dashboards."
-    },
-    {
-      "en": "ActionTrail",
-      "es": "ActionTrail",
-      "def": "Auditoría inmutable de llamadas API."
-    },
-    {
-      "en": "ROS",
-      "es": "ROS",
-      "def": "Resource Orchestration Service: IaC nativo tipo CloudFormation."
-    },
-    {
-      "en": "SLA",
-      "es": "SLA",
-      "def": "Service Level Agreement: garantía contractual de disponibilidad."
-    },
-    {
-      "en": "Shared Responsibility",
-      "es": "Responsabilidad compartida",
-      "def": "Modelo donde el proveedor gestiona infraestructura y el cliente gestiona datos/config."
-    }
+    { "en": "Malware", "es": "Código malicioso", "def": "Término general para cualquier software diseñado para dañar, robar información o tomar control no autorizado de un sistema." },
+    { "en": "Virus", "es": "Virus", "def": "Malware que se adjunta a un archivo anfitrión y requiere su ejecución para propagarse." },
+    { "en": "Worm", "es": "Gusano", "def": "Malware que se propaga de forma autónoma por la red explotando vulnerabilidades, sin necesitar archivo anfitrión ni interacción humana." },
+    { "en": "Trojan", "es": "Troyano", "def": "Malware disfrazado de software legítimo que depende del engaño para que la víctima lo ejecute." },
+    { "en": "RAT (Remote Access Trojan)", "es": "Troyano de acceso remoto", "def": "Troyano que da al atacante control interactivo persistente sobre el sistema comprometido." },
+    { "en": "C2 (Command and Control)", "es": "Comando y Control", "def": "Infraestructura remota que un atacante usa para enviar órdenes y recibir datos de sistemas comprometidos." },
+    { "en": "Beaconing", "es": "Señalización periódica", "def": "Conexiones salientes periódicas de un malware hacia su servidor C2 para recibir instrucciones." },
+    { "en": "Ransomware", "es": "Secuestro de datos", "def": "Malware que cifra archivos y exige un pago (rescate) por la clave de descifrado." },
+    { "en": "Double Extortion", "es": "Doble extorsión", "def": "Táctica de ransomware que exfiltra datos antes de cifrarlos y amenaza con publicarlos si no se paga." },
+    { "en": "Webshell", "es": "Webshell", "def": "Puerta trasera escrita en el lenguaje de la aplicación web, plantada tras explotar una vulnerabilidad, operable por HTTP." },
+    { "en": "RCE (Remote Code Execution)", "es": "Ejecución remota de código", "def": "Vulnerabilidad que permite a un atacante ejecutar comandos arbitrarios en un sistema remoto." },
+    { "en": "Cryptojacking", "es": "Secuestro de cómputo para minería", "def": "Uso no autorizado de recursos de cómputo de la víctima para minar criptomonedas." },
+    { "en": "Botnet", "es": "Red de bots", "def": "Conjunto de sistemas comprometidos controlados remotamente para ejecutar ataques distribuidos." },
+    { "en": "Rootkit", "es": "Rootkit", "def": "Malware diseñado para ocultar su presencia y la de otro malware al sistema operativo y a las herramientas de detección." },
+    { "en": "Fileless Malware", "es": "Malware sin archivo", "def": "Malware que opera en memoria o abusa de herramientas legítimas del sistema, sin dejar un binario detectable en disco." },
+    { "en": "IOC (Indicator of Compromise)", "es": "Indicador de compromiso", "def": "Artefacto observable (hash, IP, patrón) que sugiere que un sistema fue comprometido." },
+    { "en": "EDR (Endpoint Detection and Response)", "es": "Detección y respuesta de endpoint", "def": "Agente que monitorea comportamiento en tiempo real a nivel de proceso/sistema para detectar amenazas." },
+    { "en": "Sandboxing", "es": "Entorno aislado de análisis", "def": "Ejecutar un artefacto sospechoso en un entorno aislado para observar su comportamiento sin riesgo." },
+    { "en": "Security Center (SAS)", "es": "Security Center", "def": "Servicio de Alibaba Cloud que combina gestión de vulnerabilidades, baseline check y detección de comportamiento anómalo." },
+    { "en": "Leaked AccessKey", "es": "AccessKey filtrada", "def": "Credencial de API expuesta accidentalmente (p.ej. en un repositorio público), vector de compromiso muy común en la nube." }
   ],
   "quiz": [
-    {
-      "q": "¿Cuál describe mejor a Seguridad en Alibaba Cloud?",
-      "options": [
-        "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Ce",
-        "ECS es el servicio de máquinas virtuales de Alibaba Cloud y el fundamento de casi cualquier arquitectura cloud. Ofrece instancias elásticas con múltiples familias (cómputo, memoria, GPU, almacenamient",
-        "VPC es la red lógica privada donde vive todo recurso Alibaba Cloud. Permite definir rangos de IP, segmentar en subredes (VSwitches), enrutar tráfico con tablas de rutas, conectar con on-premise vía VP",
-        "SLB distribuye tráfico entrante entre múltiples backends. Alibaba Cloud ofrece tres variantes: CLB (clásico L4/L7), ALB (L7 avanzado con reglas de contenido y WAF integrado) y NLB (L4 ultra-rápido par"
-      ],
-      "answer": 0,
-      "explain": "Alibaba Cloud provee un stack de seguridad completo cubriendo identidad (RAM), red (Security Groups, Cloud Firewall, Anti-DDoS), aplicación (WAF, Bot Manager), datos (KMS, SDDP), endpoint (Security Center), auditoría (ActionTrail) y cumplimiento (PCI, ISO, GDPR)."
-    },
-    {
-      "q": "¿Qué es <strong>WAF</strong> (Web Application Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "WAF (Web Application Firewall): Filtro L7 contra OWASP Top 10, bots, CC attacks."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Basic</strong> (Anti-DDoS Basic) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Protección gratuita hasta 5 Gbps.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Scrubbing centers para ataques grandes.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Basic (Anti-DDoS Basic): Protección gratuita hasta 5 Gbps."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Pro</strong> (Anti-DDoS Pro) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Scrubbing centers para ataques grandes.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Global, para negocios fuera de China."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Pro (Anti-DDoS Pro): Scrubbing centers para ataques grandes."
-    },
-    {
-      "q": "¿Qué es <strong>Anti-DDoS Premium</strong> (Anti-DDoS Premium) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Global, para negocios fuera de China.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Anti-DDoS Premium (Anti-DDoS Premium): Global, para negocios fuera de China."
-    },
-    {
-      "q": "¿Qué es <strong>Cloud Firewall</strong> (Cloud Firewall) en Seguridad en Alibaba Cloud?",
-      "options": [
-        "Firewall centralizado inter-VPC, internet, host.",
-        "Filtro L7 contra OWASP Top 10, bots, CC attacks.",
-        "Protección gratuita hasta 5 Gbps.",
-        "Scrubbing centers para ataques grandes."
-      ],
-      "answer": 0,
-      "explain": "Cloud Firewall (Cloud Firewall): Firewall centralizado inter-VPC, internet, host."
-    },
-    {
-      "q": "Para maximizar disponibilidad con Seguridad en Alibaba Cloud, ¿qué diseño es correcto?",
-      "options": [
-        "Todos los recursos en una zona única (mínima latencia)",
-        "Distribuir en 2+ zonas dentro de la región con failover automático",
-        "Spot instances en producción crítica",
-        "Deshabilitar backups para reducir costos"
-      ],
-      "answer": 1,
-      "explain": "Multi-AZ es la práctica estándar: si una zona falla, las otras siguen sirviendo tráfico."
-    },
-    {
-      "q": "Al operar Seguridad en Alibaba Cloud en producción, ¿qué principio de identidad se recomienda?",
-      "options": [
-        "Compartir la AccessKey de la cuenta raíz entre desarrolladores",
-        "AdministratorAccess para todos los usuarios humanos",
-        "RAM roles con mínimo privilegio + MFA obligatorio",
-        "Autenticación solo por contraseña sin MFA"
-      ],
-      "answer": 2,
-      "explain": "Mínimo privilegio + MFA es la base de la seguridad IAM en cualquier cloud."
-    },
-    {
-      "q": "Para carga estable 24/7 durante 2 años con Seguridad en Alibaba Cloud, el modelo más económico suele ser:",
-      "options": [
-        "Pay-as-you-go puro",
-        "Instancias preemptible/spot",
-        "Suscripción anual o Reserved Instance de 3 años",
-        "Facturación por request"
-      ],
-      "answer": 2,
-      "explain": "Compromisos de 1-3 años ofrecen 30-70% de descuento vs pay-as-you-go."
-    },
-    {
-      "q": "¿Qué servicio de Alibaba Cloud gestiona las claves criptográficas?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "KMS (Key Management Service)",
-        "VPC"
-      ],
-      "answer": 2,
-      "explain": "KMS centraliza creación, rotación y control de acceso de claves."
-    },
-    {
-      "q": "¿Qué servicio provee métricas y alertas de recursos Alibaba Cloud?",
-      "options": [
-        "ActionTrail",
-        "CloudMonitor",
-        "OSS",
-        "RAM"
-      ],
-      "answer": 1,
-      "explain": "CloudMonitor centraliza métricas y alertas; ActionTrail es para auditoría API."
-    },
-    {
-      "q": "¿Qué servicio registra todas las llamadas API en tu cuenta para compliance?",
-      "options": [
-        "CloudMonitor",
-        "ActionTrail",
-        "VPC",
-        "KMS"
-      ],
-      "answer": 1,
-      "explain": "ActionTrail es el equivalente de CloudTrail: cada llamada API queda registrada."
-    },
-    {
-      "q": "¿Qué herramienta permite provisionar recursos como código en Alibaba Cloud (nativo)?",
-      "options": [
-        "ROS (Resource Orchestration Service)",
-        "OSS",
-        "CDN",
-        "SLB"
-      ],
-      "answer": 0,
-      "explain": "ROS es el equivalente a CloudFormation: plantillas YAML/JSON."
-    },
-    {
-      "q": "Bajo el modelo de responsabilidad compartida, Alibaba Cloud es responsable de:",
-      "options": [
-        "La configuración de tus aplicaciones",
-        "La seguridad de la infraestructura física, virtualización y servicios gestionados",
-        "Tus datos y permisos RAM",
-        "El código de tus funciones y microservicios"
-      ],
-      "answer": 1,
-      "explain": "El proveedor gestiona la 'seguridad DE la nube'; el cliente la 'seguridad EN la nube'."
-    },
-    {
-      "q": "Un escenario donde Seguridad en Alibaba Cloud es la elección típica:",
-      "options": [
-        "Protección web PCI-DSS con WAF + Anti-DDoS",
-        "Enrutamiento DNS global",
-        "Firma electrónica de documentos",
-        "Streaming de video en tiempo real (si no aplica)"
-      ],
-      "answer": 0,
-      "explain": "Caso de uso canónico: Protección web PCI-DSS con WAF + Anti-DDoS."
-    }
+    { "q": "¿Qué distingue a un gusano (worm) de un virus?", "options": ["El gusano necesita un archivo anfitrión y el virus no", "El gusano se propaga de forma autónoma por la red sin necesitar archivo anfitrión ni interacción humana", "No hay ninguna diferencia real", "El virus solo afecta a servidores Linux"], "answer": 1, "explain": "El gusano se propaga solo, explotando vulnerabilidades de red; el virus necesita un archivo anfitrión que se ejecute." },
+    { "q": "¿Cuál es el vector de compromiso de cuenta cloud más común según el curso?", "options": ["Ataques de phishing dirigido a ejecutivos", "AccessKeys filtradas en repositorios públicos de código o servicios de gestión expuestos", "Ataques físicos al data center", "Virus transmitidos por USB"], "answer": 1, "explain": "En entornos cloud, las credenciales filtradas y los servicios de gestión expuestos son, en la práctica, el vector más común de compromiso." },
+    { "q": "¿Qué le da a un RAT (troyano de acceso remoto) su valor principal para un atacante?", "options": ["Que cifra archivos automáticamente", "Que sobrevive a reinicios (persistencia) y puede recibir órdenes sin ser detectado (C2)", "Que solo funciona en Windows", "Que se autodestruye tras 24 horas"], "answer": 1, "explain": "El valor de un RAT está en su persistencia y en el canal de Comando y Control que le permite recibir instrucciones de forma continua." },
+    { "q": "En un ataque de ransomware, ¿qué implica la 'doble extorsión'?", "options": ["El atacante pide el rescate dos veces por error", "El atacante exfiltra los datos antes de cifrarlos y amenaza con publicarlos si no se paga", "El ransomware cifra los datos dos veces con algoritmos distintos", "El atacante ataca dos servidores simultáneamente"], "answer": 1, "explain": "La doble extorsión combina cifrado (pérdida de disponibilidad) con amenaza de fuga de los datos exfiltrados previamente." },
+    { "q": "¿Por qué un backup accesible desde la misma cuenta comprometida NO es una defensa confiable contra ransomware?", "options": ["Porque los backups caducan automáticamente", "Porque el atacante puede cifrarlo o borrarlo junto con el resto de los datos si tiene el mismo nivel de acceso", "Porque los backups no incluyen bases de datos", "Porque restaurar backups está prohibido por Alibaba Cloud"], "answer": 1, "explain": "Un backup alcanzable con las mismas credenciales comprometidas puede ser cifrado o eliminado por el atacante, igual que los datos originales." },
+    { "q": "¿Cómo se planta típicamente un webshell en un servidor web?", "options": ["Se instala automáticamente al crear la instancia ECS", "Explotando una vulnerabilidad de subida de archivos sin validación o de ejecución remota de código", "Viene preinstalado en todas las imágenes públicas", "Solo puede plantarse con acceso físico al servidor"], "answer": 1, "explain": "El vector típico es una vulnerabilidad de la aplicación web que permite subir o ejecutar código arbitrario en el servidor." },
+    { "q": "¿Por qué encontrar y eliminar un webshell no cierra necesariamente un incidente de seguridad?", "options": ["Porque los webshells se regeneran solos cada hora", "Porque un atacante experimentado suele dejar accesos de persistencia adicionales, como cuentas ocultas", "Porque eliminar un webshell requiere reiniciar toda la región", "Porque los webshells no pueden eliminarse nunca"], "answer": 1, "explain": "Un atacante sofisticado normalmente crea accesos de respaldo (cuentas ocultas, tareas programadas) además del webshell original." },
+    { "q": "¿Qué es el cryptojacking?", "options": ["Un tipo de cifrado usado por bancos", "El uso no autorizado de recursos de cómputo de la víctima para minar criptomonedas", "Un mecanismo legítimo de facturación cloud", "Una técnica de backup incremental"], "answer": 1, "explain": "El cryptojacking secuestra CPU/GPU de la víctima para minar criptomonedas en beneficio del atacante, sin robar datos directamente." },
+    { "q": "¿Cuál suele ser la señal de alerta más típica de un cryptojacking en una cuenta cloud?", "options": ["Un correo de bienvenida de Alibaba Cloud", "Un salto repentino e inexplicable en la factura de cómputo o CPU sostenida al 100% sin carga legítima", "Una reducción del tráfico de red", "Un aumento en el espacio de almacenamiento disponible"], "answer": 1, "explain": "La minería no autorizada consume CPU/GPU de forma sostenida, generando tanto un síntoma de rendimiento como un salto de costo." },
+    { "q": "¿Qué es un Indicador de Compromiso (IOC)?", "options": ["Un certificado SSL válido", "Un artefacto observable, como un hash de archivo o una IP de C2, que sugiere que un sistema fue comprometido", "Un tipo de instancia ECS", "Una política de backup automática"], "answer": 1, "explain": "Los IOC son evidencias observables (hashes, IPs, patrones de tráfico) usadas para detectar y compartir información sobre compromisos." },
+    { "q": "Ante evidencia de un rootkit en una instancia ECS, ¿cuál es la respuesta recomendada?", "options": ["Ejecutar un antivirus y continuar operando la misma instancia", "Reconstruir la instancia desde una imagen limpia en vez de intentar limpiarla manualmente", "Ignorar la alerta si el rendimiento no se ve afectado", "Cambiar solo la contraseña del usuario root"], "answer": 1, "explain": "Un rootkit compromete la confiabilidad de las herramientas del propio sistema; la respuesta estándar es reconstruir desde una imagen limpia." },
+    { "q": "¿Qué papel cumple el 'beaconing' en el ciclo de vida de un RAT?", "options": ["Cifra los archivos de la víctima", "Establece conexiones salientes periódicas hacia el servidor C2 para recibir instrucciones", "Elimina los logs del sistema", "Escanea puertos abiertos en la red local"], "answer": 1, "explain": "El beaconing es la comunicación periódica del RAT con su infraestructura de Comando y Control, a menudo disfrazada de tráfico normal." },
+    { "q": "¿Qué diferencia principal existe entre malware clasificado por 'objetivo' (ransomware, spyware, miner) y por 'propagación' (virus, gusano, troyano)?", "options": ["Son sistemas de clasificación incompatibles entre sí", "El objetivo describe qué hace el malware una vez dentro; la propagación describe cómo llegó — ambas dimensiones pueden combinarse en un mismo caso", "Solo aplica una clasificación por incidente", "El objetivo solo existe en malware de Windows"], "answer": 1, "explain": "Un mismo malware puede describirse por cómo se propaga (p.ej. troyano) y por qué hace una vez ejecutado (p.ej. ransomware) — ambas dimensiones son complementarias." }
   ],
-  "exam_focus": "Preguntas: (a) RAM users vs roles vs STS, (b) shared responsibility model, (c) Anti-DDoS Basic/Pro/Premium, (d) KMS integration, (e) ActionTrail para compliance.",
+  "exam_focus": "El examen evalúa distinguir la taxonomía de malware por mecanismo de propagación frente a objetivo, reconocer los vectores de entrada típicos en cuentas cloud (AccessKeys filtradas, servicios expuestos), y aplicar correctamente el vocabulario de RAT/C2, ransomware con doble extorsión, webshell y cryptojacking en escenarios de detección y respuesta.",
   "official_intro": "For hosts running in a network environment, they are constantly facing attacks and damage from malicious code. These malicious codes are transmitted in a variety of ways, and the level of harm is not the same. Through this course, you can not only understand the common ways of malicious code classifying and spreading, but also have a deeper understanding of the attack principles of remote control, ransomware, and webshell.",
   "recommended_for": "Cloud Host Security Administrator, Cloud host Operation and Maintenance Personnel, Network Security Administrator",
   "source_url": "https://edu.alibabacloud.com/certification/clouder_maliciouscode"
